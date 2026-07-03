@@ -9,7 +9,11 @@
 
 package org.nrg.xapi.rest.theme;
 
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
@@ -42,7 +46,7 @@ import java.util.List;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 
-@Api(description = "XNAT Theme Management API")
+@Tag(name = "theme", description = "XNAT Theme Management API")
 @XapiRestController
 @RequestMapping(value = "/themes")
 public class ThemeApi extends AbstractXapiRestController {
@@ -52,17 +56,17 @@ public class ThemeApi extends AbstractXapiRestController {
         _themeService = themeService;
     }
 
-    @ApiOperation(value = "Get list of available themes.", notes = "Use this to get a list of all available themes on the XNAT system.", response = ThemeService.TypeOption.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "Reports the currently selected global theme (if there is one), whether or not it's enabled, and a list of available themes on the system in a JSON string."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Get list of available themes.", description = "Use this to get a list of all available themes on the XNAT system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Reports the currently selected global theme (if there is one), whether or not it's enabled, and a list of available themes on the system in a JSON string."), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<List<ThemeService.TypeOption>> getAllThemes() {
         return new ResponseEntity<>(_themeService.loadExistingThemes(), HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Accepts a multipart form with a zip file upload and extracts its contents in the theme system folder. If successful, the first (root) directory name (or theme name) unzipped is returned in the response. This will overwrite any other directories already existing with the same name without warning.", notes = "The structure of the zipped package must have only directories at it's root.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Theme package successfully uploaded and extracted."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to upload a theme package."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Accepts a multipart form with a zip file upload and extracts its contents in the theme system folder. If successful, the first (root) directory name (or theme name) unzipped is returned in the response. This will overwrite any other directories already existing with the same name without warning.", description = "The structure of the zipped package must have only directories at it's root.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Theme package successfully uploaded and extracted."), @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."), @ApiResponse(responseCode = "403", description = "Not authorized to upload a theme package."), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
-    public ResponseEntity<List<ThemeService.TypeOption>> uploadTheme(@ApiParam(value = "Multipart file object being uploaded", required = true) @RequestParam(value = "themePackage", required = false) MultipartFile themePackage) {
+    public ResponseEntity<List<ThemeService.TypeOption>> uploadTheme(@Parameter(description = "Multipart file object being uploaded", required = true) @RequestParam(value = "themePackage", required = false) MultipartFile themePackage) {
         List<ThemeService.TypeOption> themeOptions = new ArrayList<>();
         try {
             if (!themePackage.getContentType().contains("zip")) {
@@ -88,8 +92,8 @@ public class ThemeApi extends AbstractXapiRestController {
         return new ResponseEntity<>(themeOptions, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Get the currently selected global theme or a role based theme if specified.", notes = "Use this to get the theme selected by the system administrator on the Theme Management page.", response = ThemeConfig.class, responseContainer = "ThemeConfig")
-    @ApiResponses({@ApiResponse(code = 200, message = "Reports the currently selected global theme (if there is one) and whether or not it's enabled."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Get the currently selected global theme or a role based theme if specified.", description = "Use this to get the theme selected by the system administrator on the Theme Management page.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Reports the currently selected global theme (if there is one) and whether or not it's enabled."), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "current", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public ResponseEntity<String> getCurrentTheme() {
         final UserI              user  = getSessionUser();
@@ -103,20 +107,20 @@ public class ThemeApi extends AbstractXapiRestController {
         return new ResponseEntity<>("No current or default theme was found.", HttpStatus.NOT_FOUND);
     }
 
-    @ApiOperation(value = "Get the currently selected global theme or a role based theme if specified.", notes = "Use this to get the theme selected by the system administrator on the Theme Management page.", response = ThemeConfig.class, responseContainer = "ThemeConfig")
-    @ApiResponses({@ApiResponse(code = 200, message = "Reports the currently selected global theme (if there is one) and whether or not it's enabled."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Get the currently selected global theme or a role based theme if specified.", description = "Use this to get the theme selected by the system administrator on the Theme Management page.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Reports the currently selected global theme (if there is one) and whether or not it's enabled."), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "role/{role}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public ResponseEntity<ThemeConfig> getThemeByRole(@ApiParam(value = "\"global\" or role name of currently set theme", required = true) @PathVariable("role") final String role) {
+    public ResponseEntity<ThemeConfig> getThemeByRole(@Parameter(description = "\"global\" or role name of currently set theme", required = true) @PathVariable("role") final String role) {
         if ("global".equalsIgnoreCase(role)) {
             return new ResponseEntity<>(_themeService.getTheme(), HttpStatus.OK);
         }
         return new ResponseEntity<>(_themeService.getTheme(role), HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Sets the current global theme to the one specified.", notes = "Returns the updated serialized theme object.", response = ThemeConfig.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully updated the current global theme."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to create or update this user."), @ApiResponse(code = 404, message = "Theme not found."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Sets the current global theme to the one specified.", description = "Returns the updated serialized theme object.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully updated the current global theme."), @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."), @ApiResponse(responseCode = "403", description = "Not authorized to create or update this user."), @ApiResponse(responseCode = "404", description = "Theme not found."), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "theme/{theme}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
-    public ResponseEntity<ThemeConfig> setGlobalTheme(@ApiParam(value = "The name of the theme to select.", required = true) @PathVariable("theme") final String theme, @RequestParam(value = "enabled", required = false, defaultValue = "true") final boolean enabled) {
+    public ResponseEntity<ThemeConfig> setGlobalTheme(@Parameter(description = "The name of the theme to select.", required = true) @PathVariable("theme") final String theme, @RequestParam(value = "enabled", required = false, defaultValue = "true") final boolean enabled) {
         try {
             final ThemeConfig themeConfig = _themeService.setTheme(StringUtils.equals(theme, "null") ? null : theme, enabled);
             return new ResponseEntity<>(themeConfig, HttpStatus.OK); // TODO: fix the return on this. It's showing up as [object Object] on the page!
@@ -129,10 +133,10 @@ public class ThemeApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Deletes the theme with the specified name.", notes = "Returns success on deletion. ", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Theme was successfully deleted."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to delete a theme."), @ApiResponse(code = 404, message = "Theme not found."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Deletes the theme with the specified name.", description = "Returns success on deletion. ")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Theme was successfully deleted."), @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."), @ApiResponse(responseCode = "403", description = "Not authorized to delete a theme."), @ApiResponse(responseCode = "404", description = "Theme not found."), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "theme/{theme}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.DELETE, restrictTo = Admin)
-    public ResponseEntity<ThemeConfig> deleteTheme(@ApiParam(value = "Name of the theme to delete", required = true) @PathVariable("theme") final String theme) {
+    public ResponseEntity<ThemeConfig> deleteTheme(@Parameter(description = "Name of the theme to delete", required = true) @PathVariable("theme") final String theme) {
         if (StringUtils.equals(theme, "null")) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

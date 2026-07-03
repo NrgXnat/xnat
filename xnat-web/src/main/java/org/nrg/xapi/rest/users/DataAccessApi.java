@@ -4,7 +4,11 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ServerException;
@@ -44,7 +48,7 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
-@Api("Data Access API")
+@Tag(name = "Data Access API")
 @XapiRestController
 @RequestMapping(value = "/access")
 @Slf4j
@@ -66,10 +70,10 @@ public class DataAccessApi extends AbstractXapiRestController {
         _groupService = groupService;
     }
 
-    @ApiOperation(value = "Gets the projects and roles associated with the current user.", response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of projects and roles for the current user."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the projects and roles associated with the current user.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of projects and roles for the current user."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "projects", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
@@ -77,13 +81,12 @@ public class DataAccessApi extends AbstractXapiRestController {
         return ResponseEntity.ok(getRoleHolder().getUserProjectRoles(getSessionUser()));
     }
 
-    @ApiOperation(value = "Gets a list of the available element displays.",
-                  notes = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
-                  response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of available element displays."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets a list of the available element displays.",
+                  description = "The available element displays can be used as parameters for this call in the form /xapi/access/displays/{DISPLAY}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of available element displays."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "displays", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
@@ -91,13 +94,12 @@ public class DataAccessApi extends AbstractXapiRestController {
         return new ResponseEntity<>(AVAILABLE_ELEMENT_DISPLAYS, OK);
     }
 
-    @ApiOperation(value = "Gets the last modified timestamp for the current user.",
-                  notes = "This indicates the time of the latest update to elements relevant to the user. An update to these elements can mean that permissions for the user have changed and the various displays should be refreshed if cached on the client side.",
-                  response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of available element displays."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the last modified timestamp for the current user.",
+                  description = "This indicates the time of the latest update to elements relevant to the user. An update to these elements can mean that permissions for the user have changed and the various displays should be refreshed if cached on the client side.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of available element displays."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "displays/modified", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
@@ -105,13 +107,12 @@ public class DataAccessApi extends AbstractXapiRestController {
         return new ResponseEntity<>(_cache.getUserLastUpdateTime(getSessionUser()), OK);
     }
 
-    @ApiOperation(value = "Gets a list of the element displays of the specified type for the current user.",
-                  notes = "This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
-                  response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of element displays of the specified type for the current user."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets a list of the element displays of the specified type for the current user.",
+                  description = "This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of element displays of the specified type for the current user."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "displays/{display}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
@@ -119,36 +120,34 @@ public class DataAccessApi extends AbstractXapiRestController {
         return ResponseEntity.ok(getElementDisplayModels(getSessionUser(), display));
     }
 
-    @ApiOperation(value = "Gets the projects and roles associated with the specified user. This can only be called by users with administrative privileges.", response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of projects and roles for the specified user."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user's projects and roles."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the projects and roles associated with the specified user. This can only be called by users with administrative privileges.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of projects and roles for the specified user."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the user's projects and roles."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/projects", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     @ResponseBody
-    public ResponseEntity<Collection<Map<String, String>>> getUserProjectRoles(@ApiParam("The user to get the project roles for.") @PathVariable final String username) {
+    public ResponseEntity<Collection<Map<String, String>>> getUserProjectRoles(@Parameter(description = "The user to get the project roles for.") @PathVariable final String username) {
         return ResponseEntity.ok(getRoleHolder().getUserProjectRoles(username));
     }
 
-    @ApiOperation(value = "Gets the last modified timestamp for the specified user. This can only be called by users with administrative privileges.",
-                  notes = "This indicates the time of the latest update to elements relevant to the specified user. An update to these elements can mean that permissions for the specified user have changed and the various displays should be refreshed if cached on the client side.",
-                  response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "Timestamp of when the list of available element displays for the specified user was updated."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user's cache timestamp."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the last modified timestamp for the specified user. This can only be called by users with administrative privileges.",
+                  description = "This indicates the time of the latest update to elements relevant to the specified user. An update to these elements can mean that permissions for the specified user have changed and the various displays should be refreshed if cached on the client side.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Timestamp of when the list of available element displays for the specified user was updated."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the user's cache timestamp."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/displays/modified", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     @ResponseBody
-    public ResponseEntity<Date> getLastModifiedForUser(@ApiParam("The user to get the last modified timestamp for.") @PathVariable final String username) {
+    public ResponseEntity<Date> getLastModifiedForUser(@Parameter(description = "The user to get the last modified timestamp for.") @PathVariable final String username) {
         return ResponseEntity.ok(_cache.getUserLastUpdateTime(username));
     }
 
-    @ApiOperation(value = "Gets a list of the element displays of the specified type for the specified user. This can only be called by users with administrative privileges.",
-                  response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of element displays of the specified type for the specified user."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays for the specified user."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets a list of the element displays of the specified type for the specified user. This can only be called by users with administrative privileges.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of element displays of the specified type for the specified user."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of available element displays for the specified user."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/displays/{display}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<List<ElementDisplayModel>> getElementDisplaysForUser(@PathVariable final String username, @PathVariable final String display) throws DataFormatException, ServerException, NotFoundException {
@@ -161,12 +160,12 @@ public class DataAccessApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns a map indicating the status of the cache initialization.", response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "A map with information on the status of cache initialization."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available element displays."),
-                   @ApiResponse(code = 404, message = "Indicates that the cache implementation doesn't have the ability to report its status."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns a map indicating the status of the cache initialization.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A map with information on the status of cache initialization."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of available element displays."),
+                   @ApiResponse(responseCode = "404", description = "Indicates that the cache implementation doesn't have the ability to report its status."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "cache/status", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<Map<String, String>> getCacheStatus() {
@@ -177,10 +176,10 @@ public class DataAccessApi extends AbstractXapiRestController {
         return new ResponseEntity<>(NOT_FOUND);
     }
 
-    @ApiOperation(value = "Clears the element cache for the current user=.")
-    @ApiResponses({@ApiResponse(code = 200, message = "The user's cache was properly cleared."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Clears the element cache for the current user=.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The user's cache was properly cleared."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "cache/flush", method = DELETE, restrictTo = Authenticated)
     @ResponseBody
     public ResponseEntity<Void> flushUserCacheStatus() {
@@ -188,14 +187,14 @@ public class DataAccessApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @ApiOperation(value = "Clears the element cache for the specified user.")
-    @ApiResponses({@ApiResponse(code = 200, message = "The specified user's cache was properly cleared."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to clear the specified user's cache.."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Clears the element cache for the specified user.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The specified user's cache was properly cleared."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to clear the specified user's cache.."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "cache/flush/{username}", method = DELETE, restrictTo = User)
     @ResponseBody
-    public ResponseEntity<Void> flushUserCacheStatus(@ApiParam("Indicates the name of the user whose cache should be flushed. If not provided, this flushes the cache of the current user.") @PathVariable @Username final String username) throws InsufficientPrivilegesException {
+    public ResponseEntity<Void> flushUserCacheStatus(@Parameter(description = "Indicates the name of the user whose cache should be flushed. If not provided, this flushes the cache of the current user.") @PathVariable @Username final String username) throws InsufficientPrivilegesException {
         final UserI user = getSessionUser();
 
         if (StringUtils.isNotBlank(username) && !StringUtils.equalsIgnoreCase(username, user.getUsername()) && !Roles.isSiteAdmin(user)) {
@@ -207,36 +206,36 @@ public class DataAccessApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @ApiOperation(value = "Finds any irregular permissions settings for standard project groups (Owners, Members, Collaborators).", responseContainer = "List", response = Map.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Irregular permissions were found and fixed."),
-                   @ApiResponse(code = 204, message = "There were no irregular permissions to be fixed."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to clear the specified user's cache.."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Finds any irregular permissions settings for standard project groups (Owners, Members, Collaborators).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Irregular permissions were found and fixed."),
+                   @ApiResponse(responseCode = "204", description = "There were no irregular permissions to be fixed."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to clear the specified user's cache.."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "permissions/group/{projectId}", restrictTo = Admin)
     @ResponseBody
     public List<Map<String, Object>> getProjectPermissions(final @PathVariable @Project String projectId) {
         return _groupService.getProjectGroupPermissions(projectId);
     }
 
-    @ApiOperation(value = "Finds any irregular permissions settings for standard project groups (Owners, Members, Collaborators).", responseContainer = "List", response = Map.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Irregular permissions were found and fixed."),
-                   @ApiResponse(code = 204, message = "There were no irregular permissions to be fixed."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to clear the specified user's cache.."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Finds any irregular permissions settings for standard project groups (Owners, Members, Collaborators).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Irregular permissions were found and fixed."),
+                   @ApiResponse(responseCode = "204", description = "There were no irregular permissions to be fixed."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to clear the specified user's cache.."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "permissions/irregular/find", restrictTo = Admin)
     @ResponseBody
     public List<Map<String, Object>> findIrregularPermissions() {
         return _groupService.findIrregularProjectGroups();
     }
 
-    @ApiOperation(value = "Finds and fixes any irregular permissions settings for standard project groups (Owners, Members, Collaborators).", responseContainer = "List", response = Integer.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Irregular permissions were found and fixed."),
-                   @ApiResponse(code = 204, message = "There were no irregular permissions to be fixed."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to clear the specified user's cache.."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Finds and fixes any irregular permissions settings for standard project groups (Owners, Members, Collaborators).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Irregular permissions were found and fixed."),
+                   @ApiResponse(responseCode = "204", description = "There were no irregular permissions to be fixed."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to clear the specified user's cache.."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "permissions/irregular/fix", method = POST, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<List<Integer>> fixIrregularPermissions() {

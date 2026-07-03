@@ -2,7 +2,11 @@ package org.nrg.xnat.snapshot.rest;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Read;
 
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
@@ -32,7 +36,7 @@ import java.util.regex.Pattern;
 /**
  * Snapshot generation API.
  */
-@Api("Snapshot Generation API")
+@Tag(name = "Snapshot Generation API")
 @XapiRestController
 @Slf4j
 public class SnapshotGenerationApi extends AbstractXapiRestController {
@@ -43,11 +47,11 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
         _resolver = resolver;
     }
 
-    @ApiOperation(value = "Get a single image or montage of full-size images from the scan. Generate the resource if necessary.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Snapshot located or generated and returned."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The session or scan requested doesn't exist."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Get a single image or montage of full-size images from the scan. Generate the resource if necessary.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Snapshot located or generated and returned."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The session or scan requested doesn't exist."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = {
             "/experiments/{session}/scan/{scanId}/snapshot",
             "/projects/{project}/experiments/{session}/scan/{scanId}/snapshot",
@@ -57,11 +61,11 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
             "/projects/{project}/subjects/{subject}/experiments/{session}/scan/{scanId}/snapshot/{view}"},
                         produces = MediaType.IMAGE_GIF_VALUE,
                         method = RequestMethod.GET, restrictTo = Read)
-    public Resource getSnapshot(@ApiParam("Specifies the project that contains the image session") final @PathVariable(required = false) @Project String project,
-                                @ApiParam("Specifies the subject associated with the image session") final @PathVariable(required = false) @Subject String subject,
-                                @ApiParam("Specifies the ID or label for the image session (if this is the label, you must also specify the project at least)") final @PathVariable @Experiment String session,
-                                @ApiParam("The scan for which the thumbnail should be generated") final @PathVariable String scanId,
-                                @ApiParam("Specifies the grid layout for montage views; must be in the format *numRows*X*numColumns*, e.g. 3X3, 5X2, etc.") final @PathVariable(required = false) String view) throws DataFormatException, NotFoundException, InitializationException {
+    public Resource getSnapshot(@Parameter(description = "Specifies the project that contains the image session") final @PathVariable(required = false) @Project String project,
+                                @Parameter(description = "Specifies the subject associated with the image session") final @PathVariable(required = false) @Subject String subject,
+                                @Parameter(description = "Specifies the ID or label for the image session (if this is the label, you must also specify the project at least)") final @PathVariable @Experiment String session,
+                                @Parameter(description = "The scan for which the thumbnail should be generated") final @PathVariable String scanId,
+                                @Parameter(description = "Specifies the grid layout for montage views; must be in the format *numRows*X*numColumns*, e.g. 3X3, 5X2, etc.") final @PathVariable(required = false) String view) throws DataFormatException, NotFoundException, InitializationException {
         try {
             return new FileSystemResource(getSnapshotFile(project, subject, session, scanId, view));
         } catch (IOException e) {
@@ -69,11 +73,11 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get a single thumbnail or montage of thumbnails. Generate the resource if necessary.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Thumbnail located or generated and returned."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The session or scan requested doesn't exist."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Get a single thumbnail or montage of thumbnails. Generate the resource if necessary.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Thumbnail located or generated and returned."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The session or scan requested doesn't exist."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = {
             "/experiments/{session}/scan/{scanId}/thumbnail",
             "/projects/{project}/experiments/{session}/scan/{scanId}/thumbnail",
@@ -83,11 +87,11 @@ public class SnapshotGenerationApi extends AbstractXapiRestController {
             "/projects/{project}/subjects/{subject}/experiments/{session}/scan/{scanId}/thumbnail/{view}"},
                         produces = MediaType.IMAGE_GIF_VALUE,
                         method = RequestMethod.GET, restrictTo = Read)
-    public Resource getThumbnail(@ApiParam("Specifies the project that contains the image session") final @PathVariable(required = false) @Project String project,
-                                 @ApiParam("Specifies the subject associated with the image session") final @PathVariable(required = false) @Subject String subject,
-                                 @ApiParam("Specifies the ID or label for the image session (if this is the label, you must also specify the project at least)") final @PathVariable @Experiment String session,
-                                 @ApiParam("The scan for which the thumbnail should be generated") final @PathVariable String scanId,
-                                 @ApiParam("Specifies the grid layout for montage views; must be in the format *numRows*X*numColumns*, e.g. 3X3, 5X2, etc.") final @PathVariable(required = false) String view) throws DataFormatException, NotFoundException, InitializationException {
+    public Resource getThumbnail(@Parameter(description = "Specifies the project that contains the image session") final @PathVariable(required = false) @Project String project,
+                                 @Parameter(description = "Specifies the subject associated with the image session") final @PathVariable(required = false) @Subject String subject,
+                                 @Parameter(description = "Specifies the ID or label for the image session (if this is the label, you must also specify the project at least)") final @PathVariable @Experiment String session,
+                                 @Parameter(description = "The scan for which the thumbnail should be generated") final @PathVariable String scanId,
+                                 @Parameter(description = "Specifies the grid layout for montage views; must be in the format *numRows*X*numColumns*, e.g. 3X3, 5X2, etc.") final @PathVariable(required = false) String view) throws DataFormatException, NotFoundException, InitializationException {
         try {
             return new FileSystemResource(getThumbnailFile(project, subject, session, scanId, view));
         } catch (IOException e) {

@@ -1,7 +1,7 @@
 package org.nrg.xapi.model.users;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static lombok.AccessLevel.PUBLIC;
 
-@ApiModel(description = "Contains the properties that define an element display model on the system.")
+@Schema(description = "Contains the properties that define an element display model on the system.")
 @Getter(PUBLIC)
 @Accessors(prefix = "_")
 @Slf4j

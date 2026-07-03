@@ -9,7 +9,11 @@
 
 package org.nrg.xapi.rest.users;
 
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -76,7 +80,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
-@Api("User Management API")
+@Tag(name = "User Management API")
 @XapiRestController
 @RequestMapping(value = "/users")
 @Slf4j
@@ -105,14 +109,12 @@ public class UsersApi extends AbstractXapiRestController {
         _service                  = service;
     }
 
-    @ApiOperation(value = "Get list of users.",
-                  notes = "The primary users function returns a list of all users of the XNAT system. This includes just the username and nothing else. You can retrieve a particular user by adding the username to the REST API URL or a list of users with abbreviated user profiles by calling /xapi/users/profiles.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of usernames."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of users.",
+                  description = "The primary users function returns a list of all users of the XNAT system. This includes just the username and nothing else. You can retrieve a particular user by adding the username to the REST API URL or a list of users with abbreviated user profiles by calling /xapi/users/profiles.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of usernames."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of usernames."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authorizer)
     @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
@@ -120,14 +122,12 @@ public class UsersApi extends AbstractXapiRestController {
         return new ArrayList<>(Users.getAllLogins());
     }
 
-    @ApiOperation(value = "Get list of user profiles.",
-                  notes = "The users' profiles function returns a list of all users of the XNAT system with brief information about each.",
-                  responseContainer = "List",
-                  response = User.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of user profiles."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of users."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of user profiles.",
+                  description = "The users' profiles function returns a list of all users of the XNAT system with brief information about each.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of user profiles."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of users."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "profiles", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authorizer)
     @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
@@ -135,44 +135,40 @@ public class UsersApi extends AbstractXapiRestController {
         return User.getAllUsers(_jdbcTemplate);
     }
 
-    @ApiOperation(value = "Get user profile.",
-                  notes = "The user profile function returns a user of the XNAT system with brief information.",
-                  response = User.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "A user profile."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user profile."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get user profile.",
+                  description = "The user profile function returns a user of the XNAT system with brief information.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A user profile."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the user profile."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "profile/{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authorizer)
     @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
-    public User usersProfileGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws DataFormatException, NotFoundException {
+    public User usersProfileGet(@Parameter(description = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws DataFormatException, NotFoundException {
         return getUserProfile(username);
     }
 
-    @ApiOperation(value = "Get user profile.",
-                  notes = "The user profile function returns the current user with brief information.",
-                  response = User.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "A user profile."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user profile."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get user profile.",
+                  description = "The user profile function returns the current user with brief information.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A user profile."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the user profile."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "profile", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
     @ResponseBody
     public User usersProfileGet() throws DataFormatException, NotFoundException {
         return getUserProfile(getSessionUser().getUsername());
     }
 
-    @ApiOperation(value = "Get user auth details.",
-                  notes = "The user authDetails function returns info about authentication methods that can be used for a given XNAT account.",
-                  responseContainer = "List",
-                  response = UserAuth.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User auth info."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the user profile."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get user auth details.",
+                  description = "The user authDetails function returns info about authentication methods that can be used for a given XNAT account.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User auth info."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the user profile."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "authDetails/{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
     @ResponseBody
-    public List<UserAuth> usersAuthDetailsGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws InsufficientPrivilegesException, DataFormatException {
+    public List<UserAuth> usersAuthDetailsGet(@Parameter(description = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws InsufficientPrivilegesException, DataFormatException {
         final UserI user = getSessionUser();
         if (!Roles.isSiteAdmin(user) && !StringUtils.equalsIgnoreCase(username, user.getUsername())) {
             throw new InsufficientPrivilegesException(user.getUsername(), username, "The user " + user.getUsername() + " attempted to get authentication details  for user " + username + ". This requires administrator privileges.");
@@ -183,11 +179,11 @@ public class UsersApi extends AbstractXapiRestController {
         return UserAuth.getUserAuths(_jdbcTemplate, username);
     }
 
-    @ApiOperation(value = "Get configured auth providers.",
-                  notes = "Returns info about authentication methods that have been configured")
-    @ApiResponses({@ApiResponse(code = 200, message = "Auth provider info."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get configured auth providers.",
+                  description = "Returns info about authentication methods that have been configured")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Auth provider info."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "authProviders", produces = APPLICATION_JSON_VALUE, method = GET)
     public List<XnatAuthenticationProviderApiPojo> getConfiguredAuthProviders() {
         return _manager.getVisibleEnabledProviders().entrySet().stream()
@@ -195,14 +191,12 @@ public class UsersApi extends AbstractXapiRestController {
                        .collect(Collectors.toList());
     }
 
-    @ApiOperation(value = "Get list of users who are enabled or who have interacted with the site somewhat recently.",
-                  notes = "The users' profiles function returns a list of all users of the XNAT system with brief information about each.",
-                  responseContainer = "List",
-                  response = User.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of user profiles."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of users who are enabled or who have interacted with the site somewhat recently.",
+                  description = "The users' profiles function returns a list of all users of the XNAT system with brief information about each.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of user profiles."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of usernames."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "current", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Authorizer)
     @AuthDelegate(UserResourceXapiAuthorization.class)
     @ResponseBody
@@ -210,14 +204,12 @@ public class UsersApi extends AbstractXapiRestController {
         return User.getCurrentUsers(_jdbcTemplate, getMaxLoginInterval(), getLastModifiedInterval());
     }
 
-    @ApiOperation(value = "Get list of active users.",
-                  notes = "Returns a map of usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. The number of active sessions and a list of the session IDs is associated with each user.",
-                  responseContainer = "Map",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of active users."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of usernames."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of active users.",
+                  description = "Returns a map of usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. The number of active sessions and a list of the session IDs is associated with each user.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of active users."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of usernames."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "active", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Admin)
     @ResponseBody
     public Map<String, Map<String, Object>> getActiveUsers() {
@@ -247,18 +239,16 @@ public class UsersApi extends AbstractXapiRestController {
         return activeUsers;
     }
 
-    @ApiOperation(value = "Get information about active sessions for the indicated user.",
-                  notes = "Returns a map containing a list of session IDs and usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. This also includes the number of active sessions for each user.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of active users."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access this user's sessions."),
-                   @ApiResponse(code = 404, message = "The indicated user has no active sessions or is not a valid user."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get information about active sessions for the indicated user.",
+                  description = "Returns a map containing a list of session IDs and usernames for users that have at least one currently active session, i.e. logged in or associated with a valid application session. This also includes the number of active sessions for each user.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of active users."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access this user's sessions."),
+                   @ApiResponse(responseCode = "404", description = "The indicated user has no active sessions or is not a valid user."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "active/{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
     @ResponseBody
-    public List<String> getUserActiveSessions(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws NotModifiedException {
+    public List<String> getUserActiveSessions(@Parameter(description = "ID of the user to fetch", required = true) @PathVariable @Username final String username) throws NotModifiedException {
         final Object located = locatePrincipalByUsername(username);
         if (located == null) {
             throw new NotModifiedException("No sessions found for user " + username);
@@ -270,16 +260,15 @@ public class UsersApi extends AbstractXapiRestController {
         return sessions.stream().map(INFO_TO_ID_FUNCTION).collect(Collectors.toList());
     }
 
-    @ApiOperation(value = "Gets the user with the specified user ID.",
-                  notes = "Returns the serialized user object with the specified user ID.",
-                  response = User.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to view this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the user with the specified user ID.",
+                  description = "Returns the serialized user object with the specified user ID.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to view this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
-    public User getUser(@ApiParam(value = "Username of the user to fetch.", required = true) @PathVariable("username") @Username final String username) throws InitializationException {
+    public User getUser(@Parameter(description = "Username of the user to fetch.", required = true) @PathVariable("username") @Username final String username) throws InitializationException {
         try {
             final UserI user = getUserManagementService().getUser(username);
             return _factory.getUser(user);
@@ -288,14 +277,13 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Creates a new user from the request body.",
-                  notes = "Returns the newly created user object.",
-                  response = User.class)
-    @ApiResponses({@ApiResponse(code = 201, message = "User successfully created."),
-                   @ApiResponse(code = 400, message = "The submitted data was invalid."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to update this user."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Creates a new user from the request body.",
+                  description = "Returns the newly created user object.")
+    @ApiResponses({@ApiResponse(responseCode = "201", description = "User successfully created."),
+                   @ApiResponse(responseCode = "400", description = "The submitted data was invalid."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to update this user."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = AccessLevel.Admin)
     @ResponseStatus(CREATED)
     public User createUser(@RequestBody final User model) throws DataFormatException, ResourceAlreadyExistsException, UserInitException {
@@ -347,27 +335,26 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Updates the user object with the specified username.",
-                  notes = "Returns the updated serialized user object with the specified username.",
-                  response = User.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User successfully updated."),
-                   @ApiResponse(code = 304, message = "The user object was not modified because no attributes were changed."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to update this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Updates the user object with the specified username.",
+                  description = "Returns the updated serialized user object with the specified username.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User successfully updated."),
+                   @ApiResponse(responseCode = "304", description = "The user object was not modified because no attributes were changed."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to update this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}", consumes = {APPLICATION_JSON_VALUE, MULTIPART_FORM_DATA_VALUE}, produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Admin)
-    public User updateUser(@ApiParam(value = "The username of the user to create or update.", required = true) @PathVariable @Username final String username, @RequestBody final User model) throws UserInitException, XapiException, UserNotFoundException {
+    public User updateUser(@Parameter(description = "The username of the user to create or update.", required = true) @PathVariable @Username final String username, @RequestBody final User model) throws UserInitException, XapiException, UserNotFoundException {
         return updateUser(username, model, true);
     }
 
-    @ApiOperation(value = "Update ones own user account.", response = User.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User successfully updated."),
-                   @ApiResponse(code = 304, message = "The user object was not modified because no attributes were changed."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to update this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Update ones own user account.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User successfully updated."),
+                   @ApiResponse(responseCode = "304", description = "The user object was not modified because no attributes were changed."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to update this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "update", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Authenticated)
     public User update(@RequestBody final User model) throws UserInitException, XapiException, UserNotFoundException {
         UserI user = getSessionUser();
@@ -501,18 +488,16 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Invalidates all active sessions associated with the specified username.",
-                  notes = "Returns a list of session IDs that were invalidated.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User successfully invalidated."),
-                   @ApiResponse(code = 304, message = "Indicated user has no active sessions, so no action was taken."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to invalidate this user's sessions."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Invalidates all active sessions associated with the specified username.",
+                  description = "Returns a list of session IDs that were invalidated.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User successfully invalidated."),
+                   @ApiResponse(responseCode = "304", description = "Indicated user has no active sessions, so no action was taken."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to invalidate this user's sessions."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "active/{username}", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.User)
-    public List<String> invalidateUser(final HttpSession current, @ApiParam(value = "The username of the user to invalidate.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException, NotModifiedException {
+    public List<String> invalidateUser(final HttpSession current, @Parameter(description = "The username of the user to invalidate.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException, NotModifiedException {
         final UserI  user;
         final String currentSessionId;
         if (StringUtils.equals(getSessionUser().getUsername(), username)) {
@@ -534,28 +519,27 @@ public class UsersApi extends AbstractXapiRestController {
         return sessions.stream().map(INFO_TO_ID_INVALIDATOR_FUNCTION).filter(sessionId -> !StringUtils.equalsIgnoreCase(sessionId, currentSessionId)).collect(Collectors.toList());
     }
 
-    @ApiOperation(value = "Returns whether the user with the specified user ID is enabled.",
-                  notes = "Returns true or false based on whether the specified user is enabled or not.",
-                  response = Boolean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User enabled status successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to get whether this user is enabled."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns whether the user with the specified user ID is enabled.",
+                  description = "Returns true or false based on whether the specified user is enabled or not.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User enabled status successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to get whether this user is enabled."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/enabled", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
-    public boolean usersIdEnabledGet(@ApiParam(value = "The ID of the user to retrieve the enabled status for.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException {
+    public boolean usersIdEnabledGet(@Parameter(description = "The ID of the user to retrieve the enabled status for.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException {
         return getUserManagementService().getUser(username).isEnabled();
     }
 
-    @ApiOperation(value = "Sets the user's enabled state.",
-                  notes = "Sets the enabled state of the user with the specified user ID to the value of the flag parameter.")
-    @ApiResponses({@ApiResponse(code = 200, message = "User enabled status successfully set."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Sets the user's enabled state.",
+                  description = "Sets the enabled state of the user with the specified user ID to the value of the flag parameter.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User enabled status successfully set."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to enable or disable this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/enabled/{flag}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Admin)
-    public void usersIdEnabledFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, InitializationException {
+    public void usersIdEnabledFlagPut(@Parameter(description = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @Parameter(description = "The value to set for the enabled status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, InitializationException {
         final UserI user = getUserManagementService().getUser(username);
         if (user.isEnabled() == flag) {
             return;
@@ -576,28 +560,27 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns whether the user with the specified user ID is verified.",
-                  notes = "Returns true or false based on whether the specified user is verified or not.",
-                  response = Boolean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User verified status successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to view this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns whether the user with the specified user ID is verified.",
+                  description = "Returns true or false based on whether the specified user is verified or not.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User verified status successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to view this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/verified", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
-    public boolean usersIdVerifiedGet(@ApiParam(value = "The ID of the user to retrieve the verified status for.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException {
+    public boolean usersIdVerifiedGet(@Parameter(description = "The ID of the user to retrieve the verified status for.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException {
         return getUserManagementService().getUser(username).isVerified();
     }
 
-    @ApiOperation(value = "Sets the user's verified state.",
-                  notes = "Sets the verified state of the user with the specified user ID to the value of the flag parameter.")
-    @ApiResponses({@ApiResponse(code = 200, message = "User verified status successfully set."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to verify or un-verify this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Sets the user's verified state.",
+                  description = "Sets the verified state of the user with the specified user ID to the value of the flag parameter.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User verified status successfully set."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to verify or un-verify this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/verified/{flag}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Admin)
-    public void usersIdVerifiedFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @ApiParam(value = "The value to set for the verified status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, InitializationException {
+    public void usersIdVerifiedFlagPut(@Parameter(description = "ID of the user to fetch", required = true) @PathVariable @Username final String username, @Parameter(description = "The value to set for the verified status.", required = true) @PathVariable Boolean flag) throws UserNotFoundException, UserInitException, InitializationException {
         final UserI user = getUserManagementService().getUser(username);
         if (user.isVerified() == flag) {
             return;
@@ -618,75 +601,65 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns all of the roles on the system, with a list of users assigned to each role.",
-                  notes = "Users may appear in more than one role.",
-                  responseContainer = "Map",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User roles successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to view this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns all of the roles on the system, with a list of users assigned to each role.",
+                  description = "Users may appear in more than one role.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User roles successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to view this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "rolemap", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Admin)
     public Map<String, Collection<String>> getRolesAndUsers() {
         return getRoleHolder().getRolesAndUsers();
     }
 
-    @ApiOperation(value = "Returns all of the roles on the system, with a list of users assigned to each role.",
-                  notes = "Users may appear in more than one role.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User roles successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to view this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns all of the roles on the system, with a list of users assigned to each role.",
+                  description = "Users may appear in more than one role.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User roles successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to view this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "roles", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Admin)
     public Collection<String> getRoles() {
         return getRoleHolder().getRoles();
     }
 
-    @ApiOperation(value = "Returns the roles for the user with the specified user ID.",
-                  notes = "Returns a collection of the user's roles.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User roles successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to view this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the roles for the user with the specified user ID.",
+                  description = "Returns a collection of the user's roles.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User roles successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to view this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "roles/{role}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Admin)
-    public Collection<String> getUsersWithRole(@ApiParam(value = "The ID of the user to retrieve the roles for.", required = true) @PathVariable final String role) {
+    public Collection<String> getUsersWithRole(@Parameter(description = "The ID of the user to retrieve the roles for.", required = true) @PathVariable final String role) {
         return getRoleHolder().getUsers(role);
     }
 
-    @ApiOperation(value = "Returns the roles for the user with the specified user ID.",
-                  notes = "Returns a collection of the user's roles.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User roles successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to view this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the roles for the user with the specified user ID.",
+                  description = "Returns a collection of the user's roles.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User roles successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to view this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/roles", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
-    public Collection<String> usersIdRolesGet(@ApiParam(value = "The ID of the user to retrieve the roles for.", required = true) @PathVariable @Username final String username) {
+    public Collection<String> usersIdRolesGet(@Parameter(description = "The ID of the user to retrieve the roles for.", required = true) @PathVariable @Username final String username) {
         return getUserRoles(username);
     }
 
-    @ApiOperation(value = "Adds one or more roles to a user.",
-                  notes = "Assigns one or more new roles to a user.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "All specified user roles successfully added."),
-                   @ApiResponse(code = 202, message = "Some user roles successfully added, but some may have failed. Check the return value for roles that the service was unable to add."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to add roles to this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Adds one or more roles to a user.",
+                  description = "Assigns one or more new roles to a user.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "All specified user roles successfully added."),
+                   @ApiResponse(responseCode = "202", description = "Some user roles successfully added, but some may have failed. Check the return value for roles that the service was unable to add."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to add roles to this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/roles", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Admin)
-    public ResponseEntity<Collection<String>> usersIdAddRoles(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable @Username final String username,
-                                                              @ApiParam(value = "The user's new roles.", required = true) @RequestBody final List<String> roles) throws UserNotFoundException, UserInitException {
+    public ResponseEntity<Collection<String>> usersIdAddRoles(@Parameter(description = "ID of the user to add a role to", required = true) @PathVariable @Username final String username,
+                                                              @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The user's new roles.", required = true) @RequestBody final List<String> roles) throws UserNotFoundException, UserInitException {
         final UserI user = getUserManagementService().getUser(username);
 
         final Collection<String> failed = new ArrayList<>();
@@ -702,19 +675,17 @@ public class UsersApi extends AbstractXapiRestController {
         return failed.isEmpty() ? ResponseEntity.ok(failed) : ResponseEntity.accepted().body(failed);
     }
 
-    @ApiOperation(value = "Removes one or more roles from a user.",
-                  notes = "Removes one or more new roles from a user.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "All specified user roles successfully removed."),
-                   @ApiResponse(code = 202, message = "Some user roles successfully removed, but some may have failed. Check the return value for roles that the service was unable to remove."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to remove roles from this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Removes one or more roles from a user.",
+                  description = "Removes one or more new roles from a user.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "All specified user roles successfully removed."),
+                   @ApiResponse(responseCode = "202", description = "Some user roles successfully removed, but some may have failed. Check the return value for roles that the service was unable to remove."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to remove roles from this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/roles", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.Admin)
-    public ResponseEntity<Collection<String>> usersIdRemoveRoles(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable @Username final String username,
-                                                                 @ApiParam(value = "The roles to be removed.", required = true) @RequestBody final List<String> roles) throws UserNotFoundException, UserInitException {
+    public ResponseEntity<Collection<String>> usersIdRemoveRoles(@Parameter(description = "ID of the user to remove role from", required = true) @PathVariable @Username final String username,
+                                                                 @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The roles to be removed.", required = true) @RequestBody final List<String> roles) throws UserNotFoundException, UserInitException {
         final UserI user = getUserManagementService().getUser(username);
 
         final Collection<String> failed = new ArrayList<>();
@@ -730,16 +701,16 @@ public class UsersApi extends AbstractXapiRestController {
         return failed.isEmpty() ? ResponseEntity.ok(failed) : ResponseEntity.accepted().body(failed);
     }
 
-    @ApiOperation(value = "Adds a role to a user.",
-                  notes = "Assigns a new role to a user.")
-    @ApiResponses({@ApiResponse(code = 200, message = "User role successfully added."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to add a role to this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Adds a role to a user.",
+                  description = "Assigns a new role to a user.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User role successfully added."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to add a role to this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/roles/{role}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Admin)
-    public void usersIdAddRole(@ApiParam(value = "ID of the user to add a role to", required = true) @PathVariable @Username final String username,
-                               @ApiParam(value = "The user's new role.", required = true) @PathVariable final String role) throws UserNotFoundException, UserInitException, InitializationException {
+    public void usersIdAddRole(@Parameter(description = "ID of the user to add a role to", required = true) @PathVariable @Username final String username,
+                               @Parameter(description = "The user's new role.", required = true) @PathVariable final String role) throws UserNotFoundException, UserInitException, InitializationException {
         final UserI user = getUserManagementService().getUser(username);
         try {
             getRoleHolder().addRole(getSessionUser(), user, role);
@@ -748,16 +719,16 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Remove a user's role.",
-                  notes = "Removes a user's role.")
-    @ApiResponses({@ApiResponse(code = 200, message = "User role successfully removed."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to remove a role from this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Remove a user's role.",
+                  description = "Removes a user's role.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User role successfully removed."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to remove a role from this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/roles/{role}", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.Admin)
-    public void usersIdRemoveRole(@ApiParam(value = "ID of the user to delete a role from", required = true) @PathVariable @Username final String username,
-                                  @ApiParam(value = "The user role to delete.", required = true) @PathVariable String role) throws UserNotFoundException, UserInitException, InitializationException, ConflictedStateException {
+    public void usersIdRemoveRole(@Parameter(description = "ID of the user to delete a role from", required = true) @PathVariable @Username final String username,
+                                  @Parameter(description = "The user role to delete.", required = true) @PathVariable String role) throws UserNotFoundException, UserInitException, InitializationException, ConflictedStateException {
         final UserI user = getUserManagementService().getUser(username);
         try {
             getRoleHolder().deleteRole(getSessionUser(), user, role);
@@ -771,16 +742,14 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns the projects to which the user belongs along with the user's role in the project.",
-                  responseContainer = "Map",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User projects successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to get the projects for this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the projects to which the user belongs along with the user's role in the project.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User projects successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to get the projects for this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/projects", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
-    public Map<String, String> getUserProjects(@ApiParam(value = "The ID of the user to retrieve the projects for.", required = true) @PathVariable @Username final String username) throws UserNotFoundException {
+    public Map<String, String> getUserProjects(@Parameter(description = "The ID of the user to retrieve the projects for.", required = true) @PathVariable @Username final String username) throws UserNotFoundException {
         if (!Users.exists(username)) {
             throw new UserNotFoundException(username);
         }
@@ -793,34 +762,30 @@ public class UsersApi extends AbstractXapiRestController {
                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    @ApiOperation(value = "Returns the groups for the user with the specified user ID.",
-                  notes = "Returns a collection of the user's groups.",
-                  responseContainer = "Set",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User groups successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to get the groups for this user."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the groups for the user with the specified user ID.",
+                  description = "Returns a collection of the user's groups.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User groups successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to get the groups for this user."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/groups", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.User)
-    public Set<String> usersIdGroupsGet(@ApiParam(value = "The ID of the user to retrieve the groups for.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException {
+    public Set<String> usersIdGroupsGet(@Parameter(description = "The ID of the user to retrieve the groups for.", required = true) @PathVariable @Username final String username) throws UserNotFoundException, UserInitException {
         return Groups.getGroupsForUser(getUserManagementService().getUser(username)).keySet();
     }
 
-    @ApiOperation(value = "Adds the user to one or more groups.",
-                  notes = "Assigns the user to one or more new groups.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User successfully added for all specified groups."),
-                   @ApiResponse(code = 202, message = "User was successfully added to some of the specified groups, but some may have failed. Check the return value for groups that the service was unable to add."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to add this user to groups."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Adds the user to one or more groups.",
+                  description = "Assigns the user to one or more new groups.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User successfully added for all specified groups."),
+                   @ApiResponse(responseCode = "202", description = "User was successfully added to some of the specified groups, but some may have failed. Check the return value for groups that the service was unable to add."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to add this user to groups."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/groups", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Authorizer)
     @AuthDelegate(UserGroupXapiAuthorization.class)
-    public ResponseEntity<Collection<String>> usersIdAddGroups(@ApiParam(value = "ID of the user to add to the specified groups", required = true) @PathVariable @Username final String username,
-                                                               @ApiParam(value = "The groups to which the user should be added.", required = true) @UserGroup @RequestBody final List<String> groups) throws UserNotFoundException, UserInitException {
+    public ResponseEntity<Collection<String>> usersIdAddGroups(@Parameter(description = "ID of the user to add to the specified groups", required = true) @PathVariable @Username final String username,
+                                                               @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The groups to which the user should be added.", required = true) @UserGroup @RequestBody final List<String> groups) throws UserNotFoundException, UserInitException {
         final UserI user = getUserManagementService().getUser(username);
 
         final Collection<String> failed = new ArrayList<>();
@@ -835,19 +800,17 @@ public class UsersApi extends AbstractXapiRestController {
         return failed.isEmpty() ? ResponseEntity.ok(Collections.emptyList()) : ResponseEntity.accepted().body(failed);
     }
 
-    @ApiOperation(value = "Removes the user from one or more groups.",
-                  notes = "Removes the user from one or more groups.",
-                  responseContainer = "List",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User successfully removed from all specified groups."),
-                   @ApiResponse(code = 202, message = "User was successfully removed from some of the specified groups, but some may have failed. Check the return value for groups that the service was unable to remove."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to remove this user from groups."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Removes the user from one or more groups.",
+                  description = "Removes the user from one or more groups.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User successfully removed from all specified groups."),
+                   @ApiResponse(responseCode = "202", description = "User was successfully removed from some of the specified groups, but some may have failed. Check the return value for groups that the service was unable to remove."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to remove this user from groups."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/groups", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.User)
-    public ResponseEntity<Collection<String>> usersIdRemoveGroups(@ApiParam(value = "ID of the user to remove role from", required = true) @PathVariable @Username final String username,
-                                                                  @ApiParam(value = "The groups from which the user should be removed.", required = true) @RequestBody final List<String> groups) throws UserNotFoundException, UserInitException {
+    public ResponseEntity<Collection<String>> usersIdRemoveGroups(@Parameter(description = "ID of the user to remove role from", required = true) @PathVariable @Username final String username,
+                                                                  @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The groups from which the user should be removed.", required = true) @RequestBody final List<String> groups) throws UserNotFoundException, UserInitException {
         final UserI user = getUserManagementService().getUser(username);
 
         final Collection<String> failed = new ArrayList<>();
@@ -862,16 +825,16 @@ public class UsersApi extends AbstractXapiRestController {
         return failed.isEmpty() ? ResponseEntity.ok(Collections.emptyList()) : ResponseEntity.accepted().body(failed);
     }
 
-    @ApiOperation(value = "Adds a user to a group.",
-                  notes = "Assigns user to a group.")
-    @ApiResponses({@ApiResponse(code = 200, message = "User successfully added to group."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to assign this user to groups."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Adds a user to a group.",
+                  description = "Assigns user to a group.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User successfully added to group."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to assign this user to groups."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/groups/{group}", produces = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Authorizer)
     @AuthDelegate(UserGroupXapiAuthorization.class)
-    public void usersIdAddGroup(@ApiParam(value = "ID of the user to add to a group", required = true) @PathVariable @Username final String username, @ApiParam(value = "The user's new group.", required = true) @UserGroup @PathVariable final String group) throws UserNotFoundException, UserInitException, DataFormatException, InitializationException {
+    public void usersIdAddGroup(@Parameter(description = "ID of the user to add to a group", required = true) @PathVariable @Username final String username, @Parameter(description = "The user's new group.", required = true) @UserGroup @PathVariable final String group) throws UserNotFoundException, UserInitException, DataFormatException, InitializationException {
         final UserI user = getUserManagementService().getUser(username);
         if (user.getID().equals(Users.getGuest().getID())) {
             throw new DataFormatException("You can't add the guest user to groups");
@@ -883,15 +846,15 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Removes a user from a group.",
-                  notes = "Removes a user from a group.")
-    @ApiResponses({@ApiResponse(code = 200, message = "User's group successfully removed."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to remove this user from groups."),
-                   @ApiResponse(code = 404, message = "User not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Removes a user from a group.",
+                  description = "Removes a user from a group.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "User's group successfully removed."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to remove this user from groups."),
+                   @ApiResponse(responseCode = "404", description = "User not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{username}/groups/{group}", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.User)
-    public void usersIdRemoveGroup(@ApiParam(value = "ID of the user to remove from group", required = true) @PathVariable @Username final String username, @ApiParam(value = "The group to remove the user from.", required = true) @PathVariable final String group) throws UserNotFoundException, UserInitException, InitializationException {
+    public void usersIdRemoveGroup(@Parameter(description = "ID of the user to remove from group", required = true) @PathVariable @Username final String username, @Parameter(description = "The group to remove the user from.", required = true) @PathVariable final String group) throws UserNotFoundException, UserInitException, InitializationException {
         final UserI user = getUserManagementService().getUser(username);
         try {
             Groups.removeUserFromGroup(user, getSessionUser(), group, null);
@@ -900,29 +863,26 @@ public class UsersApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns list of projects that user has edit access.",
-                  notes = "Returns list of projects that user has edit access.",
-                  responseContainer = "List",
-                  response = String.class)
+    @Operation(summary = "Returns list of projects that user has edit access.",
+                  description = "Returns list of projects that user has edit access.")
     @XapiRequestMapping(value = "projects", produces = APPLICATION_JSON_VALUE, method = GET)
     public List<String> getProjectsByUser() {
         return _permissionsService.getUserEditableProjects(getSessionUser());
     }
 
-    @ApiOperation(value = "Returns username for signed-in user",
-                  response = String.class)
+    @Operation(summary = "Returns username for signed-in user")
     @XapiRequestMapping(value = "username", produces = TEXT_PLAIN_VALUE, method = GET, restrictTo = AccessLevel.Authenticated)
     public String getUsername() {
         return getSessionUser().getUsername();
     }
 
-    @ApiOperation(value = "Cancels a change request.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Change request canceled."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Cancels a change request.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Change request canceled."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "changeRequest/{type}", produces = APPLICATION_JSON_VALUE, method = DELETE)
-    public void cancelChangeRequest(@ApiParam(value = "Type of change request", required = true) @PathVariable("type") final String type) {
+    public void cancelChangeRequest(@Parameter(description = "Type of change request", required = true) @PathVariable("type") final String type) {
         _userChangeRequestService.cancelRequest(getSessionUser().getUsername(), type);
     }
 

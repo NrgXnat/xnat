@@ -1,7 +1,7 @@
 package org.nrg.xnat.archive.xapi;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -30,7 +30,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 @Slf4j
 @XapiRestController
 @RequestMapping(value = "/direct-archive")
-@Api("Direct Archive Session API")
+@Tag(name = "Direct Archive Session API")
 public class DirectArchiveSessionApi extends AbstractXapiRestController {
     private final DirectArchiveSessionService directArchiveSessionService;
     private final PermissionsServiceI permissionsService;
@@ -46,13 +46,13 @@ public class DirectArchiveSessionApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(method = POST, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Get direct archive sessions")
+    @Operation(summary = "Get direct archive sessions")
     public ResponseEntity<List<SessionData>> getPaginated(@RequestBody DirectArchiveSessionPaginatedRequest request) {
         return new ResponseEntity<>(directArchiveSessionService.getPaginated(getSessionUser(), request), HttpStatus.OK);
     }
 
     @XapiRequestMapping(path="{project}/{tag}/{name}", method = GET, produces = MediaType.APPLICATION_JSON_VALUE, restrictTo = AccessLevel.Read)
-    @ApiOperation(value = "Get direct archive session")
+    @Operation(summary = "Get direct archive session")
     public ResponseEntity<SessionData> getSession(@Project @PathVariable String project,
                                                   @PathVariable String tag,
                                                   @PathVariable String name) throws NotFoundException {
@@ -61,14 +61,14 @@ public class DirectArchiveSessionApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(path="{id}", method = DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Delete direct archive session")
+    @Operation(summary = "Delete direct archive session")
     public ResponseEntity<Void> delete(@PathVariable long id) throws InvalidPermissionException, NotFoundException {
         directArchiveSessionService.delete(id, getSessionUser());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @XapiRequestMapping(path="{project}/{tag}/{name}", method = POST, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Trigger direct archive of session")
+    @Operation(summary = "Trigger direct archive of session")
     public ResponseEntity<Void> triggerArchive(@Project @PathVariable String project,
                                                @PathVariable String tag,
                                                @PathVariable String name)

@@ -28,6 +28,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -44,6 +45,7 @@ import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
@@ -76,7 +78,12 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Override
     public void addResourceHandlers(final ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("**/swagger-ui.html").addResourceLocations("classpath:/META-INF/resources/");
+        // Swagger UI is served straight from the swagger-ui webjar (version follows springdoc-openapi-ui's
+        // transitive dependency - keep in sync when bumping springdoc). The webapp-local location comes first so
+        // XNAT's swagger-initializer.js override (which points the UI at XNAT's /v3/api-docs) shadows the webjar's
+        // petstore default.
+        registry.addResourceHandler("/swagger-ui/**")
+                .addResourceLocations("/swagger-ui-overrides/", "classpath:/META-INF/resources/webjars/swagger-ui/5.11.8/");
         registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
 
         // TODO: This is supposed to work to cache images, CSS, JS, etc., overriding the http.headers() settings in SecurityConfig (http://bit.ly/2E1i8SO),
@@ -88,6 +95,9 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Override
     public void configureMessageConverters(final List<HttpMessageConverter<?>> converters) {
+        // Must precede the Jackson converter: byte[]-returning endpoints (e.g. springdoc's /v3/api-docs)
+        // would otherwise be serialized as a base64 JSON string.
+        converters.add(new ByteArrayHttpMessageConverter());
         converters.add(stringHttpMessageConverter());
         converters.add(mappingJackson2HttpMessageConverter());
         converters.add(marshallingHttpMessageConverter());
@@ -95,6 +105,13 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         converters.add(xftBeanHttpMessageConverter());
         converters.add(xftObjectHttpMessageConverter());
         converters.add(zipFileHttpMessageConverter());
+    }
+
+    @Override
+    public void addViewControllers(final ViewControllerRegistry registry) {
+        // Preserves the historical springfox URL. The redirect target is deliberately relative (no leading slash)
+        // so the servlet mapping prefix (/xapi et al.) survives the redirect.
+        registry.addRedirectViewController("/swagger-ui.html", "swagger-ui/index.html");
     }
 
     @Override

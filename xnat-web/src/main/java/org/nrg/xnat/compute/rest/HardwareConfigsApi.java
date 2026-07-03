@@ -1,9 +1,9 @@
 package org.nrg.xnat.compute.rest;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -25,7 +25,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
-@Api("Compute Hardware REST API")
+@Tag(name = "Compute Hardware REST API")
 @XapiRestController
 @RequestMapping(value = "/compute/hardware")
 public class HardwareConfigsApi extends AbstractXapiRestController {
@@ -40,37 +40,37 @@ public class HardwareConfigsApi extends AbstractXapiRestController {
         this.hardwareConfigService = hardwareConfigService;
     }
 
-    @ApiOperation(value = "Get a hardware config.", response = HardwareConfig.class)
+    @Operation(summary = "Get a hardware config.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Hardware config successfully retrieved."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 404, message = "Hardware config not found."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "200", description = "Hardware config successfully retrieved."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "404", description = "Hardware config not found."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @XapiRequestMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public HardwareConfig get(@PathVariable("id") final Long id) throws NotFoundException {
         return hardwareConfigService.retrieve(id).orElseThrow(() -> new NotFoundException("No hardware config found for ID " + id));
     }
 
-    @ApiOperation(value = "Get all hardware configs.", response = HardwareConfig.class)
+    @Operation(summary = "Get all hardware configs.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Hardware configs successfully retrieved."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "200", description = "Hardware configs successfully retrieved."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @XapiRequestMapping(value = "", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public List<HardwareConfig> getAll() {
         return hardwareConfigService.retrieveAll();
     }
 
-    @ApiOperation(value = "Create a hardware config.", response = HardwareConfig.class)
+    @Operation(summary = "Create a hardware config.")
     @ApiResponses({
-            @ApiResponse(code = 201, message = "Hardware config successfully created."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "201", description = "Hardware config successfully created."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @ResponseStatus(HttpStatus.CREATED)
     @XapiRequestMapping(value = "", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
@@ -78,13 +78,13 @@ public class HardwareConfigsApi extends AbstractXapiRestController {
         return hardwareConfigService.create(hardwareConfig);
     }
 
-    @ApiOperation(value = "Update a hardware config.", response = HardwareConfig.class)
+    @Operation(summary = "Update a hardware config.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Hardware config successfully updated."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 404, message = "Hardware config not found."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "200", description = "Hardware config successfully updated."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "404", description = "Hardware config not found."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @XapiRequestMapping(value = "/{id}", consumes = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
     public HardwareConfig update(@PathVariable("id") final Long id,
@@ -95,13 +95,13 @@ public class HardwareConfigsApi extends AbstractXapiRestController {
         return hardwareConfigService.update(hardwareConfig);
     }
 
-    @ApiOperation(value = "Delete a hardware config.")
+    @Operation(summary = "Delete a hardware config.")
     @ApiResponses({
-            @ApiResponse(code = 204, message = "Hardware config successfully deleted."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 404, message = "Hardware config not found."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "204", description = "Hardware config successfully deleted."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "404", description = "Hardware config not found."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @XapiRequestMapping(value = "/{id}", method = DELETE, restrictTo = Admin)

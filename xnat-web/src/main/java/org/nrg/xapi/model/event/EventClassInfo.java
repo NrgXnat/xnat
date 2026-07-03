@@ -13,8 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 
 import com.google.common.collect.Maps;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import org.nrg.framework.event.EventClass;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -27,7 +26,7 @@ import java.util.Map;
 /**
  * The Class EventClassInfo.
  */
-@ApiModel(description = "Event class names and filterable fields.")
+@Schema(description = "Event class names and filterable fields.")
 public class EventClassInfo {
 	
 	/** The _class name. */
@@ -89,7 +88,7 @@ public class EventClassInfo {
      *
      * @return the class name
      */
-    @ApiModelProperty(value = "Event class name (Should implement AutomationEventImplementerI")
+    @Schema(description = "Event class name (Should implement AutomationEventImplementerI")
     @JsonProperty("class")
     public String getClassName() {
         return _className;
@@ -100,7 +99,7 @@ public class EventClassInfo {
      *
      * @return the display name
      */
-    @ApiModelProperty(value = "Display Name")
+    @Schema(description = "Display Name")
     @JsonProperty("displayName")
     public String getDisplayName() {
         return _displayName;
@@ -120,7 +119,7 @@ public class EventClassInfo {
      *
      * @return the description
      */
-    @ApiModelProperty(value = "Description")
+    @Schema(description = "Description")
     @JsonProperty("description")
     public String getDescription() {
         return _description;
@@ -131,7 +130,7 @@ public class EventClassInfo {
      *
      * @return the filterable fields map
      */
-    @ApiModelProperty(value = "Map of Filterable fields.")
+    @Schema(description = "Map of Filterable fields.")
     @JsonProperty("filterableFields")
     public Map<String,EventHandlerFilterInfo> getFilterableFieldsMap() {
         return _filterableFields;
@@ -142,7 +141,7 @@ public class EventClassInfo {
      *
      * @return the event ids
      */
-    @ApiModelProperty(value = "List of event IDs.")
+    @Schema(description = "List of event IDs.")
     @JsonProperty("eventIds")
     public List<String> getEventIds() {
         return _eventIds;

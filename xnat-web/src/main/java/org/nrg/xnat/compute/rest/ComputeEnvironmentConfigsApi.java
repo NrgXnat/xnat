@@ -1,9 +1,9 @@
 package org.nrg.xnat.compute.rest;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -25,7 +25,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.nrg.xdat.security.helpers.AccessLevel.Read;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-@Api("Compute Environments REST API")
+@Tag(name = "Compute Environments REST API")
 @XapiRestController
 @RequestMapping(value = "/compute/environments")
 public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
@@ -40,12 +40,12 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
         this.computeEnvironmentConfigService = computeEnvironmentConfigService;
     }
 
-    @ApiOperation(value = "Get all compute environment configs or all compute environment configs for a given type.", response = ComputeEnvironmentConfig.class)
+    @Operation(summary = "Get all compute environment configs or all compute environment configs for a given type.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Compute environment configs successfully retrieved."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "200", description = "Compute environment configs successfully retrieved."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @XapiRequestMapping(value = "", produces = APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public List<ComputeEnvironmentConfig> getAll(@RequestParam(value = "type", required = false) final ComputeEnvironmentConfig.ConfigType type) {
@@ -56,13 +56,13 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get a compute environment config.", response = ComputeEnvironmentConfig.class)
+    @Operation(summary = "Get a compute environment config.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Compute environment config successfully retrieved."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 404, message = "Compute environment config not found."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "200", description = "Compute environment config successfully retrieved."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "404", description = "Compute environment config not found."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @XapiRequestMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public ComputeEnvironmentConfig get(@PathVariable("id") final Long id) throws NotFoundException {
@@ -70,12 +70,12 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
                 .orElseThrow(() -> new NotFoundException("Compute environment config not found."));
     }
 
-    @ApiOperation(value = "Create a compute environment config.", response = ComputeEnvironmentConfig.class)
+    @Operation(summary = "Create a compute environment config.")
     @ApiResponses({
-            @ApiResponse(code = 201, message = "Compute environment config successfully created."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "201", description = "Compute environment config successfully created."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @ResponseStatus(HttpStatus.CREATED)
     @XapiRequestMapping(value = "", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
@@ -83,13 +83,13 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
         return computeEnvironmentConfigService.create(computeEnvironmentConfig);
     }
 
-    @ApiOperation(value = "Update a compute environment config.", response = ComputeEnvironmentConfig.class)
+    @Operation(summary = "Update a compute environment config.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Compute environment config successfully updated."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 404, message = "Compute environment config not found."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "200", description = "Compute environment config successfully updated."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "404", description = "Compute environment config not found."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @XapiRequestMapping(value = "/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
     public ComputeEnvironmentConfig update(@PathVariable("id") final Long id,
@@ -101,13 +101,13 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
         return computeEnvironmentConfigService.update(computeEnvironmentConfig);
     }
 
-    @ApiOperation(value = "Delete a compute environment config.")
+    @Operation(summary = "Delete a compute environment config.")
     @ApiResponses({
-            @ApiResponse(code = 204, message = "Compute environment config successfully deleted."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 404, message = "Compute environment config not found."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "204", description = "Compute environment config successfully deleted."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "404", description = "Compute environment config not found."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @XapiRequestMapping(value = "/{id}", method = RequestMethod.DELETE, restrictTo = Admin)
@@ -115,12 +115,12 @@ public class ComputeEnvironmentConfigsApi extends AbstractXapiRestController {
         computeEnvironmentConfigService.delete(id);
     }
 
-    @ApiOperation(value = "Get all available compute environment configs for the provided execution scope.", response = ComputeEnvironmentConfig.class, responseContainer = "List")
+    @Operation(summary = "Get all available compute environment configs for the provided execution scope.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Compute environment configs successfully retrieved."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized."),
-            @ApiResponse(code = 500, message = "Unexpected error")
+            @ApiResponse(responseCode = "200", description = "Compute environment configs successfully retrieved."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "Not authorized."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")
     })
     @XapiRequestMapping(value = "/available", produces = APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Read)
     public List<ComputeEnvironmentConfig> getAvailable(@RequestParam final Map<String, String> params) {

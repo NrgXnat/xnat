@@ -9,8 +9,11 @@
 
 package org.nrg.xapi.configuration;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
 import lombok.extern.slf4j.Slf4j;
-import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.spawner.configuration.SpawnerConfig;
 import org.springframework.context.MessageSource;
@@ -20,45 +23,38 @@ import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.bind.annotation.ControllerAdvice;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
-import java.util.Collections;
 import java.util.Locale;
 
+/**
+ * Configures the XAPI OpenAPI documentation. XNAT is a plain Spring MVC application (not Spring Boot), so the
+ * springdoc configuration classes are imported explicitly per the springdoc "spring without spring-boot" setup.
+ */
 @Configuration
-@EnableSwagger2
 @ComponentScan(value = {"org.nrg.xapi.model.users", "org.nrg.xapi.rest", "org.nrg.xnat.eventservice.rest", "org.nrg.xnat.snapshot.rest"}, includeFilters = @Filter(ControllerAdvice.class))
-@Import({SpawnerConfig.class})
+@Import({SpawnerConfig.class,
+         org.springdoc.core.SpringDocConfiguration.class,
+         org.springdoc.core.SpringDocConfigProperties.class,
+         org.springdoc.webmvc.core.SpringDocWebMvcConfiguration.class,
+         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class})
 @Slf4j
 public class RestApiConfig {
-    @Bean
-    public Docket api(final XnatAppInfo info, final MessageSource messageSource) {
-        log.debug("Initializing the Swagger Docket object");
-        // TODO: When updating to Swagger 2.5.0 or later, remove the pathMapping("/xapi") call at the end.
-        return new Docket(DocumentationType.SWAGGER_2).select()
-                                                      .apis(RequestHandlerSelectors.withClassAnnotation(XapiRestController.class))
-                                                      .paths(PathSelectors.any())
-                                                      .build()
-                                                      .apiInfo(apiInfo(info, messageSource));
-    }
+    // NOTE: springdoc's swagger-ui integration (webmvc-ui SwaggerConfig) is deliberately NOT imported: its
+    // welcome/redirect controllers build URLs from the context path only and break behind XNAT's /xapi/* servlet
+    // mapping. The UI is served directly from the swagger-ui webjar by WebConfig instead, and the generated spec
+    // is a verified superset of the old springfox output (546 vs 530 operations, 0 missing).
 
-    private ApiInfo apiInfo(final XnatAppInfo info, final MessageSource messageSource) {
-        return new ApiInfo(getMessage(messageSource, "apiInfo.title"),
-                           getMessage(messageSource, "apiInfo.description"),
-                           info.getVersion(),
-                           getMessage(messageSource, "apiInfo.termsOfServiceUrl"),
-                           new Contact(getMessage(messageSource, "apiInfo.contactName"),
-                                       getMessage(messageSource, "apiInfo.contactUrl"),
-                                       getMessage(messageSource, "apiInfo.contactEmail")),
-                           getMessage(messageSource, "apiInfo.license"),
-                           getMessage(messageSource, "apiInfo.licenseUrl"),
-                           Collections.emptyList());
+    @Bean
+    public OpenAPI openApi(final XnatAppInfo info, final MessageSource messageSource) {
+        return new OpenAPI().info(new Info().title(getMessage(messageSource, "apiInfo.title"))
+                                            .description(getMessage(messageSource, "apiInfo.description"))
+                                            .version(info.getVersion())
+                                            .termsOfService(getMessage(messageSource, "apiInfo.termsOfServiceUrl"))
+                                            .contact(new Contact().name(getMessage(messageSource, "apiInfo.contactName"))
+                                                                  .url(getMessage(messageSource, "apiInfo.contactUrl"))
+                                                                  .email(getMessage(messageSource, "apiInfo.contactEmail")))
+                                            .license(new License().name(getMessage(messageSource, "apiInfo.license"))
+                                                                  .url(getMessage(messageSource, "apiInfo.licenseUrl"))));
     }
 
     private String getMessage(final MessageSource messageSource, final String messageId) {

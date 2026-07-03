@@ -9,11 +9,11 @@
 
 package org.nrg.xapi.rest.data;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -40,7 +40,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  * XNAT Element Display API
  * Provides REST endpoints for listing, retrieving, and deleting database-backed element display configurations.
  */
-@Api("XNAT Element Display API")
+@Tag(name = "XNAT Element Display API")
 @XapiRestController
 @RequestMapping(value = "/elementdisplays")
 @Slf4j
@@ -54,11 +54,10 @@ public class ElementDisplayApi extends AbstractXapiRestController {
         _elementDisplayStorageService = elementDisplayStorageService;
     }
 
-    @ApiOperation(value = "Get all element displays",
-                  notes = "Returns a list of all database-backed element display configurations.")
+    @Operation(summary = "Get all element displays", description = "Returns a list of all database-backed element display configurations.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved element displays"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved element displays"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public ResponseEntity<List<ElementDisplayDB>> getAllElementDisplays() {
@@ -71,16 +70,15 @@ public class ElementDisplayApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get an element display by element name",
-                  notes = "Returns the database-backed element display configuration for the specified element name (xsi:type).")
+    @Operation(summary = "Get an element display by element name", description = "Returns the database-backed element display configuration for the specified element name (xsi:type).")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved element display"),
-        @ApiResponse(code = 404, message = "Element display not found"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved element display"),
+        @ApiResponse(responseCode = "404", description = "Element display not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/{elementName}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public ResponseEntity<ElementDisplayDB> getElementDisplay(
-            @ApiParam(value = "The element name (xsi:type) of the element display", required = true)
+            @Parameter(description = "The element name (xsi:type) of the element display", required = true)
             @PathVariable String elementName) {
         log.debug("User {} is requesting element display for: {}", getSessionUser().getUsername(), elementName);
         try {
@@ -95,16 +93,15 @@ public class ElementDisplayApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Delete an element display by element name",
-                  notes = "Deletes the database-backed element display configuration for the specified element name and removes it from the in-memory DisplayManager.")
+    @Operation(summary = "Delete an element display by element name", description = "Deletes the database-backed element display configuration for the specified element name and removes it from the in-memory DisplayManager.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Element display deleted successfully"),
-        @ApiResponse(code = 404, message = "Element display not found"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Element display deleted successfully"),
+        @ApiResponse(responseCode = "404", description = "Element display not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/{elementName}", produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = Admin)
     public ResponseEntity<String> deleteElementDisplay(
-            @ApiParam(value = "The element name (xsi:type) of the element display to delete", required = true)
+            @Parameter(description = "The element name (xsi:type) of the element display to delete", required = true)
             @PathVariable String elementName) {
         log.debug("User {} is requesting to delete element display for: {}", getSessionUser().getUsername(), elementName);
         try {

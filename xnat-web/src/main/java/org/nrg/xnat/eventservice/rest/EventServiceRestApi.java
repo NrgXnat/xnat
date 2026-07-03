@@ -1,10 +1,10 @@
 package org.nrg.xnat.eventservice.rest;
 
 import com.jayway.jsonpath.InvalidPathException;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
@@ -61,7 +61,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @Slf4j
-@Api("API for the XNAT Event Service")
+@Tag(name = "API for the XNAT Event Service")
 @XapiRestController
 public class EventServiceRestApi extends AbstractXapiRestController {
 
@@ -78,7 +78,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription", method = POST)
-    @ApiOperation(value = "Create a Subscription", code = 201)
+    @Operation(summary = "Create a Subscription")
     public ResponseEntity<String> createSubscription(final @RequestBody SubscriptionCreator subscription,
                                                      final @RequestParam(value = "overpopulate-attributes", required = false) Boolean overpopulateAttributes) throws SubscriptionValidationException, SubscriptionAccessException {
         final UserI        userI    = getSessionUser();
@@ -91,7 +91,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription", method = POST)
-    @ApiOperation(value = "Create a Subscription for (project)", code = 201)
+    @Operation(summary = "Create a Subscription for (project)")
     public ResponseEntity<String> createSubscription(final @RequestBody ProjectSubscriptionCreator subscription,
                                                      final @PathVariable @Project String project) throws SubscriptionValidationException, SubscriptionAccessException, UnauthorizedException {
         final UserI  userI    = getSessionUser();
@@ -105,31 +105,31 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/filter"}, method = GET, produces = JSON, params = {"event-type"})
-    @ApiOperation(value = "Get a subscription filter for a given Event ID")
+    @Operation(summary = "Get a subscription filter for a given Event ID")
     @ResponseBody
     public Map<String, JsonPathFilterNode> retrieveFilterBuilder(final @RequestParam(name = "event-type") String eventId) {
         return eventService.getEventFilterNodes(eventId);
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = {"/events/event/properties"}, method = GET, produces = JSON, params = {"event-type"})
-    @ApiOperation(value = "Get a event properties for a given Event ID")
+    @Operation(summary = "Get a event properties for a given Event ID")
     @ResponseBody
     public List<EventPropertyNode> retrieveEventProperties(final @RequestParam(value = "event-type") String eventId) {
         return eventService.getEventPropertyNodes(eventId);
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/filter"}, method = GET, produces = JSON)
-    @ApiOperation(value = "Generate a subscription RegEx filter string from filter node set")
+    @Operation(summary = "Generate a subscription RegEx filter string from filter node set")
     public String generateFilterRegEx(final @RequestBody Map<String, JsonPathFilterNode> filterNodes) {
         return eventService.generateFilterRegEx(filterNodes);
     }
 
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Valid JsonPath Predicate."),
-            @ApiResponse(code = 424, message = "Invalid JsonPath Predicate."),
-            @ApiResponse(code = 500, message = "Unexpected error.")})
+            @ApiResponse(responseCode = "200", description = "Valid JsonPath Predicate."),
+            @ApiResponse(responseCode = "424", description = "Invalid JsonPath Predicate."),
+            @ApiResponse(responseCode = "500", description = "Unexpected error.")})
     @XapiRequestMapping(restrictTo = Authenticated, value = {"/events/subscription/filter/validate"}, method = POST)
-    @ApiOperation(value = "Validate a JsonPath predicate for use in event service filter.")
+    @Operation(summary = "Validate a JsonPath predicate for use in event service filter.")
     public ResponseEntity<Void> validateFilterJsonPathPredicate(final @RequestBody String jsonPathPredicate) throws InvalidPathException {
         eventService.validateFilterJsonPathPredicate(jsonPathPredicate);
         return ResponseEntity.ok().build();
@@ -137,7 +137,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription/{id}", method = PUT)
-    @ApiOperation(value = "Update an existing Subscription")
+    @Operation(summary = "Update an existing Subscription")
     public ResponseEntity<Void> updateSubscription(final @PathVariable long id, final @RequestBody SubscriptionUpdate update) throws SubscriptionValidationException, NotFoundException, SubscriptionAccessException {
         final Subscription toUpdate = eventService.getSubscription(id);
         final Subscription updated  = toUpdate.update(update);
@@ -146,7 +146,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription/{id}", method = PUT)
-    @ApiOperation(value = "Update an existing Subscription for (project)")
+    @Operation(summary = "Update an existing Subscription for (project)")
     public ResponseEntity<Void> updateSubscription(final @PathVariable long id,
                                                    final @RequestBody SubscriptionUpdate update,
                                                    final @PathVariable @Project String project)
@@ -160,7 +160,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription/{id}/activate", method = POST)
-    @ApiOperation(value = "Activate an existing Subscription")
+    @Operation(summary = "Activate an existing Subscription")
     public ResponseEntity<Void> activateSubscription(final @PathVariable long id)
             throws NotFoundException {
         eventService.activateSubscription(id);
@@ -168,7 +168,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription/{id}/activate", method = POST)
-    @ApiOperation(value = "Activate an existing Subscription")
+    @Operation(summary = "Activate an existing Subscription")
     public ResponseEntity<Void> activateSubscription(final @PathVariable long id,
                                                      final @PathVariable @Project String project)
             throws NotFoundException, UnauthorizedException, SubscriptionAccessException {
@@ -179,7 +179,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription/{id}/deactivate", method = POST)
-    @ApiOperation(value = "deactivate an existing Subscription")
+    @Operation(summary = "deactivate an existing Subscription")
     public ResponseEntity<Void> deactivateSubscription(final @PathVariable long id)
             throws NotFoundException {
         eventService.deactivateSubscription(id);
@@ -187,7 +187,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription/{id}/deactivate", method = POST)
-    @ApiOperation(value = "Activate an existing Subscription")
+    @Operation(summary = "Activate an existing Subscription")
     public ResponseEntity<Void> deactivateSubscription(final @PathVariable long id,
                                                       final @PathVariable @Project String project)
             throws NotFoundException, UnauthorizedException, SubscriptionAccessException {
@@ -211,14 +211,14 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = {"/events/subscription/{id}"}, method = GET, produces = JSON)
-    @ApiOperation(value = "Get a Subscription by ID")
+    @Operation(summary = "Get a Subscription by ID")
     @ResponseBody
     public Subscription retrieveSubscription(final @PathVariable long id) throws NotFoundException, SubscriptionAccessException {
         return eventService.getSubscription(id);
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = {"/projects/{project}/events/subscription/{id}"}, method = GET, produces = JSON)
-    @ApiOperation(value = "Get a Subscription by ID")
+    @Operation(summary = "Get a Subscription by ID")
     @ResponseBody
     public SubscriptionDisplay retrieveSubscription(final @PathVariable long id,
                                              final @PathVariable @Project String project) throws NotFoundException, UnauthorizedException, SubscriptionAccessException {
@@ -227,14 +227,14 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/subscription/{id}", method = DELETE)
-    @ApiOperation(value = "Deactivate and delete a subscription by ID", code = 204)
+    @Operation(summary = "Deactivate and delete a subscription by ID")
     public ResponseEntity<Void> delete(final @PathVariable long id) throws Exception {
         eventService.deleteSubscription(id);
         return ResponseEntity.noContent().build();
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/subscription/{id}", method = DELETE)
-    @ApiOperation(value = "Deactivate and delete a subscription by ID", code = 204)
+    @Operation(summary = "Deactivate and delete a subscription by ID")
     public ResponseEntity<Void> delete(final @PathVariable long id,
                                        final @PathVariable @Project String project) throws Exception {
 
@@ -270,7 +270,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered", method = POST, consumes = JSON, produces = JSON)
-    @ApiOperation(value = "Get paginated event history results per request")
+    @Operation(summary = "Get paginated event history results per request")
     @ResponseBody
     public List<SubscriptionDelivery> getDeliveredSubscriptions(
             final @RequestParam(value = "project", required = false) String projectId,
@@ -319,7 +319,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/delivered/cleanup/", method = POST)
-    @ApiOperation(value = "Cleanup Event Service history by deleting old serialized payload objects. Keep N most recent.")
+    @Operation(summary = "Cleanup Event Service history by deleting old serialized payload objects. Keep N most recent.")
     public ResponseEntity<Void> deactivateSubscription(final @RequestParam(value = "keep-recent", required = false) Integer keepRecent){
         eventService.deleteSubscriptionDeliveryPayloads(keepRecent != null ? keepRecent : 0);
         return ResponseEntity.ok().build();
@@ -387,7 +387,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/actionsbyevent", method = GET, params = {"!xnattype"})
-    @ApiOperation(value = "Get actions that can act on a particular Event type")
+    @Operation(summary = "Get actions that can act on a particular Event type")
     public List<Action> getActionsByEvent(final @RequestParam(value = "event-type") String eventId,
                                           final @RequestParam(value = "project", required = false) String projectId) {
         final UserI user = getSessionUser();
@@ -395,7 +395,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(restrictTo = Delete, value = "/projects/{project}/events/actionsbyevent", method = GET, params = {"!xnattype"})
-    @ApiOperation(value = "Get actions that can act on a particular Event type")
+    @Operation(summary = "Get actions that can act on a particular Event type")
     public List<Action> getProjectActionsByEvent(final @RequestParam(value = "event-type") String eventId,
                                                  final @PathVariable @Project String project) {
         final UserI user = getSessionUser();
@@ -412,13 +412,13 @@ public class EventServiceRestApi extends AbstractXapiRestController {
     //}
 
     @XapiRequestMapping(restrictTo = Authenticated, value = "/events/prefs", method = GET)
-    @ApiOperation(value = "Get Event Service Preferences")
+    @Operation(summary = "Get Event Service Preferences")
     public EventServicePrefs getPrefs() {
         return eventService.getPrefsPojo();
     }
 
     @XapiRequestMapping(restrictTo = Admin, value = "/events/prefs", method = PUT)
-    @ApiOperation(value = "Update Event Service Preferences")
+    @Operation(summary = "Update Event Service Preferences")
     public ResponseEntity<Void> updatePrefs(final @RequestBody EventServicePrefs prefs) {
         eventService.updatePrefs(prefs);
         return ResponseEntity.ok().build();
@@ -426,7 +426,7 @@ public class EventServiceRestApi extends AbstractXapiRestController {
 
 
     @XapiRequestMapping(restrictTo = Authenticated, value = {"/events/action"}, params = "actionkey", method = GET)
-    @ApiOperation(value = "Get a actions by key in the form of \"ProviderID:ActionID\"")
+    @Operation(summary = "Get a actions by key in the form of \"ProviderID:ActionID\"")
     @ResponseBody
     public Action getAction(final @RequestParam String actionkey,
                             final @RequestParam(value = "project", required = false) String projectId,

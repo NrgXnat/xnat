@@ -10,10 +10,10 @@
 package org.nrg.xapi.rest.event;
 
 import com.google.common.collect.Lists;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javassist.Modifier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -58,7 +58,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
 /**
  * The Class EventHandlerApi.
  */
-@Api("The XNAT Event Handler API")
+@Tag(name = "The XNAT Event Handler API")
 @XapiRestController
 @Slf4j
 public class EventHandlerApi extends AbstractXapiRestController {
@@ -76,8 +76,8 @@ public class EventHandlerApi extends AbstractXapiRestController {
      *
      * @return the response entity
      */
-    @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = EventClassInfo.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Get list of event classes.", description = "Returns a list of classes implementing AutomationEventI.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "An array of class names"), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = {"/projects/{projectId}/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Edit)
     @ResponseBody
     public ResponseEntity<List<EventClassInfo>> automationEventClassesGetByProject(@PathVariable @Project final String projectId) {
@@ -94,8 +94,8 @@ public class EventHandlerApi extends AbstractXapiRestController {
      *
      * @return the response entity
      */
-    @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = EventClassInfo.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Get list of event classes.", description = "Returns a list of classes implementing AutomationEventI.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "An array of class names"), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = {"/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<List<EventClassInfo>> automationEventClassesGet() {

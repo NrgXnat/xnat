@@ -11,10 +11,9 @@ package org.nrg.xapi.rest.task;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.node.XnatNode;
@@ -45,7 +44,6 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 /**
  * The Class XnatTaskApi.
  */
-@Api
 @XapiRestController
 @Slf4j
 public class XnatTaskApi extends AbstractXapiRestController {
@@ -69,8 +67,8 @@ public class XnatTaskApi extends AbstractXapiRestController {
      *
      * @return nodeAndTaskConfigurationStatus
      */
-    @ApiOperation(value = "Get node configuration status.", notes = "Returns node configuration status for this installation.", response = Properties.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Get node configuration status.", description = "Returns node configuration status for this installation.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "An array of properties"), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = {"/xnatTask/checkNodeConfigurationStatus"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<Properties> getNodeConfigurationStatus() {
@@ -92,8 +90,8 @@ public class XnatTaskApi extends AbstractXapiRestController {
      *
      * @return the task list
      */
-    @ApiOperation(value = "Get list of XnatTask classes.", notes = "Returns a list of XnatTask properties", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Get list of XnatTask classes.", description = "Returns a list of XnatTask properties")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "An array of properties"), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = {"/xnatTask/taskList"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<List<Properties>> getTaskList() {

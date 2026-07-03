@@ -1,10 +1,10 @@
 package org.nrg.xnat.services.cache;
 
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import javax.validation.constraints.NotNull;
@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-@Api("XNAT Caching Management API")
+@Tag(name = "XNAT Caching Management API")
 @XapiRestController
 @RequestMapping(value = "/caching")
 @Slf4j
@@ -42,22 +42,22 @@ public class CachingApi extends AbstractXapiRestController {
         _jCacheHelper = jCacheHelper;
     }
 
-    @ApiOperation(value = "Returns a list of all of the existing caches on the system.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "XNAT cache names successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Must be an administrator to view XNAT caches."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Returns a list of all of the existing caches on the system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "XNAT cache names successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Must be an administrator to view XNAT caches."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = AccessLevel.Admin)
     public List<String> getAllCacheNames() {
         return _jCacheHelper.getCacheNames();
     }
 
-    @ApiOperation(value = "Returns the configuration for the specified cache.", notes = "Throws NotFoundException if a cache with the specified name doesn't exist.", response = CompleteConfiguration.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "XNAT cache configuration successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Must be an administrator to view XNAT caches."),
-                   @ApiResponse(code = 404, message = "No cache with the specified name exists."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Returns the configuration for the specified cache.", description = "Throws NotFoundException if a cache with the specified name doesn't exist.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "XNAT cache configuration successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Must be an administrator to view XNAT caches."),
+                   @ApiResponse(responseCode = "404", description = "No cache with the specified name exists."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "{cacheName}/info", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = AccessLevel.Admin)
     public CompleteConfiguration<?, ?> getCacheInfo(final @PathVariable String cacheName) throws NotFoundException {
         final CompleteConfiguration<?, ?> configuration = _jCacheHelper.getCacheConfiguration(cacheName);
@@ -67,23 +67,23 @@ public class CachingApi extends AbstractXapiRestController {
         return configuration;
     }
 
-    @ApiOperation(value = "Returns a list of the keys in the specified cache.", notes = "Throws NotFoundException if a cache with the specified name doesn't exist.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "XNAT cache keys successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Must be an administrator to view XNAT caches."),
-                   @ApiResponse(code = 404, message = "No cache with the specified name exists."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Returns a list of the keys in the specified cache.", description = "Throws NotFoundException if a cache with the specified name doesn't exist.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "XNAT cache keys successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Must be an administrator to view XNAT caches."),
+                   @ApiResponse(responseCode = "404", description = "No cache with the specified name exists."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "{cacheName}/keys", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = AccessLevel.Admin)
     public List<String> getCacheKeys(final @PathVariable String cacheName) throws NotFoundException {
         return StreamSupport.stream(getCache(cacheName).spliterator(), false).map(entry -> entry.getKey().toString()).collect(Collectors.toList());
     }
 
-    @ApiOperation(value = "Returns a list of the keys in the specified cache.", notes = "Throws NotFoundException if a cache with the specified name doesn't exist.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "XNAT cache keys successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Must be an administrator to view XNAT caches."),
-                   @ApiResponse(code = 404, message = "No cache with the specified name exists."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Returns a list of the keys in the specified cache.", description = "Throws NotFoundException if a cache with the specified name doesn't exist.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "XNAT cache keys successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Must be an administrator to view XNAT caches."),
+                   @ApiResponse(responseCode = "404", description = "No cache with the specified name exists."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "{cacheName}/keys/{key}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = AccessLevel.Admin)
     public Object getCacheValue(final @PathVariable String cacheName, final @PathVariable String key) throws NotFoundException, DataFormatException {
         final Pair<Class<?>, Class<?>> types = _jCacheHelper.getCacheTypes(cacheName).orElseThrow(() -> new NotFoundException("No cache with name " + cacheName + " exists"));

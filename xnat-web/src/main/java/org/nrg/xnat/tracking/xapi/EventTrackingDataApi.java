@@ -1,6 +1,6 @@
 package org.nrg.xnat.tracking.xapi;
 
-import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-@Api("The XNAT Event Tracking Data API")
+@Tag(name = "The XNAT Event Tracking Data API")
 @XapiRestController
 @RequestMapping(value = "event_tracking")
 @Slf4j

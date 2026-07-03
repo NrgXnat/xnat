@@ -1,9 +1,9 @@
 package org.nrg.xnat.customforms.api;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 @XapiRestController
 @RequestMapping(value = "/customforms/displayfields")
-@Api("Custom Forms Display Field API")
+@Tag(name = "Custom Forms Display Field API")
 @Slf4j
 public class CustomFormDisplayFieldApi extends AbstractXapiRestController {
 
@@ -27,11 +27,11 @@ public class CustomFormDisplayFieldApi extends AbstractXapiRestController {
         this.formDisplayFieldService = formDisplayFieldService;
     }
 
-    @ApiOperation(value="Reloads Custom Form Display fields", notes = "Reloads Custom Form Display fields")
+    @Operation(summary = "Reloads Custom Form Display fields", description = "Reloads Custom Form Display fields")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/reload", method = RequestMethod.POST)
     public void reloadCustomFormDisplayFields() {
         formDisplayFieldService.refreshDisplayFields();

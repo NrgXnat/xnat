@@ -17,7 +17,11 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -57,7 +61,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Api("XNAT Data Type Schemas API")
+@Tag(name = "XNAT Data Type Schemas API")
 @XapiRestController
 @RequestMapping(value = "/schemas")
 @Slf4j
@@ -102,10 +106,10 @@ public class SchemaApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns a list of all of the installed XNAT data-type schemas.", notes = "The strings returned from this function tell you the name of the schema and can be used with other methods on this API to retrieve the full schema document. This tells you nothing about whether the data types defined in the schemas are active or configured.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "XNAT data-type schemas successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Returns a list of all of the installed XNAT data-type schemas.", description = "The strings returned from this function tell you the name of the schema and can be used with other methods on this API to retrieve the full schema document. This tells you nothing about whether the data types defined in the schemas are active or configured.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "XNAT data-type schemas successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public List<String> getAllDataTypeSchemas() throws InitializationException {
         try {
@@ -131,21 +135,21 @@ public class SchemaApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns the requested XNAT data-type schema.", notes = "XNAT data-type schemas are most often stored on the classpath in the folder schemas/SCHEMA/SCHEMA.xsd. This function returns the schema named SCHEMA.xsd in the folder named SCHEMA. You can use the function that allows you to specify the namespace as well if the folder name differs from the schema name. This tells you nothing about whether the data types defined in the schemas are active or configured.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "XNAT data-type schemas successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The requested resource wasn't found."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Returns the requested XNAT data-type schema.", description = "XNAT data-type schemas are most often stored on the classpath in the folder schemas/SCHEMA/SCHEMA.xsd. This function returns the schema named SCHEMA.xsd in the folder named SCHEMA. You can use the function that allows you to specify the namespace as well if the folder name differs from the schema name. This tells you nothing about whether the data types defined in the schemas are active or configured.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "XNAT data-type schemas successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The requested resource wasn't found."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "{schema}", produces = {MediaType.APPLICATION_XML_VALUE}, method = {RequestMethod.GET})
     public String getRequestedDataTypeSchema(@PathVariable("schema") final String schema) throws IOException, NotFoundException, InsufficientPrivilegesException {
         return getRequestedDataTypeSchema(schema, schema);
     }
 
-    @ApiOperation(value = "Returns the requested XNAT data-type schema.", notes = "XNAT data-type schemas are most often stored on the classpath in the folder schemas/SCHEMA/SCHEMA.xsd, but sometimes the folder name differs from the schema name. This function returns the schema named SCHEMA.xsd in the folder named NAMESPACE. This tells you nothing about whether the data types defined in the schemas are active or configured.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "XNAT data-type schemas successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The requested resource wasn't found."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Returns the requested XNAT data-type schema.", description = "XNAT data-type schemas are most often stored on the classpath in the folder schemas/SCHEMA/SCHEMA.xsd, but sometimes the folder name differs from the schema name. This function returns the schema named SCHEMA.xsd in the folder named NAMESPACE. This tells you nothing about whether the data types defined in the schemas are active or configured.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "XNAT data-type schemas successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The requested resource wasn't found."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "{namespace}/{schema}", produces = {MediaType.APPLICATION_XML_VALUE}, method = {RequestMethod.GET})
     // TODO: Eventually these should return XML Document objects that are appropriately converted. Spring doesn't have a converter for that by default.
     public String getRequestedDataTypeSchema(@PathVariable("namespace") final String namespace, @PathVariable("schema") final String schema) throws IOException, NotFoundException, InsufficientPrivilegesException {
@@ -177,13 +181,12 @@ public class SchemaApi extends AbstractXapiRestController {
         return BasicXnatResourceLocator.getResource("classpath:schemas/" + SanitizeUtils.sanitizeFilePath(namespace) + "/" + SanitizeUtils.sanitizeFilePath(schema) + ".xsd");
     }
 
-    @ApiOperation(value = "Gets a list of the available data types on the system.",
-                  notes = "The available data types can be used as parameters for this call in the form /xapi/access/datatypes/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
-                  response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of available data types."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available data types."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets a list of the available data types on the system.",
+                  description = "The available data types can be used as parameters for this call in the form /xapi/access/datatypes/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of available data types."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of available data types."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
@@ -191,13 +194,12 @@ public class SchemaApi extends AbstractXapiRestController {
         return _elementTypes;
     }
 
-    @ApiOperation(value = "Gets a map of the available data types on the system along with the various data type element names and types. This map includes a timestamp indicating when the list of data types was generated using the key \"timestamp\".",
-                  notes = "The available data types (i.e. the keys in the returned map) can be used as parameters for this call in the form /xapi/access/datatypes/names/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs). The timestamp element in this list indicates when the list was generated. This allows clients to check whether the data type list has been updated since the last call to this method.",
-                  response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of available data types."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available data types."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets a map of the available data types on the system along with the various data type element names and types. This map includes a timestamp indicating when the list of data types was generated using the key \"timestamp\".",
+                  description = "The available data types (i.e. the keys in the returned map) can be used as parameters for this call in the form /xapi/access/datatypes/names/{dataType}. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs). The timestamp element in this list indicates when the list was generated. This allows clients to check whether the data type list has been updated since the last call to this method.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of available data types."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of available data types."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/names/all", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
@@ -205,55 +207,51 @@ public class SchemaApi extends AbstractXapiRestController {
         return _elementNames;
     }
 
-    @ApiOperation(value = "Gets the element names and types for the specified data type.",
-                  notes = "The available data types that can be used as parameters for this call can be retrieved by calling /xapi/access/datatypes/names/all. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
-                  response = String.class, responseContainer = "Set")
-    @ApiResponses({@ApiResponse(code = 200, message = "The element names and types for the specified data type."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the specified data type."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the element names and types for the specified data type.",
+                  description = "The available data types that can be used as parameters for this call can be retrieved by calling /xapi/access/datatypes/names/all. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The element names and types for the specified data type."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the specified data type."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/names/{dataType}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public SetMultimap<String, String> getSpecifiedElementTypeNames(@ApiParam("The name of the data type to retrieve") @PathVariable final String dataType) throws NotFoundException {
+    public SetMultimap<String, String> getSpecifiedElementTypeNames(@Parameter(description = "The name of the data type to retrieve") @PathVariable final String dataType) throws NotFoundException {
         return getElementNames(dataType);
     }
 
-    @ApiOperation(value = "Gets information about the requested data types.",
-                  notes = "The available data types from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
-                  response = GenericWrapperElement.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "The element names and types for the specified data types."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the specified data types."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets information about the requested data types.",
+                  description = "The available data types from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The element names and types for the specified data types."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the specified data types."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/names", consumes = {APPLICATION_JSON_VALUE, APPLICATION_JSON_UTF8_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public SetMultimap<String, String> getSpecifiedElementTypeNamesFromJsonPost(@ApiParam("The data types to be retrieved.") @RequestBody final Map<String, Object> attributes) throws NotFoundException, DataFormatException {
+    public SetMultimap<String, String> getSpecifiedElementTypeNamesFromJsonPost(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The data types to be retrieved.") @RequestBody final Map<String, Object> attributes) throws NotFoundException, DataFormatException {
         return getDataTypeMaps(getElementNamesFromTypeAndTypes(((List<?>) attributes.get("dataTypes")).stream().map(String.class::cast).collect(Collectors.toList()), (String) attributes.get("dataType")));
     }
 
-    @ApiOperation(value = "Gets information about the requested data type.",
-                  notes = "The available element displays from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
-                  response = GenericWrapperElement.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Information on the requested data type."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the available data type."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets information about the requested data type.",
+                  description = "The available element displays from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Information on the requested data type."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the available data type."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/names", consumes = {APPLICATION_FORM_URLENCODED_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public SetMultimap<String, String> getSpecifiedElementTypeNamesFromFormPost(@ApiParam("A list of data types to be retrieved.") @RequestParam(required = false) final List<String> dataTypes, @ApiParam("The data type to be retrieved.") @RequestParam(required = false) final String dataType) throws NotFoundException, DataFormatException {
+    public SetMultimap<String, String> getSpecifiedElementTypeNamesFromFormPost(@Parameter(description = "A list of data types to be retrieved.") @RequestParam(required = false) final List<String> dataTypes, @Parameter(description = "The data type to be retrieved.") @RequestParam(required = false) final String dataType) throws NotFoundException, DataFormatException {
         return getDataTypeMaps(getElementNamesFromTypeAndTypes(dataTypes, dataType));
     }
 
-    @ApiOperation(value = "Gets a map of all available data types on the system with the full element definition.",
-                  notes = "This can get pretty large.",
-                  response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of available data types."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the list of available data types."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets a map of all available data types on the system with the full element definition.",
+                  description = "This can get pretty large.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of available data types."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the list of available data types."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/elements/all", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
@@ -261,53 +259,50 @@ public class SchemaApi extends AbstractXapiRestController {
         return _elements;
     }
 
-    @ApiOperation(value = "Gets information about the requested data type.",
-                  notes = "The available data types from the call /xapi/access/datatypes/elements/all can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
-                  response = GenericWrapperElement.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Information on the requested data type."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the available data type."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets information about the requested data type.",
+                  description = "The available data types from the call /xapi/access/datatypes/elements/all can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Information on the requested data type."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the available data type."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/elements/{dataType}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public Map<String, GenericWrapperElement> getSpecifiedElement(@ApiParam("The data type to be retrieved.") @PathVariable final String dataType) throws NotFoundException {
+    public Map<String, GenericWrapperElement> getSpecifiedElement(@Parameter(description = "The data type to be retrieved.") @PathVariable final String dataType) throws NotFoundException {
         return getElement(dataType);
     }
 
-    @ApiOperation(value = "Gets the requested data types.",
-                  notes = "The available data types from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
-                  response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "Information on the requested data type."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the available data type."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the requested data types.",
+                  description = "The available data types from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Information on the requested data type."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the available data type."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/elements", consumes = {APPLICATION_JSON_VALUE, APPLICATION_JSON_UTF8_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public Map<String, GenericWrapperElement> getSpecifiedElementsFromJsonPost(@ApiParam("The data types to be retrieved.") @RequestBody final Map<String, Object> attributes) throws NotFoundException, DataFormatException {
+    public Map<String, GenericWrapperElement> getSpecifiedElementsFromJsonPost(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The data types to be retrieved.") @RequestBody final Map<String, Object> attributes) throws NotFoundException, DataFormatException {
         return getElementMaps(getElementNamesFromTypeAndTypes(((List<?>) attributes.get("dataTypes")).stream().map(String.class::cast).collect(Collectors.toList()), (String) attributes.get("dataType")));
     }
 
-    @ApiOperation(value = "Gets information about the requested data type.",
-                  notes = "The available element displays from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).",
-                  response = GenericWrapperElement.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Information on the requested data type."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the available data type."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets information about the requested data type.",
+                  description = "The available element displays from the call /xapi/access/datatypes can be used as the data type parameter for this call. This call is accessible to guest users when the site preference require login is set to false (i.e. open XNATs).")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Information on the requested data type."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the available data type."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/elements", consumes = {APPLICATION_FORM_URLENCODED_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody
-    public Map<String, GenericWrapperElement> getSpecifiedElementsFromFormPost(@ApiParam("A list of data types to be retrieved.") @RequestParam(required = false) final List<String> dataTypes, @ApiParam("The data type to be retrieved.") @RequestParam(required = false) final String dataType) throws NotFoundException, DataFormatException {
+    public Map<String, GenericWrapperElement> getSpecifiedElementsFromFormPost(@Parameter(description = "A list of data types to be retrieved.") @RequestParam(required = false) final List<String> dataTypes, @Parameter(description = "The data type to be retrieved.") @RequestParam(required = false) final String dataType) throws NotFoundException, DataFormatException {
         return getElementMaps(getElementNamesFromTypeAndTypes(dataTypes, dataType));
     }
 
-    @ApiOperation(value = "Gets the image session datatypes which are searchable within the system.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "The list of searchable image session datatypes which are available from the system."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "You do not have sufficient permissions to access the searchable datatypes."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the image session datatypes which are searchable within the system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The list of searchable image session datatypes which are available from the system."),
+            @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(responseCode = "403", description = "You do not have sufficient permissions to access the searchable datatypes."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "datatypes/searchable", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authorizer)
     @AuthDelegate(GuestUserAccessXapiAuthorization.class)
     @ResponseBody

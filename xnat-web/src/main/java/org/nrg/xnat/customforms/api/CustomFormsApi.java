@@ -18,10 +18,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javassist.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -64,7 +64,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Role;
 
 @XapiRestController
 @RequestMapping(value = "/customforms")
-@Api("Custom Forms FormsIO API")
+@Tag(name = "Custom Forms FormsIO API")
 @Slf4j
 public class CustomFormsApi extends AbstractXapiRestController {
 
@@ -92,12 +92,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
         objectMapperNoFailOnUnknown.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
     }
 
-    @ApiOperation(value = "Accepts a JSON", notes = "Accepts a JSON", response = String.class)
+    @Operation(summary = "Accepts a JSON", description = "Accepts a JSON")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, method = RequestMethod.PUT, restrictTo = Role)
     @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> addCustomFormsToProtocolsAndProjects(final @RequestBody String jsonbody)
@@ -132,12 +132,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Gets Custom Form JSON for a given entity", notes = "Gets Custom Form JSON for a given entity", response = String.class)
+    @Operation(summary = "Gets Custom Form JSON for a given entity", description = "Gets Custom Form JSON for a given entity")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/element",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             method = RequestMethod.GET)
@@ -166,12 +166,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Marks a form as enabled", notes = "Marks a form as enabled", response = String.class)
+    @Operation(summary = "Marks a form as enabled", description = "Marks a form as enabled")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/enable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
     @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> enableCustomForm(final @RequestBody String jsonbody) {
@@ -195,14 +195,14 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Add projects to an existing form", notes = "Add projects to an existing form", response = String.class)
+    @Operation(summary = "Add projects to an existing form", description = "Add projects to an existing form")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 403, message = "Forbidden"),
-            @ApiResponse(code = 404, message = "Not Found"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/optin/{rowId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> optInCustomForm(final @PathVariable String rowId, final @RequestBody String jsonbody) {
         final UserI user = getSessionUser();
@@ -231,14 +231,14 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Opt out of a form", notes = "Opt out of a form", response = String.class)
+    @Operation(summary = "Opt out of a form", description = "Opt out of a form")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 403, message = "Forbidden"),
-            @ApiResponse(code = 404, message = "Not Found"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "404", description = "Not Found"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/optout/{formId}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<String> optOutCustomForm(final @PathVariable String formId, final @RequestBody String jsonbody) {
         final UserI user = getSessionUser();
@@ -266,13 +266,13 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Set display order of a form", notes = "The order must be within the range [-11000000, 1000000]", response = String.class)
+    @Operation(summary = "Set display order of a form", description = "The order must be within the range [-11000000, 1000000]")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 403, message = "Forbidden"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/formId/{formId}", method = RequestMethod.POST, restrictTo = Role)
     @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> modifyFormDisplayOrder(final @PathVariable String formId, final @RequestParam Integer displayOrder) {
@@ -302,12 +302,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
     }
 
 
-    @ApiOperation(value = "Promote a Project specific form to Site Repository", notes = "Promote a form to site repository", response = String.class)
+    @Operation(summary = "Promote a Project specific form to Site Repository", description = "Promote a form to site repository")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/promote", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
     @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> promoteform(final @RequestBody String jsonbody) {
@@ -330,12 +330,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Marks a form as disabled", notes = "Marks a form as disabled", response = String.class)
+    @Operation(summary = "Marks a form as disabled", description = "Marks a form as disabled")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/disable", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
     @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> disableCustomForm(final @RequestBody String jsonbody) {
@@ -359,13 +359,13 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Deletes a form", notes = "Deletes a form is not backed up by data", response = String.class)
+    @Operation(summary = "Deletes a form", description = "Deletes a form is not backed up by data")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 403, message = "Forbidden"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, restrictTo = Role)
     @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<String> deleteCustomForm(final @RequestBody String jsonbody) {
@@ -393,12 +393,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
     }
 
     //TODO: Are the configurations open to all?
-    @ApiOperation(value = "Gets list of all site wide and projects which have custom forms", notes = "Gets Site wide and project Custom Form configurations", response = String.class)
+    @Operation(summary = "Gets list of all site wide and projects which have custom forms", description = "Gets Site wide and project Custom Form configurations")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_UTF8_VALUE, method = RequestMethod.GET)
     public ResponseEntity<List<PseudoConfiguration>> getAllCustomFormConfigurations(
             final @RequestParam(required = false) String projectId) {
@@ -414,12 +414,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get the XNAT Deployment environment related to FormsIO", notes = "Get the XNAT Deployment environment related to FormsIO", response = String.class)
+    @Operation(summary = "Get the XNAT Deployment environment related to FormsIO", description = "Get the XNAT Deployment environment related to FormsIO")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/env", produces = MediaType.APPLICATION_JSON_UTF8_VALUE, method = RequestMethod.GET)
     public ResponseEntity<XnatFormsIOEnv> getXnatEnvironmentForFormsIO(
             final @RequestParam(required = false) String projectId) {
@@ -435,12 +435,12 @@ public class CustomFormsApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Checks to see if any data has been created and associated with a given custom form.", response = String.class)
+    @Operation(summary = "Checks to see if any data has been created and associated with a given custom form.")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/hasdata/{rowId}", method = RequestMethod.GET)
     public boolean checkForCustomFormHasData(final @PathVariable String rowId) throws DataFormatException {
         try {

@@ -9,10 +9,10 @@
 
 package org.nrg.xapi.model;
 
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@ApiModel(value = "XAPI Error", description = "Provides the description of an error that occurred within the XAPI functions.")
+@Schema(name = "XAPI Error", description = "Provides the description of an error that occurred within the XAPI functions.")
 public class Error {
     private Integer code    = null;
     private String  message = null;
@@ -22,7 +22,7 @@ public class Error {
      * The code for the error. The meaning of the code is dependent on the context.
      * @return The error code.
      */
-    @ApiModelProperty(name = "Error Code", value = "The code for the error.", dataType = "java.lang.Integer", notes = "The meaning of this error code is dependent on the function where the error occurred.")
+    @Schema(title = "Error Code", description = "The code for the error.")
     @JsonProperty("code")
     public Integer getCode() {
         return code;
@@ -35,7 +35,7 @@ public class Error {
     /**
      * A message associated with the error.
      */
-    @ApiModelProperty(name = "Error Message", value = "A message indicating what the error was.", dataType = "java.lang.String")
+    @Schema(title = "Error Message", description = "A message indicating what the error was.")
     @JsonProperty("message")
     public String getMessage() {
         return message;
@@ -48,7 +48,7 @@ public class Error {
     /**
      * Indicates the fields of the data object that caused the error.
      */
-    @ApiModelProperty(name = "Error Fields", value = "Indicates the fields of the data object that caused the error.", dataType = "java.lang.String")
+    @Schema(title = "Error Fields", description = "Indicates the fields of the data object that caused the error.")
     @JsonProperty("fields")
     public String getFields() {
         return fields;

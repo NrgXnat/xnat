@@ -190,8 +190,8 @@ dependencies {
     implementation libs.jackson.datatype.jsr310
 
     // --- Springfox / Swagger ---
-    implementation libs.springfox.swagger2
-    implementation libs.springfox.swagger.ui
+    implementation libs.springdoc.openapi.ui
+    implementation libs.spring.boot.autoconfigure
 
     // --- Jakarta ORO (transitive from restlet in Maven) ---
     implementation 'oro:oro:2.0.8'

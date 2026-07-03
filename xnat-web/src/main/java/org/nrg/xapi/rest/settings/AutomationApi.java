@@ -9,7 +9,10 @@
 
 package org.nrg.xapi.rest.settings;
 
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.automation.services.AutomationService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -32,7 +35,7 @@ import java.util.Map;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 
-@Api(description = "Automation Service API")
+@Tag(name = "automation", description = "Automation Service API")
 @XapiRestController
 @RequestMapping(value = "/automation")
 @Slf4j
@@ -47,24 +50,24 @@ public class AutomationApi extends AbstractXapiRestController {
         _automationEnabled = automationService.getAutomationEnabled();
     }
 
-    @ApiOperation(value = "Returns the full map of automation settings for this XNAT application.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "Automation settings successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the full map of automation settings for this XNAT application.", description = "Complex objects may be returned as encapsulated JSON strings.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Automation settings successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public Map<String, Object> getAllAutomationPreferences() {
         log.info("User {} requested the system automation settings.", getSessionUser().getUsername());
         return new HashMap<>(_preferences);
     }
 
-    @ApiOperation(value = "Sets a map of automation properties.", notes = "Sets the automation properties specified in the map.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Automation properties successfully set."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to set automation properties."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Sets a map of automation properties.", description = "Sets the automation properties specified in the map.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Automation properties successfully set."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to set automation properties."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.POST, restrictTo = Admin)
-    public void setBatchAutomationPreferences(@ApiParam(value = "The map of automation preferences to be set.", required = true) @RequestBody final Map<String, String> properties) {
+    public void setBatchAutomationPreferences(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The map of automation preferences to be set.", required = true) @RequestBody final Map<String, String> properties) {
         log.info("User {} requested to set a batch of automation preferences.", getSessionUser().getUsername());
         // Is this call initializing the system?
         for (final String name : properties.keySet()) {
@@ -79,30 +82,28 @@ public class AutomationApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Indicates whether internal scripting is enabled for this XNAT system.",
-                  notes = "Internal scripting may be used by XNAT itself even when disabled, but this setting indicates whether users and administrators can " +
-                          "configure and execute scripts internally to the application process. Access to this setting is restricted to site administrators.",
-                  response = Boolean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Internal scripting setting successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Indicates whether internal scripting is enabled for this XNAT system.",
+                  description = "Internal scripting may be used by XNAT itself even when disabled, but this setting indicates whether users and administrators can " +
+                          "configure and execute scripts internally to the application process. Access to this setting is restricted to site administrators.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Internal scripting setting successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "enabled", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public boolean isInternalScriptingEnabled() {
         log.debug("User {} requested the internal scripting enabled setting.", getSessionUser().getUsername());
         return _automationEnabled && _preferences.isInternalScriptingEnabled();
     }
 
-    @ApiOperation(value = "Sets the internal scripting enabled flag for this XNAT application to the submitted value.",
-                  notes = "Internal scripting may be used by XNAT itself even when disabled, but this setting indicates whether users and administrators can configure " +
+    @Operation(summary = "Sets the internal scripting enabled flag for this XNAT application to the submitted value.",
+                  description = "Internal scripting may be used by XNAT itself even when disabled, but this setting indicates whether users and administrators can configure " +
                           "and execute scripts internally to the application process. Access to this setting is restricted to site administrators." +
                           "Note that automation can also be 'hard disabled' via the application property 'automation.enabled'. That setting can *not* be overridden by " +
-                          "calling this endpoint to set the internal preference to true.",
-                  response = Boolean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Internal scripting setting successfully set."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to change the requested setting."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+                          "calling this endpoint to set the internal preference to true.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Internal scripting setting successfully set."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to change the requested setting."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "enabled/{setting}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
     public boolean setInternalScriptingEnabled(@PathVariable final boolean setting) throws InsufficientPrivilegesException {
         if (!_automationEnabled) {

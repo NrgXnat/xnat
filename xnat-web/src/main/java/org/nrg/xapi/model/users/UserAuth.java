@@ -10,7 +10,7 @@
 package org.nrg.xapi.model.users;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,7 +24,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import java.util.Date;
 import java.util.List;
 
-@ApiModel(description = "Contains the properties that define a user's authentication provider mapping entry on the system.")
+@Schema(description = "Contains the properties that define a user's authentication provider mapping entry on the system.")
 @Data
 @Accessors(prefix = "_")
 @AllArgsConstructor

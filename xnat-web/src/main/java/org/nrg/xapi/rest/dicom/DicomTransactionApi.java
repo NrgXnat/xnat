@@ -9,10 +9,10 @@
 
 package org.nrg.xapi.rest.dicom;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -36,7 +36,7 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
-@Api(description = "XNAT DICOM transaction management API")
+@Tag(name = "dicom-transaction", description = "XNAT DICOM transaction management API")
 @XapiRestController
 @RequestMapping(value = "/dicom")
 public class DicomTransactionApi extends AbstractXapiRestController {
@@ -46,10 +46,10 @@ public class DicomTransactionApi extends AbstractXapiRestController {
         _importRequestService = importRequestService;
     }
 
-    @ApiOperation(value = "Get a list of all outstanding (i.e. not completed or failed) inbox import requests.", response = DicomInboxImportRequest.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "All outstanding inbox import requests are returned."),
-                   @ApiResponse(code = 403, message = "The user has insufficient authorization to access the list of inbox import requests."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get a list of all outstanding (i.e. not completed or failed) inbox import requests.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "All outstanding inbox import requests are returned."),
+                   @ApiResponse(responseCode = "403", description = "The user has insufficient authorization to access the list of inbox import requests."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "list/active", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<DicomInboxImportRequest>> getOutstandingDicomInboxImportRequests() {
@@ -62,10 +62,10 @@ public class DicomTransactionApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get a list of all inbox import requests.", response = DicomInboxImportRequest.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "All inbox import requests are returned."),
-            @ApiResponse(code = 403, message = "The user has insufficient authorization to access the list of inbox import requests."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get a list of all inbox import requests.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "All inbox import requests are returned."),
+            @ApiResponse(responseCode = "403", description = "The user has insufficient authorization to access the list of inbox import requests."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "list/all", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<DicomInboxImportRequest>> getDicomInboxImportRequests() {
@@ -78,10 +78,10 @@ public class DicomTransactionApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Retrieves the requested inbox import request.", response = DicomInboxImportRequest.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "All outstanding inbox import requests are returned."),
-                   @ApiResponse(code = 403, message = "The user has insufficient authorization to access the list of inbox import requests."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Retrieves the requested inbox import request.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "All outstanding inbox import requests are returned."),
+                   @ApiResponse(responseCode = "403", description = "The user has insufficient authorization to access the list of inbox import requests."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<DicomInboxImportRequest> getDicomInboxImportRequest(@PathVariable final long id) {

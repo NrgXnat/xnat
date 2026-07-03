@@ -196,8 +196,8 @@ dependencies {
         api libs.google.jsr305
 
         // Swagger
-        api libs.springfox.swagger2
-        api libs.springfox.swagger.ui
+        api libs.springdoc.openapi.ui
+        api libs.spring.boot.autoconfigure
 
         // Bouncy Castle
         api libs.bouncycastle.bcpkix.jdk18on

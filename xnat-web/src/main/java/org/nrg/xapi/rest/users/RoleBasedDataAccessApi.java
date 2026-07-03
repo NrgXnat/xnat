@@ -4,10 +4,10 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.model.users.ElementDisplayModel;
@@ -46,7 +46,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 
 @XapiRestController
 @RequestMapping(value = "/role")
-@Api("Role Based Data Access API")
+@Tag(name = "Role Based Data Access API")
 @Slf4j
 public class RoleBasedDataAccessApi extends AbstractXapiRestController {
 
@@ -66,14 +66,12 @@ public class RoleBasedDataAccessApi extends AbstractXapiRestController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @ApiOperation(value = "Gets XNAT Elements that can be created by a Form Data Manager",
-            notes = "Gets XNAT Elements that can be created by a Form Data Manager",
-            response = String.class, responseContainer = "List")
+    @Operation(summary = "Gets XNAT Elements that can be created by a Form Data Manager", description = "Gets XNAT Elements that can be created by a Form Data Manager")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/displays/createable",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             method = RequestMethod.GET)
@@ -83,14 +81,12 @@ public class RoleBasedDataAccessApi extends AbstractXapiRestController {
         return ResponseEntity.ok(getCreatableElementDisplay(adminUser));
     }
 
-    @ApiOperation(value = "Gets XNAT Elements that can be created by a Form Data Manager",
-            notes = "Gets XNAT Elements that can be created by a Form Data Manager",
-            response = String.class, responseContainer = "List")
+    @Operation(summary = "Gets XNAT Elements that can be created by a Form Data Manager", description = "Gets XNAT Elements that can be created by a Form Data Manager")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/projects",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             method = RequestMethod.GET, restrictTo = Authorizer)
@@ -101,13 +97,12 @@ public class RoleBasedDataAccessApi extends AbstractXapiRestController {
         return ResponseEntity.ok(resultSet);
     }
 
-    @ApiOperation(value = "Get specific XNAT project data that can be used by a Form Data Manager",
-            response = String.class, responseContainer = "List")
+    @Operation(summary = "Get specific XNAT project data that can be used by a Form Data Manager")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/projectsById",
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE,
             consumes = MediaType.TEXT_PLAIN_VALUE,

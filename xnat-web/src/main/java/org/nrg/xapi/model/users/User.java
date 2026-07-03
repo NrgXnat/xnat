@@ -10,8 +10,7 @@
 package org.nrg.xapi.model.users;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,7 +34,7 @@ import java.util.List;
  * data. Newly created beans have secure set to false by default to allow for serializing the bean for REST calls with
  * all data intact.
  */
-@ApiModel(description = "Contains the properties that define a user on the system.")
+@Schema(description = "Contains the properties that define a user on the system.")
 @Data
 @Accessors(prefix = "_")
 @AllArgsConstructor
@@ -82,7 +81,7 @@ public class User {
     /**
      * The user's encrypted password.
      **/
-    @ApiModelProperty(value = "The user's encrypted password.")
+    @Schema(description = "The user's encrypted password.")
     public String getPassword() {
         return getSecuredProperty(_password);
     }
@@ -95,7 +94,7 @@ public class User {
      * @deprecated Passwords are automatically salted by the security framework.
      */
     @Deprecated
-    @ApiModelProperty(value = "The salt used to encrypt the user's password.")
+    @Schema(description = "The salt used to encrypt the user's password.")
     public String getSalt() {
         return null;
     }
@@ -103,12 +102,12 @@ public class User {
     /**
      * The user's authorization record used when logging in.
      **/
-    @ApiModelProperty(value = "The user's authorization record used when logging in.")
+    @Schema(description = "The user's authorization record used when logging in.")
     public UserAuthI getAuthorization() {
         return getSecuredProperty(_authorization);
     }
 
-    @ApiModelProperty(value = "The user's full name.")
+    @Schema(description = "The user's full name.")
     @JsonIgnore
     public String getFullName() {
         return String.format("%s %s", getFirstName(), getLastName());
@@ -134,32 +133,32 @@ public class User {
         return _secured ? null : property;
     }
 
-    @ApiModelProperty(value = "The user's unique key.")
+    @Schema(description = "The user's unique key.")
     private Integer   _id;
-    @ApiModelProperty(value = "The user's login name.")
+    @Schema(description = "The user's login name.")
     private String    _username;
-    @ApiModelProperty(value = "The user's first name.")
+    @Schema(description = "The user's first name.")
     private String    _firstName;
-    @ApiModelProperty(value = "The user's last name.")
+    @Schema(description = "The user's last name.")
     private String    _lastName;
-    @ApiModelProperty(value = "The user's email address.")
+    @Schema(description = "The user's email address.")
     private String    _email;
-    @ApiModelProperty(value = "The user's encrypted password.")
+    @Schema(description = "The user's encrypted password.")
     private String    _password;
-    @ApiModelProperty(value = "Indicates whether the user object is secured, which causes secure fields like password to return null.")
+    @Schema(description = "Indicates whether the user object is secured, which causes secure fields like password to return null.")
     private boolean   _secured;
-    @ApiModelProperty(value = "The date and time the user record was last modified.")
+    @Schema(description = "The date and time the user record was last modified.")
     private Date      _lastModified;
-    @ApiModelProperty(value = "The user's authorization record used when logging in.")
+    @Schema(description = "The user's authorization record used when logging in.")
     private UserAuthI _authorization;
-    @ApiModelProperty(value = "Whether the user is enabled.")
+    @Schema(description = "Whether the user is enabled.")
     private Boolean   _enabled;
-    @ApiModelProperty(value = "Whether the user is verified.")
+    @Schema(description = "Whether the user is verified.")
     private Boolean   _verified;
-    @ApiModelProperty("The date and time of the last successful login attempt for the most recently used authentication provider.")
+    @Schema(description = "The date and time of the last successful login attempt for the most recently used authentication provider.")
     private Date      _lastSuccessfulLogin;
-    @ApiModelProperty("New email address, pending verification")
+    @Schema(description = "New email address, pending verification")
     private String    _pendingEmail;
-    @ApiModelProperty("If changing password, include current one")
+    @Schema(description = "If changing password, include current one")
     private String    _currentPassword;
 }

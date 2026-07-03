@@ -10,10 +10,10 @@
 package org.nrg.xapi.rest.settings;
 
 import com.google.common.collect.Lists;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
@@ -42,7 +42,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 /**
  * The Class PluginOpenUrlsConfigurationApi.
  */
-@Api(description = "Plugin Open URLs Authorization API")
+@Tag(name = "plugin-open-urls-configuration", description = "Plugin Open URLs Authorization API")
 @XapiRestController
 public class PluginOpenUrlsConfigurationApi extends AbstractXapiRestController {
 
@@ -68,8 +68,8 @@ public class PluginOpenUrlsConfigurationApi extends AbstractXapiRestController {
      *
      * @return the plugin open url configuration
      */
-    @ApiOperation(value = "Gets the plugin open URL configuration.", notes = "Returns plugin open URL configuration for this installation.", response = Properties.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "An array of properties"), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Gets the plugin open URL configuration.", description = "Returns plugin open URL configuration for this installation.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "An array of properties"), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = {"/pluginOpenUrls/settings"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<Properties> getPluginOpenUrlsConfiguration() {
@@ -88,8 +88,8 @@ public class PluginOpenUrlsConfigurationApi extends AbstractXapiRestController {
      * @param config the config
      * @return the response entity
      */
-    @ApiOperation(value = "Sets the plugin open URL configuration.", notes = "Sets plugin open URL configuration for this installation.", response = Void.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "OK"), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Sets the plugin open URL configuration.", description = "Sets plugin open URL configuration for this installation.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = {"/pluginOpenUrls/settings"}, consumes = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST, restrictTo = Admin)
     @ResponseBody
     public ResponseEntity<Void> setPluginOpenUrlsConfiguration(@RequestBody final Map<String, Boolean> config) {

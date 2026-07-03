@@ -9,8 +9,7 @@
 
 package org.nrg.xnat.services.messaging.processing;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,7 +23,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map;
 
-@ApiModel(description = "Provides a container for the properties required to launch a Clara training session.")
+@Schema(description = "Provides a container for the properties required to launch a Clara training session.")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,19 +32,19 @@ import java.util.Map;
 public abstract class ProcessingOperationRequestData implements Serializable {
     @Serial
     private static final long serialVersionUID = 1;
-    @ApiModelProperty("Indicates the unique ID of this processing request.")
+    @Schema(description = "Indicates the unique ID of this processing request.")
     @NonNull
     private String _processingId;
 
-    @ApiModelProperty("Indicates the username of the user launching the training session instance.")
+    @Schema(description = "Indicates the username of the user launching the training session instance.")
     @NonNull
     private String _username;
 
-    @ApiModelProperty("Provides the parameters for the training session. The keys in the map are JSON paths indicating particular items in the training configuration template, while the values in the map indicate the value to be set for the corresponding item.")
+    @Schema(description = "Provides the parameters for the training session. The keys in the map are JSON paths indicating particular items in the training configuration template, while the values in the map indicate the value to be set for the corresponding item.")
     @NonNull
     private Map<String, String> _parameters;
 
-    @ApiModelProperty("Indicates the workflow ID associated with this processing request.")
+    @Schema(description = "Indicates the workflow ID associated with this processing request.")
     @Nullable
     private String _workflowId;
 }

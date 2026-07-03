@@ -9,11 +9,11 @@
 
 package org.nrg.xapi.rest.data;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -42,7 +42,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  * XNAT XFT Element API
  * Provides read-only REST endpoints for accessing internal XFT configuration held in memory
  */
-@Api("XNAT XFT Element API")
+@Tag(name = "XNAT XFT Element API")
 @XapiRestController
 @RequestMapping(value = "/xft")
 @Slf4j
@@ -58,11 +58,10 @@ public class XFTElementApi extends AbstractXapiRestController {
         super(userManagementService, roleHolder);
     }
 
-    @ApiOperation(value = "Get all XFT schemas",
-                  notes = "Returns a list of all XFT schemas loaded in memory. Excludes protected namespaces.")
+    @Operation(summary = "Get all XFT schemas", description = "Returns a list of all XFT schemas loaded in memory. Excludes protected namespaces.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved schemas"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved schemas"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/schemas", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public ResponseEntity<List<Map<String, Object>>> getSchemas() {
@@ -93,17 +92,16 @@ public class XFTElementApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get all meta element names",
-                  notes = "Returns a list of all XFT element names from XFTMetaManager. By default excludes history and metadata elements.")
+    @Operation(summary = "Get all meta element names", description = "Returns a list of all XFT element names from XFTMetaManager. By default excludes history and metadata elements.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved element names"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved element names"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/elements", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public ResponseEntity<List<String>> getMetaElementNames(
-            @ApiParam(value = "Include metadata elements (ending in _meta_data)", required = false)
+            @Parameter(description = "Include metadata elements (ending in _meta_data)", required = false)
             @RequestParam(value = "showMeta", required = false, defaultValue = "false") boolean showMeta,
-            @ApiParam(value = "Include history elements (ending in _history)", required = false)
+            @Parameter(description = "Include history elements (ending in _history)", required = false)
             @RequestParam(value = "showHistory", required = false, defaultValue = "false") boolean showHistory) {
 
         log.debug("User {} is requesting XFT meta element names list (showMeta={}, showHistory={})",
@@ -153,11 +151,10 @@ public class XFTElementApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get all XFT references",
-                  notes = "Returns a list of all XFT references from XFTReferenceManager, including many-to-many and superior references.")
+    @Operation(summary = "Get all XFT references", description = "Returns a list of all XFT references from XFTReferenceManager, including many-to-many and superior references.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved references"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved references"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/references", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public ResponseEntity<List<Map<String, Object>>> getAllXFTReferences() {
@@ -273,21 +270,20 @@ public class XFTElementApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get elements from a schema",
-                  notes = "Returns all XFT elements for all schemas with the specified target namespace prefix. Multiple schemas can share the same prefix. Protected namespaces are not accessible. By default excludes history and metadata elements.")
+    @Operation(summary = "Get elements from a schema", description = "Returns all XFT elements for all schemas with the specified target namespace prefix. Multiple schemas can share the same prefix. Protected namespaces are not accessible. By default excludes history and metadata elements.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved elements"),
-        @ApiResponse(code = 403, message = "Access to protected namespace is forbidden"),
-        @ApiResponse(code = 404, message = "Schema not found"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved elements"),
+        @ApiResponse(responseCode = "403", description = "Access to protected namespace is forbidden"),
+        @ApiResponse(responseCode = "404", description = "Schema not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/schemas/{prefix}/elements", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public ResponseEntity<List<Map<String, Object>>> getSchemaElements(
-            @ApiParam(value = "Target namespace prefix of the schema", required = true)
+            @Parameter(description = "Target namespace prefix of the schema", required = true)
             @PathVariable String prefix,
-            @ApiParam(value = "Include metadata elements (ending in _meta_data)", required = false)
+            @Parameter(description = "Include metadata elements (ending in _meta_data)", required = false)
             @RequestParam(value = "showMeta", required = false, defaultValue = "false") boolean showMeta,
-            @ApiParam(value = "Include history elements (ending in _history)", required = false)
+            @Parameter(description = "Include history elements (ending in _history)", required = false)
             @RequestParam(value = "showHistory", required = false, defaultValue = "false") boolean showHistory) {
 
         log.debug("User {} is requesting elements for schema: {} (showMeta={}, showHistory={})",
@@ -342,19 +338,18 @@ public class XFTElementApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get a specific XFT element",
-                  notes = "Returns detailed information about a specific XFT element including basic metadata. Searches across all schemas with the specified prefix. Protected namespaces are not accessible.")
+    @Operation(summary = "Get a specific XFT element", description = "Returns detailed information about a specific XFT element including basic metadata. Searches across all schemas with the specified prefix. Protected namespaces are not accessible.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved element"),
-        @ApiResponse(code = 403, message = "Access to protected namespace is forbidden"),
-        @ApiResponse(code = 404, message = "Element not found"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved element"),
+        @ApiResponse(responseCode = "403", description = "Access to protected namespace is forbidden"),
+        @ApiResponse(responseCode = "404", description = "Element not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/schemas/{prefix}/elements/{elementName}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public ResponseEntity<Map<String, Object>> getElement(
-            @ApiParam(value = "Target namespace prefix of the schema", required = true)
+            @Parameter(description = "Target namespace prefix of the schema", required = true)
             @PathVariable String prefix,
-            @ApiParam(value = "Name of the element", required = true)
+            @Parameter(description = "Name of the element", required = true)
             @PathVariable String elementName) {
 
         log.debug("User {} is requesting element: {} from schema: {}", getSessionUser().getUsername(), elementName, prefix);
@@ -393,19 +388,18 @@ public class XFTElementApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get fields from an element",
-                  notes = "Returns all fields (both data fields and reference fields) for a specific XFT element. Searches across all schemas with the specified prefix. Protected namespaces are not accessible.")
+    @Operation(summary = "Get fields from an element", description = "Returns all fields (both data fields and reference fields) for a specific XFT element. Searches across all schemas with the specified prefix. Protected namespaces are not accessible.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved fields"),
-        @ApiResponse(code = 403, message = "Access to protected namespace is forbidden"),
-        @ApiResponse(code = 404, message = "Element not found"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved fields"),
+        @ApiResponse(responseCode = "403", description = "Access to protected namespace is forbidden"),
+        @ApiResponse(responseCode = "404", description = "Element not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/schemas/{prefix}/elements/{elementName}/fields", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public ResponseEntity<List<Map<String, Object>>> getElementFields(
-            @ApiParam(value = "Target namespace prefix of the schema", required = true)
+            @Parameter(description = "Target namespace prefix of the schema", required = true)
             @PathVariable String prefix,
-            @ApiParam(value = "Name of the element", required = true)
+            @Parameter(description = "Name of the element", required = true)
             @PathVariable String elementName) {
 
         log.debug("User {} is requesting fields for element: {} from schema: {}",

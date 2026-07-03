@@ -10,15 +10,14 @@
 package org.nrg.xapi.model.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
 /**
  * The Class EventClassInfo.
  */
-@ApiModel(description = "Event class names and filterable fields.")
+@Schema(description = "Event class names and filterable fields.")
 public class EventHandlerFilterInfo {
 	
 	String _defaultValue;
@@ -30,7 +29,7 @@ public class EventHandlerFilterInfo {
 	Boolean _includeValuesFromDatabase;
 
 	
-    @ApiModelProperty(value = "Default selected value for event filter values")
+    @Schema(description = "Default selected value for event filter values")
     @JsonProperty("defaultValue")
     
 	public String getDefaultValue() {
@@ -41,7 +40,7 @@ public class EventHandlerFilterInfo {
 		this._defaultValue = _defaultValue;
 	}
 
-    @ApiModelProperty(value = "Filter Values")
+    @Schema(description = "Filter Values")
     @JsonProperty("filterValues")
 	public List<String> getFilterValues() {
 		return _filterValues;
@@ -51,7 +50,7 @@ public class EventHandlerFilterInfo {
 		this._filterValues = _filterValues;
 	}
 
-    @ApiModelProperty(value = "Filter Required?")
+    @Schema(description = "Filter Required?")
     @JsonProperty("filterRequired")
 	public Boolean getFilterRequired() {
 		return _filterRequired;
@@ -61,7 +60,7 @@ public class EventHandlerFilterInfo {
 		this._filterRequired = _filterRequired;
 	}
 
-    @ApiModelProperty(value = "Include Values From Database?")
+    @Schema(description = "Include Values From Database?")
     @JsonProperty("includeValuesFromDatabase")
 	public Boolean getIncludeValuesFromDatabase() {
 		return _includeValuesFromDatabase;

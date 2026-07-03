@@ -1,6 +1,10 @@
 package org.nrg.xapi.rest.contrast;
 
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xnat.contrast.model.ContrastBolus;
@@ -21,7 +25,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
-@Api("Contrast Bolus API")
+@Tag(name = "Contrast Bolus API")
 @XapiRestController
 @RequestMapping(value = "/contrasts")
 @Slf4j
@@ -34,12 +38,12 @@ public class ContrastApi extends AbstractXapiRestController {
         this.contrastService = contrastService;
     }
 
-    @ApiOperation(value = "Create a new contrast entry for a specific scan.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Contrast bolus successfully created."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred."),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 403, message = "Not allowed."),
-            @ApiResponse(code = 404, message = "Item not found.")})
+    @Operation(summary = "Create a new contrast entry for a specific scan.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Contrast bolus successfully created."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred."),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "403", description = "Not allowed."),
+            @ApiResponse(responseCode = "404", description = "Item not found.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE, method = PUT,
             restrictTo = AccessLevel.Edit, value = {"/create/{sessionID}"})
     public ContrastBolus createContrast(@Experiment @PathVariable("sessionID") final String sessionId,
@@ -50,12 +54,12 @@ public class ContrastApi extends AbstractXapiRestController {
         return contrast;
     }
 
-    @ApiOperation(value = "Update a specific contrast entry for a given scan.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully updated contrast bolus."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred."),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 403, message = "Not allowed."),
-            @ApiResponse(code = 404, message = "Item not found.")})
+    @Operation(summary = "Update a specific contrast entry for a given scan.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully updated contrast bolus."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred."),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "403", description = "Not allowed."),
+            @ApiResponse(responseCode = "404", description = "Item not found.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Edit, value = {
             "/save/{sessionID}"})
     public ResponseEntity<ContrastBolus> updateContrast(@Experiment @PathVariable("sessionID") final String sessionId,
@@ -66,12 +70,12 @@ public class ContrastApi extends AbstractXapiRestController {
         return new ResponseEntity<>(contrast, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Delete contrast entry for a specific scan")
-    @ApiResponses({@ApiResponse(code = 200, message = "The deleted contrast bolus."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred."),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 403, message = "Not allowed."),
-            @ApiResponse(code = 404, message = "Item not found.")})
+    @Operation(summary = "Delete contrast entry for a specific scan")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The deleted contrast bolus."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred."),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "403", description = "Not allowed."),
+            @ApiResponse(responseCode = "404", description = "Item not found.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.Edit, value = {
             "/delete/{sessionID}"})
     public void deleteContrast(@Experiment @PathVariable("sessionID") final String sessionId,
@@ -81,15 +85,14 @@ public class ContrastApi extends AbstractXapiRestController {
         contrastService.delete(contrast, user);
     }
 
-    @ApiOperation(value = "Get contrast entries for session.", notes = "Returns a list of Contrast Bolus entries",
-            response = String.class, responseContainer = "List")
+    @Operation(summary = "Get contrast entries for session.", description = "Returns a list of Contrast Bolus entries")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "A list of Contrast Bolus elements"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "A list of Contrast Bolus elements"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = {"/{sessionID}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method =
             RequestMethod.GET, restrictTo = AccessLevel.Read)
     public ResponseEntity<List<ContrastBolus>> getContrastEntries(
-            @ApiParam(value = "The session ID (Accesssion Number).", required = true) @PathVariable("sessionID") final String sessionId) {
+            @Parameter(description = "The session ID (Accesssion Number).", required = true) @PathVariable("sessionID") final String sessionId) {
         try {
             final UserI user = getSessionUser();
             return new ResponseEntity<>(contrastService.findContrast(sessionId, user), HttpStatus.OK);

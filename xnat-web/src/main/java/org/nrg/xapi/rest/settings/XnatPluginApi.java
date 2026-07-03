@@ -9,10 +9,10 @@
 
 package org.nrg.xapi.rest.settings;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,7 @@ import java.util.Properties;
 
 import static lombok.AccessLevel.PRIVATE;
 
-@Api("XNAT Plugin API")
+@Tag(name = "XNAT Plugin API")
 @XapiRestController
 @RequestMapping(value = "/plugins")
 @Getter(PRIVATE)
@@ -51,20 +51,20 @@ public class XnatPluginApi extends AbstractXapiRestController {
         log.debug("Plugin API controller loaded {} plugins: {}", getPlugins().size(), StringUtils.join(getPlugins().keySet(), ", "));
     }
 
-    @ApiOperation(value = "Returns a list of all of the installed and active XNAT plugins with their properties.", notes = "The maps returned from this call include all of the properties specified in the plugin's property file.", response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "XNAT plugin properties successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Returns a list of all of the installed and active XNAT plugins with their properties.", description = "The maps returned from this call include all of the properties specified in the plugin's property file.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "XNAT plugin properties successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public Map<String, XnatPluginBean> getAllPlugins() {
         return getPlugins();
     }
 
-    @ApiOperation(value = "Returns the indicated XNAT plugin with its properties.", notes = "The map returned from this call include all of the properties specified in the plugin's property file.", response = Properties.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "XNAT plugin properties successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The requested resource wasn't found."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Returns the indicated XNAT plugin with its properties.", description = "The map returned from this call include all of the properties specified in the plugin's property file.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "XNAT plugin properties successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The requested resource wasn't found."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "{plugin}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public XnatPluginBean getRequestedPlugin(@PathVariable("plugin") final String plugin) throws NotFoundException {
         if (!getPlugins().containsKey(plugin)) {

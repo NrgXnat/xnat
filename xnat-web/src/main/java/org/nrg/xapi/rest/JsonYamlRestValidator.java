@@ -9,7 +9,11 @@
 
 package org.nrg.xapi.rest;
 
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -20,23 +24,23 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Api(description = "JSON / YAML REST Validator")
+@Tag(name = "json-yaml-rest-validator", description = "JSON / YAML REST Validator")
 @RestController
 @RequestMapping(value = "/validate")
 public class JsonYamlRestValidator {
     private static final Logger _log = LoggerFactory.getLogger(JsonYamlRestValidator.class);
 
-    @ApiOperation(value = "Validates the JSON string passed in as an escaped query variable.", notes = "Query string variable is json", response = String.class, responseContainer = "String")
-    @ApiResponses({@ApiResponse(code = 200, message = "Reports \"Success\" if valid or the parsing error message if not."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Validates the JSON string passed in as an escaped query variable.", description = "Query string variable is json")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Reports \"Success\" if valid or the parsing error message if not."), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, method = RequestMethod.GET)
-    public ResponseEntity<String> validateQueryJson(@ApiParam(value="the JSON string to validate", required=true) @RequestParam(value="json") String json) {
+    public ResponseEntity<String> validateQueryJson(@Parameter(description = "the JSON string to validate", required = true) @RequestParam(value="json") String json) {
         return validate(json);
     }
 
-    @ApiOperation(value = "Validates the posted JSON string.", response = String.class, responseContainer = "String")
-    @ApiResponses({@ApiResponse(code = 200, message = "Reports \"Success\" if valid or the parsing error message if not."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Validates the posted JSON string.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Reports \"Success\" if valid or the parsing error message if not."), @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, method = RequestMethod.POST)
-    public ResponseEntity<String> validatePostedJson(@ApiParam(value="the JSON string to validate", required=true) @RequestParam(value="json") String json) {
+    public ResponseEntity<String> validatePostedJson(@Parameter(description = "the JSON string to validate", required = true) @RequestParam(value="json") String json) {
         return validate(json);
     }
 

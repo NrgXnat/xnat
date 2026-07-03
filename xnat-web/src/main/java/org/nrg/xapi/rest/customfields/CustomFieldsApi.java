@@ -1,11 +1,11 @@
 package org.nrg.xapi.rest.customfields;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
@@ -47,7 +47,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
-@Api("Custom Fields API")
+@Tag(name = "Custom Fields API")
 @XapiRestController
 @RequestMapping(value = "/custom-fields")
 @Slf4j
@@ -61,12 +61,12 @@ public class CustomFieldsApi extends AbstractXapiRestController {
     }
 
     @ResponseBody
-    @ApiOperation(value = "Get custom fields for an item.")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of custom fields."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred."),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 403, message = "Cannot access data item."),
-            @ApiResponse(code = 404, message = "Item not found.")})
+    @Operation(summary = "Get custom fields for an item.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of custom fields."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred."),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "403", description = "Cannot access data item."),
+            @ApiResponse(responseCode = "404", description = "Item not found.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = AccessLevel.Read, value = {
             "/projects/{project}/fields",
             "/projects/{project}/experiments/{experiment}/fields",
@@ -80,11 +80,11 @@ public class CustomFieldsApi extends AbstractXapiRestController {
             "/experiments/{experiment}/fields",
             "/experiments/{experiment}/assessors/{assessor}/fields",
             "/experiments/{experiment}/scans/{scan}/fields"})
-    public JsonNode getFields(@ApiParam("The project") @PathVariable(required = false) @Project final String project,
-                              @ApiParam("The subject") @PathVariable(required = false) @Subject final String subject,
-                              @ApiParam("The experiment") @PathVariable(required = false) @Experiment final String experiment,
-                              @ApiParam("The scan") @PathVariable(required = false) final String scan,
-                              @ApiParam("The assessor") @PathVariable(required = false) final String assessor,
+    public JsonNode getFields(@Parameter(description = "The project") @PathVariable(required = false) @Project final String project,
+                              @Parameter(description = "The subject") @PathVariable(required = false) @Subject final String subject,
+                              @Parameter(description = "The experiment") @PathVariable(required = false) @Experiment final String experiment,
+                              @Parameter(description = "The scan") @PathVariable(required = false) final String scan,
+                              @Parameter(description = "The assessor") @PathVariable(required = false) final String assessor,
                               @RequestParam(required = false) final List<String> fieldNames) throws NotFoundException {
         final UserI user = getSessionUser();
         final ItemI item = getItem(user, project, subject, experiment, scan, assessor);
@@ -92,12 +92,12 @@ public class CustomFieldsApi extends AbstractXapiRestController {
     }
 
     @ResponseBody
-    @ApiOperation(value = "Get the text value of a custom field.")
-    @ApiResponses({@ApiResponse(code = 200, message = "A custom field value."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred."),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 403, message = "Cannot access data item."),
-            @ApiResponse(code = 404, message = "Item not found.")})
+    @Operation(summary = "Get the text value of a custom field.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A custom field value."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred."),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "403", description = "Cannot access data item."),
+            @ApiResponse(responseCode = "404", description = "Item not found.")})
     @XapiRequestMapping(produces = TEXT_PLAIN_VALUE, method = GET, restrictTo = AccessLevel.Read, value = {
             "/projects/{project}/fields/{fieldName}",
             "/projects/{project}/experiments/{experiment}/fields/{fieldName}",
@@ -111,11 +111,11 @@ public class CustomFieldsApi extends AbstractXapiRestController {
             "/experiments/{experiment}/fields/{fieldName}",
             "/experiments/{experiment}/assessors/{assessor}/fields/{fieldName}",
             "/experiments/{experiment}/scans/{scan}/fields/{fieldName}"})
-    public String getFieldValue(@ApiParam("The project") @PathVariable(required = false) @Project final String project,
-                                @ApiParam("The subject") @PathVariable(required = false) @Subject final String subject,
-                                @ApiParam("The experiment") @PathVariable(required = false) @Experiment final String experiment,
-                                @ApiParam("The scan") @PathVariable(required = false) final String scan,
-                                @ApiParam("The assessor") @PathVariable(required = false) final String assessor,
+    public String getFieldValue(@Parameter(description = "The project") @PathVariable(required = false) @Project final String project,
+                                @Parameter(description = "The subject") @PathVariable(required = false) @Subject final String subject,
+                                @Parameter(description = "The experiment") @PathVariable(required = false) @Experiment final String experiment,
+                                @Parameter(description = "The scan") @PathVariable(required = false) final String scan,
+                                @Parameter(description = "The assessor") @PathVariable(required = false) final String assessor,
                                 @PathVariable final String fieldName) throws NotFoundException {
         final UserI user = getSessionUser();
         final ItemI item = getItem(user, project, subject, experiment, scan, assessor);
@@ -124,12 +124,12 @@ public class CustomFieldsApi extends AbstractXapiRestController {
     }
 
     @ResponseBody
-    @ApiOperation(value = "Delete a custom field.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Field deleted."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred."),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 403, message = "Not allowed."),
-            @ApiResponse(code = 404, message = "Item not found.")})
+    @Operation(summary = "Delete a custom field.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Field deleted."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred."),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "403", description = "Not allowed."),
+            @ApiResponse(responseCode = "404", description = "Item not found.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = DELETE, restrictTo = AccessLevel.Edit, value = {
             "/projects/{project}/fields/{fieldName}",
             "/projects/{project}/experiments/{experiment}/fields/{fieldName}",
@@ -143,11 +143,11 @@ public class CustomFieldsApi extends AbstractXapiRestController {
             "/experiments/{experiment}/fields/{fieldName}",
             "/experiments/{experiment}/assessors/{assessor}/fields/{fieldName}",
             "/experiments/{experiment}/scans/{scan}/fields/{fieldName}"})
-    public JsonNode deleteField(@ApiParam("The project") @PathVariable(required = false) @Project final String project,
-                                @ApiParam("The subject") @PathVariable(required = false) @Subject final String subject,
-                                @ApiParam("The experiment") @PathVariable(required = false) @Experiment final String experiment,
-                                @ApiParam("The scan") @PathVariable(required = false) final String scan,
-                                @ApiParam("The assessor") @PathVariable(required = false) final String assessor,
+    public JsonNode deleteField(@Parameter(description = "The project") @PathVariable(required = false) @Project final String project,
+                                @Parameter(description = "The subject") @PathVariable(required = false) @Subject final String subject,
+                                @Parameter(description = "The experiment") @PathVariable(required = false) @Experiment final String experiment,
+                                @Parameter(description = "The scan") @PathVariable(required = false) final String scan,
+                                @Parameter(description = "The assessor") @PathVariable(required = false) final String assessor,
                                 @PathVariable final String fieldName)
             throws NotFoundException, InsufficientPrivilegesException, NrgServiceException {
         final UserI user = getSessionUser();
@@ -156,12 +156,12 @@ public class CustomFieldsApi extends AbstractXapiRestController {
     }
 
     @ResponseBody
-    @ApiOperation(value = "Set the value for one or more custom fields.")
-    @ApiResponses({@ApiResponse(code = 200, message = "The updated list of fields."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred."),
-            @ApiResponse(code = 400, message = "Bad request."),
-            @ApiResponse(code = 403, message = "Not allowed."),
-            @ApiResponse(code = 404, message = "Item not found.")})
+    @Operation(summary = "Set the value for one or more custom fields.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The updated list of fields."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred."),
+            @ApiResponse(responseCode = "400", description = "Bad request."),
+            @ApiResponse(responseCode = "403", description = "Not allowed."),
+            @ApiResponse(responseCode = "404", description = "Item not found.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE, method = PUT, restrictTo = AccessLevel.Edit, value = {
             "/projects/{project}/fields",
             "/projects/{project}/experiments/{experiment}/fields",
@@ -175,11 +175,11 @@ public class CustomFieldsApi extends AbstractXapiRestController {
             "/experiments/{experiment}/fields",
             "/experiments/{experiment}/assessors/{assessor}/fields",
             "/experiments/{experiment}/scans/{scan}/fields"})
-    public JsonNode updateFields(@ApiParam("The project") @PathVariable(required = false) @Project final String project,
-                                 @ApiParam("The subject") @PathVariable(required = false) @Subject final String subject,
-                                 @ApiParam("The experiment") @PathVariable(required = false) @Experiment final String experiment,
-                                 @ApiParam("The scan") @PathVariable(required = false) final String scan,
-                                 @ApiParam("The assessor") @PathVariable(required = false) final String assessor,
+    public JsonNode updateFields(@Parameter(description = "The project") @PathVariable(required = false) @Project final String project,
+                                 @Parameter(description = "The subject") @PathVariable(required = false) @Subject final String subject,
+                                 @Parameter(description = "The experiment") @PathVariable(required = false) @Experiment final String experiment,
+                                 @Parameter(description = "The scan") @PathVariable(required = false) final String scan,
+                                 @Parameter(description = "The assessor") @PathVariable(required = false) final String assessor,
                                  @RequestBody final JsonNode newFields)
             throws NotFoundException, InsufficientPrivilegesException, NrgServiceException {
         final UserI user = getSessionUser();

@@ -143,7 +143,8 @@ spring-oauth2 = "2.5.2.RELEASE"
 spring-security = "5.7.13"
 spring-test-junit5 = "1.5.0"
 springockito = "1.0.5"
-swagger = "2.9.2"
+springdoc = "1.8.0"
+spring-boot-autoconfigure = "2.7.18"
 testcontainers = "1.21.4"
 tomcat-embed = "9.0.93"
 torque = "3.3"
@@ -393,8 +394,8 @@ spring-test = { group = "org.springframework", name = "spring-test", version.ref
 spring-tx = { group = "org.springframework", name = "spring-tx", version.ref = "spring-framework" }
 spring-web = { group = "org.springframework", name = "spring-web", version.ref = "spring-framework" }
 spring-webmvc = { group = "org.springframework", name = "spring-webmvc", version.ref = "spring-framework" }
-springfox-swagger-ui = { group = "io.springfox", name = "springfox-swagger-ui", version.ref = "swagger" }
-springfox-swagger2 = { group = "io.springfox", name = "springfox-swagger2", version.ref = "swagger" }
+springdoc-openapi-ui = { group = "org.springdoc", name = "springdoc-openapi-ui", version.ref = "springdoc" }
+spring-boot-autoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure", version.ref = "spring-boot-autoconfigure" }
 swinglabs-wizard = { group = "org.swinglabs", name = "wizard", version.ref = "wizard" }
 thedeanda-lorem = { group = "com.thedeanda", name = "lorem", version.ref = "lorem" }
 toedter-jcalendar = { group = "com.toedter", name = "jcalendar", version.ref = "jcalendar" }

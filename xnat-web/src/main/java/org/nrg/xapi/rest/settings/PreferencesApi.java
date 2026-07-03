@@ -9,10 +9,10 @@
 
 package org.nrg.xapi.rest.settings;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.validation.constraints.NotNull;
@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 
-@Api(description = "Preferences Service API")
+@Tag(name = "preferences", description = "Preferences Service API")
 @XapiRestController
 @RequestMapping(value = "/prefs")
 @Slf4j
@@ -57,22 +57,22 @@ public class PreferencesApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns the full map of preferences and values for this XNAT application.", response = Properties.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "Preference settings successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the full map of preferences and values for this XNAT application.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Preference settings successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public Map<String, Properties> getAllPreferenceSettings() {
         log.info("User {} requested the system preference settings.", getSessionUser().getUsername());
         return getPrefsBeanProperties();
     }
 
-    @ApiOperation(value = "Returns the full map of preferences and values for this XNAT application.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Preference settings successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the full map of preferences and values for this XNAT application.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Preference settings successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "ini", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public String getPreferenceSettingsInis() throws InitializationException {
         log.info("User {} requested all system preference settings in ini format.", getSessionUser().getUsername());
@@ -90,12 +90,12 @@ public class PreferencesApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Returns the full map of preferences and values for this XNAT application.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Preference settings successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 404, message = "Tool ID not found in the system."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the full map of preferences and values for this XNAT application.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Preference settings successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "404", description = "Tool ID not found in the system."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "ini/{toolId}", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public String getPreferenceSettingsIni(@PathVariable final String toolId) throws NotFoundException, InitializationException {
         if (!_preferences.containsKey(toolId)) {
@@ -106,12 +106,12 @@ public class PreferencesApi extends AbstractXapiRestController {
         return writePreferencesToString(toolId, true);
     }
 
-    @ApiOperation(value = "Returns the full map of preferences and values for this XNAT application.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Preference settings successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 404, message = "Tool ID not found in the system."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the full map of preferences and values for this XNAT application.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Preference settings successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "404", description = "Tool ID not found in the system."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "props/{toolId}", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public String getToolPreferences(@PathVariable final String toolId) throws NotFoundException, InitializationException {
         if (!_preferences.containsKey(toolId)) {
@@ -122,12 +122,12 @@ public class PreferencesApi extends AbstractXapiRestController {
         return writePreferencesToString(toolId, false);
     }
 
-    @ApiOperation(value = "Returns the full map of preferences and values for this XNAT application.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Preference settings successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 404, message = "Tool ID not found in the system."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the full map of preferences and values for this XNAT application.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Preference settings successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "404", description = "Tool ID not found in the system."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "props/{toolId}/{preference}", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET, restrictTo = Admin)
     public String getToolPreference(@PathVariable final String toolId, @PathVariable final String preference) throws NotFoundException {
         if (!_preferences.containsKey(toolId)) {
@@ -142,12 +142,12 @@ public class PreferencesApi extends AbstractXapiRestController {
         return properties.getProperty(preference);
     }
 
-    @ApiOperation(value = "Sets the value for the indicated preference associated with the specified tool ID.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Preference value successfully stored."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 404, message = "Tool ID not found in the system."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Sets the value for the indicated preference associated with the specified tool ID.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Preference value successfully stored."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "404", description = "Tool ID not found in the system."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "props/{toolId}/{preference}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
     public void setToolPreference(@PathVariable final String toolId, @PathVariable final String preference, final @RequestBody String value) throws NotFoundException {
         if (!_preferences.containsKey(toolId)) {

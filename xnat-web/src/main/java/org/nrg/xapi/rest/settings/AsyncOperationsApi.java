@@ -9,7 +9,10 @@
 
 package org.nrg.xapi.rest.settings;
 
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,7 +43,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
-@Api(description = "Asynchronous Operations Preferences API")
+@Tag(name = "async-operations", description = "Asynchronous Operations Preferences API")
 @XapiRestController
 @RequestMapping(value = "/asyncOps")
 @Slf4j
@@ -51,24 +54,24 @@ public class AsyncOperationsApi extends AbstractXapiRestController {
         _preferences = preferences;
     }
 
-    @ApiOperation(value = "Returns the full map of async operations preferences for this XNAT application.", response = Properties.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "Async operations preferences successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested settings."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the full map of async operations preferences for this XNAT application.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Async operations preferences successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested settings."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Admin)
     public Properties getAsyncOperationsPreferences() {
         log.info("User {} requested the async operations preferences.", getSessionUser().getUsername());
         return _preferences.asProperties();
     }
 
-    @ApiOperation(value = "Sets a map of async operations preferences.", notes = "Sets the async operations preferences specified in the map.", response = Integer.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Async operations preferences successfully set."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Not authorized to set async operations preferences."),
-                   @ApiResponse(code = 500, message = "Unexpected error")})
+    @Operation(summary = "Sets a map of async operations preferences.", description = "Sets the async operations preferences specified in the map.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Async operations preferences successfully set."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Not authorized to set async operations preferences."),
+                   @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(consumes = {APPLICATION_FORM_URLENCODED_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = Admin)
-    public int setAsyncOperationsPreferences(@ApiParam(value = "The map of async operations preferences to be set.", required = true) @RequestBody final Map<String, Object> preferences) throws NoContentException, InvalidPreferenceName, DataFormatException {
+    public int setAsyncOperationsPreferences(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The map of async operations preferences to be set.", required = true) @RequestBody final Map<String, Object> preferences) throws NoContentException, InvalidPreferenceName, DataFormatException {
         if (preferences.isEmpty()) {
             throw new NoContentException("You must specify one or more async operations preferences to be set.");
         }
@@ -86,12 +89,12 @@ public class AsyncOperationsApi extends AbstractXapiRestController {
         return count.get();
     }
 
-    @ApiOperation(value = "Returns the value of a particular async operations preference.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Preference settings successfully retrieved."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 404, message = "Tool ID not found in the system."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns the value of a particular async operations preference.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Preference settings successfully retrieved."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "404", description = "Tool ID not found in the system."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{preference}", produces = APPLICATION_JSON_VALUE, restrictTo = Admin)
     public String getAsyncOperationsPreference(@PathVariable final String preference) throws NotFoundException {
         log.info("User {} requested the value for the async operations preference {}.", getSessionUser().getUsername(), preference);
@@ -102,12 +105,12 @@ public class AsyncOperationsApi extends AbstractXapiRestController {
         throw new NotFoundException("There is no preference with the name " + preference + " associated with the async operations preferences.");
     }
 
-    @ApiOperation(value = "Sets the value for the indicated async operations preference.", notes = "This method returns the previously set value for the indicated preference.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Preference value successfully stored."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 403, message = "Insufficient privileges to retrieve the requested setting."),
-                   @ApiResponse(code = 404, message = "Tool ID not found in the system."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Sets the value for the indicated async operations preference.", description = "This method returns the previously set value for the indicated preference.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Preference value successfully stored."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient privileges to retrieve the requested setting."),
+                   @ApiResponse(responseCode = "404", description = "Tool ID not found in the system."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "{preference}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
     public String getAsyncOperationsPreference(@PathVariable final String preference, final @RequestBody String value) throws NotFoundException {
         log.info("User {} is setting the value for the async operations preference {} to '{}'.", getSessionUser().getUsername(), preference, value);

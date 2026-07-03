@@ -9,11 +9,11 @@
 
 package org.nrg.xapi.rest.data;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -48,7 +48,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
  * XNAT Data Types API
  * Provides REST endpoints for managing XNAT data types
  */
-@Api("XNAT Data Types API")
+@Tag(name = "XNAT Data Types API")
 @XapiRestController
 @RequestMapping(value = "/datatypes")
 @Slf4j
@@ -60,21 +60,20 @@ public class DataTypesApi extends AbstractXapiRestController {
         super(userManagementService, roleHolder);
     }
 
-    @ApiOperation(value = "Get all data types",
-                  notes = "Returns a list of all XNAT data types with their properties.")
+    @Operation(summary = "Get all data types", description = "Returns a list of all XNAT data types with their properties.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved data types"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved data types"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authenticated)
     public ResponseEntity<List<Map<String, Object>>> getDataTypes(
-            @ApiParam(value = "Filter to only secured data types", required = false)
+            @Parameter(description = "Filter to only secured data types", required = false)
             @RequestParam(required = false) Boolean secured,
 
-            @ApiParam(value = "Filter to only data types with existing data", required = false)
+            @Parameter(description = "Filter to only data types with existing data", required = false)
             @RequestParam(required = false) Boolean used,
 
-            @ApiParam(value = "Use readable counts instead of total counts", required = false)
+            @Parameter(description = "Use readable counts instead of total counts", required = false)
             @RequestParam(required = false) Boolean readable) {
 
         log.debug("User {} is requesting data types list", getSessionUser().getUsername());
@@ -108,33 +107,32 @@ public class DataTypesApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Create a new data type",
-                  notes = "Creates a new XNAT data type with the specified parameters. Requires administrator privileges.")
+    @Operation(summary = "Create a new data type", description = "Creates a new XNAT data type with the specified parameters. Requires administrator privileges.")
     @ApiResponses({
-        @ApiResponse(code = 201, message = "Data type created successfully"),
-        @ApiResponse(code = 400, message = "Invalid request parameters"),
-        @ApiResponse(code = 403, message = "Insufficient permissions or extension type not allowed"),
-        @ApiResponse(code = 409, message = "Data type already exists"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "201", description = "Data type created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request parameters"),
+        @ApiResponse(responseCode = "403", description = "Insufficient permissions or extension type not allowed"),
+        @ApiResponse(responseCode = "409", description = "Data type already exists"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/create", produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
     public ResponseEntity<String> createDataType(
-            @ApiParam(value = "Schema prefix (optional, will auto-generate if not provided)", required = false)
+            @Parameter(description = "Schema prefix (optional, will auto-generate if not provided)", required = false)
             @RequestParam(required = false) String prefix,
 
-            @ApiParam(value = "Complex type name (optional, will derive from name if not provided)", required = false)
+            @Parameter(description = "Complex type name (optional, will derive from name if not provided)", required = false)
             @RequestParam(required = false) String complexType,
 
-            @ApiParam(value = "Backend name of the data type", required = true)
+            @Parameter(description = "Backend name of the data type", required = true)
             @RequestParam String name,
 
-            @ApiParam(value = "Singular display name", required = true)
+            @Parameter(description = "Singular display name", required = true)
             @RequestParam String singular,
 
-            @ApiParam(value = "Plural display name", required = true)
+            @Parameter(description = "Plural display name", required = true)
             @RequestParam String plural,
 
-            @ApiParam(value = "Base type to extend (e.g., 'subjectAssessorData', 'imageAssessorData')", required = true)
+            @Parameter(description = "Base type to extend (e.g., 'subjectAssessorData', 'imageAssessorData')", required = true)
             @RequestParam("extends") String extendsValue) {
 
         log.debug("User {} is creating a new data type: {}", getSessionUser().getUsername(), name);
@@ -164,16 +162,15 @@ public class DataTypesApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get a specific data type",
-                  notes = "Returns detailed information about a specific data type including all its properties.")
+    @Operation(summary = "Get a specific data type", description = "Returns detailed information about a specific data type including all its properties.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved data type"),
-        @ApiResponse(code = 404, message = "Data type not found"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved data type"),
+        @ApiResponse(responseCode = "404", description = "Data type not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/{elementName}", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authenticated)
     public ResponseEntity<Map<String, Object>> getDataType(
-            @ApiParam(value = "Element name of the data type", required = true)
+            @Parameter(description = "Element name of the data type", required = true)
             @PathVariable String elementName) {
 
         log.debug("User {} is requesting data type: {}", getSessionUser().getUsername(), elementName);
@@ -209,16 +206,15 @@ public class DataTypesApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Get actions for a data type",
-                  notes = "Returns the list of actions configured for a specific data type.")
+    @Operation(summary = "Get actions for a data type", description = "Returns the list of actions configured for a specific data type.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully retrieved actions"),
-        @ApiResponse(code = 404, message = "Data type not found"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved actions"),
+        @ApiResponse(responseCode = "404", description = "Data type not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/{elementName}/actions", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authenticated)
     public ResponseEntity<List<Map<String, Object>>> getDataTypeActions(
-            @ApiParam(value = "Element name of the data type", required = true)
+            @Parameter(description = "Element name of the data type", required = true)
             @PathVariable String elementName) {
 
         log.debug("User {} is requesting actions for data type: {}", getSessionUser().getUsername(), elementName);
@@ -259,20 +255,19 @@ public class DataTypesApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Add actions to a data type",
-                  notes = "Adds one or more actions to a data type. Requires administrator privileges.")
+    @Operation(summary = "Add actions to a data type", description = "Adds one or more actions to a data type. Requires administrator privileges.")
     @ApiResponses({
-        @ApiResponse(code = 200, message = "Successfully added actions"),
-        @ApiResponse(code = 404, message = "Data type not found"),
-        @ApiResponse(code = 400, message = "Invalid request"),
-        @ApiResponse(code = 500, message = "Internal server error")
+        @ApiResponse(responseCode = "200", description = "Successfully added actions"),
+        @ApiResponse(responseCode = "404", description = "Data type not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid request"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @XapiRequestMapping(value = "/{elementName}/actions", produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
     public ResponseEntity<String> addDataTypeActions(
-            @ApiParam(value = "Element name of the data type", required = true)
+            @Parameter(description = "Element name of the data type", required = true)
             @PathVariable String elementName,
 
-            @ApiParam(value = "List of actions to add", required = true)
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of actions to add", required = true)
             @RequestBody List<Map<String, String>> actionsToAdd) {
 
         log.debug("User {} is adding actions to data type: {}", getSessionUser().getUsername(), elementName);

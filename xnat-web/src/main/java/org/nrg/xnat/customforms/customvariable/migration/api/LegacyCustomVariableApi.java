@@ -1,9 +1,9 @@
 package org.nrg.xnat.customforms.customvariable.migration.api;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.AbstractXapiRestController;
@@ -34,7 +34,7 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Role;
 
 @XapiRestController
 @RequestMapping(value = "/legacycustomvariable")
-@Api("Legacy Custom Variable API")
+@Tag(name = "Legacy Custom Variable API")
 @Slf4j
 
 public class LegacyCustomVariableApi extends AbstractXapiRestController {
@@ -57,12 +57,12 @@ public class LegacyCustomVariableApi extends AbstractXapiRestController {
     }
 
 
-    @ApiOperation(value = "Get List of All Custom Variables", notes = "Gets a list of existing legacy custom variables", response = String.class)
+    @Operation(summary = "Get List of All Custom Variables", description = "Gets a list of existing legacy custom variables")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(produces = MediaType.APPLICATION_JSON_UTF8_VALUE, method = RequestMethod.GET)
     public ResponseEntity<List<CollatedLegacyCustomVariable>> getAllLegacyCustomVariables() {
         try {
@@ -78,13 +78,13 @@ public class LegacyCustomVariableApi extends AbstractXapiRestController {
     }
 
 
-    @ApiOperation(value = "Migrate legacy custom variable to Dynamic Variable", notes = "Generate a forms IO JSON for pre-formsio Custom Variable Definition", response = String.class)
+    @Operation(summary = "Migrate legacy custom variable to Dynamic Variable", description = "Generate a forms IO JSON for pre-formsio Custom Variable Definition")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 400, message = "Bad Request"),
-            @ApiResponse(code = 401, message = "Unauthorized"),
-            @ApiResponse(code = 403, message = "Not enabled"),
-            @ApiResponse(code = 500, message = "Unexpected error")})
+            @ApiResponse(responseCode = "200", description = "Success"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Not enabled"),
+            @ApiResponse(responseCode = "500", description = "Unexpected error")})
     @XapiRequestMapping(value = "/migratetoformio/{field_definition_id}",  method = RequestMethod.POST, restrictTo = Role)
     @AuthorizedRoles({CustomFormsConstants.ADMIN_ROLE, CustomFormsConstants.FORM_MANAGER_ROLE})
     public ResponseEntity<Void> migrateCustomVariableToDynamicVariable(final @PathVariable String field_definition_id,

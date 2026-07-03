@@ -16,7 +16,11 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 import com.google.common.base.Joiner;
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.io.IOUtils;
@@ -68,7 +72,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Api("XNAT Archive and Resource Management API")
+@Tag(name = "XNAT Archive and Resource Management API")
 @XapiRestController
 @RequestMapping(value = "/archive")
 @Slf4j
@@ -80,22 +84,22 @@ public class CatalogApi extends AbstractXapiRestController {
         _preferences = preferences;
     }
 
-    @ApiOperation(value = "Refresh the catalog entry for one or more resources.", notes = "The resource should be identified by standard archive-relative paths, such as /archive/experiments/XNAT_E0001 or /archive/projects/XNAT_01/subjects/XNAT_01_01.")
-    @ApiResponses({@ApiResponse(code = 200, message = "The refresh operation(s) were completed successfully."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @Operation(summary = "Refresh the catalog entry for one or more resources.", description = "The resource should be identified by standard archive-relative paths, such as /archive/experiments/XNAT_E0001 or /archive/projects/XNAT_01/subjects/XNAT_01_01.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The refresh operation(s) were completed successfully."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "catalogs/refresh", consumes = MediaType.APPLICATION_JSON_VALUE, method = PUT)
     @ResponseBody
-    public void refreshResourceCatalog(@ApiParam("The list of resources to be refreshed.") @RequestBody final List<String> resources) throws ServerException, ClientException {
+    public void refreshResourceCatalog(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The list of resources to be refreshed.") @RequestBody final List<String> resources) throws ServerException, ClientException {
         refreshResourceCatalogWithOptions(null, resources);
     }
 
-    @ApiOperation(value = "Refresh the catalog entry for one or more resources, performing only the operations specified.", notes = "The resource should be identified by standard archive-relative paths, such as /archive/experiments/XNAT_E0001 or /archive/projects/XNAT_01/subjects/XNAT_01_01. The available operations are All, Append, Checksum, Delete, and PopulateStats. They should be comma separated but without spaces. Omitting the operations implies All.")
-    @ApiResponses({@ApiResponse(code = 200, message = "The refresh operation(s) were completed successfully."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @Operation(summary = "Refresh the catalog entry for one or more resources, performing only the operations specified.", description = "The resource should be identified by standard archive-relative paths, such as /archive/experiments/XNAT_E0001 or /archive/projects/XNAT_01/subjects/XNAT_01_01. The available operations are All, Append, Checksum, Delete, and PopulateStats. They should be comma separated but without spaces. Omitting the operations implies All.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The refresh operation(s) were completed successfully."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "catalogs/refresh/{operations}", consumes = MediaType.APPLICATION_JSON_VALUE, method = PUT)
     @ResponseBody
-    public void refreshResourceCatalogWithOptions(@ApiParam("The operations to be performed") @PathVariable final List<CatalogService.Operation> operations,
-                                                  @ApiParam("The list of resources to be refreshed.") @RequestBody final List<String> resources) throws ServerException, ClientException {
+    public void refreshResourceCatalogWithOptions(@Parameter(description = "The operations to be performed") @PathVariable final List<CatalogService.Operation> operations,
+                                                  @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The list of resources to be refreshed.") @RequestBody final List<String> resources) throws ServerException, ClientException {
         final UserI user = getSessionUser();
         log.info("User {} requested catalog refresh for the following resources: {}", getSessionUser().getUsername(), Joiner.on(", ").join(resources));
         if (operations == null) {
@@ -105,60 +109,54 @@ public class CatalogApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Creates a download catalog for the submitted sessions and other data objects.",
-                  notes = "The map submitted to this call supports lists of object IDs organized by key type: sessions, "
+    @Operation(summary = "Creates a download catalog for the submitted sessions and other data objects.", description = "The map submitted to this call supports lists of object IDs organized by key type: sessions, "
                           + "scan_type, scan_format, recon, assessors, and resources. The response for this method is "
                           + "the ID for the catalog of resolved resources, which can be submitted to the download/{catalog} "
                           + "function to retrieve the catalog or to the download/{catalog}/zip function to retrieve the"
-                          + "files in the catalog as a zip archive.",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The download catalog was successfully built."),
-                   @ApiResponse(code = 204, message = "No resources were specified."),
-                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
-                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
-                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+                          + "files in the catalog as a zip archive.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The download catalog was successfully built."),
+                   @ApiResponse(responseCode = "204", description = "No resources were specified."),
+                   @ApiResponse(responseCode = "400", description = "Something is wrong with the request format."),
+                   @ApiResponse(responseCode = "403", description = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(responseCode = "404", description = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "download", restrictTo = Read, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.POST)
     @ResponseBody
-    public String createDownloadSessionsCatalog(@ApiParam("The resources to be cataloged.") @RequestBody @Project final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
+    public String createDownloadSessionsCatalog(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The resources to be cataloged.") @RequestBody @Project final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
         validateResourceRequest(user, resources);
         return _service.buildCatalogForResources(user, resources, false).get("id");
     }
 
-    @ApiOperation(value = "Creates a download catalog for the submitted sessions and other data objects.",
-                  notes = "The map submitted to this call supports lists of object IDs organized by key type: sessions, "
+    @Operation(summary = "Creates a download catalog for the submitted sessions and other data objects.", description = "The map submitted to this call supports lists of object IDs organized by key type: sessions, "
                           + "scan_type, scan_format, recon, assessors, and resources. The response for this method is json"
                           + "with the ID for the catalog of resolved resources (which can be submitted to the "
                           + "download/{catalog} function to retrieve the catalog or to the download/{catalog}/zip function"
-                          + "to retrieve the files in the catalog as a zip archive), as well as the total size of the files.",
-                  response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The download catalog was successfully built."),
-                   @ApiResponse(code = 204, message = "No resources were specified."),
-                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
-                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
-                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+                          + "to retrieve the files in the catalog as a zip archive), as well as the total size of the files.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The download catalog was successfully built."),
+                   @ApiResponse(responseCode = "204", description = "No resources were specified."),
+                   @ApiResponse(responseCode = "400", description = "Something is wrong with the request format."),
+                   @ApiResponse(responseCode = "403", description = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(responseCode = "404", description = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "downloadwithsize", restrictTo = Read, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
     @ResponseBody
-    public Map<String, String> createDownloadSessionsCatalogWithSize(@ApiParam("The resources to be cataloged.") @RequestBody @Project final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
+    public Map<String, String> createDownloadSessionsCatalogWithSize(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The resources to be cataloged.") @RequestBody @Project final Map<String, List<String>> resources) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
         validateResourceRequest(user, resources);
         return _service.buildCatalogForResources(user, resources, true);
     }
 
-    @ApiOperation(value = "Retrieves the download catalog for the submitted catalog ID.",
-                  notes = "This retrieves a catalog created earlier by the catalog service.",
-                  response = CatCatalogBean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The download catalog was successfully built."),
-                   @ApiResponse(code = 204, message = "No resources were specified."),
-                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
-                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
-                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @Operation(summary = "Retrieves the download catalog for the submitted catalog ID.", description = "This retrieves a catalog created earlier by the catalog service.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The download catalog was successfully built."),
+                   @ApiResponse(responseCode = "204", description = "No resources were specified."),
+                   @ApiResponse(responseCode = "400", description = "Something is wrong with the request format."),
+                   @ApiResponse(responseCode = "403", description = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(responseCode = "404", description = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "download/{catalogId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
     @ResponseBody
-    public CatCatalogI getDownloadSessionsCatalog(@ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NotFoundException {
+    public CatCatalogI getDownloadSessionsCatalog(@Parameter(description = "The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NotFoundException {
         final UserI user = getSessionUser();
 
         log.info("User {} requested download catalog {}", user.getUsername(), catalogId);
@@ -169,16 +167,16 @@ public class CatalogApi extends AbstractXapiRestController {
         return catalog;
     }
 
-    @ApiOperation(value = "Downloads the specified catalog as an XML file.", response = StreamingResponseBody.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The requested catalog was successfully downloaded."),
-                   @ApiResponse(code = 204, message = "No catalog was specified."),
-                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
-                   @ApiResponse(code = 403, message = "The user is not authorized to access the specified catalog."),
-                   @ApiResponse(code = 404, message = "The request was valid but the specified catalog was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @Operation(summary = "Downloads the specified catalog as an XML file.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The requested catalog was successfully downloaded."),
+                   @ApiResponse(responseCode = "204", description = "No catalog was specified."),
+                   @ApiResponse(responseCode = "400", description = "Something is wrong with the request format."),
+                   @ApiResponse(responseCode = "403", description = "The user is not authorized to access the specified catalog."),
+                   @ApiResponse(responseCode = "404", description = "The request was valid but the specified catalog was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "download/{catalogId}/xml", produces = MediaType.APPLICATION_XML_VALUE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogXml(@ApiParam("The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NotFoundException, IOException, NrgServiceException {
+    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogXml(@Parameter(description = "The ID of the catalog to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NotFoundException, IOException, NrgServiceException {
         try {
             final UserI user = getSessionUser();
 
@@ -211,17 +209,16 @@ public class CatalogApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Downloads the contents of the specified catalog as a zip archive.",
-                  response = StreamingResponseBody.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The requested resources were successfully downloaded."),
-                   @ApiResponse(code = 204, message = "No resources were specified."),
-                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
-                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
-                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @Operation(summary = "Downloads the contents of the specified catalog as a zip archive.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The requested resources were successfully downloaded."),
+                   @ApiResponse(responseCode = "204", description = "No resources were specified."),
+                   @ApiResponse(responseCode = "400", description = "Something is wrong with the request format."),
+                   @ApiResponse(responseCode = "403", description = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(responseCode = "404", description = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "download/{catalogId}/zip", produces = AbstractZipStreamingResponseBody.MEDIA_TYPE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZip(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException {
+    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZip(@Parameter(description = "The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException {
         final UserI user = getSessionUser();
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         validateCatalogRequest(user, catalogId);
@@ -231,17 +228,16 @@ public class CatalogApi extends AbstractXapiRestController {
                              .body(new CatalogZipStreamingResponseBody(user, _service.getCachedCatalog(user, catalogId), _preferences.getArchivePath(), request));
     }
 
-    @ApiOperation(value = "Downloads the specified catalog as a zip archive, using a small empty file for each entry.",
-                  response = StreamingResponseBody.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The requested resources were successfully downloaded."),
-                   @ApiResponse(code = 204, message = "No resources were specified."),
-                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
-                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
-                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @Operation(summary = "Downloads the specified catalog as a zip archive, using a small empty file for each entry.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The requested resources were successfully downloaded."),
+                   @ApiResponse(responseCode = "204", description = "No resources were specified."),
+                   @ApiResponse(responseCode = "400", description = "Something is wrong with the request format."),
+                   @ApiResponse(responseCode = "403", description = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(responseCode = "404", description = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "download/{catalogId}/test", produces = AbstractZipStreamingResponseBody.MEDIA_TYPE, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZipTest(@ApiParam("The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
+    public ResponseEntity<StreamingResponseBody> downloadSessionCatalogZipTest(@Parameter(description = "The ID of the catalog of resources to be downloaded.") @PathVariable final String catalogId) throws InsufficientPrivilegesException, NoContentException, NotFoundException {
         final UserI user = getSessionUser();
         validateCatalogRequest(user, catalogId);
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
@@ -257,20 +253,20 @@ public class CatalogApi extends AbstractXapiRestController {
                              .body(new CatalogZipStreamingResponseBody(user, catalog, _preferences.getArchivePath(), true, request));
     }
 
-    @ApiOperation(value = "Accepts the XML payload and attempts to create or update an XNAT data object as appropriate.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The requested XML was successfully uploaded."),
-                   @ApiResponse(code = 204, message = "No resources were specified."),
-                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
-                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
-                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @Operation(summary = "Accepts the XML payload and attempts to create or update an XNAT data object as appropriate.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The requested XML was successfully uploaded."),
+                   @ApiResponse(responseCode = "204", description = "No resources were specified."),
+                   @ApiResponse(responseCode = "400", description = "Something is wrong with the request format."),
+                   @ApiResponse(responseCode = "403", description = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(responseCode = "404", description = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "upload/xml", consumes = {TEXT_PLAIN_VALUE, APPLICATION_XML_VALUE}, produces = TEXT_PLAIN_VALUE, method = PUT, restrictTo = Authenticated)
     @ResponseBody
-    public String uploadXml(@ApiParam("The XML body.") @RequestBody final String xml,
-                            @ApiParam("Indicates whether data in existing objects should be overwritten by values in the uploaded XML") @RequestParam final boolean allowDataDeletion,
-                            @ApiParam("Describes the event action for audit entries") @RequestParam(name = "event_action", required = false, defaultValue = "REST") final String action,
-                            @ApiParam("Describes the reason for the change.") @RequestParam(name = "event_reason", required = false) final String reason,
-                            @ApiParam("Includes any comments about the change.") @RequestParam(name = "event_comment", required = false) final String comment) throws NoContentException, ServerException, ClientException {
+    public String uploadXml(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The XML body.") @RequestBody final String xml,
+                            @Parameter(description = "Indicates whether data in existing objects should be overwritten by values in the uploaded XML") @RequestParam final boolean allowDataDeletion,
+                            @Parameter(description = "Describes the event action for audit entries") @RequestParam(name = "event_action", required = false, defaultValue = "REST") final String action,
+                            @Parameter(description = "Describes the reason for the change.") @RequestParam(name = "event_reason", required = false) final String reason,
+                            @Parameter(description = "Includes any comments about the change.") @RequestParam(name = "event_comment", required = false) final String comment) throws NoContentException, ServerException, ClientException {
         if (StringUtils.isBlank(xml)) {
             throw new NoContentException("There was no XML provided with the request.");
         }
@@ -282,20 +278,20 @@ public class CatalogApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Accepts the XML payload and attempts to create or update an XNAT data object as appropriate.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The requested XML was successfully uploaded."),
-                   @ApiResponse(code = 204, message = "No resources were specified."),
-                   @ApiResponse(code = 400, message = "Something is wrong with the request format."),
-                   @ApiResponse(code = 403, message = "The user is not authorized to access one or more of the specified resources."),
-                   @ApiResponse(code = 404, message = "The request was valid but one or more of the specified resources was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @Operation(summary = "Accepts the XML payload and attempts to create or update an XNAT data object as appropriate.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The requested XML was successfully uploaded."),
+                   @ApiResponse(responseCode = "204", description = "No resources were specified."),
+                   @ApiResponse(responseCode = "400", description = "Something is wrong with the request format."),
+                   @ApiResponse(responseCode = "403", description = "The user is not authorized to access one or more of the specified resources."),
+                   @ApiResponse(responseCode = "404", description = "The request was valid but one or more of the specified resources was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "upload/xml", consumes = MULTIPART_FORM_DATA_VALUE, produces = TEXT_PLAIN_VALUE, method = POST, restrictTo = Authenticated)
     @ResponseBody
-    public String uploadXml(@ApiParam("The XML body.") @RequestParam final MultipartFile item,
-                            @ApiParam("Indicates whether data in existing objects should be overwritten by values in the uploaded XML") @RequestParam(required = false, defaultValue = "false") final boolean allowDataDeletion,
-                            @ApiParam("Describes the event action for audit entries") @RequestParam(name = "event_action", required = false, defaultValue = "REST") final String action,
-                            @ApiParam("Describes the reason for the change.") @RequestParam(name = "event_reason", required = false) final String reason,
-                            @ApiParam("Includes any comments about the change.") @RequestParam(name = "event_comment", required = false) final String comment) throws NoContentException, ServerException, ClientException {
+    public String uploadXml(@Parameter(description = "The XML body.") @RequestParam final MultipartFile item,
+                            @Parameter(description = "Indicates whether data in existing objects should be overwritten by values in the uploaded XML") @RequestParam(required = false, defaultValue = "false") final boolean allowDataDeletion,
+                            @Parameter(description = "Describes the event action for audit entries") @RequestParam(name = "event_action", required = false, defaultValue = "REST") final String action,
+                            @Parameter(description = "Describes the reason for the change.") @RequestParam(name = "event_reason", required = false) final String reason,
+                            @Parameter(description = "Includes any comments about the change.") @RequestParam(name = "event_comment", required = false) final String comment) throws NoContentException, ServerException, ClientException {
         if (item == null) {
             throw new NoContentException("There was no XML provided with the request.");
         }
@@ -307,7 +303,7 @@ public class CatalogApi extends AbstractXapiRestController {
         }
     }
 
-    private void validateResourceRequest(final UserI user, @Project @RequestBody @ApiParam("The resources to be cataloged.") final Map<String, List<String>> resources) throws NoContentException {
+    private void validateResourceRequest(final UserI user, @Project @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The resources to be cataloged.") final Map<String, List<String>> resources) throws NoContentException {
         final boolean hasProjectId  = resources.containsKey("projectId");
         final boolean hasProjectIds = resources.containsKey("projectIds");
         if (resources.size() == 0 || !resources.containsKey("sessions") || (!hasProjectId && !hasProjectIds)) {

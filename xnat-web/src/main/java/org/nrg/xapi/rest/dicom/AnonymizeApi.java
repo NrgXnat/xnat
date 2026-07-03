@@ -9,7 +9,12 @@
 
 package org.nrg.xapi.rest.dicom;
 
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -39,7 +44,7 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
-@Api("XNAT DICOM Anonymization API")
+@Tag(name = "XNAT DICOM Anonymization API")
 @XapiRestController
 @RequestMapping(value = "/anonymize")
 @Slf4j
@@ -51,10 +56,10 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         _preferences = preferences;
     }
 
-    @ApiOperation(value = "Gets the default anonymization script.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved the contents of the default anonymization script."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to access the default anonymization script."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the default anonymization script.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully retrieved the contents of the default anonymization script."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient permissions to access the default anonymization script."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "default", produces = TEXT_PLAIN_VALUE, method = GET, restrictTo = Authenticated)
     public String getDefaultAnonScript() throws InitializationException {
         try {
@@ -65,10 +70,10 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         }
     }
 
-    @ApiOperation(value = "Gets the site-wide anonymization script.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved the contents of the site-wide anonymization script."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to access the site-wide anonymization script."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the site-wide anonymization script.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully retrieved the contents of the site-wide anonymization script."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient permissions to access the site-wide anonymization script."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "site", produces = TEXT_PLAIN_VALUE, method = GET, restrictTo = Authenticated)
     public String getSiteWideAnonScript() throws InitializationException {
         try {
@@ -79,39 +84,39 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         }
     }
 
-    @ApiOperation(value = "Sets the site-wide anonymization script.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully stored the contents of the site-wide anonymization script."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to modify the site-wide anonymization script."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Sets the site-wide anonymization script.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully stored the contents of the site-wide anonymization script."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient permissions to modify the site-wide anonymization script."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "site", consumes = TEXT_PLAIN_VALUE, method = PUT, restrictTo = Admin)
     public void setSiteWideAnonScript(@RequestBody final String script) {
         _preferences.setSitewideAnonymizationScript(script);
     }
 
-    @ApiOperation(value = "Indicates whether the site-wide anonymization script is enabled or disabled.", response = Boolean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved the status of the site-wide anonymization script."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to access the site-wide anonymization script settings."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Indicates whether the site-wide anonymization script is enabled or disabled.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully retrieved the status of the site-wide anonymization script."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient permissions to access the site-wide anonymization script settings."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "site/enabled", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Authenticated)
     public boolean isSiteWideAnonScriptEnabled() {
         return _preferences.getEnableSitewideAnonymizationScript();
     }
 
-    @ApiOperation(value = "Enables or disables the site-wide anonymization script.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully set the status of the site-wide anonymization script."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to modify the site-wide anonymization script settings."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Enables or disables the site-wide anonymization script.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully set the status of the site-wide anonymization script."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient permissions to modify the site-wide anonymization script settings."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "site/enabled", consumes = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Admin)
-    public void setSiteWideAnonScriptEnabled(@ApiParam(value = "Whether the site-wide anonymization script should be enabled or disabled.", defaultValue = "true") @RequestParam(required = false, defaultValue = "true") final boolean enable) {
+    public void setSiteWideAnonScriptEnabled(@Parameter(description = "Whether the site-wide anonymization script should be enabled or disabled.", schema = @Schema(defaultValue = "true")) @RequestParam(required = false, defaultValue = "true") final boolean enable) {
         _preferences.setEnableSitewideAnonymizationScript(enable);
     }
 
-    @ApiOperation(value = "Gets the project-specific anonymization script.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved the contents of the project-specific anonymization script."),
-                   @ApiResponse(code = 204, message = "The specified project was found but had no associated anonymization script."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to access the project-specific anonymization script."),
-                   @ApiResponse(code = 404, message = "The specified project wasn't found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Gets the project-specific anonymization script.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully retrieved the contents of the project-specific anonymization script."),
+                   @ApiResponse(responseCode = "204", description = "The specified project was found but had no associated anonymization script."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient permissions to access the project-specific anonymization script."),
+                   @ApiResponse(responseCode = "404", description = "The specified project wasn't found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "projects/{projectId}", produces = TEXT_PLAIN_VALUE, method = GET, restrictTo = Read)
     public String getProjectAnonScript(@PathVariable("projectId") @Project final String projectId) throws NoContentException, InitializationException {
         try {
@@ -126,14 +131,14 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         }
     }
 
-    @ApiOperation(value = "Sets the project-specific anonymization script.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully stored the contents of the project-specific anonymization script."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to modify the project-specific anonymization script."),
-                   @ApiResponse(code = 404, message = "The specified project wasn't found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Sets the project-specific anonymization script.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully stored the contents of the project-specific anonymization script."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient permissions to modify the project-specific anonymization script."),
+                   @ApiResponse(responseCode = "404", description = "The specified project wasn't found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "projects/{projectId}", consumes = TEXT_PLAIN_VALUE, method = PUT, restrictTo = Delete)
-    public void setProjectAnonScript(@ApiParam(value = "Indicates the ID of the project for which the anonymization script should be enabled or disabled.", required = true) @PathVariable("projectId") @Project final String projectId,
-                                     @ApiParam(value = "Whether the specified project's anonymization script should be enabled or disabled.", required = true) @RequestBody final String script) throws InitializationException {
+    public void setProjectAnonScript(@Parameter(description = "Indicates the ID of the project for which the anonymization script should be enabled or disabled.", required = true) @PathVariable("projectId") @Project final String projectId,
+                                     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Whether the specified project's anonymization script should be enabled or disabled.", required = true) @RequestBody final String script) throws InitializationException {
         try {
             _anonUtils.setProjectScript(getSessionUser().getUsername(), script, projectId);
         } catch (ConfigServiceException e) {
@@ -142,19 +147,19 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         }
     }
 
-    @ApiOperation(value = "Indicates whether the project-specific anonymization script is enabled or disabled.", response = Boolean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully retrieved the status of the project-specific anonymization script."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to access the project-specific anonymization script settings."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Indicates whether the project-specific anonymization script is enabled or disabled.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully retrieved the status of the project-specific anonymization script."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient permissions to access the project-specific anonymization script settings."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "projects/{projectId}/enabled", produces = APPLICATION_JSON_VALUE, method = GET, restrictTo = Read)
     public boolean isProjectAnonScriptEnabled(@PathVariable("projectId") @Project final String projectId) {
         return _anonUtils.isProjectScriptEnabled(projectId);
     }
 
-    @ApiOperation(value = "Enables or disables the project-specific anonymization script.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Successfully set the status of the project-specific anonymization script."),
-                   @ApiResponse(code = 403, message = "Insufficient permissions to modify the project-specific anonymization script settings."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Enables or disables the project-specific anonymization script.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Successfully set the status of the project-specific anonymization script."),
+                   @ApiResponse(responseCode = "403", description = "Insufficient permissions to modify the project-specific anonymization script settings."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "projects/{projectId}/enabled", consumes = APPLICATION_JSON_VALUE, method = PUT, restrictTo = Delete)
     public void setProjectAnonScriptEnabled(@PathVariable("projectId") @Project final String projectId,
                                             @RequestParam(required = false, defaultValue = "true") final boolean enable) throws NrgServiceException {

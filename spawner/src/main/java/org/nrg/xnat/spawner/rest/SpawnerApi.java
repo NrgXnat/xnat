@@ -11,11 +11,11 @@ package org.nrg.xnat.spawner.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 
-@Api("XNAT Spawner API")
+@Tag(name = "XNAT Spawner API")
 @XapiRestController
 @RequestMapping(value = "/spawner")
 @ResponseBody
@@ -84,17 +84,17 @@ public class SpawnerApi extends AbstractXapiRestController {
         _validationService = validationService;
     }
 
-    @ApiOperation(value = "Re-initializes the system's spawner elements.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Spawner elements successfully re-initialized."),
-                   @ApiResponse(code = 500, message = "An unexpected or unknown error occurred")})
+    @Operation(summary = "Re-initializes the system's spawner elements.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Spawner elements successfully re-initialized."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected or unknown error occurred")})
     @XapiRequestMapping(value = "initialize", consumes = MediaType.APPLICATION_JSON_VALUE, restrictTo = AccessLevel.Admin, method = RequestMethod.POST)
-    public void initialize(@ApiParam(value = "Whether the service should be purged regardless of the purgeAndRefreshOnStartup preference setting. If not specified, this defaults to true.") @RequestBody(required = false) final Boolean forcePurge) {
+    public void initialize(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Whether the service should be purged regardless of the purgeAndRefreshOnStartup preference setting. If not specified, this defaults to true.") @RequestBody(required = false) final Boolean forcePurge) {
         _service.initialize(BooleanUtils.toBooleanDefaultIfNull(forcePurge, true));
     }
 
-    @ApiOperation(value = "Get list of available element namespaces in the system.", notes = "The spawner element namespaces provide organizational separation of spawner elements. This call returns a list of the namespaces in the XNAT system.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of spawner element namespaces."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of available element namespaces in the system.", description = "The spawner element namespaces provide organizational separation of spawner elements. This call returns a list of the namespaces in the XNAT system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of spawner element namespaces."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "namespaces", produces = "application/json", method = RequestMethod.GET)
     public List<String> getNamespaces() {
         final List<String> elementIds = _service.getNamespaces();
@@ -102,9 +102,9 @@ public class SpawnerApi extends AbstractXapiRestController {
         return elementIds;
     }
 
-    @ApiOperation(value = "Get list of available element namespaces and their restrictions in the system for the requesting user.", notes = "The spawner element namespaces provide organizational separation of spawner elements. This call returns a list of the namespaces in the XNAT system.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A map of spawner element namespaces and their restrictions."),
-            @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of available element namespaces and their restrictions in the system for the requesting user.", description = "The spawner element namespaces provide organizational separation of spawner elements. This call returns a list of the namespaces in the XNAT system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A map of spawner element namespaces and their restrictions."),
+            @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "namespaces/restricted", produces = "application/json", method = RequestMethod.GET)
     public List<String> getNamespacesWithRestrictions() {
         final List<Object[]> elementIds = _service.getNamespacesAndResrictions();
@@ -113,18 +113,18 @@ public class SpawnerApi extends AbstractXapiRestController {
     }
 
 
-    @ApiOperation(value = "Get list of element IDs in the system's default namespace.", notes = "The spawner element IDs function returns a list of all the IDs of spawner elements in the default namespace of the XNAT system.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of spawner element IDs in the default namespace."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of element IDs in the system's default namespace.", description = "The spawner element IDs function returns a list of all the IDs of spawner elements in the default namespace of the XNAT system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of spawner element IDs in the default namespace."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "ids", produces = "application/json", method = RequestMethod.GET)
     public List<String> getDefaultElementIds() {
         return getNamespacedElementIds(SpawnerElement.DEFAULT_NAMESPACE);
     }
 
-    @ApiOperation(value = "Get list of element IDs in the specified namespace.", notes = "The spawner element IDs function returns a list of all the IDs of spawner elements in the specified namespace of the XNAT system.", response = String.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of spawner element IDs for the specified namespace."),
-                   @ApiResponse(code = 204, message = "Namespace not found or no elements exist."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of element IDs in the specified namespace.", description = "The spawner element IDs function returns a list of all the IDs of spawner elements in the specified namespace of the XNAT system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of spawner element IDs for the specified namespace."),
+                   @ApiResponse(responseCode = "204", description = "Namespace not found or no elements exist."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "ids/{namespace}", produces = "application/json", method = RequestMethod.GET)
     public List<String> getNamespacedElementIds(@PathVariable final String namespace) {
         final List<String> elementIds = _service.getNamespacedElementIds(namespace);
@@ -132,18 +132,18 @@ public class SpawnerApi extends AbstractXapiRestController {
         return elementIds;
     }
 
-    @ApiOperation(value = "Get list of spawner elements in the system's default namespace.", notes = "The default namespace spawner element function returns a list of all of the spawner elements in the default namespace of the XNAT system.", response = SpawnerElement.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of spawner elements from the default namespace."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of spawner elements in the system's default namespace.", description = "The default namespace spawner element function returns a list of all of the spawner elements in the default namespace of the XNAT system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of spawner elements from the default namespace."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "elements", produces = "application/json", method = RequestMethod.GET)
     public List<SpawnerElement> getDefaultElements() throws NoContentException {
         return getNamespacedElements(SpawnerElement.DEFAULT_NAMESPACE);
     }
 
-    @ApiOperation(value = "Get list of spawner elements in the specified namespace.", notes = "The namespaced spawner element function returns a list of all of the spawner elements in the specified namespace of the XNAT system.", response = SpawnerElement.class, responseContainer = "List")
-    @ApiResponses({@ApiResponse(code = 200, message = "A list of spawner elements from the specified namespace."),
-                   @ApiResponse(code = 204, message = "Namespace not found or no elements exist."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get list of spawner elements in the specified namespace.", description = "The namespaced spawner element function returns a list of all of the spawner elements in the specified namespace of the XNAT system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "A list of spawner elements from the specified namespace."),
+                   @ApiResponse(responseCode = "204", description = "Namespace not found or no elements exist."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "elements/{namespace}", produces = "application/json", method = RequestMethod.GET)
     public List<SpawnerElement> getNamespacedElements(@PathVariable("namespace") final String namespace) throws NoContentException {
         final List<SpawnerElement> elements = _service.getNamespacedElements(namespace);
@@ -154,49 +154,49 @@ public class SpawnerApi extends AbstractXapiRestController {
         return elements;
     }
 
-    @ApiOperation(value = "Refreshes the spawner elements in the specified namespace from the corresponding element definition file.", notes = "The refresh spawner namespace updates all of the spawner elements in the specified element definition file of the XNAT system. This will not delete or update any elements that are not specified in the element definition file")
-    @ApiResponses({@ApiResponse(code = 200, message = "The spawner elements in the specified namespace were successfully refreshed."),
-                   @ApiResponse(code = 404, message = "Namespace not found"),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Refreshes the spawner elements in the specified namespace from the corresponding element definition file.", description = "The refresh spawner namespace updates all of the spawner elements in the specified element definition file of the XNAT system. This will not delete or update any elements that are not specified in the element definition file")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The spawner elements in the specified namespace were successfully refreshed."),
+                   @ApiResponse(responseCode = "404", description = "Namespace not found"),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "elements/{namespace}", produces = "application/json", method = RequestMethod.PUT, restrictTo = Admin)
     public void refreshNamespacedElements(@PathVariable("namespace") final String namespace) throws InvalidElementIdException {
         _service.refreshNamespace(namespace);
         log.info("User {} deleted all of the existing spawner elements in the namespace {}.", getSessionUser().getLogin(), getFormattedNamespace(namespace));
     }
 
-    @ApiOperation(value = "Purges the existing spawner elements in the specified namespace and refreshes the elements from the corresponding element definition file.", notes = "The refresh spawner namespace updates all of the spawner elements in the specified element definition file of the XNAT system. Any elements that are not specified in the element definition file will be purged from the system.")
-    @ApiResponses({@ApiResponse(code = 200, message = "The spawner elements in the specified namespace were successfully purged and refreshed."),
-                   @ApiResponse(code = 404, message = "Namespace not found"),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Purges the existing spawner elements in the specified namespace and refreshes the elements from the corresponding element definition file.", description = "The refresh spawner namespace updates all of the spawner elements in the specified element definition file of the XNAT system. Any elements that are not specified in the element definition file will be purged from the system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The spawner elements in the specified namespace were successfully purged and refreshed."),
+                   @ApiResponse(responseCode = "404", description = "Namespace not found"),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "elements/{namespace}", produces = "application/json", method = RequestMethod.POST, restrictTo = Admin)
     public void purgeAndRefreshNamespacedElements(@PathVariable("namespace") final String namespace) throws InvalidElementIdException {
         _service.purgeAndRefreshNamespace(namespace);
         log.info("User {} deleted all of the existing spawner elements in the namespace {}.", getSessionUser().getLogin(), getFormattedNamespace(namespace));
     }
 
-    @ApiOperation(value = "Deletes all spawner elements in the specified namespace.", notes = "The delete spawner namespace deletes all of the spawner elements in the specified namespace of the XNAT system.")
-    @ApiResponses({@ApiResponse(code = 200, message = "The spawner elements in the specified namespace were successfully deleted."),
-                   @ApiResponse(code = 404, message = "Namespace not found"),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Deletes all spawner elements in the specified namespace.", description = "The delete spawner namespace deletes all of the spawner elements in the specified namespace of the XNAT system.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The spawner elements in the specified namespace were successfully deleted."),
+                   @ApiResponse(responseCode = "404", description = "Namespace not found"),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "elements/{namespace}", produces = "application/json", method = RequestMethod.DELETE, restrictTo = Admin)
     public void deleteNamespacedElements(@PathVariable("namespace") final String namespace) {
         _service.deleteNamespace(namespace);
         log.info("User {} deleted all of the existing spawner elements in the namespace {}.", getSessionUser().getLogin(), getFormattedNamespace(namespace));
     }
 
-    @ApiOperation(value = "Get the specified spawner element from the default namespace.", notes = "Retrieves the spawner element with the indicated ID from the default namespace.", response = SpawnerElement.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The spawner element with the specified ID from the default namespace."),
-                   @ApiResponse(code = 204, message = "Element ID doesn't exist or has no content."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get the specified spawner element from the default namespace.", description = "Retrieves the spawner element with the indicated ID from the default namespace.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The spawner element with the specified ID from the default namespace."),
+                   @ApiResponse(responseCode = "204", description = "Element ID doesn't exist or has no content."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "element/{elementId}", produces = "application/json", method = RequestMethod.GET)
     public SpawnerElement getDefaultElement(@PathVariable("elementId") final String elementId) throws NoContentException {
         return getNamespacedElement(SpawnerElement.DEFAULT_NAMESPACE, elementId);
     }
 
-    @ApiOperation(value = "Get the specified spawner element from the specified namespace.", notes = "Retrieves the spawner element with the indicated ID from the specified namespace.", response = SpawnerElement.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The spawner element with the specified ID from the default namespace."),
-                   @ApiResponse(code = 204, message = "Namespace or element ID doesn't exist or has no content."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Get the specified spawner element from the specified namespace.", description = "Retrieves the spawner element with the indicated ID from the specified namespace.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The spawner element with the specified ID from the default namespace."),
+                   @ApiResponse(responseCode = "204", description = "Namespace or element ID doesn't exist or has no content."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "element/{namespace}/{elementId}", produces = "application/json", method = RequestMethod.GET)
     public SpawnerElement getNamespacedElement(@PathVariable("namespace") String namespace, @PathVariable("elementId") final String elementId) throws NoContentException {
         final SpawnerElement element = _service.retrieve(namespace, elementId);
@@ -207,21 +207,21 @@ public class SpawnerApi extends AbstractXapiRestController {
         return element;
     }
 
-    @ApiOperation(value = "Updates the specified spawner element.", notes = "Updates the spawner element in the default namespace with the submitted data. This method returns the parsed and validated YAML content of the spawner element on success.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The specified element was successfully updated."),
-                   @ApiResponse(code = 403, message = "Access denied"),
-                   @ApiResponse(code = 404, message = "Namespace or element ID not found"),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Updates the specified spawner element.", description = "Updates the spawner element in the default namespace with the submitted data. This method returns the parsed and validated YAML content of the spawner element on success.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The specified element was successfully updated."),
+                   @ApiResponse(responseCode = "403", description = "Access denied"),
+                   @ApiResponse(responseCode = "404", description = "Namespace or element ID not found"),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "element/{elementId}", produces = "text/x-yaml", method = RequestMethod.PUT, restrictTo = Admin)
     public String updateDefaultElement(@PathVariable("elementId") final String elementId, @RequestBody final String yaml) throws NotFoundException {
         return updateNamespacedElement(SpawnerElement.DEFAULT_NAMESPACE, elementId, yaml);
     }
 
-    @ApiOperation(value = "Updates the specified spawner element.", notes = "Updates the spawner element in the specified namespace with the submitted data. This method returns the parsed and validated YAML content of the spawner element on success.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The specified element was successfully updated."),
-                   @ApiResponse(code = 403, message = "Access denied"),
-                   @ApiResponse(code = 404, message = "Namespace or element ID not found"),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Updates the specified spawner element.", description = "Updates the spawner element in the specified namespace with the submitted data. This method returns the parsed and validated YAML content of the spawner element on success.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The specified element was successfully updated."),
+                   @ApiResponse(responseCode = "403", description = "Access denied"),
+                   @ApiResponse(responseCode = "404", description = "Namespace or element ID not found"),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "element/{namespace}/{elementId}", produces = "text/x-yaml", method = RequestMethod.PUT, restrictTo = Admin)
     public String updateNamespacedElement(@PathVariable("namespace") String namespace, @PathVariable("elementId") final String elementId, @RequestBody final String yaml) throws NotFoundException {
         final SpawnerElement element = _service.retrieve(namespace, elementId);
@@ -234,21 +234,21 @@ public class SpawnerApi extends AbstractXapiRestController {
         return yaml;
     }
 
-    @ApiOperation(value = "Deletes the specified spawner element.", notes = "Deletes the spawner element in the default namespace.")
-    @ApiResponses({@ApiResponse(code = 200, message = "The specified element was successfully deleted."),
-                   @ApiResponse(code = 403, message = "Access denied"),
-                   @ApiResponse(code = 404, message = "Namespace or element ID not found"),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Deletes the specified spawner element.", description = "Deletes the spawner element in the default namespace.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The specified element was successfully deleted."),
+                   @ApiResponse(responseCode = "403", description = "Access denied"),
+                   @ApiResponse(responseCode = "404", description = "Namespace or element ID not found"),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "element/{elementId}", produces = "text/x-yaml", method = RequestMethod.DELETE, restrictTo = Admin)
     public void deleteDefaultElement(@PathVariable("elementId") final String elementId) throws NotFoundException {
         deleteNamespacedElement(SpawnerElement.DEFAULT_NAMESPACE, elementId);
     }
 
-    @ApiOperation(value = "Deletes the specified spawner element.", notes = "Deletes the spawner element in the specified namespace.")
-    @ApiResponses({@ApiResponse(code = 200, message = "The specified element was successfully deleted."),
-                   @ApiResponse(code = 403, message = "Access denied"),
-                   @ApiResponse(code = 404, message = "Namespace or element ID not found"),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Deletes the specified spawner element.", description = "Deletes the spawner element in the specified namespace.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The specified element was successfully deleted."),
+                   @ApiResponse(responseCode = "403", description = "Access denied"),
+                   @ApiResponse(responseCode = "404", description = "Namespace or element ID not found"),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "element/{namespace}/{elementId}", produces = "text/x-yaml", method = RequestMethod.DELETE, restrictTo = Admin)
     public void deleteNamespacedElement(@PathVariable("namespace") String namespace, @PathVariable("elementId") final String elementId) throws NotFoundException {
         final SpawnerElement element = _service.retrieve(elementId);
@@ -259,21 +259,21 @@ public class SpawnerApi extends AbstractXapiRestController {
         _service.delete(element);
     }
 
-    @ApiOperation(value = "Create a new spawner element in the default namespace.", notes = "Creates a new spawner element in the default namespace from the submitted YAML. This method returns the parsed and validated YAML content of the spawner element on success.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The new spawner element was successfully created."),
-                   @ApiResponse(code = 400, message = "Bad request, likely an invalid, missing, or duplicated element ID."),
-                   @ApiResponse(code = 403, message = "Access denied"),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Create a new spawner element in the default namespace.", description = "Creates a new spawner element in the default namespace from the submitted YAML. This method returns the parsed and validated YAML content of the spawner element on success.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The new spawner element was successfully created."),
+                   @ApiResponse(responseCode = "400", description = "Bad request, likely an invalid, missing, or duplicated element ID."),
+                   @ApiResponse(responseCode = "403", description = "Access denied"),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "element", consumes = {"text/plain", "text/x-yaml"}, produces = "text/x-yaml", method = RequestMethod.POST, restrictTo = Admin)
     public String createDefaultElement(@RequestBody final String yaml) throws IOException, InvalidElementIdException, InvalidYamlElementException, ResourceAlreadyExistsException {
         return createNamespacedElement(SpawnerElement.DEFAULT_NAMESPACE, yaml);
     }
 
-    @ApiOperation(value = "Create a new spawner element in the specified namespace.", notes = "Creates a new spawner element in the specified namespace from the submitted YAML. This method returns the parsed and validated YAML content of the spawner element on success.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The new spawner element was successfully created."),
-                   @ApiResponse(code = 400, message = "Bad request, likely an invalid, missing, or duplicated element ID."),
-                   @ApiResponse(code = 403, message = "Access denied"),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Create a new spawner element in the specified namespace.", description = "Creates a new spawner element in the specified namespace from the submitted YAML. This method returns the parsed and validated YAML content of the spawner element on success.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The new spawner element was successfully created."),
+                   @ApiResponse(responseCode = "400", description = "Bad request, likely an invalid, missing, or duplicated element ID."),
+                   @ApiResponse(responseCode = "403", description = "Access denied"),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "element/{namespace}", consumes = {"text/plain", "text/x-yaml"}, produces = "text/x-yaml", method = RequestMethod.POST, restrictTo = Admin)
     public String createNamespacedElement(@PathVariable("namespace") String namespace, @RequestBody final String yaml) throws IOException, InvalidElementIdException, InvalidYamlElementException, ResourceAlreadyExistsException {
         final SpawnerElement element = _service.parse(yaml);
@@ -291,20 +291,20 @@ public class SpawnerApi extends AbstractXapiRestController {
         return created.getYaml();
     }
 
-    @ApiOperation(value = "Resolves the specified spawner element from the default namespace.", notes = "This method retrieves the spawner element with the indicated ID from the default namespace, then resolves all of the referenced child elements as well, and renders a fully resolved YAML document that describes a complete interface.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The specified element was successfully located and resolved."),
-                   @ApiResponse(code = 204, message = "Element ID doesn't exist or has no content."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Resolves the specified spawner element from the default namespace.", description = "This method retrieves the spawner element with the indicated ID from the default namespace, then resolves all of the referenced child elements as well, and renders a fully resolved YAML document that describes a complete interface.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The specified element was successfully located and resolved."),
+                   @ApiResponse(responseCode = "204", description = "Element ID doesn't exist or has no content."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "resolve/{elementId}", produces = "application/json", method = RequestMethod.GET)
     public JsonNode resolveDefaultElement(@PathVariable("elementId") final String elementId, final @RequestParam(required = false) boolean restrict) throws CircularReferenceException, IOException, NoContentException, InsufficientPrivilegesException {
         return resolveNamespacedElement(SpawnerElement.DEFAULT_NAMESPACE, elementId, restrict);
     }
 
-    @ApiOperation(value = "Resolves the specified spawner element from the specified namespace.", notes = "This method retrieves the spawner element with the indicated ID from the specified namespace, then resolves all of the referenced child elements as well, and renders a fully resolved YAML document that describes a complete interface.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The specified element was successfully located and resolved."),
-                   @ApiResponse(code = 204, message = "Namespace or element ID doesn't exist or has no content."),
-                   @ApiResponse(code = 403, message = "Namespace or element ID is restricted to role."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Resolves the specified spawner element from the specified namespace.", description = "This method retrieves the spawner element with the indicated ID from the specified namespace, then resolves all of the referenced child elements as well, and renders a fully resolved YAML document that describes a complete interface.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The specified element was successfully located and resolved."),
+                   @ApiResponse(responseCode = "204", description = "Namespace or element ID doesn't exist or has no content."),
+                   @ApiResponse(responseCode = "403", description = "Namespace or element ID is restricted to role."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "resolve/{namespace}/{elementId}", produces = "application/json", method = RequestMethod.GET)
     public JsonNode resolveNamespacedElement(@PathVariable("namespace") String namespace, @PathVariable("elementId") final String elementId, final @RequestParam(required = false) boolean restrict) throws CircularReferenceException, IOException, NoContentException, InsufficientPrivilegesException {
         final SpawnerElement element = _service.retrieve(namespace, elementId);
@@ -320,10 +320,10 @@ public class SpawnerApi extends AbstractXapiRestController {
         return _serializer.deserializeYaml(_service.resolve(namespace, elementId));
     }
 
-    @ApiOperation(value = "Resolves the 'root' element in the specified spawner namespace as XML.", notes = "This method retrieves elements from the specified spawner namespace and renders an XML representation of a fully resolved YAML document that describes a complete interface.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The specified namespace was successfully located and resolved."),
-                   @ApiResponse(code = 204, message = "Namespace doesn't exist or has no content."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Resolves the 'root' element in the specified spawner namespace as XML.", description = "This method retrieves elements from the specified spawner namespace and renders an XML representation of a fully resolved YAML document that describes a complete interface.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The specified namespace was successfully located and resolved."),
+                   @ApiResponse(responseCode = "204", description = "Namespace doesn't exist or has no content."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "xml/{namespace}", produces = "text/xml", method = RequestMethod.GET)
     public String resolveNamespaceXml(@PathVariable("namespace") String namespace) throws CircularReferenceException, IOException, NoContentException {
         // look for an element named 'root' as the main entry point
@@ -332,10 +332,10 @@ public class SpawnerApi extends AbstractXapiRestController {
         return createSpawnerXml(namespace, elementPair.getKey());
     }
 
-    @ApiOperation(value = "Resolves the specified spawner element from the specified namespace as XML.", notes = "This method retrieves the spawner element with the indicated ID from the specified namespace, then resolves all of the referenced child elements as well, and renders an XML representation of a fully resolved YAML document that describes a complete interface.", response = String.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "The specified element was successfully located and resolved."),
-                   @ApiResponse(code = 204, message = "Namespace or element ID doesn't exist or has no content."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Resolves the specified spawner element from the specified namespace as XML.", description = "This method retrieves the spawner element with the indicated ID from the specified namespace, then resolves all of the referenced child elements as well, and renders an XML representation of a fully resolved YAML document that describes a complete interface.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The specified element was successfully located and resolved."),
+                   @ApiResponse(responseCode = "204", description = "Namespace or element ID doesn't exist or has no content."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "xml/{namespace}/{elementId}", produces = "text/xml", method = RequestMethod.GET)
     public String resolveNamespacedElementXml(@PathVariable("namespace") String namespace, @PathVariable("elementId") final String elementId) throws CircularReferenceException, IOException, NoContentException {
         final SpawnerElement element = _service.retrieve(namespace, elementId);
@@ -346,57 +346,57 @@ public class SpawnerApi extends AbstractXapiRestController {
         return createSpawnerXml(namespace, elementId);
     }
 
-    @ApiOperation(value = "Returns all available validation methods.", notes = "This call returns a map keyed by the validation set and ID.", response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "Value was successfully validated."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The specified validation method was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns all available validation methods.", description = "This call returns a map keyed by the validation set and ID.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Value was successfully validated."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The specified validation method was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "validate/list", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
     public Map<String, List<String>> validateList() {
         log.debug("User {} is requesting the validation list", getSessionUser().getUsername());
         return _validationService.getValidations();
     }
 
-    @ApiOperation(value = "Returns all available validation methods.", notes = "This call returns a map keyed by the validation set and ID.", response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "Value was successfully validated."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The specified validation method was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Returns all available validation methods.", description = "This call returns a map keyed by the validation set and ID.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Value was successfully validated."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The specified validation method was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "validate/list/{set}", produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-    public List<String> validateListSet(@ApiParam(value = "The set of validations to retrieve", required = true) @PathVariable("set") final String set) {
+    public List<String> validateListSet(@Parameter(description = "The set of validations to retrieve", required = true) @PathVariable("set") final String set) {
         log.debug("User {} is requesting the validation list", getSessionUser().getUsername());
         return new ArrayList<>(_validationService.getValidationSet(set).keySet());
     }
 
-    @ApiOperation(value = "Validates the value in the request body with the indicated validation method.", notes = "Applies the given validation method to the value in the request body.", response = Validated.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Value was successfully validated."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The specified validation method was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Validates the value in the request body with the indicated validation method.", description = "Applies the given validation method to the value in the request body.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Value was successfully validated."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The specified validation method was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "validate/{validation}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
-    public Validated validateValidation(@ApiParam(value = "The validation method to be applied to the input value.", required = true) @PathVariable("validation") final String validation, @RequestBody final String value) throws UnknownValidationSetException {
+    public Validated validateValidation(@Parameter(description = "The validation method to be applied to the input value.", required = true) @PathVariable("validation") final String validation, @RequestBody final String value) throws UnknownValidationSetException {
         log.debug("User {} is using the validation {} to validate the value: {}", getSessionUser().getUsername(), validation, value);
         return _validationService.validate(validation, value);
     }
 
-    @ApiOperation(value = "Validates the value in the request body with the indicated validation method.", notes = "Applies the given validation method to the value in the request body.", response = Validated.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "Value was successfully validated."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The specified validation method was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Validates the value in the request body with the indicated validation method.", description = "Applies the given validation method to the value in the request body.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Value was successfully validated."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The specified validation method was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "validate/{set}/{validation}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
-    public Validated validateSetValidation(@ApiParam(value = "The validation set to reference.", required = true) @PathVariable("set") final String set, @ApiParam(value = "The validation method to be applied to the input value.", required = true) @PathVariable("validation") final String validation, @RequestBody final String value) throws UnknownValidationSetException {
+    public Validated validateSetValidation(@Parameter(description = "The validation set to reference.", required = true) @PathVariable("set") final String set, @Parameter(description = "The validation method to be applied to the input value.", required = true) @PathVariable("validation") final String validation, @RequestBody final String value) throws UnknownValidationSetException {
         log.debug("User {} is using the validation {} to validate the value: {}", getSessionUser().getUsername(), validation, value);
         return _validationService.validate(set, validation, value);
     }
 
-    @ApiOperation(value = "Validates the value in the request body with the indicated validation method.", notes = "Applies the given validation method to the value in the request body.", response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "Value was successfully validated."),
-                   @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-                   @ApiResponse(code = 404, message = "The specified validation method was not found."),
-                   @ApiResponse(code = 500, message = "An unexpected error occurred.")})
+    @Operation(summary = "Validates the value in the request body with the indicated validation method.", description = "Applies the given validation method to the value in the request body.")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "Value was successfully validated."),
+                   @ApiResponse(responseCode = "401", description = "Must be authenticated to access the XNAT REST API."),
+                   @ApiResponse(responseCode = "404", description = "The specified validation method was not found."),
+                   @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "validate/batch", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.POST)
-    public Map<String, Validated> validateBatch(@ApiParam("This is a map of element IDs, with each element ID corresponding to a map containing a value property, validation property, and optional set property. Both set and validation can specified with the validation property by using the form \"validation\": \"set:validation\".") @RequestBody final Map<String, Map<String, String>> elements) throws UnknownValidationSetException, InvalidValidationValueException {
+    public Map<String, Validated> validateBatch(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "This is a map of element IDs, with each element ID corresponding to a map containing a value property, validation property, and optional set property. Both set and validation can specified with the validation property by using the form \"validation\": \"set:validation\".") @RequestBody final Map<String, Map<String, String>> elements) throws UnknownValidationSetException, InvalidValidationValueException {
         log.debug("User {} is using the batch validation method to validate {} elements from IDs: {}", getSessionUser().getUsername(), elements.size(), elements.keySet());
         final Map<String, Validated> validations = new HashMap<>();
         for (final String id : elements.keySet()) {

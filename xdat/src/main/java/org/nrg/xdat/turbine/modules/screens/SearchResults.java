@@ -48,7 +48,7 @@ public class SearchResults extends SecureScreen {
 	 */
 	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		DisplaySearch search = getSearch(data);
 		XFTTableI table = search.getPresentedTable();
 		

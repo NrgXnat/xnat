@@ -31,8 +31,9 @@ import java.io.FileInputStream;
  */
 public abstract class FileScreen extends SecureScreen {
 
-    public String getContentType(RunData data)
+    public String getContentType(PipelineData pipelineData)
     {
+        RunData data = pipelineData.getRunData();
  	   return "application/octet-stream";
     }
 
@@ -43,7 +44,7 @@ public abstract class FileScreen extends SecureScreen {
      */
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         File f = getDownloadFile(data,context);
         if (f==null || !f.exists())
         {

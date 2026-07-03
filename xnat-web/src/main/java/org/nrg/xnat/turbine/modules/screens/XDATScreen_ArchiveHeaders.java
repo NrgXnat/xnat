@@ -19,7 +19,7 @@ public class XDATScreen_ArchiveHeaders extends SecureScreen {
 
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context arg1) throws Exception {
-        final RunData arg0 = pipelineData.getRunData();
+        RunData arg0 = pipelineData.getRunData();
 		if (TurbineUtils.HasPassedParameter("numdays", arg0)) {
 			arg1.put("numdays", TurbineUtils.GetPassedParameter("numdays", arg0));
 		}

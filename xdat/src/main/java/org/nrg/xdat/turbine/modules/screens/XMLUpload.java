@@ -20,7 +20,7 @@ public class XMLUpload extends SecureScreen {
 
     @Override
     protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final UserI user = getUser();
         if (user.isGuest()) {
             data.setScreenTemplate("Error.vm");

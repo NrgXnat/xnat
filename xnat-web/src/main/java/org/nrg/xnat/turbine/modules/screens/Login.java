@@ -24,7 +24,7 @@ import org.nrg.xnat.security.XnatProviderManager;
 public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
     @Override
     protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final boolean forceLocalLogin = data.getParameters().getBoolean("forceLocalLogin");
         if (!forceLocalLogin) {
             context.put("login_methods", getProviderManager().getVisibleEnabledProviders().values());

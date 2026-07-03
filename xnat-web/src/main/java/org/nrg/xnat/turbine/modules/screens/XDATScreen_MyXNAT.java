@@ -20,7 +20,7 @@ import org.nrg.xft.security.UserI;
 public class XDATScreen_MyXNAT extends SecureScreen {
 
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 
     	try {
             UserI item = TurbineUtils.getUser(data);

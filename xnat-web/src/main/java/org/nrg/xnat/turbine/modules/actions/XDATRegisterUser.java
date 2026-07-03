@@ -63,7 +63,7 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
 
     @Override
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
         boolean isProjectAccessRequest = hasPAR(data);
 
@@ -196,7 +196,7 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
         } else if (getPreferences().getUserRegistration() && !getPreferences().getEmailVerification()) {
             if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
                 data.setAction(nextAction);
-                ((VelocityAction) ActionLoader.getInstance().getInstance(nextAction)).doPerform(data, context);
+                ((VelocityAction) ActionLoader.getInstance().getAssembler(nextAction)).doPerform(data, context);
             } else if (!StringUtils.isBlank(nextPage) && !StringUtils.equals(nextPage, Turbine.getConfiguration().getString("template.home"))) {
                 data.setScreenTemplate(nextPage);
             }

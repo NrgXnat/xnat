@@ -27,6 +27,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.nrg.xdat.om.XnatAbstractresource;
@@ -66,7 +67,8 @@ public class StoreXAR extends RawScreen {
     UserI user=null;
 
     @Override
-    public void doOutput(RunData data)  {
+    public void doOutput(PipelineData pipelineData)  {
+        RunData data = pipelineData.getRunData();
         final HttpServletResponse response = data.getResponse();
         response.setContentType("text/xml");
         response.setHeader("Cache-Control", "no-cache");
@@ -555,7 +557,8 @@ public class StoreXAR extends RawScreen {
 
     @Override
 
-    protected String getContentType(RunData data) {
+    protected String getContentType(PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
 
         return "text/xml";
 

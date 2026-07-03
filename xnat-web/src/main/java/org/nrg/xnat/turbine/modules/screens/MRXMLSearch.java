@@ -19,6 +19,7 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -53,8 +54,9 @@ org.apache.turbine.modules.screens.RawScreen
 	* @param data Turbine information.
 	* @return content type.
 	*/
-	public String getContentType(RunData data)
+	public String getContentType(PipelineData pipelineData)
 	{
+        RunData data = pipelineData.getRunData();
 		return "text/xml";
 	};
 
@@ -65,8 +67,9 @@ created in buildPDF.
 	* @param data RunData
 	* @exception Exception, any old generic exception.
 	*/
-	protected final void doOutput(RunData data) throws Exception
+	protected final void doOutput(PipelineData pipelineData) throws Exception
 	{
+        RunData data = pipelineData.getRunData();
 	    String username = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("username",data));
 	    String password = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("password",data));
 	    UserI user = TurbineUtils.getUser(data);

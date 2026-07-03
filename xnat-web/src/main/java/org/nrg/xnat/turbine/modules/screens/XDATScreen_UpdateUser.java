@@ -39,7 +39,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
 
     @Override
     protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final Context context = TurbineUtils.getVelocityContext(data);
 
         SecureScreen.loadAdditionalVariables(data, context);
@@ -55,7 +55,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
     }
 
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final Boolean forgot  = (data.getSession().getAttribute("forgot")!=null && (Boolean)data.getSession().getAttribute("forgot")); 
         final Boolean expired = (data.getSession().getAttribute("expired")!=null && (Boolean)data.getSession().getAttribute("expired"));
         
@@ -226,7 +226,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
 
     @Override
     protected boolean isAuthorized(PipelineData pipelineData) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         return false;
     }
 

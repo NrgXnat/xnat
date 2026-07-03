@@ -19,10 +19,10 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.services.TurbineServices;
-import org.apache.turbine.services.intake.model.Group;
+import org.apache.fulcrum.intake.model.Group;
 import org.apache.turbine.services.velocity.VelocityService;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -745,9 +745,7 @@ public class TurbineUtils {
         //TurbineUtils.OutputDataParameters(data);
         final Map<String, String> hash  = new Hashtable<>();
         ParameterParser           pp    = data.getParameters();
-        Enumeration<Object>       penum = pp.keys();
-        while (penum.hasMoreElements()) {
-            final String key   = penum.nextElement().toString();
+        for (final String key : pp.getKeys()) {
             final Object value = TurbineUtils.escapeParam(data.getParameters().get(key));
             if (value != null && !value.equals("")) {
                 hash.put(TurbineUtils.escapeParam(key), value.toString());

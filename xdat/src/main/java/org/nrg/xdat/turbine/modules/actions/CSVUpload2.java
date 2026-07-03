@@ -14,12 +14,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.commons.fileupload.FileItem;
+import javax.servlet.http.Part;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -69,7 +69,7 @@ public class CSVUpload2 extends SecureAction {
 
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
     }
 
@@ -77,8 +77,8 @@ public class CSVUpload2 extends SecureAction {
         preserveVariables(data,context);
         ParameterParser params = data.getParameters();
 
-        //grab the FileItems available in ParameterParser
-        FileItem fi = params.getFileItem("csv_to_store");
+        //grab the Parts available in ParameterParser
+        Part fi = params.getPart("csv_to_store");
 
 
         String fm_id=TurbineUtils.escapeParam(((String)TurbineUtils.GetPassedParameter("fm_id",data)));
@@ -89,7 +89,7 @@ public class CSVUpload2 extends SecureAction {
 
         if (fi != null) {
             File temp = File.createTempFile("xnat", "csv");
-            fi.write(temp);
+            java.nio.file.Files.copy(fi.getInputStream(), temp.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
             List<List<String>> rows = FileUtils.csvFileToArrayListUsingApacheCommons(temp);
             if (rows.size() > 0 && rows.getFirst().getFirst().equals("ID")) {

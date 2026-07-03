@@ -29,7 +29,7 @@ public class Scripts extends AdminScreen {
 
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         List<Script> scripts = _service.getAll();
         Collections.sort(scripts, new ScriptSorter());
         context.put("scripts", scripts);

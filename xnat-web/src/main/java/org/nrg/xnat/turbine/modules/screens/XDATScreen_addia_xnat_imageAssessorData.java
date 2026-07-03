@@ -106,7 +106,7 @@ public class XDATScreen_addia_xnat_imageAssessorData
 	}
 
 	public void doBuildTemplate(PipelineData pipelineData, Context context) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		try {
 			if (TurbineUtils.HasPassedParameter("destination", data)) {
 				context.put("destination", TurbineUtils.GetPassedParameter("destination", data));

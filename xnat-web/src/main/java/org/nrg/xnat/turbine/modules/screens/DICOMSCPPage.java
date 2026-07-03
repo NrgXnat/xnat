@@ -22,7 +22,7 @@ import java.util.Calendar;
 public class DICOMSCPPage extends SecureScreen {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         context.put("uploadID", FORMATTER.format(Calendar.getInstance().getTime()));
         context.put("host", XDAT.getSiteConfigPreferences().getSiteUrl());
         context.put("scps", XDAT.getContextService().getBean(DicomSCPManager.class).getDicomSCPInstances());

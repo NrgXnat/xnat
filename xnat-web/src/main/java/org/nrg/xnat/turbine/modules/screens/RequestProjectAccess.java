@@ -24,7 +24,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 public class RequestProjectAccess extends SecureScreen {
     @Override
     protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final String projectId = (String) TurbineUtils.GetPassedParameter("project", data);
         log.debug("User {} is requesting access to project {}", XDAT.getUserDetails().getUsername(), projectId);
         context.put("project", XnatProjectdata.getXnatProjectdatasById(projectId, null, false));

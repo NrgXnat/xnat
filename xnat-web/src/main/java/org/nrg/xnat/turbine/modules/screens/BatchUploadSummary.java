@@ -28,7 +28,7 @@ public class BatchUploadSummary extends SecureScreen {
      */
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         UserI user = TurbineUtils.getUser(data);
         String cachepath= ArcSpecManager.GetInstance().getGlobalCachePath();
         

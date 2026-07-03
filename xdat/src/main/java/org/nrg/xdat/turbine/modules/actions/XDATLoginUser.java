@@ -17,7 +17,6 @@ import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.security.TurbineSecurityException;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.Authenticator;
@@ -49,13 +48,13 @@ public class XDATLoginUser extends VelocityAction{
 	 * to SCREEN_LOGIN
 	 *
 	 * @param     data Turbine information.
-	 * @exception TurbineSecurityException could not get instance of the
+	 * @exception Exception could not get instance of the
 	 *            anonymous user
 	 */
 	public void doPerform(PipelineData pipelineData, Context context)
-			throws TurbineSecurityException
+			throws Exception
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		//ScreenUtils.OutputDataParameters(data);
 		//ScreenUtils.OutputContextParameters(TurbineUtils.getVelocityContext(data));
 		String username = (String)TurbineUtils.GetPassedParameter(CGI_USERNAME, data);
@@ -152,7 +151,7 @@ public class XDATLoginUser extends VelocityAction{
 		 */
 		if (hasNextAction && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
 			data.setAction(nextAction);
-			VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
+			VelocityAction action = (VelocityAction) ActionLoader.getInstance().getAssembler(nextAction);
 			action.doPerform(data, context);
 		} else if (hasNextPage && !nextPage.equals(Turbine.getConfiguration().getString("template.home"))) {
 			data.setScreenTemplate(nextPage);

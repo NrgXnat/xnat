@@ -20,6 +20,7 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.security.user.exceptions.FailedLoginException;
@@ -43,8 +44,9 @@ public class GetFile extends RawScreen {
     * @param data Turbine information.
     * @return content type.
     */
-    public String getContentType(RunData data)
+    public String getContentType(PipelineData pipelineData)
     {
+        RunData data = pipelineData.getRunData();
         return "application/octet-stream";
     };
 
@@ -56,8 +58,9 @@ public class GetFile extends RawScreen {
     * @param data RunData
     * @exception Exception, any old generic exception.
     */
-    protected final void doOutput(RunData data)
+    protected final void doOutput(PipelineData pipelineData)
     {
+        RunData data = pipelineData.getRunData();
         long startTime = Calendar.getInstance().getTimeInMillis();
              String search_element = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data));
              String search_field = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data));

@@ -50,7 +50,7 @@ import static org.nrg.xft.event.XftItemLifecyclePhase.Save;
 public class AddProject extends AbstractProjectSecureAction {
     @Override
     public void doPerform(final PipelineData pipelineData, final Context context) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         if (TurbineUtils.HasPassedParameter("tag", data)) {
             context.put("tag", TurbineUtils.GetPassedParameter("tag", data));
         }
@@ -147,7 +147,7 @@ public class AddProject extends AbstractProjectSecureAction {
 
     private PopulateItem getSubmittedXFTItem(final RunData data) {
         try {
-            final EditScreenA screen = (EditScreenA) ScreenLoader.getInstance().getInstance("XDATScreen_add_xnat_projectData");
+            final EditScreenA screen = (EditScreenA) ScreenLoader.getInstance().getAssembler("XDATScreen_add_xnat_projectData");
             final XFTItem newItem = (XFTItem) screen.getEmptyItem(data);
             return PopulateItem.Populate(data, "xnat:projectData", true, newItem);
         } catch (Exception e) {

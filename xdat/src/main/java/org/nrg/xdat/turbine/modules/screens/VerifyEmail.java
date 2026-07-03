@@ -39,7 +39,7 @@ import static org.nrg.xdat.turbine.utils.TurbineUtils.redirectToLogin;
 public class VerifyEmail extends VelocitySecureScreen {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final Context context = TurbineUtils.getVelocityContext(data);
         SecureScreen.loadAdditionalVariables(data, context);
         doBuildTemplate(data, context);
@@ -47,7 +47,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 
     @Override
     protected void doBuildTemplate(final PipelineData pipelineData, final Context context) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final String alias = (String) TurbineUtils.GetPassedParameter("a", data);
         final String secret = (String) TurbineUtils.GetPassedParameter("s", data);
         final String userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias, secret);
@@ -142,7 +142,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 
     @Override
     protected boolean isAuthorized(final PipelineData pipelineData) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         return false;
     }
 

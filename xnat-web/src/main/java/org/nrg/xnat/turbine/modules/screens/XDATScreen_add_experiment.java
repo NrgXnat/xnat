@@ -27,7 +27,7 @@ public class XDATScreen_add_experiment extends SecureScreen {
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 
 //        ArrayList elements = new ArrayList();
 //        Iterator editable_Displays = TurbineUtils.getUser(data).getEditableElementDisplays().iterator();

@@ -29,7 +29,7 @@ public class XDATScreen_search extends SecureScreen {
      */
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             Hashtable hash = ElementSecurity.GetDistinctIdValuesFor("Investigator","default",TurbineUtils.getUser(data).getLogin());
             context.put("investigators",hash);

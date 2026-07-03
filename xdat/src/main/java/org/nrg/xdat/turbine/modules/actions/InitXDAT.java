@@ -20,7 +20,7 @@ public class InitXDAT extends VelocitySecureAction
 	static Logger logger = Logger.getLogger(InitXDAT.class);
 
    public void doPerform(PipelineData pipelineData, Context context){
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
    	logger.debug("InitXDAT BEGIN");
    	try{
    		//XDAT.init("C:\\jakarta-tomcat-5.5.4\\webapps\\cnda4\\WEB-INF\\conf\\XDAT\\");
@@ -39,7 +39,7 @@ public class InitXDAT extends VelocitySecureAction
    }
     protected boolean isAuthorized(PipelineData pipelineData) throws Exception
     {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         return true;
     }
 }

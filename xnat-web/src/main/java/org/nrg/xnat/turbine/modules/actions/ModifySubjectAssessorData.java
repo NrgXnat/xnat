@@ -56,7 +56,7 @@ public class ModifySubjectAssessorData extends ModifyItem {
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
        XFTItem found = null;
         try {
             String element0 = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("element_0",data));

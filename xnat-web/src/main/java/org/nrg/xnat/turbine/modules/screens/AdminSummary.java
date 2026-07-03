@@ -27,7 +27,7 @@ public class AdminSummary extends AdminScreen {
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context)
 			throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		
 		if(TurbineUtils.HasPassedParameter("duration1", data)){
 			context.put("duration1", TurbineUtils.GetPassedParameter("duration1", data));

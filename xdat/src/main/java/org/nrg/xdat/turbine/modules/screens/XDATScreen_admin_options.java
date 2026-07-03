@@ -21,7 +21,7 @@ public class XDATScreen_admin_options extends AdminScreen {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         XFTTable t = XFTTable.Execute("SELECT login, firstname,lastname FROM xdat_user;", TurbineUtils.getUser(data).getDBName(), null);
         context.put("users", t.rowHashs());
     }

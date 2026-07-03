@@ -36,7 +36,7 @@ public class XDATLoginUser extends
 		 */
 		 if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);
-            VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
+            VelocityAction action = (VelocityAction) ActionLoader.getInstance().getAssembler(nextAction);
             action.doPerform(data, context);
 		 }else if (!StringUtils.isEmpty(par)){
 	         	AcceptProjectAccess action = new AcceptProjectAccess();

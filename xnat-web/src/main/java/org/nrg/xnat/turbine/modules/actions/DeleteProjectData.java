@@ -50,7 +50,7 @@ import static org.nrg.xft.event.XftItemEventI.DELETE;
 public class DeleteProjectData extends SecureAction {
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final UserI           user      = XDAT.getUserDetails();
         final String          projectId = (String) TurbineUtils.GetPassedParameter("project", data);
         final XnatProjectdata project   = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);

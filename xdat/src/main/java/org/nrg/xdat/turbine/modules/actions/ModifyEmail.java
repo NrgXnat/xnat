@@ -38,7 +38,7 @@ public class ModifyEmail extends ModifyAction {
     public static final String EMAIL_ADDRESS_CHANGED = "Email address changed.";
 
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final String method = data.getRequest().getMethod();
         UserChangeRequestService userChangeRequestService = XDAT.getContextService().getBean(UserChangeRequestService.class);
 

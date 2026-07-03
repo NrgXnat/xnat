@@ -24,7 +24,7 @@ public class CreateExperiment extends SecureAction {
 
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         if (TurbineUtils.HasPassedParameter("destination", data)){
             context.put("destination", TurbineUtils.GetPassedParameter("destination", data));
         }

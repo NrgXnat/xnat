@@ -25,7 +25,7 @@ public abstract class AdminAction extends SecureAction {
      */
     @Override
     protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         if (!super.isAuthorized(data)) {
             return false;
         }

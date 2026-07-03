@@ -41,7 +41,7 @@ import java.util.Date;
 @SuppressWarnings("unused")
 public class ModifyPassword extends ModifyAction {
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         setDataAndContext(data, context);
 
         if (data.getSession().getAttribute("forgot") != null && ((Boolean) data.getSession().getAttribute("forgot"))) {

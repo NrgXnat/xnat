@@ -18,7 +18,7 @@ public class ReportIssue extends SecureScreen {
 
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		// doesn't currently need any context, just needed to subclass SecureScreen
 	}
 

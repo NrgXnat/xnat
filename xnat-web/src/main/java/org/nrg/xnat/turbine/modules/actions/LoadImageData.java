@@ -67,7 +67,7 @@ public class LoadImageData extends SecureAction {
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final String folder = (String)TurbineUtils.GetPassedParameter("folder",data);
         String root = (String)TurbineUtils.GetPassedParameter("root",data);
         if(root==null){

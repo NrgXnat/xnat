@@ -18,7 +18,7 @@ import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.utilities.Patterns;
 import org.nrg.xdat.XDAT;
@@ -60,7 +60,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
     @Override
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         //noinspection Duplicates
         try {
             SecureAction.isCsrfTokenOk(data);
@@ -229,7 +229,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
         if ((getPreferences().getUserRegistration() && !getPreferences().getEmailVerification()) || ((getPreferences().getUserRegistration() || getPreferences().getPar()) && hasPAR(data))) {
             if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
                 data.setAction(nextAction);
-                ((VelocityAction) ActionLoader.getInstance().getInstance(nextAction)).doPerform(data, context);
+                ((VelocityAction) ActionLoader.getInstance().getAssembler(nextAction)).doPerform(data, context);
             } else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(Turbine.getConfiguration().getString("template.home"))) {
                 data.setScreenTemplate(nextPage);
             }
@@ -238,7 +238,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
     @Override
     protected boolean isAuthorized(final PipelineData pipelineData) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         return true;
     }
 

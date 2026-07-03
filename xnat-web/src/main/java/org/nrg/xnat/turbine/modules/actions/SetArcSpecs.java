@@ -50,7 +50,7 @@ public class SetArcSpecs extends AdminAction {
      */
     @Override
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final PopulateItem populater = PopulateItem.Populate(data, "arc:ArchiveSpecification", true);
         final XFTItem      item      = populater.getItem();
         item.setUser(XDAT.getUserDetails());

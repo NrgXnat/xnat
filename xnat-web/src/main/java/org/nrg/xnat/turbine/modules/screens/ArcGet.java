@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatReconstructedimagedataI;
@@ -59,8 +60,9 @@ public class ArcGet extends org.apache.turbine.modules.screens.RawScreen {
 	* @param data Turbine information.
 	* @return content type.
 	*/
-	public String getContentType(RunData data)
+	public String getContentType(PipelineData pipelineData)
 	{
+        RunData data = pipelineData.getRunData();
 		return "application/zip";
 	};
 
@@ -72,8 +74,9 @@ created in buildPDF.
 	* @exception Exception, any old generic exception.
 	*/
     @SuppressWarnings({ "deprecation", "rawtypes", "unchecked" })
-	protected final void doOutput(RunData data) 
+	protected final void doOutput(PipelineData pipelineData) 
 	{
+        RunData data = pipelineData.getRunData();
             String username = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("username",data));
             String password = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("password",data));
             String raw = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("raw",data));

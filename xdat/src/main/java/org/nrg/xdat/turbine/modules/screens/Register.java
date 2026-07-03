@@ -23,7 +23,7 @@ public class Register extends VelocitySecureScreen {
 
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		Context c = TurbineUtils.getVelocityContext(data);
         SecureScreen.loadAdditionalVariables(data, c);
         doBuildTemplate(data, c);
@@ -31,7 +31,7 @@ public class Register extends VelocitySecureScreen {
 
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
 		if(siteConfig.getSecurityNewUserRegistrationDisabled()){
 			data.setMessage("New user registration is not allowed on " + siteConfig.getSiteId());
@@ -57,7 +57,7 @@ public class Register extends VelocitySecureScreen {
 
 	@Override
 	protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
-        final RunData arg0 = pipelineData.getRunData();
+        RunData arg0 = pipelineData.getRunData();
 		return false;
 	}
 

@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.presentation.CSVPresenter;
@@ -38,7 +39,8 @@ import java.util.Date;
 
 @Slf4j
 public class CSVScreen extends RawScreen {
-    public String getContentType(RunData data) {
+    public String getContentType(PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
         return "application/msexcel";
     }
 
@@ -86,7 +88,8 @@ public class CSVScreen extends RawScreen {
      * @throws Exception When something goes wrong.
      */
     @SuppressWarnings("deprecation")
-    protected final void doOutput(RunData data) throws Exception {
+    protected final void doOutput(PipelineData pipelineData) throws Exception {
+        RunData data = pipelineData.getRunData();
         DisplaySearch search = getSearch(data);
         search.setPagingOn(false);
         XFTTableI table = search.execute(new CSVPresenter(), TurbineUtils.getUser(data).getLogin());

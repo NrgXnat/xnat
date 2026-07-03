@@ -35,7 +35,7 @@ public class FindStudy extends SecureAction {
      * .turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 
         String patientName = data.getParameters().getString("patientName");
         String patientID = data.getParameters().getString("patientID");

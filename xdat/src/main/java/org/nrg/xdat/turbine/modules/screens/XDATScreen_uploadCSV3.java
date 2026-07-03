@@ -17,7 +17,7 @@ public class XDATScreen_uploadCSV3 extends SecureScreen{
 
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		// TODO Auto-generated method stub
 		
 	}

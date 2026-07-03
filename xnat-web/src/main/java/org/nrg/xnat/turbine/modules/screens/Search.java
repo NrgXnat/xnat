@@ -21,7 +21,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 public class Search extends SecureScreen {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final String node   = (String) TurbineUtils.GetPassedParameter("node", data);
         final String search = (String) TurbineUtils.GetPassedParameter("new_search", data);
         log.debug("Now in Search.doBuildTemplate(), got values node=\"{}\", new_search=\"{}\"",

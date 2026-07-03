@@ -37,7 +37,7 @@ public class UserCacheAction extends SecureAction {
      */
 
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
     	String folder = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("folder",data));
     	Boolean delete = Boolean.valueOf(((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("delete", data)));
     	if (folder != null) {

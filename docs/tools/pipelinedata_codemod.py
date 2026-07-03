@@ -15,7 +15,7 @@ import re, sys, pathlib
 ROOTS = ["xnat-web/src/main/java", "xdat/src/main/java"]
 # match a concrete/abstract declaration: methodName( [final] RunData name [, [final] Context c] )
 SIG = re.compile(
-    r'\b(?P<m>doBuildTemplate|doPerform|isAuthorized)\(\s*(?P<f1>final\s+)?RunData\s+(?P<rn>\w+)'
+    r'\b(?P<m>doBuildTemplate|doPerform|isAuthorized|doOutput|getContentType)\(\s*(?P<f1>final\s+)?RunData\s+(?P<rn>\w+)'
     r'(?P<rest>\s*,\s*(?:final\s+)?Context\s+\w+\s*)?\s*\)'
 )
 

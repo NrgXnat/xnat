@@ -35,7 +35,7 @@ public class ModifyUser extends SecureAction {
 	static Logger logger = Logger.getLogger(ModifyUser.class);
 	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		// TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		// parameter specifying elementAliass and elementNames
 		String header = "ELEMENT_";
@@ -141,8 +141,7 @@ public class ModifyUser extends SecureAction {
 		data.getParameters().setString(
 				"search_value",submitted.getLogin());
 		data.setAction("DisplayItemAction");
-		VelocityAction action = (VelocityAction) ActionLoader.getInstance()
-				.getInstance("DisplayItemAction");
+		VelocityAction action = (VelocityAction) ActionLoader.getInstance().getAssembler("DisplayItemAction");
 		action.doPerform(data, context);
 	}
 }

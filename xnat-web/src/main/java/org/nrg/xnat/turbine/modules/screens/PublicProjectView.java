@@ -30,7 +30,7 @@ public class PublicProjectView extends VelocityScreen {
      */
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         UserI user = XDAT.getUserDetails();
 
         if (user == null) {

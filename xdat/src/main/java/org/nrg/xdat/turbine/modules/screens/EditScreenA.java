@@ -51,7 +51,7 @@ public abstract class EditScreenA extends SecureScreen {
     }
 
     public void doBuildTemplate(PipelineData pipelineData, Context context) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             if (TurbineUtils.HasPassedParameter("destination", data)) {
                 context.put("destination", TurbineUtils.GetPassedParameter("destination", data));

@@ -27,7 +27,7 @@ public class SetEmailSpecs extends AdminAction {
      */
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         XFTItem item = PopulateItem.Populate(data,"arc:ArchiveSpecification",true).getItem();
         item.setUser(TurbineUtils.getUser(data));
         ArcSpecManager.save(new ArcArchivespecification(item), newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, "Modified email specifications."));

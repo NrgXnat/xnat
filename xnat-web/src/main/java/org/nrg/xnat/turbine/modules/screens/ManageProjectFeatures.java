@@ -19,7 +19,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 public class ManageProjectFeatures extends SecureScreen {
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final Object projects = TurbineUtils.GetPassedParameter("projects", data);
         if (projects != null) {
             context.put("project", projects);

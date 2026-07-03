@@ -29,7 +29,7 @@ import java.util.Arrays;
 public class XDATScreen_uploadCSV extends SecureScreen {
     @Override
     protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         context.put("elements", ElementSecurity.GetNonXDATElementNames());
         context.put("all_elements", GenericWrapperElement.GetAllElements(false));
         //If an upload was attempted earlier in the session, then those rows must be cleared off.

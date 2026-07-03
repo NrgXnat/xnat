@@ -25,7 +25,7 @@ public class XDATScreen_super_search extends SecureScreen {
      */
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         
     }
 

@@ -19,7 +19,7 @@ import org.apache.velocity.context.Context;
 public class XDATScreen_user_admin_xdat_user extends AdminScreen {
 	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 	}
 }
 

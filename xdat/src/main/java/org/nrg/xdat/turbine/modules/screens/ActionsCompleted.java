@@ -27,7 +27,7 @@ public class ActionsCompleted extends org.nrg.xdat.turbine.modules.screens.Secur
      */
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             if (TurbineUtils.HasPassedParameter("new_session", data))
             {

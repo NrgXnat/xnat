@@ -26,7 +26,7 @@ public class XDATScreen_search_wizard2 extends SecureScreen {
 
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		UserI user = TurbineUtils.getUser(data);
 		Map<String,Object> additional=new Hashtable<String,Object>();
 		Map<String,Object> additionalDescriptions=new Hashtable<String,Object>();

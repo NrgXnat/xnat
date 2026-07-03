@@ -13,11 +13,11 @@ package org.nrg.xdat.turbine.modules.actions;
 import static org.nrg.xdat.turbine.modules.screens.XMLUpload.MESSAGE_NO_GUEST_PERMISSIONS;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.fileupload.FileItem;
+import javax.servlet.http.Part;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.services.impl.ValidationHandler;
 import org.nrg.xdat.XDAT;
@@ -48,7 +48,7 @@ public class XMLUpload extends SecureAction {
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final UserI user = getUser();
         if (user.isGuest()) {
             handleInvalidPermissions(data);
@@ -58,8 +58,8 @@ public class XMLUpload extends SecureAction {
         // get the ParameterParser from RunData
         final ParameterParser params = data.getParameters();
 
-        //grab the FileItems available in ParameterParser
-        final FileItem          fileItem = params.getFileItem("xml_to_store");
+        //grab the Parts available in ParameterParser
+        final Part          fileItem = params.getPart("xml_to_store");
         final ValidationHandler handler  = new XMLValidator().validateInputStream(fileItem.getInputStream());
         if (!handler.assertValid()) {
             throw handler.getErrors().getFirst();

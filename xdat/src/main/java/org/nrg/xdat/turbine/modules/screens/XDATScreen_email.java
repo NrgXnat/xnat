@@ -33,7 +33,7 @@ public class XDATScreen_email extends AdminScreen {
      */
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         ArrayList al = ItemSearch.GetAllItems("xdat:user",null,false).items();
         Collections.sort(al, new nameComparator());
         context.put("users",al);

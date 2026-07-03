@@ -26,7 +26,7 @@ public class XDATScreen_prearchives extends SecureScreen {
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     protected void doBuildTemplate(final PipelineData pipelineData, final Context context) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             final Hashtable hash = XNATUtils.getInvestigatorsForRead("xnat:mrSessionData", data);
             context.put("investigators", hash);

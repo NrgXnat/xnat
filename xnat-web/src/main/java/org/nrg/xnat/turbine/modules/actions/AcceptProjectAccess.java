@@ -28,7 +28,7 @@ public class AcceptProjectAccess extends SecureAction {
 
 	@Override
 	public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		UserI user = (UserI) context.get("user"); //Check the user in the context before XDAT.getUserDetails() because XDAT.getUserDetails() may still be the guest user at this point.
 
 		if (user == null) {

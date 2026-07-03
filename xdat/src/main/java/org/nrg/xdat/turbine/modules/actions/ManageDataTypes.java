@@ -33,7 +33,7 @@ import java.util.List;
 public class ManageDataTypes extends AdminAction {
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final PopulateItem populater  = PopulateItem.Populate(data, "xdat:security", true);
         final XFTItem      found      = populater.getItem();
         final List<String> updatedIds = new ArrayList<>();

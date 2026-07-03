@@ -29,7 +29,7 @@ public class AlternateImageUpload extends SecureScreen {
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws MalformedURLException {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_hhmmss");
         context.put("uploadID", formatter.format(Calendar.getInstance().getTime()));
         final ArcArchivespecification arc = ArcSpecManager.GetInstance();

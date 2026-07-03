@@ -34,7 +34,7 @@ public abstract class AdminEditScreenA extends EditScreenA {
      */
     @Override
     protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         boolean authorized = super.isAuthorized(data);
         if (authorized) {
             final UserI user = XDAT.getUserDetails();

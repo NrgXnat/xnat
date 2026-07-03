@@ -229,7 +229,7 @@ public abstract class SecureAction extends VelocitySecureAction {
     }
 
     protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         if (XDAT.getSiteConfigPreferences().getRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
             TurbineUtils.getVelocityContext(data).put("logout", "true");
             data.getParameters().setString("logout", "true");

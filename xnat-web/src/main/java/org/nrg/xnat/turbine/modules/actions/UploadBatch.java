@@ -33,7 +33,7 @@ public class UploadBatch extends SecureAction {
 
     @Override
     public void doPerform(PipelineData pipelineData,Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         System.out.println("Starting Upload");
         long startTime = Calendar.getInstance().getTimeInMillis();
         ParameterParser params = data.getParameters();

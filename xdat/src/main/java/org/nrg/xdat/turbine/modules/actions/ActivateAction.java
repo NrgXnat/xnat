@@ -31,7 +31,7 @@ public class ActivateAction extends SecureAction{
     static Logger logger = Logger.getLogger(ActivateAction.class);
 	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
 	    ItemI item = activate(data,context);
 	    if (item ==null)

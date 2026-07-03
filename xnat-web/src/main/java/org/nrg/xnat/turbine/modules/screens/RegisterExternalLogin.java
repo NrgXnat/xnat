@@ -30,7 +30,7 @@ public class RegisterExternalLogin extends VelocitySecureScreen {
 
     @Override
     protected void doBuildTemplate(final PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final Context context = TurbineUtils.getVelocityContext(data);
         SecureScreen.loadAdditionalVariables(data, context);
 
@@ -39,7 +39,7 @@ public class RegisterExternalLogin extends VelocitySecureScreen {
 
     @Override
     protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final UsernameAuthMappingNotFoundException exception
                 = (UsernameAuthMappingNotFoundException) data.getRequest().getSession().getAttribute(UsernameAuthMappingNotFoundException.class.getSimpleName());
         if (exception == null) {
@@ -61,7 +61,7 @@ public class RegisterExternalLogin extends VelocitySecureScreen {
 
     @Override
     protected boolean isAuthorized(final PipelineData pipelineData) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         return false;
     }
 

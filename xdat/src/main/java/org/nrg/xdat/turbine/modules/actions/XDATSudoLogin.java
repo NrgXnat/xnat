@@ -22,7 +22,7 @@ import org.nrg.xft.security.UserI;
 public class XDATSudoLogin extends SecureAction {
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final UserI user = XDAT.getUserDetails();
         if (Roles.isSiteAdmin(user)) {
             final String login = (String) TurbineUtils.GetPassedParameter("sudo_login", data);

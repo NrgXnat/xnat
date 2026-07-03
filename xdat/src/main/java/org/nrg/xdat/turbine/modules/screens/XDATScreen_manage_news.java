@@ -26,7 +26,7 @@ public class XDATScreen_manage_news extends AdminScreen {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         UserI user = TurbineUtils.getUser(data); 
         try {
             DisplaySearch search = UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data),"xdat:newsEntry","listing");

@@ -20,7 +20,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
  */
 public class CSVAction extends SecureAction {
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         preserveVariables(data, context);
         data.setScreenTemplate("CSVScreen.vm");
         if (TurbineUtils.GetPassedParameter("querytype", data) != null && TurbineUtils.GetPassedParameter("querytype", data).equals("new")) {

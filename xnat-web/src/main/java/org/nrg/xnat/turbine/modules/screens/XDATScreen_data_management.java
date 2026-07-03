@@ -36,7 +36,7 @@ public class XDATScreen_data_management extends SecureScreen {
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		try {
             String project = (String)TurbineUtils.GetPassedParameter("project",data);
             String prearchive_path= null;

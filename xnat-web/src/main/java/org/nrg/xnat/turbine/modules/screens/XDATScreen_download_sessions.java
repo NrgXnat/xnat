@@ -58,7 +58,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
 
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         // Do a first smell test to see if the user is even logged in, legit, etc.
         final boolean isAuthorized = isAuthorized(data);
         if (!isAuthorized) {

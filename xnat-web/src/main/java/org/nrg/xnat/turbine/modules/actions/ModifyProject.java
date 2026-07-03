@@ -55,7 +55,7 @@ public class ModifyProject extends AbstractProjectSecureAction {
      */
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final PopulateItem populator = PopulateItem.Populate(data, "xnat:projectData", true);
         final XFTItem item = populator.getItem();
 

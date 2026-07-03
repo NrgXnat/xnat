@@ -25,7 +25,7 @@ public class XDATScreen_uploadCSV2_Save extends SecureScreen {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         context.put("elements",ElementSecurity.GetNonXDATElementNames());
 
         FieldMapping fm = (FieldMapping)context.get("fm");

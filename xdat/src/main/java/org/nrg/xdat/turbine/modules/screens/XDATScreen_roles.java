@@ -28,7 +28,7 @@ import org.nrg.xft.security.UserI;
 public class XDATScreen_roles extends AdminScreen {
 	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		//TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		UserI user = TurbineUtils.getUser(data);	
 		try {

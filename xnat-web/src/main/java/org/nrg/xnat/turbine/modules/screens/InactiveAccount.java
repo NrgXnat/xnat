@@ -30,7 +30,7 @@ public class InactiveAccount extends VelocitySecureScreen {
 
     @Override
     protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         Context c = TurbineUtils.getVelocityContext(data);
         SecureScreen.loadAdditionalVariables(data, c);
         doBuildTemplate(data, c);
@@ -38,7 +38,7 @@ public class InactiveAccount extends VelocitySecureScreen {
 
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             if (data != null && TurbineUtils.getUser(data) != null &&
                     !StringUtils.isBlank(TurbineUtils.getUser(data).getUsername()) &&
@@ -106,7 +106,7 @@ public class InactiveAccount extends VelocitySecureScreen {
 
     @Override
     protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
-        final RunData runData = pipelineData.getRunData();
+        RunData runData = pipelineData.getRunData();
         return false;
     }
 

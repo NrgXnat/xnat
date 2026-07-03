@@ -18,7 +18,7 @@ public class ManageProjectPermissions extends SecureAction {
 
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
     }
 
 }

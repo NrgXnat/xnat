@@ -56,7 +56,7 @@ public class ExptFileUpload extends SecureAction {
 
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception{
-        final RunData data = pipelineData.getRunData();        
+        RunData data = pipelineData.getRunData();        
         ParameterParser params = data.getParameters();
         HttpSession session = data.getSession();
         String uploadID= null;

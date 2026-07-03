@@ -67,7 +67,7 @@ public class ManageEntryAccess extends ModifyItem {
     
     public void doPerform(PipelineData pipelineData, Context context) throws Exception
     {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         XFTItem first =null;
         preserveVariables(data,context);
         //TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
@@ -118,7 +118,7 @@ public class ManageEntryAccess extends ModifyItem {
                 }else{
                     if (screenName.equals("XDATScreen_edit_" + e.getFormattedName()))
                     {
-                        EditScreenA screen = (EditScreenA) ScreenLoader.getInstance().getInstance(screenName);
+                        EditScreenA screen = (EditScreenA) ScreenLoader.getInstance().getAssembler(screenName);
                         XFTItem newItem = (XFTItem)screen.getEmptyItem(data);
                         populater = PopulateItem.Populate(data,element,true,newItem);
                     }else{

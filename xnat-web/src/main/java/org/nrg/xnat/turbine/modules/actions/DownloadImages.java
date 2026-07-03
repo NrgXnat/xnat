@@ -55,7 +55,7 @@ public class DownloadImages extends SecureAction {
      */
     @SuppressWarnings("deprecation")
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         log.info("BEGIN DownloadImages.java");
         UserI user = TurbineUtils.getUser(data);
         long startTime = Calendar.getInstance().getTimeInMillis();

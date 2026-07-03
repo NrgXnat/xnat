@@ -52,7 +52,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
 
     @Override
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         //noinspection Duplicates
         try {
             SecureAction.isCsrfTokenOk(data);
@@ -190,7 +190,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
 
     @Override
     protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         return true;
     }
 

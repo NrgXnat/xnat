@@ -28,7 +28,7 @@ public class XDATScreen_add_xdat_element_security extends AdminScreen {
      */
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         ArrayList allAbsent = ElementSecurity.GetAbsentElements();
         context.put("elements",allAbsent);
     }

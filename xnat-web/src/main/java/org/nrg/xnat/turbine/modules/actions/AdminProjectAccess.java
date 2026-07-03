@@ -36,7 +36,7 @@ public class AdminProjectAccess extends SecureAction {
 	 */
 	@Override
 	public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		UserI user = TurbineUtils.getUser(data);
 		int counter = 0;
 		List<String> successfulArray = new ArrayList<String>();

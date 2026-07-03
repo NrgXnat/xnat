@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class ManageProjectAccess extends SecureAction {
     @Override
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final String          projectId = ((String) TurbineUtils.GetPassedParameter("project", data));
         final XnatProjectdata project   = XnatProjectdata.getXnatProjectdatasById(projectId, null, false);
 

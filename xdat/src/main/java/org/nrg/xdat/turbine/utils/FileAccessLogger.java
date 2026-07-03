@@ -1,9 +1,9 @@
 package org.nrg.xdat.turbine.utils;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import org.restlet.ext.servlet.ServletUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.restlet.data.Request;
+import org.restlet.Request;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -15,7 +15,7 @@ public class FileAccessLogger extends AccessLogger{
     }
 
     public static void LogFileResourceAccess(final String user, final Request request, final String service, final String message) {
-        logFileAccess(user, ServletCall.getRequest(request), service, message);
+        logFileAccess(user, ServletUtils.getRequest(request), service, message);
     }
 
     private static void logFileAccess(final String username, final HttpServletRequest request, final String target, final String payload) {

@@ -29,7 +29,7 @@ import org.nrg.xft.schema.design.SchemaElementI;
 public class XDATScreen_edit extends SecureScreen {
 	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		try {
 			ItemI item = TurbineUtils.GetItemBySearch(data);
 			if (item == null)

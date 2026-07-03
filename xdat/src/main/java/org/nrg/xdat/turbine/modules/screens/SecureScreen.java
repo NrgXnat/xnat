@@ -144,7 +144,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
      * @throws Exception When something goes wrong.
      */
     protected void doBuildTemplate(final PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             attemptToPreventBrowserCachingOfHTML(data.getResponse());
             final Context context = TurbineUtils.getVelocityContext(data);
@@ -284,7 +284,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
      * @throws Exception When something goes wrong.
      */
     protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         return isAuthorizedInternal(data);
     }
 

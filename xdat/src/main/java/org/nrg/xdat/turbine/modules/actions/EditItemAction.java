@@ -29,7 +29,7 @@ public class EditItemAction extends SecureAction {
     private static final Logger logger = LoggerFactory.getLogger(EditItemAction.class);
 
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         preserveVariables(data, context);
         try {
             ItemI o = TurbineUtils.GetItemBySearch(data);

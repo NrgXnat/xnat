@@ -33,7 +33,7 @@ public abstract class PrearchiveSessionScreen extends SecureScreen {
 
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		final String folder = (String)TurbineUtils.GetPassedParameter("folder",data);
 	    final String timestamp = (String)TurbineUtils.GetPassedParameter("timestamp",data);
 	    final String project = (String)TurbineUtils.GetPassedParameter("project",data);	

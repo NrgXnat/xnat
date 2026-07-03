@@ -24,7 +24,7 @@ public class RequestProjectAccessForm extends SecureScreen {
     private XnatProjectdata project = null;
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         String p = ((String) TurbineUtils.GetPassedParameter("project",data));
         UserI user = XDAT.getUserDetails();
         if (project==null){

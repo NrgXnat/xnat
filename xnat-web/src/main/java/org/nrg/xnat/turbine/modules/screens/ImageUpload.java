@@ -33,7 +33,7 @@ public class ImageUpload extends SecureScreen {
      */
     protected void doBuildTemplate(final PipelineData pipelineData, final Context context)
     throws MalformedURLException {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final Date d = Calendar.getInstance().getTime();
 
         final SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_hhmmss");

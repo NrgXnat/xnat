@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.Authenticator;
@@ -33,14 +34,16 @@ public class XMLSearch extends XDATRawScreen {
     /**
      * {@inheritDoc}
      */
-    public String getContentType(RunData data) {
+    public String getContentType(PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
         return "text/xml";
     }
 
     /**
      * {@inheritDoc}
      */
-    protected final void doOutput(RunData data) throws Exception {
+    protected final void doOutput(PipelineData pipelineData) throws Exception {
+        RunData data = pipelineData.getRunData();
         final String username = ((String) TurbineUtils.GetPassedParameter("username", data));
         final String password = ((String) TurbineUtils.GetPassedParameter("password", data));
         UserI user = XDAT.getUserDetails();

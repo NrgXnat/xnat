@@ -17,7 +17,7 @@ import org.apache.velocity.context.Context;
 public class UploadOptions extends DICOMSCPPage {
 	@Override
 	protected void doBuildTemplate(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		super.doBuildTemplate(data, context);
 	}
 }

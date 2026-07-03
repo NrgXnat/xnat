@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.nrg.xdat.bean.CatCatalogBean;
@@ -59,7 +60,8 @@ import org.nrg.xnat.utils.WorkflowUtils;
 public class ArcPut extends RawScreen {
     private static final Logger logger = Logger.getLogger(ArcPut.class);
     @Override
-    protected void doOutput(RunData data) throws Exception {
+    protected void doOutput(PipelineData pipelineData) throws Exception {
+        RunData data = pipelineData.getRunData();
         String session = (String) TurbineUtils.GetPassedParameter("session",data);
         String mr_session_id = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("mr_session_id",data));
         HttpServletResponse response = data.getResponse();
@@ -306,7 +308,8 @@ public class ArcPut extends RawScreen {
         }
     }
     @Override
-    protected String getContentType(RunData data) {
+    protected String getContentType(PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
         return "text/xml";
     }
 }

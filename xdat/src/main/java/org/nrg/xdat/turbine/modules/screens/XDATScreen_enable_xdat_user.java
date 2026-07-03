@@ -33,7 +33,7 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
 	static Logger logger = Logger.getLogger(XDATScreen_enable_xdat_user.class);
 	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		try {
 			String login=(String)TurbineUtils.GetPassedParameter("search_value", data);
 			if (login != null)

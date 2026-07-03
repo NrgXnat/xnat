@@ -29,7 +29,7 @@ public class XDATScreen_activate extends SecureScreen {
 	static Logger logger = Logger.getLogger(XDATScreen_activate.class);
 	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 	    try {
             ItemI item = null;
             try {

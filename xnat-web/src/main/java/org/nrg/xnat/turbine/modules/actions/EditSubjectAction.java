@@ -63,7 +63,7 @@ public class EditSubjectAction extends SecureAction {
      */
     @SuppressWarnings("deprecation")
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final UserI user = TurbineUtils.getUser(data);
         ItemI found = null;
 
@@ -71,7 +71,7 @@ public class EditSubjectAction extends SecureAction {
             context.put("tag", TurbineUtils.GetPassedParameter("tag", data));
         }
         try {
-            final EditScreenA screen = (EditScreenA) ScreenLoader.getInstance().getInstance("XDATScreen_edit_xnat_subjectData");
+            final EditScreenA screen = (EditScreenA) ScreenLoader.getInstance().getAssembler("XDATScreen_edit_xnat_subjectData");
             
             final XFTItem newItem = (XFTItem)screen.getEmptyItem(data);
             

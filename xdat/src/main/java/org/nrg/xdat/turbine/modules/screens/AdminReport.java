@@ -15,7 +15,7 @@ import org.apache.turbine.util.RunData;
 public abstract class AdminReport extends SecureReport {
     @Override
     protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         return isAuthorizedAdmin(data);
     }
 }

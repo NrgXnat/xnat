@@ -28,7 +28,7 @@ public class ConfigureSearchFields extends AdminScreen {
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context)
 			throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 
 	}
 }

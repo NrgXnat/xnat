@@ -22,7 +22,7 @@ import org.nrg.xnat.security.XnatProviderManager;
 public class VerifyEmail extends org.nrg.xdat.turbine.modules.screens.VerifyEmail {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final Context context = TurbineUtils.getVelocityContext(data);
         SecureScreen.loadAdditionalVariables(data, context);
         context.put("login_methods", getProviderManager().getVisibleEnabledProviders().values());

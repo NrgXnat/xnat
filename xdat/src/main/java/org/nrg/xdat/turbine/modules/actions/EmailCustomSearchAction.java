@@ -43,7 +43,7 @@ public class EmailCustomSearchAction extends SecureAction{
      */
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data))!=null){
             data.getSession().setAttribute("search_xml",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data)));
         }

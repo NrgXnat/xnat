@@ -30,7 +30,7 @@ import java.util.Date;
 public class Login extends VelocitySecureScreen {
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		final String message = data.getMessage();
 
 		if (!StringUtils.isBlank(message) && (message.startsWith("Password changed") || message.startsWith("Registration successful"))) {
@@ -95,7 +95,7 @@ public class Login extends VelocitySecureScreen {
 
     @Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		for(final Object param : data.getParameters().keySet()){
 			final String paramS= (String)param;
 			if ((!paramS.equalsIgnoreCase("template")) && (!paramS.equalsIgnoreCase("action"))){
@@ -106,7 +106,7 @@ public class Login extends VelocitySecureScreen {
 
 	@Override
 	protected boolean isAuthorized(final PipelineData pipelineData) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		return false;
 	}
 }

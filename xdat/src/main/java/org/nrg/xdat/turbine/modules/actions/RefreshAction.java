@@ -32,7 +32,7 @@ public class RefreshAction extends AdminAction {
 	static Logger logger = Logger.getLogger(RefreshAction.class);
 	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		if (TurbineUtils.GetPassedParameter("refresh",data) !=null)
 		{
 			String refresh = ((String)TurbineUtils.GetPassedParameter("refresh",data));
@@ -72,7 +72,7 @@ public class RefreshAction extends AdminAction {
     @Override
 
     protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 
         boolean authorized= super.isAuthorized(data);
 

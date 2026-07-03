@@ -22,7 +22,7 @@ public abstract class DataManagementEditScreenA extends EditScreenA {
      */
     @Override
     protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         boolean authorized= super.isAuthorized(data);
 //      elimnated DataManager role because every user was automatically one.  
 //        if (authorized)

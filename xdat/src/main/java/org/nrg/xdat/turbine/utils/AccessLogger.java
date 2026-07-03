@@ -11,15 +11,16 @@ package org.nrg.xdat.turbine.utils;
 
 import static org.springframework.http.HttpHeaders.USER_AGENT;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import org.restlet.ext.servlet.ServletUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.services.InstantiationException;
-import org.apache.turbine.services.session.TurbineSession;
+import org.apache.turbine.services.TurbineServices;
+import org.apache.turbine.services.session.SessionService;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
-import org.restlet.data.Request;
+import org.restlet.Request;
 import org.slf4j.helpers.MessageFormatter;
 
 import javax.servlet.http.HttpServletRequest;
@@ -91,7 +92,7 @@ public class AccessLogger {
     }
 
     public static void LogResourceAccess(final String user, final Request request, final String service, final String message) {
-        logAccess(user, ServletCall.getRequest(request), service, message);
+        logAccess(user, ServletUtils.getRequest(request), service, message);
     }
 
     public static void LogResourceAccess(final String user, final HttpServletRequest request, final String service) {
@@ -198,7 +199,7 @@ public class AccessLogger {
     private static Boolean isTrackingSessions() {
         if (TRACKING_SESSIONS == null) {
             try {
-                TRACKING_SESSIONS = !TurbineSession.getActiveSessions().isEmpty();
+                TRACKING_SESSIONS = !((SessionService) TurbineServices.getInstance().getService(SessionService.SERVICE_NAME)).getActiveSessions().isEmpty();
             } catch (InstantiationException exception) {
                 log.info("Got instantiation exception trying to track active sessions. Maybe it's too early to do this?");
             }

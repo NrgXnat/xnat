@@ -22,7 +22,7 @@ import org.nrg.xft.XFT;
 public class DefaultTop extends VelocityNavigation {
 	protected void doBuildTemplate(PipelineData pipelineData,Context context)throws Exception
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		if (XDAT.getSiteConfigPreferences().getRequireLogin())
 		{
 			context.put("logout","true");

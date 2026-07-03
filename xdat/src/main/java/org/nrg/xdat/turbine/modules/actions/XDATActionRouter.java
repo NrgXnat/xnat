@@ -26,7 +26,7 @@ public class XDATActionRouter extends SecureAction
 {
 	static Logger logger = Logger.getLogger(XDATActionRouter.class);
    public void doPerform(PipelineData pipelineData, Context context){
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
        preserveVariables(data,context);
    		String action = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("xdataction",data));
    		if (action != null)

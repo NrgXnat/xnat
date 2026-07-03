@@ -23,7 +23,7 @@ public abstract class DataManagementReport extends SecureReport {
      */
     @Override
     protected boolean isAuthorized(PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         boolean authorized= super.isAuthorized(data);
         if (authorized)
         {

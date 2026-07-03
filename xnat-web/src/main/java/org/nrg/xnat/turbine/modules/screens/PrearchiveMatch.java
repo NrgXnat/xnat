@@ -41,7 +41,7 @@ public class PrearchiveMatch extends SecureScreen {
     final String[] ct_identifiers={"xnat:ctSessionData.ID","xnat:ctSessionData.label","xnat:ctSessionData.sharing.share.label"};
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         ArrayList allMatchers=new ArrayList();
 
         String project = (String)TurbineUtils.GetPassedParameter("project", data);

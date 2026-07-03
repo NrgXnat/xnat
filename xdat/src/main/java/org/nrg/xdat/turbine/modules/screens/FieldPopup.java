@@ -32,7 +32,7 @@ public class FieldPopup extends SecureScreen {
      */
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         String s = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("element_name",data));
         context.put("element_name",s);
         

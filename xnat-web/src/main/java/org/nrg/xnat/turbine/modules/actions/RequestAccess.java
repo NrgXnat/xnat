@@ -37,7 +37,7 @@ public class RequestAccess extends SecureAction {
 
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         String p = ((String) TurbineUtils.GetPassedParameter("project",data));
         XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(p, null, false);
 

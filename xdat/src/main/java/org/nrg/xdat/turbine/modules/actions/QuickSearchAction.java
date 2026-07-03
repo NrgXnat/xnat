@@ -31,7 +31,7 @@ public class QuickSearchAction extends SecureAction {
      * @see org.nrg.xdat.turbine.modules.actions.SearchA#setupSearch(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void doPerform(PipelineData pipelineData, Context context) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
         String s = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("searchValue",data));
         if (s==null || s.equalsIgnoreCase(""))

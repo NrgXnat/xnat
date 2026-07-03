@@ -25,7 +25,7 @@ public class XnatErrorScreen extends VelocityErrorScreen {
 
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         super.doBuildTemplate(data, context);
 
         final HttpServletRequest request = data.getRequest();

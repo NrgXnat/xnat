@@ -32,7 +32,7 @@ public class XDATScreen_uploadCSV1 extends SecureScreen {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         FieldMapping fm = (FieldMapping)context.get("fm");
         String fm_id = (String)TurbineUtils.GetPassedParameter("fm_id", data);
         if (fm==null && fm_id!=null){

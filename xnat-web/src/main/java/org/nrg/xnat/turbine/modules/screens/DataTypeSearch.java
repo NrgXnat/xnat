@@ -21,7 +21,7 @@ public class DataTypeSearch extends SecureScreen {
 	@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context)
 			throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 
 		if(TurbineUtils.HasPassedParameter("dataType",data)){
 			SchemaElement gwe = SchemaElement.GetElement((String)TurbineUtils.GetPassedParameter("dataType", data));

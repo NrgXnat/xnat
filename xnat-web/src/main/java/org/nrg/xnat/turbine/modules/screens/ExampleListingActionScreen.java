@@ -29,7 +29,7 @@ public class ExampleListingActionScreen extends SecureScreen {
 
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         
         //retrieve passed search object
         DisplaySearch search = TurbineUtils.getSearch(data);

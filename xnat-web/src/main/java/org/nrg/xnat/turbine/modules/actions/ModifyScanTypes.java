@@ -42,7 +42,7 @@ public class ModifyScanTypes extends ModifyItem{
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
 			final String project = (String)TurbineUtils.GetPassedParameter("project", data);
 			final UserI user = TurbineUtils.getUser(data);

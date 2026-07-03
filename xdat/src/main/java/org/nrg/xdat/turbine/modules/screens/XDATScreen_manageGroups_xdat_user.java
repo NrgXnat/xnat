@@ -26,7 +26,7 @@ public class XDATScreen_manageGroups_xdat_user extends AdminScreen {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             ItemI item = TurbineUtils.GetItemBySearch(data);
             if (item == null)

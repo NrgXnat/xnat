@@ -39,7 +39,7 @@ public class EmailAction extends SecureAction {
 	 * .turbine.util.RunData, org.apache.velocity.context.Context)
 	 */
 	public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		preserveVariables(data, context);
 		execute(data, context);
 	}

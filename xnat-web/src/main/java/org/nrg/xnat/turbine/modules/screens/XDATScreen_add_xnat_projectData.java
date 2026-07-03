@@ -43,7 +43,7 @@ public class XDATScreen_add_xnat_projectData extends EditScreenA {
     
     @Override
     protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         if(!XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation()) {
             return super.isAuthorizedAdmin(data);
         }else {

@@ -17,7 +17,7 @@ public class ModifyGroupPrivileges extends AdminAction {
 	static Logger logger = Logger.getLogger(ModifyGroupPrivileges.class);
 	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		data.setMessage("Not currently supported");
 	}
 }

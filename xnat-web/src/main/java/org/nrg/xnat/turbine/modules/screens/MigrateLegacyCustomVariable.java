@@ -14,7 +14,7 @@ public class MigrateLegacyCustomVariable extends SecureScreen {
 
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 
         if (!XDAT.getBooleanPreferenceValue(CustomFormsFeatureFlags.CUSTOM_FORMS_FEATURE_FLAGS_TOOL_ID, CustomFormsFeatureFlags.CUSTOM_VARIABLE_MIGRATION_PREFERENCE_NAME, false)) {
             data.setMessage("Unauthorized: You do not have sufficient permission to access this page");

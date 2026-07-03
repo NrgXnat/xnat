@@ -24,7 +24,7 @@ public class DisplayXMLAction extends SecureAction {
 	static Logger logger = Logger.getLogger(DisplayXMLAction.class);
 	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
 		try {
 			ItemI item = TurbineUtils.GetItemBySearch(data);

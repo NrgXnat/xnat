@@ -34,7 +34,7 @@ public class ProjectDownloadAction extends SecureAction {
     @SuppressWarnings("Duplicates")
     @Override
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final String projectId = (String) TurbineUtils.GetPassedParameter("project", data);
 
         if (projectId.contains("\\") || projectId.contains("'")) {

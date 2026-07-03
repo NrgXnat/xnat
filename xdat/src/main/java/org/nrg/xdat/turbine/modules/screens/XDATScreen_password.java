@@ -28,7 +28,7 @@ public class XDATScreen_password extends SecureScreen {
 
     public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		try {
 			UserI user = TurbineUtils.getUser(data);
 			

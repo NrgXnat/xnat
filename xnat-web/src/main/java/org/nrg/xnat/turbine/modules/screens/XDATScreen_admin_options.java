@@ -19,6 +19,6 @@ public class XDATScreen_admin_options extends SecureScreen  {
     public final static Logger logger = Logger.getLogger(XDATScreen_admin_options.class);
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
     }
 }

@@ -78,7 +78,7 @@ public abstract class SearchA extends SecureAction {
 
 	public void doPerform(PipelineData pipelineData, Context context)
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		try {
 		    doPreliminaryProcessing(data,context);
 

@@ -32,7 +32,7 @@ public class XDATScreen_bundles extends AdminScreen {
      */
     protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 //      TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		UserI user = TurbineUtils.getUser(data);	
 		try {

@@ -19,6 +19,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -30,7 +31,8 @@ public class CreateCSVTemplate extends RawScreen {
      * @see org.apache.turbine.modules.screens.VelocitySecureScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     @Override
-    protected void doOutput(RunData data) throws Exception {
+    protected void doOutput(PipelineData pipelineData) throws Exception {
+        RunData data = pipelineData.getRunData();
         FieldMapping fm = (FieldMapping)TurbineUtils.GetPassedParameter("fm", data);
         String fm_id = (String)TurbineUtils.GetPassedParameter("fm_id", data);
         if (fm==null && fm_id!=null){
@@ -62,8 +64,9 @@ public class CreateCSVTemplate extends RawScreen {
          out.print(sb.toString());
          out.close();
     }
-    public String getContentType(RunData data)
+    public String getContentType(PipelineData pipelineData)
       {
+        RunData data = pipelineData.getRunData();
         return "application/msexcel";
       }
 

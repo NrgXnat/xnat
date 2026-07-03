@@ -16,6 +16,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 
@@ -29,8 +30,9 @@ public abstract class PdfScreen extends SecureReport
     * @param data Turbine information.
     * @return content type.
     */
-    public String getContentType(RunData data)
+    public String getContentType(PipelineData pipelineData)
     {
+        RunData data = pipelineData.getRunData();
         return "application/pdf";
     }
 

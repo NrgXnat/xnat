@@ -26,7 +26,7 @@ public class ConfirmRegister extends SecureAction {
 
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             UserI newUser=Users.createUser(TurbineUtils.GetDataParameterHash(data));
             
@@ -79,7 +79,7 @@ public class ConfirmRegister extends SecureAction {
 
     protected boolean isAuthorized(PipelineData pipelineData)  throws Exception
     {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         return true;
     }
 }

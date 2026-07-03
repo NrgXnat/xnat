@@ -15,7 +15,7 @@ public class TriageResources extends CustomTableScreen {
 	 */
 	/*@Override
 	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		if(data.getParameters().getObject("hideTopBar")!=null){
 			context.put("hideTopBar", Boolean.valueOf((String)TurbineUtils.GetPassedParameter(("hideTopBar"), data)));
 		}

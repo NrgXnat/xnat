@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 public class Index extends SecureScreen {
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         // TODO: put all this in a method in the theme service with an optional requested page parameter
         final String themedRedirect = themeService.getThemePage("Landing");
         if (StringUtils.isNotBlank(themedRedirect)) {

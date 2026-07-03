@@ -46,7 +46,7 @@ public class RegisterExternalLogin extends XDATRegisterUser {
 
     @Override
     public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         final String operation    = (String) TurbineUtils.GetPassedParameter("operation", data);
         final String username     = (String) TurbineUtils.GetPassedParameter("username", data);
         final String password     = (String) TurbineUtils.GetPassedParameter("password", data);

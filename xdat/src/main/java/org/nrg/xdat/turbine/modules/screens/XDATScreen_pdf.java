@@ -51,7 +51,8 @@ public class XDATScreen_pdf extends SecureScreen {
      * @param data Turbine information.
      * @return content type.
      */
-    public String getContentType(RunData data) {
+    public String getContentType(PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
         return "application/pdf";
     }
 
@@ -141,7 +142,7 @@ public class XDATScreen_pdf extends SecureScreen {
     }
 
     public void doBuildTemplate(PipelineData pipelineData, Context context) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             item = TurbineUtils.GetItemBySearch(data);
         } catch (Exception ignored) {

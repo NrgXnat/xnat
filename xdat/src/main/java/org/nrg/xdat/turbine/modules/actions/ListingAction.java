@@ -20,7 +20,7 @@ public abstract class ListingAction extends SecureAction {
 
     @Override
     public void doPerform(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
         String destination = getDestinationScreenName(data);
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("querytype",data)) !=null)

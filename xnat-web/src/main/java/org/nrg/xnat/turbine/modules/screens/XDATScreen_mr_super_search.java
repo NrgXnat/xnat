@@ -29,7 +29,7 @@ public class XDATScreen_mr_super_search extends SecureScreen {
      * @see org.cnl.xdat.turbine.modules.screens.SecureReport#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void doBuildTemplate(PipelineData pipelineData, Context context) {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         try {
             Hashtable hash = ElementSecurity.GetDistinctIdValuesFor("xnat:investigatorData","default",TurbineUtils.getUser(data).getLogin());
             context.put("investigators",hash);

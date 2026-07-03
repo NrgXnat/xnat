@@ -22,7 +22,7 @@ import org.nrg.xft.XFTItem;
 public class XDATScreen_edit_xdat_user extends AdminScreen {
 	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
 		try {
 			ItemI item = TurbineUtils.GetItemBySearch(data);
 			if (item == null)

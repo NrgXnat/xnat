@@ -21,7 +21,7 @@ public class XDATScreen_admin_projectAccess extends AdminScreen {
 
     @Override
     protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
-        final RunData data = pipelineData.getRunData();
+        RunData data = pipelineData.getRunData();
         UserI user = TurbineUtils.getUser(data);
         String query = "SELECT proj.id, CASE WHEN PUB_PROJS.read_element=1 THEN 'public' WHEN PRIV_PROJS.read_element=1 THEN 'protected'  WHEN PRIV_PROJS.read_element=0 THEN 'private' ELSE 'NULL' END AS accessibility" +
                 " FROM xnat_projectData proj "+

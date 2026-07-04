@@ -12,7 +12,7 @@ package org.nrg.xnat.restlet.representations;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
 import org.restlet.data.MediaType;
-import org.restlet.resource.OutputRepresentation;
+import org.restlet.representation.OutputRepresentation;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

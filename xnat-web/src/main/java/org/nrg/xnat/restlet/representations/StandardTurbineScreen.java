@@ -18,7 +18,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.TurbineException;
 import org.nrg.xft.security.UserI;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
+import org.restlet.Request;
 
 /**
  * @author tolsen01

@@ -17,10 +17,10 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.resource.Representation;
+import org.restlet.Request;
+import org.restlet.representation.Representation;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import org.restlet.ext.servlet.ServletUtils;
 
 public class RequestUtil {
 	public static final String DEST = "dest";
@@ -30,7 +30,7 @@ public class RequestUtil {
 	public static final String TRUE = "true";
 
 	public HttpServletRequest getHttpServletRequest(Request request) {
-		return ServletCall.getRequest(request);
+		return ServletUtils.getRequest(request);
 	}
 
 	private static Map<MediaType, String> supported_upload_types = new Hashtable<MediaType, String>() {{

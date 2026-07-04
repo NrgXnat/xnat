@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet;
 
-import org.restlet.util.Template;
+import org.restlet.routing.Template;
 
 public @interface XnatRestletURI {
 	String value();

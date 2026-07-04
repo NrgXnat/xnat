@@ -11,10 +11,9 @@ package org.nrg.xnat.ajax;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.rundata.RunDataService;
-import org.apache.turbine.services.rundata.TurbineRunDataFacade;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.TurbineException;
-import org.apache.turbine.util.parser.CookieParser;
+import org.apache.fulcrum.parser.CookieParser;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.exceptions.IllegalAccessException;
@@ -55,7 +54,7 @@ public class RequestSearchData {
             InputSource is = new InputSource(sr);
             
             RunDataService rundataService = null;
-            rundataService = TurbineRunDataFacade.getService();
+            rundataService = (org.apache.turbine.services.rundata.RunDataService) org.apache.turbine.services.TurbineServices.getInstance().getService(org.apache.turbine.services.rundata.RunDataService.SERVICE_NAME);
             try {
                 if (rundataService == null)
                 {
@@ -187,7 +186,7 @@ public class RequestSearchData {
         if (user!=null){
             
             RunDataService rundataService = null;
-            rundataService = TurbineRunDataFacade.getService();
+            rundataService = (org.apache.turbine.services.rundata.RunDataService) org.apache.turbine.services.TurbineServices.getInstance().getService(org.apache.turbine.services.rundata.RunDataService.SERVICE_NAME);
             try {
                 if (rundataService == null)
                 {

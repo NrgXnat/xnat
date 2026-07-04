@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.PageLoader;
 import org.apache.turbine.services.template.TemplateService;
-import org.apache.turbine.services.template.TurbineTemplate;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.ServerData;
 import org.apache.turbine.util.TurbineException;
@@ -31,11 +30,11 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.rundata.RestletRunData;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.resource.OutputRepresentation;
+import org.restlet.Request;
+import org.restlet.representation.OutputRepresentation;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
-import com.noelios.restlet.http.HttpRequest;
+import org.restlet.ext.servlet.ServletUtils;
+import org.restlet.engine.adapter.HttpRequest;
 
 public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 	static org.apache.log4j.Logger logger = Logger.getLogger(TurbineScreenRepresentation.class);
@@ -68,7 +67,7 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 
 	@SuppressWarnings("deprecation")
 	public void turbineScreen(RunData data,OutputStream out)throws IOException,Exception{
-		TemplateService templateService = TurbineTemplate.getService();
+		TemplateService templateService = (org.apache.turbine.services.template.TemplateService) org.apache.turbine.services.TurbineServices.getInstance().getService(org.apache.turbine.services.template.TemplateService.SERVICE_NAME);
         String defaultPage = (templateService == null)
                 ? null :templateService.getDefaultPageName(data);
 
@@ -109,8 +108,8 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 //		RunData data = rundataService.getRunData("restlet",request, response, XNATRestletServlet.REST_CONFIG);
 
 		RestletRunData data = new RestletRunData();
-        data.setParameterParser(new org.apache.turbine.util.parser.DefaultParameterParser());
-        data.setCookieParser(new org.apache.turbine.util.parser.DefaultCookieParser());
+        data.setParameterParser(new org.apache.fulcrum.parser.DefaultParameterParser());
+        data.setCookieParser(new org.apache.fulcrum.parser.DefaultCookieParser());
 
         // Set the request and response.
         data.setRequest(request);

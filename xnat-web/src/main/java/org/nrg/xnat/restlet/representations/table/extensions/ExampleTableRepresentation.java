@@ -12,7 +12,7 @@ package org.nrg.xnat.restlet.representations.table.extensions;
 import org.nrg.xft.XFTTable;
 import org.nrg.xnat.restlet.XnatTableRepresentation;
 import org.restlet.data.MediaType;
-import org.restlet.resource.OutputRepresentation;
+import org.restlet.representation.OutputRepresentation;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -72,7 +72,7 @@ public class ExampleTableRepresentation extends OutputRepresentation {
 
 	/* (non-Javadoc)
 	 * This is where the magic happens.  Most likely, this is the only method you should have to modify.  
-	 * @see org.restlet.resource.Representation#write(java.io.OutputStream)
+	 * @see org.restlet.representation.Representation#write(java.io.OutputStream)
 	 */
 	@Override
 	public void write(OutputStream os) throws IOException {

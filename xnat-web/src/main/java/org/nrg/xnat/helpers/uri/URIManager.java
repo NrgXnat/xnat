@@ -22,7 +22,7 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.uri.archive.impl.*;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
-import org.restlet.util.Template;
+import org.restlet.routing.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Collection;

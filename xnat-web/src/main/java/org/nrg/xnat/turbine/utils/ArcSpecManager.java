@@ -26,7 +26,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
-import org.restlet.util.DateUtils;
+import org.restlet.engine.util.DateUtils;
 import org.xml.sax.SAXException;
 
 import java.io.File;

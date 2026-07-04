@@ -12,7 +12,7 @@ package org.nrg.xnat.restlet.representations;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.restlet.data.MediaType;
-import org.restlet.resource.OutputRepresentation;
+import org.restlet.representation.OutputRepresentation;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

@@ -12,7 +12,7 @@ package org.nrg.xnat.restlet.representations;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.bean.base.BaseElement;
 import org.restlet.data.MediaType;
-import org.restlet.resource.OutputRepresentation;
+import org.restlet.representation.OutputRepresentation;
 
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import java.io.IOException;

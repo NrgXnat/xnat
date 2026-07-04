@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet.servlet;
 
-import com.noelios.restlet.ext.servlet.ServerServlet;
+import org.restlet.ext.servlet.ServerServlet;
 import org.nrg.dcm.scp.DicomSCPManager;
 import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;

@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet.resources.search;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import org.restlet.ext.servlet.ServletUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -23,11 +23,11 @@ import org.nrg.xnat.restlet.presentation.RESTHTMLPresenter;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,7 +112,7 @@ public class CachedSearchResource extends SecureResource {
 				}
 				if (mt!=null && (mt.equals(SecureResource.APPLICATION_XLIST))){
 					DisplaySearch ds = mv.getDisplaySearch(user);
-			    	RESTHTMLPresenter presenter= new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletCall.getRequest(this.getRequest())),null,user,sortBy);
+			    	RESTHTMLPresenter presenter= new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletUtils.getRequest(this.getRequest())),null,user,sortBy);
 			    	presenter.setRootElement(ds.getRootElement());
 					presenter.setDisplay(ds.getDisplay());
 					presenter.setAdditionalViews(ds.getAdditionalViews());

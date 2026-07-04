@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet.resources.search;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import org.restlet.ext.servlet.ServletUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.*;
@@ -40,12 +40,12 @@ import org.nrg.xnat.restlet.resources.ItemResource;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.FileRepresentation;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.FileRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
 import org.springframework.util.StringUtils;
 import org.xml.sax.SAXException;
 
@@ -205,7 +205,7 @@ public class SavedSearchResource extends ItemResource {
                     final XFTTable table;
                     if (mv != null) {
                         if (mt.equals(SecureResource.APPLICATION_XLIST)) {
-                            table = (XFTTable) ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletCall.getRequest(this.getRequest())), this.getCurrentURI(), user, sortBy), user.getLogin());
+                            table = (XFTTable) ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletUtils.getRequest(this.getRequest())), this.getCurrentURI(), user, sortBy), user.getLogin());
                         } else if (this.isQueryVariableTrue("guiStyle")) {
                             table = (XFTTable) ds.execute(new CSVPresenter(), user.getLogin());
                         } else {
@@ -214,7 +214,7 @@ public class SavedSearchResource extends ItemResource {
                     } else {
                         ds.setPagingOn(false);
                         if (mt.equals(SecureResource.APPLICATION_XLIST)) {
-                            table = (XFTTable) ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletCall.getRequest(this.getRequest())), this.getCurrentURI(), user, sortBy), user.getLogin());
+                            table = (XFTTable) ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletUtils.getRequest(this.getRequest())), this.getCurrentURI(), user, sortBy), user.getLogin());
                         } else if (this.isQueryVariableTrue("guiStyle")) {
                             table = (XFTTable) ds.execute(new CSVPresenter(), user.getLogin());
                         } else {

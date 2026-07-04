@@ -10,8 +10,8 @@
 package org.nrg.xnat.restlet.resources;
 
 import org.restlet.Context;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 
 public abstract class ItemResource extends SecureResource {
 

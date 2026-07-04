@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet.extensions;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import org.restlet.ext.servlet.ServletUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
@@ -18,8 +18,11 @@ import org.nrg.xnat.security.XnatProviderManager;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.restlet.Context;
 import org.restlet.data.*;
+import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
 import org.restlet.resource.Resource;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Variant;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -114,7 +117,7 @@ public class AuthenticationRestlet extends Resource {
             }
             if (null != authentication && authentication.isAuthenticated()) {
                 succeed(authentication);
-                getResponse().setEntity(ServletCall.getRequest(getRequest()).getSession().getId(), MediaType.TEXT_PLAIN);
+                getResponse().setEntity(ServletUtils.getRequest(getRequest()).getSession().getId(), MediaType.TEXT_PLAIN);
             } else {
                 fail();
             }

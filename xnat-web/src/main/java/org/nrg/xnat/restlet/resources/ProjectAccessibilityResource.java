@@ -21,9 +21,12 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
-import org.restlet.resource.Representation;
-import org.restlet.resource.StringRepresentation;
-import org.restlet.resource.Variant;
+import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.representation.Variant;
 
 @Slf4j
 public class ProjectAccessibilityResource extends SecureResource {

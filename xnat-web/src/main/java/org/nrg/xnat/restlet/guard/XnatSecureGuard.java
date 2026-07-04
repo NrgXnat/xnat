@@ -21,10 +21,13 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.representations.RESTLoginRepresentation;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.utils.InteractiveAgentDetector;
-import org.restlet.Filter;
+import org.restlet.routing.Filter;
 import org.restlet.data.*;
-import org.restlet.resource.Representation;
-import org.restlet.resource.StringRepresentation;
+import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;

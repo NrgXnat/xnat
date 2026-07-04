@@ -63,10 +63,11 @@ import org.nrg.xnat.utils.CatalogUtils.CatEntryFilterI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.*;
+import org.restlet.representation.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

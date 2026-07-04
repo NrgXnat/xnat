@@ -12,7 +12,7 @@ package org.nrg.xnat.helpers;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.IOUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.restlet.resource.Representation;
+import org.restlet.representation.Representation;
 
 import java.io.File;
 import java.io.FileOutputStream;

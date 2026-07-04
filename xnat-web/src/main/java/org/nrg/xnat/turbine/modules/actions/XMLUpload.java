@@ -17,7 +17,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.turbine.services.pull.tools.TemplateLink;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;

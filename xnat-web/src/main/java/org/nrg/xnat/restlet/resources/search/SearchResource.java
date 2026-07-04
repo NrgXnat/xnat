@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet.resources.search;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import org.restlet.ext.servlet.ServletUtils;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.lang3.StringUtils;
@@ -37,11 +37,11 @@ import org.nrg.xnat.restlet.presentation.RESTHTMLPresenter;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -208,7 +208,7 @@ public class SearchResource extends SecureResource {
                     ds.setPagingOn(false);
                     MediaType mt = getRequestedMediaType();
                     if (mt != null && mt.equals(SecureResource.APPLICATION_XLIST)) {
-                        table = (XFTTable) ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletCall.getRequest(getRequest())), null, user, sortBy), user.getLogin());
+                        table = (XFTTable) ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletUtils.getRequest(getRequest())), null, user, sortBy), user.getLogin());
                     } else {
                         table = (XFTTable) ds.execute(null, user.getLogin());
                     }
@@ -373,7 +373,7 @@ public class SearchResource extends SecureResource {
                             linkProps.append(prop.getName()).append("\"");
                             linkProps.append(",\"value\":\"");
                             String v = prop.getValue();
-                            v = StringUtils.replace(v, "@WEBAPP", TurbineUtils.GetRelativePath(ServletCall.getRequest(sr.getRequest())) + "/");
+                            v = StringUtils.replace(v, "@WEBAPP", TurbineUtils.GetRelativePath(ServletUtils.getRequest(sr.getRequest())) + "/");
 
                             linkProps.append(v).append("\"");
 
@@ -445,7 +445,7 @@ public class SearchResource extends SecureResource {
                     }
 
                     if (dfr.isImage()) {
-                        cp.get(id).put("imgRoot", TurbineUtils.GetRelativePath(ServletCall.getRequest(sr.getRequest())) + "/");
+                        cp.get(id).put("imgRoot", TurbineUtils.GetRelativePath(ServletUtils.getRequest(sr.getRequest())) + "/");
                     }
                 } catch (XFTInitException | ElementNotFoundException e) {
                     logger.error("", e);

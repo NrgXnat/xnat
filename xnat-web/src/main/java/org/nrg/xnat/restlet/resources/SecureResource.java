@@ -11,7 +11,7 @@ package org.nrg.xnat.restlet.resources;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.noelios.restlet.http.HttpConstants;
+import org.restlet.engine.header.HeaderConstants;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.fileupload.DefaultFileItemFactory;
@@ -94,6 +94,10 @@ import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
+import org.restlet.data.Status;
+import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
 import org.restlet.ext.fileupload.RestletFileUpload;
 import org.restlet.resource.*;
 import org.restlet.util.Series;
@@ -1160,7 +1164,7 @@ public abstract class SecureResource extends Resource {
         if (attributes.containsKey(CONTENT_DISPOSITION)) {
             throw new IllegalStateException("A content disposition header has already been added to this response.");
         }
-        Object oHeaders = attributes.get(HttpConstants.ATTRIBUTE_HEADERS);
+        Object oHeaders = attributes.get(HeaderConstants.ATTRIBUTE_HEADERS);
         Series<Parameter> headers;
         if (oHeaders != null) {
             headers = (Series<Parameter>) oHeaders;
@@ -1168,7 +1172,7 @@ public abstract class SecureResource extends Resource {
             headers = new Form();
         }
         headers.add(new Parameter(CONTENT_DISPOSITION, TurbineUtils.createContentDispositionValue(filename, isAttachment)));
-        attributes.put(HttpConstants.ATTRIBUTE_HEADERS, headers);
+        attributes.put(HeaderConstants.ATTRIBUTE_HEADERS, headers);
     }
 
     /**

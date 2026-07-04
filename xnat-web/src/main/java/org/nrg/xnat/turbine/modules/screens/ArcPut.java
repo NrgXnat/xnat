@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.base.BaseElement;
 import org.nrg.xdat.bean.reader.XDATXMLReader;

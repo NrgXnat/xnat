@@ -16,7 +16,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.turbine.services.rundata.RunDataService;
-import org.apache.turbine.services.rundata.TurbineRunDataFacade;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.TurbineException;
 import org.apache.velocity.context.Context;
@@ -50,7 +49,7 @@ public class GrantProjectAccess {
         }
 		else {
             RunDataService rundataService = null;
-            rundataService = TurbineRunDataFacade.getService();
+            rundataService = (org.apache.turbine.services.rundata.RunDataService) org.apache.turbine.services.TurbineServices.getInstance().getService(org.apache.turbine.services.rundata.RunDataService.SERVICE_NAME);
             try {
                 if (rundataService == null) {
                     throw new TurbineException(

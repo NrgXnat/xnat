@@ -26,8 +26,8 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.services.prearchive.BatchPrearchiveActionsA;
 import org.nrg.xnat.status.StatusList;
 import org.restlet.Context;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 
 import java.util.ArrayList;
 import java.util.Collections;

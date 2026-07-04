@@ -32,8 +32,10 @@ import org.nrg.xnat.restlet.services.prearchive.PrearchiveBatchMove;
 import org.nrg.xnat.restlet.services.prearchive.PrearchiveBatchRebuild;
 import org.nrg.xnat.restlet.transaction.monitor.SQListenerRepresentation;
 import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
 import org.restlet.resource.Resource;
-import org.restlet.util.Template;
+import org.restlet.routing.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

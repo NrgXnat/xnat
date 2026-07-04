@@ -20,10 +20,10 @@ import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.restlet.Context;
 import org.restlet.data.Form;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
+import org.restlet.representation.Representation;
 
 import java.util.Arrays;
 import java.util.List;

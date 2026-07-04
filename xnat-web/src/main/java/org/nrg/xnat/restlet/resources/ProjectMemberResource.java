@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet.resources;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import org.restlet.ext.servlet.ServletUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -41,8 +41,11 @@ import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
 
 import java.sql.SQLException;
 import java.util.*;

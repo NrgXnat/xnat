@@ -38,10 +38,13 @@
     </crypto>
 
     <parser>
-        <!-- XNAT: MUST be 'none'. XNAT uses case-sensitive, camelCase request params
-             (search_field, topTab, search_element, ...). The Fulcrum default/example
-             'lower' would fold parameter names and break screen/action parameter lookup. -->
-        <urlCaseFolding>none</urlCaseFolding>
+        <!-- MUST be 'lower' (Turbine 2.3.3's default). XNAT's TurbineUtils.GetPassedParameter/
+             HasPassedParameter lowercase the key before lookup (get(s.toLowerCase())), so they rely
+             on the parser folding parameter names to lowercase. With 'none', path-info params like
+             /app/template/DataTypeSearch.vm/dataType/<x> are stored as "dataType" while the lookup
+             asks for "datatype" -> miss -> null context values across the app. (The earlier 'none'
+             recommendation was wrong: XNAT accesses params case-insensitively, it does not preserve case.) -->
+        <urlCaseFolding>lower</urlCaseFolding>
         <!-- XNAT: verify. utf-8 aligns with the Velocity 2 default-encoding change, but
              SecureAction uses ISO-8859-1 for URL-encoding (SecureAction.java:102); confirm
              request-parameter decoding behavior is unchanged under utf-8. -->

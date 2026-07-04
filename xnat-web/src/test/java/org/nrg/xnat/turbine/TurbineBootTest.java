@@ -44,6 +44,16 @@ public class TurbineBootTest {
                               TurbineServices.getInstance().getService(service));
                 System.out.println("[boot] OK: " + service);
             }
+
+            // Exercise global pull-tool instantiation — service.init() alone does not surface a
+            // missing/renamed tool class (Turbine logs it and continues). The $ui tool (UITool)
+            // delegates to UIService, so this covers both.
+            final org.apache.turbine.services.pull.PullService pull =
+                    (org.apache.turbine.services.pull.PullService) TurbineServices.getInstance().getService("PullService");
+            final org.apache.velocity.context.Context globalTools = pull.getGlobalContext();
+            final Object ui = globalTools.get("ui");
+            assertNotNull("global pull tool $ui (UITool) did not instantiate", ui);
+            System.out.println("[boot] OK: pull tool $ui -> " + ui.getClass().getName());
         } finally {
             try {
                 config.dispose();

@@ -9,6 +9,8 @@
 
 package org.nrg.xnat.restlet.extensions;
 
+import org.nrg.xnat.restlet.resources.SecureResource;
+
 import org.restlet.ext.servlet.ServletUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -34,7 +36,7 @@ import java.util.Map;
 
 @XnatRestlet(value = "/services/auth", secure = false)
 @Slf4j
-public class AuthenticationRestlet extends Resource {
+public class AuthenticationRestlet extends SecureResource {
     public AuthenticationRestlet(Context context, Request request, Response response) throws Exception {
         super(context, request, response);
         getVariants().add(new Variant(MediaType.ALL));

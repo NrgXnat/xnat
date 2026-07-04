@@ -100,8 +100,7 @@ public class AliasTokenRestlet extends SecureResource {
         _secret = (String) getRequest().getAttributes().get(PARAM_SECRET);
     }
 
-    @Override
-    public Representation represent(final Variant variant) throws ResourceException {
+    public Representation represent() throws ResourceException {
         final UserI user = getUser();
 
         final boolean hasUsername = StringUtils.isNotBlank(_username);

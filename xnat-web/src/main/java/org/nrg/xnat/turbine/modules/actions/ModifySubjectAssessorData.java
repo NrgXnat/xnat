@@ -293,7 +293,7 @@ public class ModifySubjectAssessorData extends ModifyItem {
                     TurbineUtils.SetParticipantItem(part, data);
                 }
                 TurbineUtils.SetEditItem(first, data);
-                XDATActionRouter.passToScreen(data,getContext(data),"edit",first.getXSIType());
+                XDATActionRouter.passToScreen(data,TurbineUtils.getVelocityContext(data),"edit",first.getXSIType());
             } else {
                 data.setScreenTemplate("Index.vm");
             }

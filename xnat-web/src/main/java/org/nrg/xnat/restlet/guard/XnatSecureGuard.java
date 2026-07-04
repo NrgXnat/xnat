@@ -147,7 +147,7 @@ public class XnatSecureGuard extends Filter {
             response.setEntity(loginRepresentation(request));
         } else {
             // standard 401 with a www-authenticate
-            response.setChallengeRequest(createChallengeRequest());
+            response.getChallengeRequests().add(createChallengeRequest());
         }
     }
 

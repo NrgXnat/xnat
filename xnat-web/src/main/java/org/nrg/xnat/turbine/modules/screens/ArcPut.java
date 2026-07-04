@@ -23,7 +23,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.fileupload.FileItem;
+import javax.servlet.http.Part;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
 import org.apache.turbine.pipeline.PipelineData;
@@ -97,7 +97,7 @@ public class ArcPut extends RawScreen {
                 return;
             }
             ParameterParser params = data.getParameters();
-            FileItem fi = params.getFileItem("archive");
+            Part fi = params.getPart("archive");
             if (fi != null )
             {
                 String filename = fi.getName();
@@ -155,7 +155,7 @@ public class ArcPut extends RawScreen {
                 } else {
                     //PLACE UPLOADED IMAGE INTO FOLDER
                     File uploaded = new File(cachePath + filename) ;
-                    fi.write(uploaded);
+                    java.nio.file.Files.copy(fi.getInputStream(), uploaded.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 }
                 fi.delete();
                 int counter=0; 

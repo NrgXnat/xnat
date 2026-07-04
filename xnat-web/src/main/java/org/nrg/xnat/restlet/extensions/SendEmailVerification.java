@@ -28,7 +28,7 @@ import java.util.Date;
 import java.util.List;
 
 @XnatRestlet(value = {"/services/sendEmailVerification"}, secure = false)
-public class SendEmailVerification extends Resource {
+public class SendEmailVerification extends SecureResource {
 
     private final EmailRequestLogService requests = XDAT.getContextService().getBean(EmailRequestLogService.class);
 

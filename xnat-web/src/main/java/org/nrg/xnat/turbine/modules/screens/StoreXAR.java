@@ -23,7 +23,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.fileupload.FileItem;
+import javax.servlet.http.Part;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
@@ -87,7 +87,7 @@ public class StoreXAR extends RawScreen {
 
             final ParameterParser params = data.getParameters();
 
-            final FileItem fi = params.getFileItem("archive");
+            final Part fi = params.getPart("archive");
 
 
             if (fi != null )

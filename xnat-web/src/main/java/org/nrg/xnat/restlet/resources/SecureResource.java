@@ -1416,7 +1416,7 @@ public abstract class SecureResource extends ServerResource {
                 wrappers.add(new FileWriterWrapper(item, useFileFieldName ? item.getFieldName() : fileName));
             }
         } else {
-            String name = entity.getDownloadName();
+            String name = entity.getDisposition() != null ? entity.getDisposition().getFilename() : null;
             logger.debug(name);
         }
 

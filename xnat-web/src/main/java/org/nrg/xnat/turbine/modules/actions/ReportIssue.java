@@ -10,8 +10,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.disk.DiskFileItem;
+import javax.servlet.http.Part;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.fulcrum.parser.ParameterParser;
@@ -79,8 +78,8 @@ public class ReportIssue extends SecureAction {
     }
 
     private Map<String, File> getAttachmentMap(final String sessionId, final ParameterParser parameters) {
-        final FileItem fileItem = parameters.getFileItem("upload");
-        if (fileItem == null || ((!(fileItem instanceof DiskFileItem) || ((DiskFileItem) fileItem).getStoreLocation() == null) && fileItem.getSize() <= 0)) {
+        final Part fileItem = parameters.getPart("upload");
+        if (fileItem == null || fileItem.getSize() <= 0) {
             return Collections.emptyMap();
         }
 
@@ -90,7 +89,7 @@ public class ReportIssue extends SecureAction {
         final Map<String, File> attachments = new HashMap<>();
         final File              file         = cachePath.resolve(fileItem.getName()).toFile();
         try {
-            fileItem.write(file);
+            java.nio.file.Files.copy(fileItem.getInputStream(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             attachments.put(fileItem.getName(), file);
         } catch (Exception exception) {
             log.warn("Could not attach file {}", file.getAbsolutePath(), exception);

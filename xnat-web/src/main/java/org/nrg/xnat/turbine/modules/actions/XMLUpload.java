@@ -12,7 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 import static org.nrg.xdat.turbine.modules.screens.XMLUpload.MESSAGE_NO_GUEST_PERMISSIONS;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.fileupload.FileItem;
+import javax.servlet.http.Part;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.turbine.services.pull.tools.TemplateLink;
 import org.apache.turbine.pipeline.PipelineData;
@@ -58,7 +58,7 @@ public class XMLUpload extends SecureAction {
 
         // get the ParameterParser from RunData
         final ParameterParser parameters    = data.getParameters();
-        final FileItem        fileItem      = parameters.getFileItem("xml_to_store");
+        final Part        fileItem      = parameters.getPart("xml_to_store");
         final String          allowDeletion = (String) TurbineUtils.GetPassedParameter("allowdeletion", data);
 
         if (fileItem != null && allowDeletion != null) {

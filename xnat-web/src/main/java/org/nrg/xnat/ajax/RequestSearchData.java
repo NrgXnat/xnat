@@ -109,10 +109,7 @@ public class RequestSearchData {
                 
                 if (numToDisplay != null)
                 {
-                    org.apache.turbine.util.uri.TurbineURI dui = new org.apache.turbine.util.uri.TurbineURI(data, "/");
-                    dui.removePathInfo();
-                    dui.setScriptName("/");
-                    cp.setCookiePath(dui);
+                    // Turbine 5.1/Fulcrum CookieParser has no setCookiePath; cookies use the default path.
                     cp.set("numToDisplay", numToDisplay.toString(), 60*60*24*365);
                     cp.set("secure", "true");
                 }else

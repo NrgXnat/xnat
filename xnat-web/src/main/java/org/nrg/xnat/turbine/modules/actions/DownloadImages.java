@@ -190,7 +190,7 @@ public class DownloadImages extends SecureAction {
                 }
                 
 
-                Enumeration enumer = data.getParameters().keys();
+                Enumeration enumer = java.util.Collections.enumeration(java.util.Arrays.asList(data.getParameters().getKeys()));
                 while (enumer.hasMoreElements()) {
                     String key = (String)enumer.nextElement();
                     String id = null;
@@ -264,7 +264,7 @@ public class DownloadImages extends SecureAction {
                     }
                     
                     
-                    Enumeration enumer = data.getParameters().keys();
+                    Enumeration enumer = java.util.Collections.enumeration(java.util.Arrays.asList(data.getParameters().getKeys()));
                     while (enumer.hasMoreElements())
                     {
                         String key = (String)enumer.nextElement();

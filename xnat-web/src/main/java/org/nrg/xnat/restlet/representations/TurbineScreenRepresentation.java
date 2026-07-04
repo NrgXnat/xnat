@@ -23,6 +23,8 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.modules.PageLoader;
 import org.apache.turbine.services.template.TemplateService;
 import org.apache.turbine.util.RunData;
+import org.apache.turbine.services.rundata.RunDataService;
+import org.apache.turbine.services.TurbineServices;
 import org.apache.turbine.util.ServerData;
 import org.apache.turbine.util.TurbineException;
 import org.nrg.xdat.XDAT;
@@ -48,8 +50,8 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 		this.request=request;
 		user=_user;
 		this.params=params;
-		HttpServletRequest _request = ((ServletCall)((HttpRequest) request).getHttpCall()).getRequest(); 
-		HttpServletResponse _response = ((ServletCall)((HttpRequest) request).getHttpCall()).getResponse(); 
+		HttpServletRequest _request = org.restlet.ext.servlet.ServletUtils.getRequest(request);
+		HttpServletResponse _response = org.restlet.ext.servlet.ServletUtils.getResponse(org.restlet.Response.getCurrent());
 		
 		data = populateRunData(_request,_response,user,params);
 	}
@@ -59,8 +61,8 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 		this.request=request;
 		user=_user;
 		this.params=params;
-		HttpServletRequest _request = ((ServletCall)((HttpRequest) request).getHttpCall()).getRequest(); 
-		HttpServletResponse _response = ((ServletCall)((HttpRequest) request).getHttpCall()).getResponse(); 
+		HttpServletRequest _request = org.restlet.ext.servlet.ServletUtils.getRequest(request);
+		HttpServletResponse _response = org.restlet.ext.servlet.ServletUtils.getResponse(org.restlet.Response.getCurrent());
 		
 		data = populateRunData(_request,_response,user,params);
 	}
@@ -81,12 +83,8 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 
         PageLoader.getInstance().exec(data, defaultPage);
 
-		//COPIED FROM org.apache.turbine.Turbine.doGet
-        if (data.isPageSet() && data.isOutSet() == false)
-        {
-            // Output the Page.
-            data.getPage().output(out);
-        }
+		// Turbine 5.1 removed the ECS Page model; screen output was written to the hijacked
+		// PrintWriter during PageLoader.exec() above, so there is no Page to output here.
 
         writer.flush();
         writer.close();
@@ -107,19 +105,11 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 //		}
 //		RunData data = rundataService.getRunData("restlet",request, response, XNATRestletServlet.REST_CONFIG);
 
-		RestletRunData data = new RestletRunData();
-        data.setParameterParser(new org.apache.fulcrum.parser.DefaultParameterParser());
-        data.setCookieParser(new org.apache.fulcrum.parser.DefaultCookieParser());
-
-        // Set the request and response.
-        data.setRequest(request);
-        data.setResponse(response);
-
-        // Set the servlet configuration.
-        data.setServletConfig(XNATRestletServlet.REST_CONFIG);
-
-        // Set the ServerData.
-        data.setServerData(new ServerData(request));
+		// Turbine 5.1: RunData is built by the RunDataService, which populates the parser, request,
+		// response and ServerData internally (the individual setters were removed in the 4.0 rewrite).
+		// The "restlet" key selects RestletRunData (services.RunDataService.restlet.run.data).
+		final RunDataService rundataService = (RunDataService) TurbineServices.getInstance().getService(RunDataService.SERVICE_NAME);
+		final RestletRunData data = (RestletRunData) rundataService.getRunData("restlet", request, response, XNATRestletServlet.REST_CONFIG);
 		
 		if(!XDAT.isAuthenticated()) {
 			try {

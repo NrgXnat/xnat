@@ -15,9 +15,14 @@
     <valves>
         <valve>org.apache.turbine.pipeline.DefaultSetEncodingValve</valve>
         <valve>org.apache.turbine.pipeline.DetermineActionValve</valve>
-        <valve>org.apache.turbine.pipeline.DetermineRedirectRequestedValve</valve>
         <valve>org.apache.turbine.pipeline.DetermineTargetValve</valve>
         <valve>org.apache.turbine.pipeline.ExecutePageValve</valve>
+        <!-- MUST come AFTER ExecutePageValve: the action runs inside ExecutePageValve (DefaultPage ->
+             ActionLoader), and DetermineRedirectRequestedValve sends the redirect at the START of its
+             invoke() (before invokeNext). If placed before ExecutePageValve it checks getRedirectURI()
+             before the action has set it -> the 302 is never sent and the browser gets a blank 200.
+             (DefaultPage skips rendering when a redirect is set, so ordering it here is safe.) -->
+        <valve>org.apache.turbine.pipeline.DetermineRedirectRequestedValve</valve>
         <valve>org.apache.turbine.pipeline.CleanUpValve</valve>
     </valves>
 </pipeline>

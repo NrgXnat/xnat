@@ -86,11 +86,49 @@ ServletService, PullService, SessionService. Fixes it drove: **`fulcrum-yaafi`**
 `<optional>`), and **disabling the vestigial Turbine SecurityService** (`turbine-om.properties` only declared
 the removed `DBSecurityService`; XNAT uses Spring Security).
 
-## Still runtime-unverified (needs a Tomcat deploy)
-1. `XnatServerResourceFinder` instantiation path (double-`init()` is expected/idempotent since no resource overrides `doInit()`).
-2. `ServerResource` negotiation bridge — `get(Variant)` ↔ `represent()`, and 405 via `getAllowedMethods()`.
-3. `RestletRunData("restlet")` wiring + `Response.getCurrent()` in the screen bridge.
-4. log4j2 ↔ Logback reconciliation (Turbine 5.1 needs `log4j-core`; XNAT logs via Logback).
-5. End-to-end screen render + REST endpoints against live data.
+---
 
-Validation path: Tomcat 9 deploy → `xnat-rest-tests` (REST `/data` + `/xapi`) + golden-master for `/app` Turbine screens.
+## Runtime bring-up (Tomcat 9 + PostgreSQL + ActiveMQ deploy)
+Everything below was compile-green and boot-test-green but surfaced only on a real deploy, one at a
+time. Each is a Turbine-4.0-rewrite behavior/config delta that XNAT's 2.3.3 config predated. The
+[deploy stack](tomcat9-deploy-stack.md) + Logback→console change made these findable.
+
+### Service-container init
+| Symptom | Fix | Root cause |
+|---|---|---|
+| `NoClassDefFoundError …yaafi…ServiceContainerConfiguration` at boot | add `fulcrum-yaafi:2.0.1` | Turbine ships the YAAFI container as an `<optional>` dep → not transitive |
+| `InitializationException: …DBSecurityService is unavailable` | comment `include = turbine-om.properties` | Turbine 4.0 moved security to Fulcrum; XNAT's `DBSecurityService` is gone (and vestigial — XNAT uses Spring Security) |
+| Servlet init: `IllegalArgumentException: is parameter must not be null` (JAXB) at `Turbine.configure` | add `WEB-INF/conf/turbine-classic-pipeline.xml` | 4.0 replaced the hard-coded `doGet()` flow with a configurable Valve pipeline loaded via JAXB |
+| First `/app` render: `unknown service org.apache.fulcrum.security.UserManager` | wire in-memory Fulcrum turbine security (`fulcrum-security-memory` + 7 YAAFI roles) | `PullService.populateContext()` unconditionally looks up a `TurbineUserManager` per render |
+
+### Velocity / templates
+| Symptom | Fix | Root cause |
+|---|---|---|
+| `NoSuchMethodError: MethodUtils.getMethodObject` → `MethodMap.<clinit>` on first `$obj.method()` | `commons-lang3` **3.11 → 3.17** | Velocity 2.4.1 needs `getMethodObject` (lang3 3.15+); XNAT force-pinned 3.11 |
+| Login page renders literal `$page.addAttribute(...)` | swap 5 templates to `$page.addBodyAttribute(...)` | Turbine 4.0 renamed `HtmlPageAttributes.addAttribute` → `addBodyAttribute`; Velocity echoes unresolved refs |
+| Every login → "Custom site login landing page cannot be found!" | `TurbineUtils.resourceExists()` → resolve via `CustomClasspathResourceLoader` | Velocity 2 `VelocityService` uses its own engine, not the `org.apache.velocity.app.Velocity` singleton `resourceExists()` checked |
+| `$ui.*` (skins) — `ClassNotFoundException …pull.util.UIManager` | `tool.global.ui` → `pull.tools.UITool` + declare `services.UIService` | 4.0 moved skin handling from the UIManager pull tool to a dedicated `UIService` |
+
+### Request handling / dispatch
+| Symptom | Fix | Root cause |
+|---|---|---|
+| `#parse("/screens/${schemaElement.getSQLName()}_search.vm")` — literal `${…}` → ResourceNotFound | parser `urlCaseFolding` **none → lower** | XNAT's `GetPassedParameter` lowercases keys, so it relies on the parser folding param **names** to lowercase (2.3.3 default); `none` broke path-info/param lookups app-wide |
+| Post-login redirect: `Page not found: Default` | `services.TemplateService.default.extension = vm` | generic `getDefaultPage()` resolves `default.template + "." + default.extension`; unset extension → bare "Default" (no engine) |
+| Action redirect (Create Project) → blank 200, no 302, record saved | reorder pipeline: `DetermineRedirectRequestedValve` **after** `ExecutePageValve` | the action runs in `ExecutePageValve`; the redirect valve sends at the *start* of `invoke()` (before `invokeNext`), so placed earlier it checked before the action set the URI — affected **all** redirect-after-save actions |
+
+### Ops / observability
+| Symptom | Fix | Root cause |
+|---|---|---|
+| XNAT errors invisible in `docker logs` (only Turbine's showed) | add a `ConsoleAppender` to every Logback logger + root | XNAT logs SLF4J→Logback to per-area **files** under `${xnat.home}/logs`; only Turbine's log4j2 reached stdout. This is the container side of the log4j2↔Logback item |
+
+**Verified working end-to-end:** boot, login/auth, Velocity 2 screen render (with `$ui`/skins, `$page`,
+pull tools), and a full **create → save → 302 → report** action workflow.
+
+## Still unverified
+1. Restlet `/data` REST surface — `SecureResource`→`ServerResource` shim (`get(Variant)`/`represent`, 405 via `getAllowedMethods`), `XnatServerResourceFinder` instantiation, content negotiation (json/xml/html).
+2. `RestletRunData("restlet")` screen bridge + `Response.getCurrent()`; `ZipRepresentation` Disposition (zip/tar download); multipart upload (`getPart`).
+3. Turbine security realm is empty (`isAnonymousUser` always true) — session/permission pull tools (e.g. `$sessionData`) may need the Turbine-user↔Spring-user bridge if a template relies on them.
+4. Breadth: only a few `/app` screens + one action workflow exercised so far.
+
+Validation path: continue the [smoke-test checklist](tomcat9-deploy-stack.md) / `./docker/health-check.sh`,
+then automated regression — `xnat-rest-tests` (REST `/data` + `/xapi`) + golden-master (`docs/tools/golden_master.py`) for `/app` screens.

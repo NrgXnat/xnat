@@ -1080,7 +1080,18 @@ public class TurbineUtils {
     }
 
     public boolean resourceExists(String screen) {
-        return Velocity.resourceExists(screen);
+        if (StringUtils.isBlank(screen)) {
+            return false;
+        }
+        // Turbine 5.1 / Velocity 2: the VelocityService uses its own VelocityEngine, not the
+        // org.apache.velocity.app.Velocity singleton, so Velocity.resourceExists() checks an
+        // unconfigured engine and always returns false. Resolve against the same
+        // CustomClasspathResourceLoader that VelocityService (#parse) actually loads templates through.
+        try (java.io.InputStream is = CustomClasspathResourceLoader.getInputStream(screen)) {
+            return is != null;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     public String validateTemplate(String screen, String project) {

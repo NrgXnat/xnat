@@ -82,6 +82,13 @@ public class TurbineBootTest {
             // $obj.method() render died with ExceptionInInitializerError. Force the static init.
             Class.forName("org.apache.velocity.util.introspection.MethodMap");
             System.out.println("[boot] OK: Velocity MethodMap init (commons-lang3 introspection)");
+
+            // TurbineUtils.resourceExists() must resolve through the VelocityService's custom loader,
+            // not the Velocity singleton — otherwise Index.vm's landing-page check always fails
+            // ("Custom site login landing page cannot be found!").
+            org.junit.Assert.assertTrue("resourceExists() cannot find a known template (/screens/Index.vm)",
+                    org.nrg.xdat.turbine.utils.TurbineUtils.GetInstance().resourceExists("/screens/Index.vm"));
+            System.out.println("[boot] OK: resourceExists(/screens/Index.vm)");
         } finally {
             try {
                 config.dispose();

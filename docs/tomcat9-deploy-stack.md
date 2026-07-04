@@ -60,7 +60,20 @@ Each row targets a specific piece that only a running server can validate.
 - **Schema init** is slow on the first `up`; the app is not reachable until it finishes.
 - The stack is **dev-only** (default `xnat`/`xnat` DB creds, unauthenticated broker). Do not expose it.
 
+## Golden-master capture/check
+`./docker/golden-capture.sh` drives `docs/tools/golden_master.py` against the running stack: it hits a
+curated set of `/app` screens + `/data`/`/xapi` endpoints, normalizes volatile bits (CSRF, session id,
+timestamps, cache-busters), and stores/compares each response.
+```bash
+XNAT_USER=admin XNAT_PASS=admin ./docker/golden-capture.sh update   # capture baselines (on known-good)
+./docker/golden-capture.sh check                                    # diff current vs baselines
+```
+Baselines land in `docs/goldens/` (override with `GOLDEN_DIR`). **They are tied to the underlying
+data** — capture and check against the *same* seeded/snapshotted DB, else diffs reflect data changes,
+not migration bugs. For a true migration diff, capture on the pre-migration (`develop`/Turbine 2.3.3)
+build, then `check` on the migrated build against the same DB. Edit the `ENDPOINTS` list in the script
+to add data-specific rows (a report screen for a known project id, a zip download, etc.).
+
 ## Not covered here
-Automated regression — that's `git@github.com:NrgXnat/xnat-rest-tests.git` (REST `/data` + `/xapi`)
-and the golden-master harness (`docs/tools/golden_master.py`) for `/app` screens, both run against
-this running stack once manual smoke tests pass.
+Full automated regression — `git@github.com:NrgXnat/xnat-rest-tests.git` (the 1,314-test REST suite over
+`/data` + `/xapi`), run against this running stack once the smoke tests + golden checks pass.

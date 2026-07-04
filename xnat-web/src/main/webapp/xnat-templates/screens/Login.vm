@@ -133,7 +133,7 @@
 #set ($siteId = $siteConfig.siteId)
 $page.setTitle("$siteId - Please Login")
 $page.setBgColor($ui.bgcolor)
-$page.addAttribute("onLoad", "document.getElementById('username').focus();")
+$page.addBodyAttribute("onLoad", "document.getElementById('username').focus();")
 
 <script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
 

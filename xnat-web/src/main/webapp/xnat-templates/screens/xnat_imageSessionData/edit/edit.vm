@@ -55,7 +55,7 @@
 
 <script type="text/javascript" src="$content.getURI("scripts/yui/build/autocomplete/autocomplete-min.js")"></script>
 
-$page.addAttribute("onLoad", "document.form1.month.focus();")
+$page.addBodyAttribute("onLoad", "document.form1.month.focus();")
 
 #set($datatype=$om.getXSIType())
 

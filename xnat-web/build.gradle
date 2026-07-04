@@ -249,6 +249,8 @@ dependencies {
     // Turbine 5.1 omits these Fulcrum components transitively — required by XNAT's YAAFI config.
     implementation libs.fulcrum.cache
     implementation libs.fulcrum.upload
+    // Turbine 5.1's TurbineYaafiComponentService (the service container) is an optional Turbine dep; add it.
+    implementation libs.fulcrum.yaafi
     implementation(libs.apache.velocity) { transitive = false }
     implementation libs.ecs.ecs
 

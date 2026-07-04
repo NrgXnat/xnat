@@ -77,11 +77,20 @@ Turbine 4.0 replaced static `TurbineXxx` singletons with an Avalon/YAAFI service
 
 ---
 
-## Still runtime-unverified (needs a deploy, not a compile)
+## Verified since (boot test — `TurbineBootTest`, commit `7889e5a14`)
+The Turbine 5.1 service container now **boots XNAT's actual config** (`WEB-INF/conf/TurbineResources.properties`
++ the YAAFI role/component XML) via `TurbineConfig`, outside a servlet container. All 8 services initialize:
+AvalonComponentService (YAAFI), VelocityService (Velocity 2.4.1 through the migrated custom loader, incl. the
+`macros/TurbineMacros.vm` velocimacro library), TemplateService, RunDataService, AssemblerBrokerService,
+ServletService, PullService, SessionService. Fixes it drove: **`fulcrum-yaafi`** dep (Turbine ships it
+`<optional>`), and **disabling the vestigial Turbine SecurityService** (`turbine-om.properties` only declared
+the removed `DBSecurityService`; XNAT uses Spring Security).
+
+## Still runtime-unverified (needs a Tomcat deploy)
 1. `XnatServerResourceFinder` instantiation path (double-`init()` is expected/idempotent since no resource overrides `doInit()`).
 2. `ServerResource` negotiation bridge — `get(Variant)` ↔ `represent()`, and 405 via `getAllowedMethods()`.
 3. `RestletRunData("restlet")` wiring + `Response.getCurrent()` in the screen bridge.
-4. YAAFI container boot; `turbine-om.properties` SecurityService still points at the removed `DBSecurityService`.
-5. log4j2 ↔ Logback reconciliation.
+4. log4j2 ↔ Logback reconciliation (Turbine 5.1 needs `log4j-core`; XNAT logs via Logback).
+5. End-to-end screen render + REST endpoints against live data.
 
 Validation path: Tomcat 9 deploy → `xnat-rest-tests` (REST `/data` + `/xapi`) + golden-master for `/app` Turbine screens.

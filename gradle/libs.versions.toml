@@ -63,6 +63,7 @@ fop = "0.20.5"
 fulcrum-cache = "2.0.1"
 fulcrum-intake = "2.0.0"
 fulcrum-parser = "2.0.1"
+fulcrum-yaafi = "2.0.1"
 fulcrum-upload = "2.0.0"
 glassfish-jakarta-el = "4.0.2"
 glassfish-javax-el = "3.0.1-b12"
@@ -278,6 +279,7 @@ graaljs-polyglot = { group = "org.graalvm.polyglot", name = "polyglot", version.
 fulcrum-cache = { group = "org.apache.fulcrum", name = "fulcrum-cache", version.ref = "fulcrum-cache" }
 fulcrum-intake = { group = "org.apache.fulcrum", name = "fulcrum-intake", version.ref = "fulcrum-intake" }
 fulcrum-parser = { group = "org.apache.fulcrum", name = "fulcrum-parser", version.ref = "fulcrum-parser" }
+fulcrum-yaafi = { group = "org.apache.fulcrum", name = "fulcrum-yaafi", version.ref = "fulcrum-yaafi" }
 fulcrum-upload = { group = "org.apache.fulcrum", name = "fulcrum-upload", version.ref = "fulcrum-upload" }
 glassfish-jakarta-el = { group = "org.glassfish", name = "jakarta.el", version.ref = "glassfish-jakarta-el" }
 glassfish-javax-el = { group = "org.glassfish", name = "javax.el", version.ref = "glassfish-javax-el" }

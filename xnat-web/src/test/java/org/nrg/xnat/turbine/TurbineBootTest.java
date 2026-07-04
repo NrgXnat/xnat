@@ -67,6 +67,15 @@ public class TurbineBootTest {
                 Class.forName(valves.item(i).getTextContent().trim());   // throws if a valve class is missing/renamed
             }
             System.out.println("[boot] OK: pipeline (" + valves.getLength() + " valves, all classes load)");
+
+            // Fulcrum security: Turbine 5.1's PullService.populateContext() looks up a TurbineUserManager
+            // (role org.apache.fulcrum.security.UserManager) on every screen render. Confirm the
+            // in-memory turbine security stack resolves through the service broker.
+            final Object userManager = TurbineServices.getInstance().getService("org.apache.fulcrum.security.UserManager");
+            assertNotNull("Fulcrum TurbineUserManager not registered — PullService needs it per render", userManager);
+            org.junit.Assert.assertTrue("UserManager is not a TurbineUserManager: " + userManager.getClass(),
+                    userManager instanceof org.apache.fulcrum.security.model.turbine.TurbineUserManager);
+            System.out.println("[boot] OK: security UserManager -> " + userManager.getClass().getName());
         } finally {
             try {
                 config.dispose();

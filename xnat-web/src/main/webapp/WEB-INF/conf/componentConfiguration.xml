@@ -59,4 +59,20 @@
          point at the xnat.home/work temp area rather than '.'. -->
     <upload repository="." sizeMax="20971520" sizeThreshold="10485760"/>
 
+    <!-- Fulcrum security (see roleConfiguration.xml). Each manager needs the concrete entity class
+         it instantiates; use the turbine-model entity impls. This is an empty in-memory realm — XNAT
+         auth is Spring/XDAT — so no users/groups/roles are seeded. -->
+    <userManager>
+        <className>org.apache.fulcrum.security.model.turbine.entity.impl.TurbineUserImpl</className>
+    </userManager>
+    <groupManager>
+        <className>org.apache.fulcrum.security.model.turbine.entity.impl.TurbineGroupImpl</className>
+    </groupManager>
+    <roleManager>
+        <className>org.apache.fulcrum.security.model.turbine.entity.impl.TurbineRoleImpl</className>
+    </roleManager>
+    <permissionManager>
+        <className>org.apache.fulcrum.security.model.turbine.entity.impl.TurbinePermissionImpl</className>
+    </permissionManager>
+
 </componentConfig>

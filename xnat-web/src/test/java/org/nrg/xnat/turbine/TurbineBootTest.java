@@ -89,6 +89,16 @@ public class TurbineBootTest {
             org.junit.Assert.assertTrue("resourceExists() cannot find a known template (/screens/Index.vm)",
                     org.nrg.xdat.turbine.utils.TurbineUtils.GetInstance().resourceExists("/screens/Index.vm"));
             System.out.println("[boot] OK: resourceExists(/screens/Index.vm)");
+
+            // ExecutePageValve resolves the page module via TemplateService.getDefaultPageName();
+            // for a request with no explicit target template it uses getDefaultPage(), which must be a
+            // real module. With default.extension unset this was the bare "Default" -> ClassNotFoundException
+            // ("Page not found: Default") on some post-login redirects.
+            final org.apache.turbine.services.template.TemplateService ts =
+                    (org.apache.turbine.services.template.TemplateService) TurbineServices.getInstance().getService("TemplateService");
+            org.junit.Assert.assertNotEquals("TemplateService default page is the bare 'Default' (no real module)",
+                    "Default", ts.getDefaultPage());
+            System.out.println("[boot] OK: TemplateService default page -> " + ts.getDefaultPage());
         } finally {
             try {
                 config.dispose();

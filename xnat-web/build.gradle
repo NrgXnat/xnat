@@ -10,9 +10,11 @@ group = 'org.nrg.xnat'
 // --- Global exclusions (must match original xnat-web/build.gradle exactly, see monorepo A6) ---
 configurations.matching { it.name != 'xdatGenerator' }.configureEach {
     resolutionStrategy {
-        // commons-text 1.11.0 calls Range.of() which is missing in commons-lang3
-        // bundled by Tomcat — pin to versions that work in production.
-        force 'org.apache.commons:commons-lang3:3.11'
+        // Phase 0b: bump commons-lang3 to 3.17 — Velocity 2.4.1's MethodMap.<clinit> calls
+        // MethodUtils.getMethodObject() (added in lang3 3.15+); the previous 3.11 pin crashed every
+        // $obj.method() introspection with NoSuchMethodError. 3.17 also provides Range.of(), so
+        // commons-text (kept at 1.10.0 for the Tomcat-classpath concern) still resolves cleanly.
+        force 'org.apache.commons:commons-lang3:3.17.0'
         force 'org.apache.commons:commons-text:1.10.0'
         // dcm4che 5.x pulls slf4j-api 2.x, but logback 1.2.x only supports 1.7.x.
         force 'org.slf4j:slf4j-api:1.7.36'

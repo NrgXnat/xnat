@@ -76,6 +76,12 @@ public class TurbineBootTest {
             org.junit.Assert.assertTrue("UserManager is not a TurbineUserManager: " + userManager.getClass(),
                     userManager instanceof org.apache.fulcrum.security.model.turbine.TurbineUserManager);
             System.out.println("[boot] OK: security UserManager -> " + userManager.getClass().getName());
+
+            // Velocity 2.4.1 method introspection: MethodMap.<clinit> calls commons-lang3
+            // MethodUtils.getMethodObject() (added in 3.15+). XNAT forced lang3 3.11, so every
+            // $obj.method() render died with ExceptionInInitializerError. Force the static init.
+            Class.forName("org.apache.velocity.util.introspection.MethodMap");
+            System.out.println("[boot] OK: Velocity MethodMap init (commons-lang3 introspection)");
         } finally {
             try {
                 config.dispose();

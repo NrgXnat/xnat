@@ -25,3 +25,5 @@ bin/
 .DS_Store
 Thumbs.db
 .claude/
+# Staged WAR for the local Tomcat 9 compose stack (build artifact)
+docker-context/

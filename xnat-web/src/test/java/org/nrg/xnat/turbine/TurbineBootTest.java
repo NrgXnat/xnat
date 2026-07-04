@@ -28,7 +28,7 @@ public class TurbineBootTest {
     }
 
     @Test
-    public void turbineServiceContainerBoots() {
+    public void turbineServiceContainerBoots() throws Exception {
         final String root = webappRoot();
         // The custom Velocity loader resolves templates (incl. the velocimacro library) against
         // XDATServlet.WEBAPP_ROOT, which is normally set during servlet init. Point it at the webapp.
@@ -54,6 +54,19 @@ public class TurbineBootTest {
             final Object ui = globalTools.get("ui");
             assertNotNull("global pull tool $ui (UITool) did not instantiate", ui);
             System.out.println("[boot] OK: pull tool $ui -> " + ui.getClass().getName());
+
+            // Validate the request-pipeline descriptor. Turbine.configure() JAXB-unmarshals this at
+            // servlet init; a missing file crashes there ("is parameter must not be null"). Confirm the
+            // file exists, is well-formed, and every <valve> class loads.
+            final File descriptor = new File(root, "WEB-INF/conf/turbine-classic-pipeline.xml");
+            org.junit.Assert.assertTrue("pipeline descriptor missing: " + descriptor, descriptor.isFile());
+            final org.w3c.dom.NodeList valves = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                    .newDocumentBuilder().parse(descriptor).getElementsByTagName("valve");
+            org.junit.Assert.assertTrue("pipeline has no <valve> entries", valves.getLength() > 0);
+            for (int i = 0; i < valves.getLength(); i++) {
+                Class.forName(valves.item(i).getTextContent().trim());   // throws if a valve class is missing/renamed
+            }
+            System.out.println("[boot] OK: pipeline (" + valves.getLength() + " valves, all classes load)");
         } finally {
             try {
                 config.dispose();

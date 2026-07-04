@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Turbine 4.0+ request-processing pipeline. Turbine 2.3.3 (XNAT's prior version) had a hard-coded
+  doGet() flow; 4.0 replaced it with this configurable Valve pipeline, loaded by Turbine.configure()
+  from pipeline.default.descriptor (default: this path). XNAT's old config had no such file, so the
+  servlet failed at init with "is parameter must not be null" (JAXB unmarshalling a null stream).
+
+  This is the classic render pipeline MINUS the Turbine-security valves (Login / SessionValidation /
+  ACLCreation): XNAT authenticates via Spring Security + XDAT (each SecureScreen does its own
+  isAuthorized()), and historically ran the Turbine SecurityService with PassiveUserManager (no-op).
+  The Turbine SecurityService is disabled in TurbineResources.properties, so those valves are omitted.
+  Add them back (with a passive SecurityService) only if a screen is found to require data.getACL().
+-->
+<pipeline name="default">
+    <valves>
+        <valve>org.apache.turbine.pipeline.DefaultSetEncodingValve</valve>
+        <valve>org.apache.turbine.pipeline.DetermineActionValve</valve>
+        <valve>org.apache.turbine.pipeline.DetermineRedirectRequestedValve</valve>
+        <valve>org.apache.turbine.pipeline.DetermineTargetValve</valve>
+        <valve>org.apache.turbine.pipeline.ExecutePageValve</valve>
+        <valve>org.apache.turbine.pipeline.CleanUpValve</valve>
+    </valves>
+</pipeline>

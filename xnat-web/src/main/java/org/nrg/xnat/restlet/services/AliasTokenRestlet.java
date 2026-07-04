@@ -101,7 +101,7 @@ public class AliasTokenRestlet extends SecureResource {
     }
 
     @Override
-    public Representation represent() throws ResourceException {
+    public Representation represent(final Variant variant) throws ResourceException {
         final UserI user = getUser();
 
         final boolean hasUsername = StringUtils.isNotBlank(_username);

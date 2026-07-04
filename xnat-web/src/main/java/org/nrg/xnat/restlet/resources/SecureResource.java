@@ -128,7 +128,7 @@ import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xft.event.XftItemEventI.DELETE;
 
 @SuppressWarnings("deprecation")
-public abstract class SecureResource extends Resource {
+public abstract class SecureResource extends ServerResource {
 
     private static final String COMPRESSION = "compression";
 
@@ -176,7 +176,10 @@ public abstract class SecureResource extends Resource {
     public       String       filepath;
 
     public SecureResource(Context context, Request request, Response response) {
-        super(context, request, response);
+        super();
+        // Restlet 2.x: ServerResource has no (Context,Request,Response) constructor; wire up via init()
+        // so the constructor body below (which uses getRequest()/getResponse()) works as it did in 1.1.
+        init(context, request, response);
 
         _serializer = XDAT.getSerializerService();
         if (null == _serializer) {
@@ -218,6 +221,114 @@ public abstract class SecureResource extends Resource {
             throw new RuntimeException("An error occurred where it really should not have occurred", e);
         }
     }
+
+    // ===== Restlet 2.x compatibility bridge =====
+    // Restlet 2.x replaced the 1.1 Resource model (getVariants()/represent()/handleX) with
+    // ServerResource's get/post/put/delete(Variant). These bridges dispatch the 2.x handlers to the
+    // 1.1-style methods XNAT's resource subclasses still override, so subclasses need no changes.
+    // (org.restlet.resource.ResourceException is a RuntimeException in 2.x, so no throws juggling.)
+
+    @Override
+    protected Representation get(final Variant variant) throws ResourceException {
+        handleGet();
+        final Representation entity = getResponse().getEntity();
+        return entity != null ? entity : getRepresentation(variant);
+    }
+
+    @Override
+    protected Representation get() throws ResourceException {
+        return get(null);
+    }
+
+    @Override
+    protected Representation post(final Representation entity, final Variant variant) throws ResourceException {
+        handlePost();
+        return getResponse().getEntity();
+    }
+
+    @Override
+    protected Representation put(final Representation entity, final Variant variant) throws ResourceException {
+        handlePut();
+        return getResponse().getEntity();
+    }
+
+    @Override
+    protected Representation delete(final Variant variant) throws ResourceException {
+        handleDelete();
+        return getResponse().getEntity();
+    }
+
+    /** 1.1-style GET hook. Default no-op; GET falls through to {@link #represent(Variant)}. */
+    public void handleGet() { }
+
+    /** 1.1-style GET representation producer; subclasses override to render the negotiated entity. */
+    public Representation represent(final Variant variant) throws ResourceException {
+        return null;
+    }
+
+    /** 1.1 Resource GET producer (parallel to represent()); default delegates to {@link #represent(Variant)}. */
+    public Representation getRepresentation(final Variant variant) {
+        return represent(variant);
+    }
+
+    /** Restlet 1.1 no-arg preferred-variant helper (2.x moved it to getPreferredVariant(List)). */
+    public Variant getPreferredVariant() {
+        return getPreferredVariant(getVariants());
+    }
+
+    // 1.1 Resource method-allowance flags. Subclasses override to permit a method; getAllowedMethods()
+    // below consults them so disallowed methods still yield 405 as they did under Restlet 1.1.
+    public boolean allowGet()    { return true; }
+    public boolean allowPost()   { return false; }
+    public boolean allowPut()    { return false; }
+    public boolean allowDelete() { return false; }
+
+    @Override
+    public java.util.Set<Method> getAllowedMethods() {
+        final java.util.Set<Method> allowed = new java.util.HashSet<>();
+        if (allowGet())    { allowed.add(Method.GET); allowed.add(Method.HEAD); }
+        if (allowPost())   { allowed.add(Method.POST); }
+        if (allowPut())    { allowed.add(Method.PUT); }
+        if (allowDelete()) { allowed.add(Method.DELETE); }
+        allowed.add(Method.OPTIONS);
+        return allowed;
+    }
+
+    /** 1.1-style POST hook; default delegates to {@link #acceptRepresentation(Representation)}. */
+    public void handlePost() {
+        acceptRepresentation(getRequest() == null ? null : getRequest().getEntity());
+    }
+
+    public void acceptRepresentation(final Representation entity) throws ResourceException {
+        getResponse().setStatus(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED);
+    }
+
+    /** 1.1-style PUT hook; default delegates to {@link #storeRepresentation(Representation)}. */
+    public void handlePut() {
+        storeRepresentation(getRequest() == null ? null : getRequest().getEntity());
+    }
+
+    public void storeRepresentation(final Representation entity) throws ResourceException {
+        getResponse().setStatus(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED);
+    }
+
+    /** 1.1-style DELETE hook; default delegates to {@link #removeRepresentations()}. */
+    public void handleDelete() {
+        removeRepresentations();
+    }
+
+    public void removeRepresentations() throws ResourceException {
+        getResponse().setStatus(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED);
+    }
+
+    /** 1.1 Resource modifiability toggles — no-ops in 2.x (allowance derives from overridden handlers). */
+    public void setModifiable(final boolean modifiable) { }
+
+    public void setReadable(final boolean readable) { }
+
+    public boolean isModifiable() { return allowPut() || allowPost() || allowDelete(); }
+
+    public boolean isReadable() { return allowGet(); }
 
     public static Object getParameter(Request request, String key) {
         return TurbineUtils.escapeParam(request.getAttributes().get(key));

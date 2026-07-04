@@ -113,7 +113,7 @@ public class XNATApplication extends Application {
         if (_log.isInfoEnabled()) {
             logAttachedRoute(uri, clazz, matchingMode);
         }
-        Route route = router.attach(uri.intern(), clazz);
+        Route route = router.attach(uri.intern(), new XnatServerResourceFinder(getContext(), clazz.asSubclass(org.restlet.resource.ServerResource.class)));
         if (matchingMode != null) {
             route.setMatchingMode(matchingMode);
         }

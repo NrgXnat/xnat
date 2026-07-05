@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.security;
 
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -721,7 +722,7 @@ public class UserGroupManager implements UserGroupServiceI {
 
     private void initPermissions(final UserGroupI group, final boolean create, final boolean read, final boolean delete, final boolean edit, final boolean activate, final List<ElementSecurity> elementSecurities, final String value, final UserI authenticatedUser) {
         try {
-            if (checkVelocityInit() && Velocity.resourceExists("/screens/" + NEW_GROUP_PERMS_TEMPLATE)) {
+            if (checkVelocityInit() && TurbineUtils.GetInstance().resourceExists("/screens/" + NEW_GROUP_PERMS_TEMPLATE)) {
                 final VelocityContext context = new VelocityContext();
                 context.put("group", group);
                 context.put("create", create ? "1" : "0");
@@ -749,7 +750,7 @@ public class UserGroupManager implements UserGroupServiceI {
 
     private static boolean checkVelocityInit() {
         try {
-            Velocity.resourceExists(NEW_GROUP_PERMS_TEMPLATE);
+            TurbineUtils.GetInstance().resourceExists(NEW_GROUP_PERMS_TEMPLATE);
             return true;
         } catch (Exception ignored) {
             return false;

@@ -59,7 +59,7 @@ public class EditItemAction extends SecureAction {
 
     public static String GetEditScreen(SchemaElementI se) {
         String templateName = "/screens/XDATScreen_edit_" + se.getSQLName() + ".vm";
-        if (Velocity.resourceExists(templateName)) {
+        if (TurbineUtils.GetInstance().resourceExists(templateName)) {
             templateName = "XDATScreen_edit_" + se.getSQLName() + ".vm";
         } else {
             templateName = "XDATScreen_edit.vm";

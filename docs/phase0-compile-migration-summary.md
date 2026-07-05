@@ -106,8 +106,17 @@ time. Each is a Turbine-4.0-rewrite behavior/config delta that XNAT's 2.3.3 conf
 |---|---|---|
 | `NoSuchMethodError: MethodUtils.getMethodObject` → `MethodMap.<clinit>` on first `$obj.method()` | `commons-lang3` **3.11 → 3.17** | Velocity 2.4.1 needs `getMethodObject` (lang3 3.15+); XNAT force-pinned 3.11 |
 | Login page renders literal `$page.addAttribute(...)` | swap 5 templates to `$page.addBodyAttribute(...)` | Turbine 4.0 renamed `HtmlPageAttributes.addAttribute` → `addBodyAttribute`; Velocity echoes unresolved refs |
-| Every login → "Custom site login landing page cannot be found!" | `TurbineUtils.resourceExists()` → resolve via `CustomClasspathResourceLoader` | Velocity 2 `VelocityService` uses its own engine, not the `org.apache.velocity.app.Velocity` singleton `resourceExists()` checked |
 | `$ui.*` (skins) — `ClassNotFoundException …pull.util.UIManager` | `tool.global.ui` → `pull.tools.UITool` + declare `services.UIService` | 4.0 moved skin handling from the UIManager pull tool to a dedicated `UIService` |
+| Every login → "Custom site login landing page cannot be found!" | `TurbineUtils.resourceExists()` → `CustomClasspathResourceLoader` | the Velocity-singleton issue below |
+| Open any edit/report/search screen → "Could not find screen for null" | route all **20** `Velocity.resourceExists()` sites (`XDATActionRouter.passToScreen`, `ElementDisplay`, `ElementSecurityWizard`, `BaseElement`, `DisplayItemAction`, `EditItemAction`, `SearchResults`, `UserGroupManager`, `XdatStoredSearch`) through `TurbineUtils.resourceExists()` | same singleton issue — `passToScreen()` never set a screen template because every existence check returned false |
+
+> **⚠ Recurring pattern — the `org.apache.velocity.app.Velocity` singleton is disconnected.** In Velocity 2 /
+> Turbine 5.1 the `VelocityService` owns its own `VelocityEngine`; the static `Velocity` singleton is a
+> *separate, unconfigured* engine (in 1.7/2.3.3 they were the same). So **any** `Velocity.*` static call is
+> disconnected from the templates XNAT actually renders — `resourceExists()` returns false, `getTemplate()`/
+> `evaluate()` won't resolve XNAT templates. The **existence-check** sites are fixed (above); the
+> **render-via-singleton** sites are not yet (see "Still unverified"). Rule of thumb: grep for
+> `org.apache.velocity.app.Velocity` — every hit is suspect.
 
 ### Request handling / dispatch
 | Symptom | Fix | Root cause |
@@ -127,8 +136,10 @@ pull tools), and a full **create → save → 302 → report** action workflow.
 ## Still unverified
 1. Restlet `/data` REST surface — `SecureResource`→`ServerResource` shim (`get(Variant)`/`represent`, 405 via `getAllowedMethods`), `XnatServerResourceFinder` instantiation, content negotiation (json/xml/html).
 2. `RestletRunData("restlet")` screen bridge + `Response.getCurrent()`; `ZipRepresentation` Disposition (zip/tar download); multipart upload (`getPart`).
-3. Turbine security realm is empty (`isAnonymousUser` always true) — session/permission pull tools (e.g. `$sessionData`) may need the Turbine-user↔Spring-user bridge if a template relies on them.
-4. Breadth: only a few `/app` screens + one action workflow exercised so far.
+3. **Velocity render-via-singleton** — `Velocity.getTemplate()`/`evaluate()`/`init()` still use the disconnected static singleton in `AdminUtils` (email templates), `BaseElement` (text-field rendering), `UserGroupManager`, `VelocityUtils`. Expect **email send + some text rendering to fail** until routed through `VelocityService` (existence checks are already fixed; these actually render).
+4. `/data` POST/PUT with an XML body — `SearchResource.handlePost` hit `SAXParseException: Content is not allowed in prolog` (entity arriving empty/non-XML through the `post()`→`handlePost()` bridge); needs the request `Content-Type`/payload to pin (form-field vs. consumed entity vs. content-type routing).
+5. Turbine security realm is empty (`isAnonymousUser` always true) — session/permission pull tools (e.g. `$sessionData`) may need the Turbine-user↔Spring-user bridge if a template relies on them.
+6. Breadth: a handful of `/app` screens + a couple of action workflows exercised so far.
 
 Validation path: continue the [smoke-test checklist](tomcat9-deploy-stack.md) / `./docker/health-check.sh`,
 then automated regression — `xnat-rest-tests` (REST `/data` + `/xapi`) + golden-master (`docs/tools/golden_master.py`) for `/app` screens.

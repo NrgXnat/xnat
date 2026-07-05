@@ -9,6 +9,7 @@
 
 
 package org.nrg.xdat.turbine.modules.actions;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
@@ -45,7 +46,7 @@ public class XDATActionRouter extends SecureAction
    			    String templateName = "/screens/XDATScreen_" + action   + ".vm";
 
 			    logger.debug("looking for: " + templateName);
-			    if (Velocity.resourceExists(templateName))
+			    if (TurbineUtils.GetInstance().resourceExists(templateName))
 				{
 			        data.setScreenTemplate("XDATScreen_" + action   + ".vm");
 				}else
@@ -61,7 +62,7 @@ public class XDATActionRouter extends SecureAction
 		   SchemaElementI se = SchemaElement.GetElement(elementName);
 		   String templateName = "/screens/XDATScreen_" + action  + "_" + se.getFormattedName() + ".vm";
 		   logger.debug("looking for: " + templateName);
-		   if (Velocity.resourceExists(templateName))
+		   if (TurbineUtils.GetInstance().resourceExists(templateName))
 		   {
 			   data.setScreenTemplate("XDATScreen_" + action  + "_" + se.getFormattedName() + ".vm");
 		   }else
@@ -69,7 +70,7 @@ public class XDATActionRouter extends SecureAction
 			   templateName = "/screens/XDATScreen_" + action + ".vm";
 
 			   logger.debug("looking for: " + templateName);
-			   if (Velocity.resourceExists(templateName))
+			   if (TurbineUtils.GetInstance().resourceExists(templateName))
 			   {
 				   data.getParameters().setString("search_element",elementName);
 				   data.setScreenTemplate("XDATScreen_" + action + ".vm");
@@ -78,7 +79,7 @@ public class XDATActionRouter extends SecureAction
 				   templateName = "/screens/" + action   + "_" + se.getFormattedName() + ".vm";
 
 				   logger.debug("looking for: " + templateName);
-				   if (Velocity.resourceExists(templateName))
+				   if (TurbineUtils.GetInstance().resourceExists(templateName))
 				   {
 					   data.setScreenTemplate(action   + "_" + se.getFormattedName() + ".vm");
 				   }else
@@ -86,7 +87,7 @@ public class XDATActionRouter extends SecureAction
 					   templateName = "/screens/" + action   + ".vm";
 
 					   logger.debug("looking for: " + templateName);
-					   if (Velocity.resourceExists(templateName))
+					   if (TurbineUtils.GetInstance().resourceExists(templateName))
 					   {
 						   data.setScreenTemplate(action   + ".vm");
 					   }else

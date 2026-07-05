@@ -48,7 +48,7 @@ public class DisplayItemAction extends SecureAction {
 
     public static String GetReportScreen(final SchemaElementI se) {
         final String templateName = "XDATScreen_report_" + se.getSQLName() + ".vm";
-        if(Velocity.resourceExists("/screens/" + templateName)){
+        if(TurbineUtils.GetInstance().resourceExists("/screens/" + templateName)){
             return templateName;
         }else{
             return "DefaultReport.vm";

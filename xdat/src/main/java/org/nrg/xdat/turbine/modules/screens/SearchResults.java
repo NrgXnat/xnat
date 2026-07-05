@@ -102,7 +102,7 @@ public class SearchResults extends SecureScreen {
 		    String templateName = "/screens/" + search.getRootElement().getFormattedName() + "_search.vm";
 
 		    logger.debug("looking for: " + templateName);
-		    if (Velocity.resourceExists(templateName))
+		    if (TurbineUtils.GetInstance().resourceExists(templateName))
 			{
 		        context.put("searchType",templateName);
 			}else

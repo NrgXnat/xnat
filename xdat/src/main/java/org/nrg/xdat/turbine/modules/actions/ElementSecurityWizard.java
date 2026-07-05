@@ -124,10 +124,10 @@ public class ElementSecurityWizard extends AdminAction {
 		        String actionName = item.getStringProperty("element_action_name");
 		        String templateName = "XDATScreen_"+ actionName + "_" + SchemaElement.GetElement(found.getStringProperty("xdat:element_security.element_name")).getSQLName() + ".vm";
 		        boolean foundScreen = false;
-		        if (Velocity.resourceExists("/screens/" + templateName))
+		        if (TurbineUtils.GetInstance().resourceExists("/screens/" + templateName))
 	    		{
 		            foundScreen = true;
-	    		}else if(Velocity.resourceExists("/screens/XDATScreen_" + actionName + ".vm")){
+	    		}else if(TurbineUtils.GetInstance().resourceExists("/screens/XDATScreen_" + actionName + ".vm")){
 	    		    foundScreen = true;
 	    		}
 
@@ -149,7 +149,7 @@ public class ElementSecurityWizard extends AdminAction {
 		            String s = "xdat:element_security.element_actions.element_action__"+count;
 
 		            String templateName = "XDATScreen_edit_" + SchemaElement.GetElement(found.getStringProperty("xdat:element_security.element_name")).getFormattedName() + ".vm";
-		    		if (Velocity.resourceExists("/screens/" + templateName))
+		    		if (TurbineUtils.GetInstance().resourceExists("/screens/" + templateName))
 		    		{
 			            found.setProperty(s + ".element_action_name","edit");
 			            found.setProperty(s + ".display_name","Edit");

@@ -85,7 +85,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 0b-26 | Fulcrum in-memory security (PullService `UserManager` per render) | 🟢 | |
 | 0b-27 | Pipeline order: `DetermineRedirectRequestedValve` after `ExecutePageValve` | 🟢 | fixed all redirect-after-save actions |
 | 0b-28 | Parser `urlCaseFolding` none → lower | 🟢 | fixed path-info/param lookups app-wide |
-| 0b-29 | Logback `ConsoleAppender` (XNAT logs → docker stdout) | 🟢 | container side of log4j2↔Logback |
+| 0b-29 | Logback `ConsoleAppender` (XNAT logs → docker stdout) | 🟢 | makes XNAT's Logback side of the dual-logging setup visible; full unification deferred to 1-16 (see decision note) |
 | 0b-30 | Site-root / homepage default | 🟢 | see 0b-20 |
 
 ### Verification
@@ -122,6 +122,19 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 1-13 | Flip local dev + CI to Tomcat 10 / Java 17+ | ⚪ | |
 | 1-14 | (Optional) `tomcat-jakartaee-migration` smoke-test of the Phase-0 WAR on Tomcat 10 | ⚪ | disposable milestone |
 | 1-15 | Playwright suite (`xnat-web/tests/playwright/`) on Tomcat 10 | ⚪ | |
+| 1-16 | Unify logging on Logback (the log4j2↔Logback reconciliation) | ⚪ | **Deferred here deliberately — not doable on 5.1** (see note). At 7.0 Turbine logs via `java.lang.System.Logger`; add `org.slf4j:slf4j-jdk-platform-logging` and drop the log4j2 impls |
+| 1-17 | Consume the upstream Turbine log4j-decoupling PR | ⚪ | PR prepared against Turbine 7.0 trunk (`../turbine-core`, branch `feature/decouple-log4j-core-from-transitive-deps`); marks log4j2 impls `<optional>`. If merged by 7.0 release, no exclusion needed; else exclude `log4j-core`/`log4j-jpl` in XNAT's build |
+
+### Decision — logging stays dual on 5.1; unify at 7.0
+Turbine **5.1** hard-uses log4j-core in code: `Turbine.configureLogging()` calls
+`LogManager.getContext(false)` and **casts to `org.apache.logging.log4j.core.LoggerContext`** at init, so
+log4j-core cannot be removed (Turbine won't start) and cannot be swapped for `log4j-to-slf4j` (the cast
+would fail). A single Logback backend on 5.1 would require backporting the entire 7.0 `System.Logger`
+rewrite into a Turbine fork + maintaining it — not worth it for a temporary phase. So the upstream
+"mark log4j impls optional" PR (a 3-line pom change) applies **only to 7.0**, where the code already logs
+through `System.Logger`. On 5.1 we accept dual logging: Turbine → log4j2 → stdout (`WEB-INF/conf/log4j2.xml`),
+XNAT → Logback → stdout (0b-29 console appender); both visible in `docker logs`, both tunable. Reconciliation
+is therefore a Phase-1 task (1-16/1-17), not Phase-0b.
 
 ---
 

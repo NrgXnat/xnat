@@ -129,7 +129,7 @@ public class SearchResource extends SecureResource {
                 }
             } else {
                 if (entity != null) {
-                    final Reader sax = entity.getReader();
+                    final Reader sax = new java.io.StringReader(extractSearchXml(entity.getText()));
                     try {
                         final SAXReader reader = new SAXReader(user);
                         item = reader.parse(sax);
@@ -264,6 +264,42 @@ public class SearchResource extends SecureResource {
             logger.error("Failed POST", e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
         }
+    }
+
+    /**
+     * Recovers the stored-search XML from a POST body that may be form-wrapped.
+     *
+     * <p>The search UI ({@code dataTableSearch.js}) posts via YUI Connect, which for POST requests
+     * strips the request URL's query string and prepends it to the body. So instead of bare XML the
+     * body arrives as {@code "XNAT_CSRF=...&format=json&cache=true[&refresh=true]&<search XML>"} with a
+     * {@code application/x-www-form-urlencoded} content type, the XML portion percent-encoded. Restlet
+     * 1.1 tolerated this; under 2.x {@link Representation#getText()} hands back the whole string and the
+     * SAX parser dies with "Content is not allowed in prolog" on the leading {@code XNAT_CSRF=...}.
+     *
+     * <p>Recover the payload by taking everything from the {@code <?xml} marker (literal, or the
+     * percent-encoded {@code %3C%3Fxml}, in which case the remainder is URL-decoded). A body that is
+     * already bare XML — e.g. a REST client posting {@code text/xml} — is returned unchanged.
+     */
+    static String extractSearchXml(final String body) {
+        if (body == null) {
+            return "";
+        }
+        if (StringUtils.startsWith(StringUtils.stripStart(body, null), "<")) {
+            return body;   // already bare XML
+        }
+        final int literal = body.indexOf("<?xml");
+        if (literal >= 0) {
+            return body.substring(literal);
+        }
+        final int encoded = StringUtils.indexOfIgnoreCase(body, "%3C%3Fxml");
+        if (encoded >= 0) {
+            try {
+                return java.net.URLDecoder.decode(body.substring(encoded), java.nio.charset.StandardCharsets.UTF_8.name());
+            } catch (Exception e) {
+                return body.substring(encoded);
+            }
+        }
+        return body;   // no marker found; let the parser report the problem
     }
 
     @Override

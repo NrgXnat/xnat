@@ -32,7 +32,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 0a-10 | Disposition API migration | 🟢 | |
 | 0a-11 | `getFileItem`→`getPart` / `DiskFileItem`→`DiskPart` | 🟢 | compiles; upload not yet exercised |
 | 0a-12 | Runtime verify `/data` GET in json / xml / html (content negotiation) | 🟡 | config-resource GET + 404 path confirmed; full negotiation matrix pending |
-| 0a-13 | Runtime verify `/data` POST/PUT with XML body | ⚪ | `SearchResource.handlePost` `SAXParseException: Content not allowed in prolog` — needs request `Content-Type`/payload |
+| 0a-13 | Runtime verify `/data` POST/PUT with XML body | 🟢 | `SearchResource.handlePost`: YUI Connect prepends the URL query to the POST body → form-wrapped XML. Fixed via `extractSearchXml()` (+ unit test). Fixes the Subjects tab "Failed to create search results." |
 | 0a-14 | Runtime verify zip/tar download (`ZipRepresentation` Disposition) | ⚪ | |
 | 0a-15 | Runtime verify multipart upload (`RestletFileUpload`) | ⚪ | |
 
@@ -126,7 +126,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 ---
 
 ## Known blockers / next up
-1. **0a-13** — `/data` XML-body POST `SAXParseException` (subject *save* path). Needs the failing request's `Content-Type` + payload to disambiguate form-field vs. consumed-entity vs. content-type routing.
-2. **0b-35/36** — exercise the newly-wired email + text render paths end-to-end.
-3. **0b-37** — walk the remaining screen types (report / PDF / XML raw) via the smoke-test checklist.
+1. **0b-35/36** — exercise the newly-wired email + text render paths end-to-end.
+2. **0b-37** — walk the remaining screen types (report / PDF / XML raw) via the smoke-test checklist.
+3. **0b-14/15** — `/data` zip/tar download + multipart upload still unverified (Restlet 2.x Disposition + `RestletFileUpload`).
 4. **0b-22/23** — decide whether to do a full `.vm` audit now or continue fix-on-sight.

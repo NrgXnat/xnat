@@ -258,6 +258,26 @@ public abstract class SecureResource extends ServerResource {
         return getResponse().getEntity();
     }
 
+    // No-variant forms. When a resource declares no variants (getVariants() empty), Restlet 2.x's
+    // doNegotiatedHandle() bypasses the (Representation, Variant) hooks above and dispatches to these
+    // no-arg forms, whose ServerResource defaults look for an @Post/@Put/@Delete annotation and otherwise
+    // return 405. XNAT uses no such annotations, so bridge them to the variant forms (which ignore the
+    // variant and call handlePost/handlePut/handleDelete). Parallels get()/get(Variant) both being overridden.
+    @Override
+    protected Representation post(final Representation entity) throws ResourceException {
+        return post(entity, null);
+    }
+
+    @Override
+    protected Representation put(final Representation entity) throws ResourceException {
+        return put(entity, null);
+    }
+
+    @Override
+    protected Representation delete() throws ResourceException {
+        return delete((Variant) null);
+    }
+
     /** 1.1-style GET hook. Default no-op; GET falls through to {@link #represent(Variant)}. */
     public void handleGet() { }
 

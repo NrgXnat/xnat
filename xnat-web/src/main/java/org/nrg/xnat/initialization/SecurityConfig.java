@@ -70,7 +70,11 @@ import org.springframework.security.web.authentication.session.SessionFixationPr
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.RequestContextFilter;
 
@@ -149,6 +153,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Primary
     public AuthenticationSuccessHandler authenticationSuccessHandler() {
         return new OnXnatLogin(_template);
+    }
+
+    /**
+     * A request cache that skips browser-generated asset/probe paths, so they can't become the saved
+     * request the post-login handler redirects to. Add patterns here if other background fetches surface.
+     */
+    private RequestCache navigationOnlyRequestCache() {
+        final RequestMatcher ignore = new OrRequestMatcher(
+                new AntPathRequestMatcher("/.well-known/**"),
+                new AntPathRequestMatcher("/favicon.ico"),
+                new AntPathRequestMatcher("/apple-touch-icon*.png"));
+        final HttpSessionRequestCache cache = new HttpSessionRequestCache();
+        cache.setRequestMatcher(new NegatedRequestMatcher(ignore));
+        return cache;
     }
 
     @Bean
@@ -293,6 +311,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         // This is basically what super.configure() does, minus httpBasic().
         http.authorizeRequests().anyRequest().authenticated().and().formLogin();
+
+        // Don't let browser-generated asset/probe requests hijack the post-login redirect. The default
+        // HttpSessionRequestCache saves *every* unauthenticated request (overwriting on each one), and
+        // SavedRequestAwareAuthenticationSuccessHandler then redirects to whatever was saved last. If the
+        // last unauthenticated hit before login is a background fetch (e.g. Chrome DevTools' probe of
+        // /.well-known/appspecific/com.chrome.devtools.json, or a favicon), the user lands on that 404
+        // instead of the XNAT landing page. Only cache real navigations.
+        http.requestCache().requestCache(navigationOnlyRequestCache());
 
         final InteractiveAgentDetector     detector                 = interactiveAgentDetector();
         final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, detector);

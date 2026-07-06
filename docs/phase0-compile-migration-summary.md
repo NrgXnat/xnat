@@ -133,6 +133,7 @@ time. Each is a Turbine-4.0-rewrite behavior/config delta that XNAT's 2.3.3 conf
 | Symptom | Fix | Root cause |
 |---|---|---|
 | XNAT errors invisible in `docker logs` (only Turbine's showed) | add a `ConsoleAppender` to every Logback logger + root | XNAT logs SLF4J→Logback to per-area **files** under `${xnat.home}/logs`; only Turbine's log4j2 reached stdout. This is the container side of the log4j2↔Logback item |
+| After a container restart, logging in (with Chrome DevTools open) lands on Tomcat's 404 for `/.well-known/appspecific/com.chrome.devtools.json` instead of the homepage | `SecurityConfig` now installs an `HttpSessionRequestCache` whose matcher **skips** `/.well-known/**`, favicon, apple-touch-icon so those can't become the saved request | Not a migration regression — the default request cache saves *every* unauthenticated request and overwrites on each, and `SavedRequestAwareAuthenticationSuccessHandler` redirects to the last one saved. Chrome's DevTools probe fires unauthenticated while the login page is up, becomes the saved request, and wins the post-login redirect |
 
 **Verified working end-to-end:** boot, login/auth, Velocity 2 screen render (with `$ui`/skins, `$page`,
 pull tools), and a full **create → save → 302 → report** action workflow.

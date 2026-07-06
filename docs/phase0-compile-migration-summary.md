@@ -125,6 +125,7 @@ time. Each is a Turbine-4.0-rewrite behavior/config delta that XNAT's 2.3.3 conf
 | `#parse("/screens/${schemaElement.getSQLName()}_search.vm")` — literal `${…}` → ResourceNotFound | parser `urlCaseFolding` **none → lower** | XNAT's `GetPassedParameter` lowercases keys, so it relies on the parser folding param **names** to lowercase (2.3.3 default); `none` broke path-info/param lookups app-wide |
 | Post-login redirect: `Page not found: Default` | `services.TemplateService.default.extension = vm` | generic `getDefaultPage()` resolves `default.template + "." + default.extension`; unset extension → bare "Default" (no engine) |
 | Action redirect (Create Project) → blank 200, no 302, record saved | reorder pipeline: `DetermineRedirectRequestedValve` **after** `ExecutePageValve` | the action runs in `ExecutePageValve`; the redirect valve sends at the *start* of `invoke()` (before `invokeNext`), so placed earlier it checked before the action set the URI — affected **all** redirect-after-save actions |
+| Site root `/` (e.g. post-delete "OK" → `serverRoot + "/"`) → "Couldn't map Template null to any Screen class!" | add the `default.jsp` welcome file (already listed ahead of `app` in web.xml) → 302 to `/app/template/Index.vm` | Turbine 4.0 **dropped the `template.homepage`/`screen.homepage` auto-default** — the constants still exist but no 5.1 class reads them, so the empty-target `/app` root request no longer resolved to Index.vm |
 
 ### Ops / observability
 | Symptom | Fix | Root cause |

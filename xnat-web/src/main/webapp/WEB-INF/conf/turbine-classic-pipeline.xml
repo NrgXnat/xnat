@@ -16,6 +16,12 @@
         <valve>org.apache.turbine.pipeline.DefaultSetEncodingValve</valve>
         <valve>org.apache.turbine.pipeline.DetermineActionValve</valve>
         <valve>org.apache.turbine.pipeline.DetermineTargetValve</valve>
+        <!-- Restores Turbine 2.3.3's template.homepage default (dropped in the 4.0 rewrite): a bare
+             entry request with no screen target (e.g. the context root / -> /app via the `app`
+             welcome-file) would otherwise reach TemplatePage with a null template and fail with
+             "Couldn't map Template null to any Screen class!". Must sit after DetermineTargetValve
+             (which sets the target from the request) and before ExecutePageValve. -->
+        <valve>org.nrg.xnat.turbine.pipeline.DefaultHomepageTargetValve</valve>
         <valve>org.apache.turbine.pipeline.ExecutePageValve</valve>
         <!-- MUST come AFTER ExecutePageValve: the action runs inside ExecutePageValve (DefaultPage ->
              ActionLoader), and DetermineRedirectRequestedValve sends the redirect at the START of its

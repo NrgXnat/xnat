@@ -63,10 +63,22 @@ public class TurbineBootTest {
             final org.w3c.dom.NodeList valves = javax.xml.parsers.DocumentBuilderFactory.newInstance()
                     .newDocumentBuilder().parse(descriptor).getElementsByTagName("valve");
             org.junit.Assert.assertTrue("pipeline has no <valve> entries", valves.getLength() > 0);
+            boolean hasHomepageValve = false;
             for (int i = 0; i < valves.getLength(); i++) {
-                Class.forName(valves.item(i).getTextContent().trim());   // throws if a valve class is missing/renamed
+                final String valve = valves.item(i).getTextContent().trim();
+                Class.forName(valve);   // throws if a valve class is missing/renamed
+                if (valve.endsWith("DefaultHomepageTargetValve")) {
+                    hasHomepageValve = true;
+                }
             }
             System.out.println("[boot] OK: pipeline (" + valves.getLength() + " valves, all classes load)");
+
+            // Regression guard: Turbine 5.1 dropped the template.homepage default, so without
+            // DefaultHomepageTargetValve the bare context root (/ -> /app, empty target) renders no
+            // screen and fails with "Couldn't map Template null to any Screen class!".
+            org.junit.Assert.assertTrue("pipeline is missing DefaultHomepageTargetValve — empty-target "
+                    + "/app requests (the site root) would fail with 'Couldn't map Template null'", hasHomepageValve);
+            System.out.println("[boot] OK: DefaultHomepageTargetValve wired (homepage default restored)");
 
             // Fulcrum security: Turbine 5.1's PullService.populateContext() looks up a TurbineUserManager
             // (role org.apache.fulcrum.security.UserManager) on every screen render. Confirm the

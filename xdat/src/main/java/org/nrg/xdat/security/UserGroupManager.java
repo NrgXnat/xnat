@@ -734,11 +734,9 @@ public class UserGroupManager implements UserGroupServiceI {
                 context.put("value", value);
                 context.put("user", authenticatedUser);
 
-                final StringWriter writer   = new StringWriter();
-                final Template     template = Velocity.getTemplate("/screens/" + NEW_GROUP_PERMS_TEMPLATE);
-                template.merge(context, writer);
+                final String rendered = org.nrg.xft.utils.VelocityUtils.render(context, "/screens/" + NEW_GROUP_PERMS_TEMPLATE);
 
-                final List<String> queries = XftStringUtils.DelimitedStringToArrayList(writer.toString(), ";");
+                final List<String> queries = XftStringUtils.DelimitedStringToArrayList(rendered, ";");
                 if (log.isTraceEnabled()) {
                     log.trace("Initializing permissions for group {} with the following SQL:\n{}", group.getId(), queries.stream().map(query -> "    " + query).collect(Collectors.joining(";\n")));
                 }

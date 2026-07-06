@@ -422,10 +422,7 @@ public abstract class BaseElement extends ItemWrapper implements ItemI, Serializ
                 {
                     VelocityContext context = new VelocityContext();
                     context.put("item",this);
-                    StringWriter sw = new StringWriter();
-                    Template template =Velocity.getTemplate("/screens/" + templateName);
-                    template.merge(context,sw);
-                    return sw.toString();
+                    return org.nrg.xft.utils.VelocityUtils.render(context, "/screens/" + templateName);
                 }else{
                     logger.info("No Velocity TEXT vm found for " + getItem().getGenericSchemaElement().getFullXMLName());
                     return getItem().toXML_String();

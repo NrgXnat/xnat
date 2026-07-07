@@ -1,0 +1,2225 @@
+{
+  "$comment": "Static-extracted /data + /REST endpoint reference. Best-effort lower bound; XNAT's Restlet API is not self-describing (no OpenAPI, unlike /xapi). HTTP methods resolved up the extends chain from allow{Get,Post,Put,Delete}(); query params from getQueryVariable/handleParam/URIManager constants; format-extension and boolean tokens stop-listed. See data-rest-endpoint-reference.md.",
+  "generated_from": [
+    "xnat-web/src/main/java/org/nrg/xnat/restlet/XNATApplication.java",
+    "xnat-web/.../restlet/resources/*.java",
+    "@XnatRestlet extension classes"
+  ],
+  "generated_on": "2026-07-07",
+  "totals": {
+    "resource_classes": 86,
+    "path_templates": 203
+  },
+  "common_query_params": [
+    "_lock",
+    "_obsolete",
+    "_unlock",
+    "activate",
+    "allowDataDeletion",
+    "concealHiddenFields",
+    "dateFormat",
+    "format",
+    "hideTopBar",
+    "inbody",
+    "includeDetails",
+    "includeFiles",
+    "includeHeaders",
+    "includeHistory",
+    "limit",
+    "moveAssessors",
+    "offset",
+    "populateFromDB",
+    "removeFiles",
+    "req_format",
+    "requested_screen",
+    "sortBy"
+  ],
+  "resources": {
+    "AliasTokenRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/tokens/{OPERATION}",
+        "/services/tokens/{OPERATION}/user/{USERNAME}",
+        "/services/tokens/{OPERATION}/{TOKEN}",
+        "/services/tokens/{OPERATION}/{TOKEN}/{SECRET}"
+      ],
+      "path_params": [
+        "OPERATION",
+        "SECRET",
+        "TOKEN",
+        "USERNAME"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ArchiveValidator": {
+      "family": "services",
+      "paths": [
+        "/services/validate-archive"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": [
+        "dest"
+      ]
+    },
+    "Archiver": {
+      "family": "services",
+      "paths": [
+        "/services/archive"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": [
+        "dest",
+        "overwrite",
+        "overwrite_files"
+      ]
+    },
+    "AuditRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/audit"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "AuthenticationRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/auth"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "POST",
+        "PUT"
+      ],
+      "conditional_methods": [],
+      "query_params": [
+        "authenticatorId",
+        "j_password",
+        "j_username",
+        "login_method",
+        "password",
+        "provider",
+        "username"
+      ]
+    },
+    "CachedSearchColumnResource": {
+      "family": "search",
+      "paths": [
+        "/search/{CACHED_SEARCH_ID}/{COLUMN}"
+      ],
+      "path_params": [
+        "CACHED_SEARCH_ID",
+        "COLUMN"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "CachedSearchResource": {
+      "family": "search",
+      "paths": [
+        "/search/{CACHED_SEARCH_ID}"
+      ],
+      "path_params": [
+        "CACHED_SEARCH_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "sortOrder"
+      ]
+    },
+    "CatalogResource": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/resources/{RESOURCE_ID}",
+        "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/resources/{RESOURCE_ID}",
+        "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/resources/{RESOURCE_ID}",
+        "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/resources/{RESOURCE_ID}",
+        "/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/resources/{RESOURCE_ID}",
+        "/experiments/{EXPT_ID}/resources/{RESOURCE_ID}",
+        "/projects/{PROJECT_ID}/experiments/{EXPT_ID}/resources/{RESOURCE_ID}",
+        "/projects/{PROJECT_ID}/resources/{RESOURCE_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/resources/{RESOURCE_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/resources/{RESOURCE_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/resources/{RESOURCE_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/resources/{RESOURCE_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/resources/{RESOURCE_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{EXPT_ID}/resources/{RESOURCE_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/resources/{RESOURCE_ID}",
+        "/subjects/{SUBJECT_ID}/resources/{RESOURCE_ID}"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "EXPT_ID",
+        "PROJECT_ID",
+        "RECON_ID",
+        "RESOURCE_ID",
+        "SCAN_ID",
+        "SUBJECT_ID",
+        "TYPE"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "POST",
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "all",
+        "content",
+        "description",
+        "includeRootPath",
+        "tags"
+      ]
+    },
+    "CatalogResourceList": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/resources",
+        "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/resources",
+        "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/resources",
+        "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/resources",
+        "/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/resources",
+        "/experiments/{EXPT_ID}/resources",
+        "/projects/{PROJECT_ID}/experiments/{EXPT_ID}/resources",
+        "/projects/{PROJECT_ID}/resources",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/resources",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/resources",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/resources",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/resources",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/resources",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{EXPT_ID}/resources",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/resources",
+        "/subjects/{SUBJECT_ID}/resources"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "EXPT_ID",
+        "PROJECT_ID",
+        "RECON_ID",
+        "SCAN_ID",
+        "SUBJECT_ID",
+        "TYPE"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "POST",
+        "PUT",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "all",
+        "cache_file_stats",
+        "content",
+        "description",
+        "file_stats",
+        "tags"
+      ]
+    },
+    "ConfigResource": {
+      "family": "config",
+      "paths": [
+        "/config",
+        "/config/{TOOL_NAME}",
+        "/config/{TOOL_NAME}/{PATH_TO_FILE}",
+        "/projects/{PROJECT_ID}/config",
+        "/projects/{PROJECT_ID}/config/{TOOL_NAME}",
+        "/projects/{PROJECT_ID}/config/{TOOL_NAME}/{PATH_TO_FILE}"
+      ],
+      "path_params": [
+        "PATH_TO_FILE",
+        "PROJECT_ID",
+        "TOOL_NAME"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "action",
+        "contents",
+        "defaultToSiteWide",
+        "meta",
+        "status",
+        "unversioned",
+        "version"
+      ]
+    },
+    "DIRResource": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{EXPT_ID}/DIR",
+        "/experiments/{EXPT_ID}/XAR",
+        "/projects/{PROJECT_ID}/experiments/{EXPT_ID}/DIR",
+        "/projects/{PROJECT_ID}/experiments/{EXPT_ID}/XAR"
+      ],
+      "path_params": [
+        "EXPT_ID",
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "recursive"
+      ]
+    },
+    "DicomDump": {
+      "family": "services",
+      "paths": [
+        "/services/dicomdump"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "SCAN_ID"
+      ]
+    },
+    "DicomEdit": {
+      "family": "config",
+      "paths": [
+        "/config/edit/image/dicom/{RESOURCE}",
+        "/config/edit/projects/{PROJECT_ID}/image/dicom/{RESOURCE}"
+      ],
+      "path_params": [
+        "PROJECT_ID",
+        "RESOURCE"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET",
+        "PUT"
+      ],
+      "conditional_methods": [],
+      "query_params": [
+        "PROJECT_ID",
+        "all",
+        "script",
+        "status"
+      ]
+    },
+    "EcatDump": {
+      "family": "services",
+      "paths": [
+        "/services/ecatdump"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "SCAN_ID"
+      ]
+    },
+    "ExperimentListResource": {
+      "family": "experiments",
+      "paths": [
+        "/experiments"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "columns",
+        "fields",
+        "recent",
+        "xsiType"
+      ]
+    },
+    "ExperimentResource": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{EXPT_ID}",
+        "/projects/{PROJECT_ID}/experiments/{EXPT_ID}"
+      ],
+      "path_params": [
+        "EXPT_ID",
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "label",
+        "overwrite",
+        "primary",
+        "subject_ID",
+        "xsiType"
+      ]
+    },
+    "ExptAssessmentResource": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "EXPT_ID",
+        "PROJECT_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "label",
+        "primary",
+        "xsiType"
+      ]
+    },
+    "FeatureDefinitionRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/features"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "group",
+        "tag",
+        "type"
+      ]
+    },
+    "FileList": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/files",
+        "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/resources/{RESOURCE_ID}/files",
+        "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/files",
+        "/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/resources/{RESOURCE_ID}/files",
+        "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/files",
+        "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/resources/{RESOURCE_ID}/files",
+        "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/files",
+        "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/resources/{RESOURCE_ID}/files",
+        "/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/files",
+        "/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/resources/{RESOURCE_ID}/files",
+        "/experiments/{EXPT_ID}/files",
+        "/experiments/{EXPT_ID}/resources/{RESOURCE_ID}/files",
+        "/projects/{PROJECT_ID}/experiments/{EXPT_ID}/resources/{RESOURCE_ID}/files",
+        "/projects/{PROJECT_ID}/files",
+        "/projects/{PROJECT_ID}/resources/{RESOURCE_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/resources/{RESOURCE_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors/{EXPT_ID}/{TYPE}/resources/{RESOURCE_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/resources/{RESOURCE_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}/{TYPE}/resources/{RESOURCE_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/resources/{RESOURCE_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{EXPT_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{EXPT_ID}/resources/{RESOURCE_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/files",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/resources/{RESOURCE_ID}/files",
+        "/subjects/{SUBJECT_ID}/files",
+        "/subjects/{SUBJECT_ID}/resources/{RESOURCE_ID}/files"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "EXPT_ID",
+        "PROJECT_ID",
+        "RECON_ID",
+        "RESOURCE_ID",
+        "SCAN_ID",
+        "SUBJECT_ID",
+        "TYPE"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "POST",
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "all",
+        "async",
+        "content",
+        "delete",
+        "description",
+        "extract",
+        "file_content",
+        "file_format",
+        "improved",
+        "includeRootPath",
+        "index",
+        "listContents",
+        "notify",
+        "overwrite",
+        "projectIncludedInPath",
+        "reference",
+        "simplified",
+        "structure",
+        "subjectIncludedInPath",
+        "tags"
+      ]
+    },
+    "Importer": {
+      "family": "services",
+      "paths": [
+        "/services/import"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": [
+        "src",
+        "transaction"
+      ]
+    },
+    "InvestigatorListResource": {
+      "family": "investigators",
+      "paths": [
+        "/investigators"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "IpWhitelist": {
+      "family": "services",
+      "paths": [
+        "/services/ipwhitelist"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "MailRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/mail/send"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "MoveFiles": {
+      "family": "services",
+      "paths": [
+        "/services/move-files"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "PARList": {
+      "family": "pars",
+      "paths": [
+        "/pars"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "PARResource": {
+      "family": "pars",
+      "paths": [
+        "/pars/{PAR_ID}"
+      ],
+      "path_params": [
+        "PAR_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "accept",
+        "decline"
+      ]
+    },
+    "PrearcSessionListResource": {
+      "family": "prearchive",
+      "paths": [
+        "/prearchive"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "tag"
+      ]
+    },
+    "PrearchiveBatchDelete": {
+      "family": "services",
+      "paths": [
+        "/services/prearchive/delete"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "PrearchiveBatchMove": {
+      "family": "services",
+      "paths": [
+        "/services/prearchive/move"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "PrearchiveBatchRebuild": {
+      "family": "services",
+      "paths": [
+        "/services/prearchive/rebuild"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "ProjSubExptAsstList": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/assessors",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/assessors"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "PROJECT_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "POST",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "columns",
+        "fields",
+        "xsiType"
+      ]
+    },
+    "ProjSubExptList": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/experiments",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments"
+      ],
+      "path_params": [
+        "PROJECT_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "POST",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "columns",
+        "fields",
+        "xsiType"
+      ]
+    },
+    "ProjectAccessibilityResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/accessibility",
+        "/projects/{PROJECT_ID}/accessibility/{ACCESS_LEVEL}"
+      ],
+      "path_params": [
+        "ACCESS_LEVEL",
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET",
+        "PUT"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "ProjectArchive": {
+      "family": "config",
+      "paths": [
+        "/config/{PROJECT_ID}/archive_spec",
+        "/projects/{PROJECT_ID}/archive_spec"
+      ],
+      "path_params": [
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ProjectGroupResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/groups",
+        "/projects/{PROJECT_ID}/groups/{GROUP_ID}"
+      ],
+      "path_params": [
+        "GROUP_ID",
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "POST",
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ProjectListResource": {
+      "family": "projects",
+      "paths": [
+        "/projects"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET",
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": [
+        "accessibility",
+        "activeSince",
+        "admin",
+        "allDataOverride",
+        "collaborator",
+        "columns",
+        "dataType",
+        "favorite",
+        "fields",
+        "member",
+        "permissions",
+        "prearc_code",
+        "recent",
+        "restrict",
+        "users",
+        "xsiType"
+      ]
+    },
+    "ProjectMemberResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/users/{GROUP_ID}/{USER_ID}",
+        "/projects/{PROJECT_ID}/users/{GROUP_ID}/{USER_ID}/{DISPLAY_HIDDEN_USERS}"
+      ],
+      "path_params": [
+        "DISPLAY_HIDDEN_USERS",
+        "GROUP_ID",
+        "PROJECT_ID",
+        "USER_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "sendemail"
+      ]
+    },
+    "ProjectPARListResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/pars"
+      ],
+      "path_params": [
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ProjectResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}"
+      ],
+      "path_params": [
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "accessibility",
+        "testHyphen",
+        "xsiType"
+      ]
+    },
+    "ProjectSearchResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/searches/{SEARCH_ID}"
+      ],
+      "path_params": [
+        "PROJECT_ID",
+        "SEARCH_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ProjectSubjectList": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/subjects"
+      ],
+      "path_params": [
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "POST",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "columns",
+        "fields",
+        "xsiType"
+      ]
+    },
+    "ProjectUserListResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/users",
+        "/projects/{PROJECT_ID}/users/{DISPLAY_HIDDEN_USERS}"
+      ],
+      "path_params": [
+        "DISPLAY_HIDDEN_USERS",
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "includeAllDataAccess"
+      ]
+    },
+    "ProtocolResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/protocols/{PROTOCOL_ID}"
+      ],
+      "path_params": [
+        "PROJECT_ID",
+        "PROTOCOL_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "dataType",
+        "gender"
+      ]
+    },
+    "RecentPrearchiveSessions": {
+      "family": "prearchive",
+      "paths": [
+        "/prearchive/experiments"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ReconList": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/reconstructions",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "PROJECT_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "POST",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "columns",
+        "fields",
+        "type",
+        "xsiType"
+      ]
+    },
+    "ReconResource": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/reconstructions/{RECON_ID}"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "PROJECT_ID",
+        "RECON_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "type",
+        "xsiType"
+      ]
+    },
+    "RefreshCatalog": {
+      "family": "services",
+      "paths": [
+        "/services/refresh/catalog"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET",
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": [
+        "append",
+        "checksum",
+        "delete",
+        "options",
+        "populateStats",
+        "resource"
+      ]
+    },
+    "SQListenerRepresentation": {
+      "family": "status",
+      "paths": [
+        "/status/{TRANSACTION_ID}"
+      ],
+      "path_params": [
+        "TRANSACTION_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "SavedSearchListResource": {
+      "family": "search",
+      "paths": [
+        "/search/saved"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "all",
+        "includeTag",
+        "user"
+      ]
+    },
+    "SavedSearchResource": {
+      "family": "search",
+      "paths": [
+        "/search/saved/{SEARCH_ID}"
+      ],
+      "path_params": [
+        "SEARCH_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "dv",
+        "guiStyle",
+        "project",
+        "refresh",
+        "saveAs",
+        "sortOrder"
+      ]
+    },
+    "ScanDIRResource": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/DICOMDIR",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/scans/{SCAN_ID}/DICOMDIR"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "PROJECT_ID",
+        "SCAN_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "type",
+        "xsiType"
+      ]
+    },
+    "ScanList": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/scans",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/scans"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "PROJECT_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "POST",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "columns",
+        "fields",
+        "type",
+        "xsiType"
+      ]
+    },
+    "ScanQualityLabelRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/scan-quality-labels",
+        "/services/scan-quality-labels/{PROJECT_ID}"
+      ],
+      "path_params": [
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ScanResource": {
+      "family": "experiments",
+      "paths": [
+        "/experiments/{ASSESSED_ID}/scans/{SCAN_ID}",
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{ASSESSED_ID}/scans/{SCAN_ID}"
+      ],
+      "path_params": [
+        "ASSESSED_ID",
+        "PROJECT_ID",
+        "SCAN_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "type",
+        "xsiType"
+      ]
+    },
+    "ScanTypeListing": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/scan_types",
+        "/scan_types"
+      ],
+      "path_params": [
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "table"
+      ]
+    },
+    "ScannerListing": {
+      "family": "scanners",
+      "paths": [
+        "/scanners"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "table"
+      ]
+    },
+    "ScriptResource": {
+      "family": "automation",
+      "paths": [
+        "/automation/scripts",
+        "/automation/scripts/{SCRIPT_ID}",
+        "/automation/scripts/{SCRIPT_ID}/{VERSION}"
+      ],
+      "path_params": [
+        "SCRIPT_ID",
+        "VERSION"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ScriptRunnerResource": {
+      "family": "automation",
+      "paths": [
+        "/automation/runners",
+        "/automation/runners/{LANGUAGE}",
+        "/automation/runners/{LANGUAGE}/{VERSION}"
+      ],
+      "path_params": [
+        "LANGUAGE",
+        "VERSION"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ScriptTriggerResource": {
+      "family": "automation",
+      "paths": [
+        "/automation/handlers",
+        "/automation/handlers/{EVENT_ID}",
+        "/automation/triggers",
+        "/automation/triggers/{TRIGGER_ID}",
+        "/projects/{PROJECT_ID}/automation/handlers",
+        "/projects/{PROJECT_ID}/automation/handlers/{EVENT_ID}"
+      ],
+      "path_params": [
+        "EVENT_ID",
+        "PROJECT_ID",
+        "TRIGGER_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ScriptTriggerTemplateResource": {
+      "family": "automation",
+      "paths": [
+        "/automation/templates",
+        "/automation/templates/{TEMPLATE_ID}",
+        "/projects/{PROJECT_ID}/automation/templates",
+        "/projects/{PROJECT_ID}/automation/templates/{TEMPLATE_ID}"
+      ],
+      "path_params": [
+        "PROJECT_ID",
+        "TEMPLATE_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "ScriptVersionsResource": {
+      "family": "automation",
+      "paths": [
+        "/automation/scriptVersions",
+        "/automation/scriptVersions/{SCRIPT_ID}"
+      ],
+      "path_params": [
+        "SCRIPT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "SearchElementListResource": {
+      "family": "search",
+      "paths": [
+        "/search/elements"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "complexType",
+        "extends",
+        "name",
+        "plural",
+        "prefix",
+        "readable",
+        "secured",
+        "singular",
+        "task",
+        "used"
+      ]
+    },
+    "SearchFieldListResource": {
+      "family": "search",
+      "paths": [
+        "/search/elements/{ELEMENT_NAME}"
+      ],
+      "path_params": [
+        "ELEMENT_NAME"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "addSqlQueryValue",
+        "code",
+        "description",
+        "fieldId",
+        "header",
+        "plural",
+        "projectScope",
+        "searchable",
+        "showAll",
+        "singular",
+        "value"
+      ]
+    },
+    "SearchFieldsVersionListResource": {
+      "family": "search",
+      "paths": [
+        "/search/elements/{ELEMENT_NAME}/versions"
+      ],
+      "path_params": [
+        "ELEMENT_NAME"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "listViews",
+        "v2"
+      ]
+    },
+    "SearchResource": {
+      "family": "search",
+      "paths": [
+        "/search"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST"
+      ],
+      "conditional_methods": [],
+      "query_params": [
+        "cache",
+        "refresh",
+        "sortOrder"
+      ]
+    },
+    "SendEmailVerification": {
+      "family": "services",
+      "paths": [
+        "/services/sendEmailVerification"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "POST",
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "conditional_methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "query_params": [
+        "email"
+      ]
+    },
+    "SessionCountRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/sessions",
+        "/services/sessions/{USERNAME}"
+      ],
+      "path_params": [
+        "USERNAME"
+      ],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "StudyRoutingRestlet": {
+      "family": "routing",
+      "paths": [
+        "/routing",
+        "/routing/{STUDY_INSTANCE_UID}"
+      ],
+      "path_params": [
+        "STUDY_INSTANCE_UID"
+      ],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "SubjAssessmentResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}/experiments/{EXPT_ID}"
+      ],
+      "path_params": [
+        "EXPT_ID",
+        "PROJECT_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "columns",
+        "fields",
+        "label",
+        "overwrite",
+        "primary",
+        "subject_ID",
+        "xsiType"
+      ]
+    },
+    "SubjectListResource": {
+      "family": "subjects",
+      "paths": [
+        "/subjects"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "columns",
+        "fields",
+        "xsiType"
+      ]
+    },
+    "SubjectResource": {
+      "family": "projects",
+      "paths": [
+        "/projects/{PROJECT_ID}/subjects/{SUBJECT_ID}",
+        "/subjects/{SUBJECT_ID}"
+      ],
+      "path_params": [
+        "PROJECT_ID",
+        "SUBJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "gender",
+        "label"
+      ]
+    },
+    "TriageApprovalRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/triage/approve"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "POST",
+        "PUT",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "PROJECT_ID"
+      ]
+    },
+    "TriageRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/triage/projects/{PROJECT}/resources",
+        "/services/triage/projects/{PROJECT}/resources/{XNAME}",
+        "/services/triage/projects/{PROJECT}/resources/{XNAME}/files",
+        "/services/triage/projects/{PROJECT}/resources/{XNAME}/files/{FILE}"
+      ],
+      "path_params": [
+        "FILE",
+        "PROJECT",
+        "XNAME"
+      ],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "UserAuth": {
+      "family": "auth",
+      "paths": [
+        "/auth"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "UserCacheResource": {
+      "family": "user",
+      "paths": [
+        "/user/cache/resources",
+        "/user/cache/resources/{XNAME}",
+        "/user/cache/resources/{XNAME}/files",
+        "/user/cache/resources/{XNAME}/files/{FILE}"
+      ],
+      "path_params": [
+        "FILE",
+        "XNAME"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "conditional_methods": [],
+      "query_params": [
+        "extract"
+      ]
+    },
+    "UserFavoriteResource": {
+      "family": "users",
+      "paths": [
+        "/users/favorites/{DATA_TYPE}/{PROJECT_ID}"
+      ],
+      "path_params": [
+        "DATA_TYPE",
+        "PROJECT_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "PUT",
+        "DELETE"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "UserFavoritesList": {
+      "family": "users",
+      "paths": [
+        "/users/favorites/{DATA_TYPE}"
+      ],
+      "path_params": [
+        "DATA_TYPE"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "UserListResource": {
+      "family": "users",
+      "paths": [
+        "/users"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "UserRolesRestlet": {
+      "family": "user",
+      "paths": [
+        "/user/{USER_ID}/roles"
+      ],
+      "path_params": [
+        "USER_ID"
+      ],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "POST",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "roles"
+      ]
+    },
+    "UserSession": {
+      "family": "JSESSION",
+      "paths": [
+        "/JSESSION"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "POST",
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "UserSessionId": {
+      "family": "user",
+      "paths": [
+        "/user/{USER_ID}/sessions"
+      ],
+      "path_params": [
+        "USER_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data",
+        "/data/archive"
+      ],
+      "http_methods": [
+        "DELETE",
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "UserSettingsRestlet": {
+      "family": "user",
+      "paths": [
+        "/user",
+        "/user/actions/{ACTION}",
+        "/user/actions/{USER_ID}/{ACTION}",
+        "/user/{USER_ID}"
+      ],
+      "path_params": [
+        "ACTION",
+        "USER_ID"
+      ],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "VerifyExtensionsRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/extensions/verify"
+      ],
+      "path_params": [],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "WorkflowEventResource": {
+      "family": "automation",
+      "paths": [
+        "/automation/workflows",
+        "/automation/workflows/{SPEC}"
+      ],
+      "path_params": [
+        "SPEC"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": []
+    },
+    "WorkflowResource": {
+      "family": "workflows",
+      "paths": [
+        "/workflows",
+        "/workflows/{WORKFLOW_ID}"
+      ],
+      "path_params": [
+        "WORKFLOW_ID"
+      ],
+      "url_prefixes": [
+        "/REST",
+        "/data"
+      ],
+      "http_methods": [
+        "GET",
+        "PUT"
+      ],
+      "conditional_methods": [],
+      "query_params": []
+    },
+    "WorkflowsRestlet": {
+      "family": "services",
+      "paths": [
+        "/services/workflows",
+        "/services/workflows/workflowid/{WORKFLOW_PRIMARY_KEY}",
+        "/services/workflows/{PIPELINE_NAME}"
+      ],
+      "path_params": [
+        "PIPELINE_NAME",
+        "WORKFLOW_PRIMARY_KEY"
+      ],
+      "url_prefixes": [
+        "/data"
+      ],
+      "http_methods": [
+        "GET"
+      ],
+      "conditional_methods": [
+        "GET"
+      ],
+      "query_params": [
+        "display",
+        "experiment",
+        "latest_by_param",
+        "project",
+        "status"
+      ]
+    }
+  },
+  "curated": {
+    "Importer": {
+      "endpoint": "POST /data/services/import",
+      "body": "payload (DICOM/zip/XAR or multipart)",
+      "params": {
+        "import-handler": "importer to use (DICOM-zip, SI, gradual-DICOM, \u2026)",
+        "dest": "destination URI (/prearchive, /archive/projects/{ID})",
+        "project": "target project id",
+        "subject": "target subject (label or id; also SUBJECT_ID)",
+        "EXPT_LABEL": "session/experiment label",
+        "overwrite": "none | append | delete",
+        "prearchive_code": "auto-archive behaviour",
+        "quarantine": "routing flag",
+        "Direct-Archive": "routing flag",
+        "PREVENT_ANON": "skip site anon",
+        "PREVENT_AUTO_COMMIT": "skip auto-commit",
+        "rename": "file-naming flag",
+        "inbody": "in-body payload flag",
+        "SOURCE": "upload source tag",
+        "src": "pre-stored file reference (async)",
+        "http-session-listener": "progress listener",
+        "transaction": "transaction record id",
+        "action": "commit a built prearchive session (action=commit)"
+      }
+    },
+    "PrearchiveBatch": {
+      "endpoint": "POST /data/services/prearchive/{delete,move,rebuild}",
+      "note": "declare no variants \u2014 the class fixed by the SecureResource no-variant bridge (pre-fix returned 405)",
+      "params": {
+        "src": "session reference(s), repeatable: /prearchive/projects/{PROJECT}/{TIMESTAMP}/{FOLDER}",
+        "async": "run asynchronously (true/false)",
+        "newProject": "(move only) destination project"
+      }
+    },
+    "SearchResource": {
+      "endpoint": "POST /data/search (+ /data/search/saved/{ID}/results)",
+      "body": "search-document XML or stored-search bundle (form-wrapped-XML fix lives here)",
+      "params": {
+        "format": "xml | json | csv | html",
+        "limit": "paging",
+        "offset": "paging",
+        "sortBy": "sort column",
+        "sortOrder": "sort direction",
+        "cache": "use cached result table",
+        "refresh": "rebuild cached result table"
+      }
+    }
+  }
+}

@@ -306,7 +306,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionRegistry(sessionRegistry())
             .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)));
 
-        http.headers().frameOptions().sameOrigin().cacheControl().disable().contentSecurityPolicy("frame-ancestors 'self'")
+        http.headers().frameOptions().sameOrigin().cacheControl().disable().contentSecurityPolicy(CONTENT_SECURITY_POLICY)
             .and().referrerPolicy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
             .and().httpStrictTransportSecurity().disable()
             .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
@@ -352,6 +352,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     private static final String QUERY_SITE_URL = "SELECT coalesce(value, '') FROM xhbm_preference p LEFT JOIN xhbm_tool t ON p.tool = t.id WHERE t.tool_id = 'siteConfig' AND p.name = 'siteUrl'";
+
+    // unsafe-eval is retained because DynamicJSLoad.js (the data-type loader, around 120 call sites) uses eval for
+    // page loading but never with user-provided content; see XXX-305 for details. The vendored Ace editor and jsonpath
+    // libraries also use eval.
+    // unsafe-inline is retained because inline scripts and handlers are pervasive, as cataloged in XXX-320
+    private static final String CONTENT_SECURITY_POLICY = String.join("; ",
+            "frame-ancestors 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
+                    + "https://www.google.com/recaptcha/ "
+                    + "https://www.gstatic.com/recaptcha/",
+            "style-src 'self' 'unsafe-inline'",
+            "form-action 'self'");
 
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;

@@ -32,6 +32,18 @@ services:
     ports:
       - "8161:8161"   # web console (admin/admin) — optional
 
+  xnat-mail:
+    # Dev SMTP sink so notifications (new-user emails, etc.) never fail against a
+    # missing mail server. XNAT reaches it as xnat-mail:1025; view captured mail at
+    # http://localhost:8025. Point XNAT at it once via:
+    #   POST /xapi/notifications/smtp?hostname=xnat-mail&port=1025
+    # (build-known-state.sh does this automatically). Mailpit is multi-arch (arm64).
+    image: axllent/mailpit:latest
+    expose:
+      - "1025"        # SMTP (in-network, reachable as xnat-mail:1025)
+    ports:
+      - "8025:8025"   # web UI
+
   xnat:
     build:
       context: .
@@ -42,6 +54,8 @@ services:
       xnat-postgresql:
         condition: service_healthy
       xnat-activemq:
+        condition: service_started
+      xnat-mail:
         condition: service_started
     ports:
       - "8080:8080"

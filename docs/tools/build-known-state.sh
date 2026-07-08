@@ -46,6 +46,12 @@ USER_PASS="${USER_PASS:-Fixture_pw_1!}"
 # httpie output: quiet by default. Set HTTP_PRINT=hb (headers+body) to debug failures.
 PRINT_OPT="--print=${HTTP_PRINT:-}"
 
+# Dev SMTP sink (the docker-compose 'xnat-mail' / Mailpit service). Points XNAT's mail
+# host here so new-user and other notification emails never fail against a missing SMTP
+# server. Set SMTP_HOST="" to leave XNAT's mail config untouched.
+SMTP_HOST="${SMTP_HOST:-xnat-mail}"
+SMTP_PORT="${SMTP_PORT:-1025}"
+
 # Users: username|first|last|project-role  (role is how they'll be shared onto projects)
 USERS=(
   "kstate_owner|Olivia|Owner|Owners"
@@ -72,6 +78,13 @@ SESSION_DATASETS=()
 # Real DICOM available in-repo: the well-known "DHead" MR study (shared StudyInstanceUID,
 # SOP class = MR Image Storage). Imports as one real MR session. Only MR exists in-repo,
 # so CT/PET sessions stay shells. Set WITH_DICOM=0 to skip real import (shells only).
+# Resource file upload (inbody PUT). Known to hang against the migrated Restlet 2.x
+# stack (FileWriterWrapper.write -> IOUtils.copy reads the entity until an EOF the
+# servlet stream doesn't signal). Kept best-effort with a short timeout; set
+# WITH_FILES=0 to skip the file step entirely and finish fast.
+WITH_FILES="${WITH_FILES:-1}"
+FILE_TIMEOUT="${FILE_TIMEOUT:-15}"
+
 WITH_DICOM="${WITH_DICOM:-1}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # PROJECT|SUBJECT|SESSION_LABEL|space-separated repo-relative globs of DICOM files
@@ -149,6 +162,17 @@ preflight() {
   log "${C_OK}ok${C_RST} — target: $BASE_URL as $ADMIN_USER"
 }
 
+configure_mail() {
+  [[ -n "$SMTP_HOST" ]] || { log "  ${C_DIM}(SMTP_HOST empty — leaving XNAT mail config as-is)${C_RST}"; return 0; }
+  step "Mail sink"
+  # Set the SMTP server via POST /xapi/notifications with an embedded 'smtpServer' JSON.
+  # NB: the /xapi/notifications/smtp form-param endpoint mis-binds its trailing Properties
+  # arg and returns 500 ("argument type mismatch"), so use the @RequestBody map endpoint.
+  printf '{"smtpServer": "{\\"hostname\\":\\"%s\\",\\"port\\":%s}"}' "$SMTP_HOST" "$SMTP_PORT" \
+    | body_soft POST "$BASE_URL/xapi/notifications" application/json
+  log "  ${C_OK}smtp${C_RST} -> $SMTP_HOST:$SMTP_PORT (captured mail at http://localhost:8025)"
+}
+
 create_users() {
   step "Users"
   local spec u first last
@@ -209,16 +233,18 @@ create_session_shell() {
   # A resource collection + a small file — CatalogResource / FileList
   req PUT "$BASE_URL/data/projects/$proj/subjects/$subj/experiments/$label/resources/NOTES?format=TEXT&content=DOC"
   N_RES+=1
-  if ! $DRY_RUN; then
+  if [[ "$WITH_FILES" == "1" ]] && ! $DRY_RUN; then
     local tmp; tmp=$(mktemp)
     printf 'known-state fixture note for %s/%s/%s (%s)\n' "$proj" "$subj" "$label" "$modality" > "$tmp"
-    http --check-status "$PRINT_OPT" --timeout=60 -a "$AUTH" \
+    local rc=0
+    http --check-status "$PRINT_OPT" --timeout="$FILE_TIMEOUT" -a "$AUTH" \
       PUT "$BASE_URL/data/projects/$proj/subjects/$subj/experiments/$label/resources/NOTES/files/readme.txt?inbody=true" \
-      Content-Type:text/plain < "$tmp"
+      Content-Type:text/plain < "$tmp" || rc=$?
     rm -f "$tmp"
+    if [[ $rc -eq 0 ]]; then N_FILE+=1; else echo "      ${C_WARN}warn${C_RST} file upload $label (exit $rc) — skipped (inbody upload hang; set WITH_FILES=0)"; fi
   fi
-  N_FILE+=1
-  log "      ${C_OK}session${C_RST} $label [$modality] +scan +resource-file"
+  local files_note="+resource"; [[ "$WITH_FILES" == "1" ]] && files_note="+resource-file"
+  log "      ${C_OK}session${C_RST} $label [$modality] +scan $files_note"
 }
 
 # POST a DICOM zip to the import service (content-type aware, best-effort). Explicit
@@ -366,6 +392,7 @@ summary() {
 
 # ---- main ---------------------------------------------------------------------------
 preflight
+configure_mail
 create_users
 build_hierarchy
 import_repo_dicom

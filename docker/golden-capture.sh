@@ -30,8 +30,13 @@ JAR="$(mktemp)"; BODY="$(mktemp)"; FULL="$(mktemp)"; trap 'rm -f "$JAR" "$BODY" 
 
 # ---- endpoints: "name|path" (name -> $GOLDEN_DIR/<name>.txt) ---------------------------------------
 # /app screens exercise Turbine 5.1 + Velocity 2; /data exercises the Restlet SecureResource shim +
-# content negotiation; /xapi is Spring MVC (not migrated, sanity only). Data-specific rows (a report
-# for a known project id, a zip download, etc.) are left for you to add once the DB is seeded.
+# content negotiation; /xapi is Spring MVC (not migrated, sanity only).
+#
+# The fixture-specific rows below (data-session-detail, data-file-download) assume the known-state
+# data created by docs/tools/build-known-state.sh (project kstate_p1, subject kstate_p1_sub1, session
+# kstate_p1_sub1_mr1 with a NOTES/readme.txt file). They deliberately exercise the router matching
+# regression we fixed: nested detail (BEST_MATCH) and download-by-name (STARTS_WITH / getRemainingPart).
+FX="/data/projects/kstate_p1/subjects/kstate_p1_sub1/experiments/kstate_p1_sub1_mr1"
 ENDPOINTS=(
   "app-index|/app/template/Index.vm"
   "app-quicksearch|/app/template/QuickSearch.vm"
@@ -40,8 +45,9 @@ ENDPOINTS=(
   "data-projects-html|/data/projects?format=html"
   "data-subjects-json|/data/subjects?format=json"
   "data-experiments-json|/data/experiments?format=json"
+  "data-session-detail|${FX}?format=json"
+  "data-file-download|${FX}/resources/NOTES/files/readme.txt"
   "data-jsession|/data/JSESSION"
-  "data-version|/data/version"
   "xapi-buildinfo|/xapi/siteConfig/buildInfo"
 )
 

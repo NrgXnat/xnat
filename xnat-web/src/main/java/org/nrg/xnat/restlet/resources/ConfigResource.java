@@ -397,10 +397,10 @@ public class ConfigResource extends SecureResource {
             }
             getResponse().setStatus(response);
         } catch (ConfigServiceException e) {
-            log.error("Configuration service error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
+            log.error("Configuration service error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path, e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
         } catch (Exception e) {
-            log.error("Unknown error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
+            log.error("Unknown error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path, e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
         }
     }

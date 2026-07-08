@@ -365,11 +365,15 @@ configure_projects() {
     # mode is blacklist|whitelist|modalityMap, enabled is a *string*, and 'list' is a regex
     # block (patterns newline-separated; a single alternation works on one line, default field
     # is SeriesDescription).
+    # NOTE: send as text/plain, not application/json. ConfigResource.handlePut treats an
+    # application/json body as a legacy parameter wrapper (expects {"contents":...,"status":...})
+    # and would report "No contents provided"; a non-json inbody PUT stores the raw body as the
+    # config contents blob (which is itself this JSON string).
     printf '{"mode":"blacklist","enabled":"true","list":"localizer|SCOUT"}' \
-      | body_soft PUT "$BASE_URL/data/projects/$proj/config/seriesImportFilter/config?inbody=true" application/json
+      | body_soft PUT "$BASE_URL/data/projects/$proj/config/seriesImportFilter/config?inbody=true" text/plain
     # (b) a plain custom config entry — exercises ConfigResource generically
     printf '{"autoArchive":false,"note":"known-state fixture"}' \
-      | body_soft PUT "$BASE_URL/data/projects/$proj/config/kstate-tool/settings?inbody=true" application/json
+      | body_soft PUT "$BASE_URL/data/projects/$proj/config/kstate-tool/settings?inbody=true" text/plain
     # (c) project DICOM anon script + enable — DicomEdit config
     printf '//known-state fixture project anon script\nversion "6.1"\n(0010,0010) := "Anonymized^Fixture"\n' \
       | body_soft PUT "$BASE_URL/data/config/edit/projects/$proj/image/dicom/script" text/plain

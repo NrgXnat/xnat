@@ -54,6 +54,18 @@ public class XNATApplication extends Application {
     @Override
     public synchronized Restlet createInboundRoot() {
         Router securedRouter = new Router(getContext());
+        // Restore the two Restlet 1.1 router defaults that XNAT's routing was written against
+        // (2.x changed BOTH):
+        //   * matching mode STARTS_WITH (2.x: EQUALS) — resources read the trailing path via
+        //     getResourceRef().getRemainingPart(): file up/download by name
+        //     (.../resources/{ID}/files/{name}), catalog subpaths, DICOMDIR. Under EQUALS those
+        //     longer URIs match no route and 404.
+        //   * routing mode BEST_MATCH (2.x: FIRST_MATCH) — with STARTS_WITH many routes match a
+        //     given URI as a prefix; BEST_MATCH picks the most specific (longest) one. Without it,
+        //     FIRST_MATCH picks the first-attached prefix route, so e.g. a subject PUT
+        //     (.../subjects/{ID}) can be intercepted by .../subjects or .../projects/{ID}.
+        securedRouter.setDefaultMatchingMode(Template.MODE_STARTS_WITH);
+        securedRouter.setRoutingMode(Router.MODE_BEST_MATCH);
 
         initializeRouteTable();
 

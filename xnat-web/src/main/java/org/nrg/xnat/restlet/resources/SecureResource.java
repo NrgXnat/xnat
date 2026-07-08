@@ -134,6 +134,11 @@ public abstract class SecureResource extends ServerResource {
 
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
 
+    // Content-Disposition is a Restlet 2.x STANDARD_HEADER (dropped if added to the raw header Series), so
+    // setContentDisposition() records the intent here and the get/post/put/delete bridges stamp it onto the
+    // returned representation via applyDisposition() -> Restlet serializes it as a Content-Disposition header.
+    private Disposition pendingDisposition;
+
     private static final String ACTION = "action";
 
     public static final String HANDLER = "handler";
@@ -232,7 +237,7 @@ public abstract class SecureResource extends ServerResource {
     protected Representation get(final Variant variant) throws ResourceException {
         handleGet();
         final Representation entity = getResponse().getEntity();
-        return entity != null ? entity : getRepresentation(variant);
+        return applyDisposition(entity != null ? entity : getRepresentation(variant));
     }
 
     @Override
@@ -243,19 +248,19 @@ public abstract class SecureResource extends ServerResource {
     @Override
     protected Representation post(final Representation entity, final Variant variant) throws ResourceException {
         handlePost();
-        return getResponse().getEntity();
+        return applyDisposition(getResponse().getEntity());
     }
 
     @Override
     protected Representation put(final Representation entity, final Variant variant) throws ResourceException {
         handlePut();
-        return getResponse().getEntity();
+        return applyDisposition(getResponse().getEntity());
     }
 
     @Override
     protected Representation delete(final Variant variant) throws ResourceException {
         handleDelete();
-        return getResponse().getEntity();
+        return applyDisposition(getResponse().getEntity());
     }
 
     // No-variant forms. When a resource declares no variants (getVariants() empty), Restlet 2.x's
@@ -1157,15 +1162,30 @@ public abstract class SecureResource extends ServerResource {
         returnRepresentation(representItem(item, MediaType.TEXT_XML));
     }
 
-    @SuppressWarnings("SameParameterValue")
+    @SuppressWarnings({"SameParameterValue", "unchecked"})
     protected void setResponseHeader(String key, String value) {
-        Form responseHeaders = (Form) getResponse().getAttributes().get("org.restlet.http.headers");
-
-        if (responseHeaders == null) {
-            responseHeaders = new Form();
-            getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
+        // Cache-Control is one of Restlet 2.x's STANDARD_HEADERS: if added to the raw header Series it is
+        // logged ("...is not allowed as such") and DROPPED by HeaderUtils.addExtensionHeaders, so it never
+        // emits. It must go through the typed API instead, which Restlet serializes back to a Cache-Control
+        // header at commit time.
+        if ("Cache-Control".equalsIgnoreCase(key)) {
+            for (final String token : value.split(",")) {
+                final String directive = token.trim();
+                if (!directive.isEmpty()) {
+                    getResponse().getCacheDirectives().add(new CacheDirective(directive));
+                }
+            }
+            return;
         }
-
+        // Restlet 2.x stores the response-headers attribute as a Series<Header> (org.restlet.data.Header);
+        // Restlet 1.1 used a Form (Series<Parameter>). Using a Form throws ClassCastException in
+        // HeaderUtils.addExtensionHeaders at response-commit time -> 500 after the body is already written.
+        final Map<String, Object> attributes = getResponse().getAttributes();
+        Series<Header> responseHeaders = (Series<Header>) attributes.get(HeaderConstants.ATTRIBUTE_HEADERS);
+        if (responseHeaders == null) {
+            responseHeaders = new Series<>(Header.class);
+            attributes.put(HeaderConstants.ATTRIBUTE_HEADERS, responseHeaders);
+        }
         responseHeaders.add(key, value);
     }
 
@@ -1289,21 +1309,24 @@ public abstract class SecureResource extends ServerResource {
      * @param filename     The suggested filename for downloaded content.
      * @param isAttachment Indicates whether the content is an attachment or inline.
      */
-    @SuppressWarnings("unchecked")
     public void setContentDisposition(String filename, boolean isAttachment) {
-        final Map<String, Object> attributes = getResponse().getAttributes();
-        if (attributes.containsKey(CONTENT_DISPOSITION)) {
+        if (pendingDisposition != null) {
             throw new IllegalStateException("A content disposition header has already been added to this response.");
         }
-        Object oHeaders = attributes.get(HeaderConstants.ATTRIBUTE_HEADERS);
-        Series<Parameter> headers;
-        if (oHeaders != null) {
-            headers = (Series<Parameter>) oHeaders;
-        } else {
-            headers = new Form();
+        // Build the typed Restlet 2.x Disposition; applyDisposition() stamps it onto the returned
+        // representation in the bridge methods. Adding "Content-Disposition" to the raw header Series would
+        // be silently dropped (STANDARD_HEADER), same as Cache-Control in setResponseHeader.
+        final Disposition disposition = new Disposition(isAttachment ? Disposition.TYPE_ATTACHMENT : Disposition.TYPE_INLINE);
+        disposition.setFilename(filename);
+        pendingDisposition = disposition;
+    }
+
+    /** Stamp any pending Content-Disposition (from {@link #setContentDisposition}) onto the outgoing entity. */
+    private Representation applyDisposition(final Representation entity) {
+        if (entity != null && pendingDisposition != null) {
+            entity.setDisposition(pendingDisposition);
         }
-        headers.add(new Parameter(CONTENT_DISPOSITION, TurbineUtils.createContentDispositionValue(filename, isAttachment)));
-        attributes.put(HeaderConstants.ATTRIBUTE_HEADERS, headers);
+        return entity;
     }
 
     /**

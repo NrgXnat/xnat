@@ -150,3 +150,18 @@ pull tools), and a full **create → save → 302 → report** action workflow.
 
 Validation path: continue the [smoke-test checklist](tomcat9-deploy-stack.md) / `./docker/health-check.sh`,
 then automated regression — `xnat-rest-tests` (REST `/data` + `/xapi`) + golden-master (`docs/tools/golden_master.py`) for `/app` screens.
+
+## Phase 1 prep done early (on the testable 5.7/javax stack)
+
+Spring Security 6 removes `WebSecurityConfigurerAdapter` and deprecates the `FilterSecurityInterceptor`
+authorization path, which would have forced a security-config rewrite in the middle of the Jakarta
+cutover. Both were converted now, while still on 5.7 / Tomcat 9, so Phase 1 stays namespace + version-only:
+
+| Change | Commit | Notes |
+|---|---|---|
+| `SecurityConfig extends WebSecurityConfigurerAdapter` → component style: `@Bean SecurityFilterChain` + explicit `@Bean AuthenticationManager` (raw `AuthenticationManagerBuilder`, same provider order, `XnatProviderManager` parent), lambda DSL | `26b8967f9` | `http.authenticationManager(...)` also sets the shared object `XnatBasicAuthConfigurer` reads; `XnatSecurityExtension` plugin hooks (`configure(http)` / `configure(builder)`) unchanged |
+| `authorizeRequests` → `authorizeHttpRequests` (`AuthorizationFilter`) | `bd55cd0b9` | Only rule is `anyRequest().authenticated()` — semantically identical; separate commit for surgical revert |
+
+**Runtime verification needed:** form login/logout, basic-auth REST (golden-capture uses it), guest
+access, concurrent-session limit. Remaining known Phase 1 security items: `spring-security-openid`
+(removed in 6), legacy `spring-security-oauth2` project, `ChannelProcessingFilter` deprecation.

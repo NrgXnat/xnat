@@ -160,8 +160,10 @@ cutover. Both were converted now, while still on 5.7 / Tomcat 9, so Phase 1 stay
 | Change | Commit | Notes |
 |---|---|---|
 | `SecurityConfig extends WebSecurityConfigurerAdapter` → component style: `@Bean SecurityFilterChain` + explicit `@Bean AuthenticationManager` (raw `AuthenticationManagerBuilder`, same provider order, `XnatProviderManager` parent), lambda DSL | `26b8967f9` | `http.authenticationManager(...)` also sets the shared object `XnatBasicAuthConfigurer` reads; `XnatSecurityExtension` plugin hooks (`configure(http)` / `configure(builder)`) unchanged |
-| `authorizeRequests` → `authorizeHttpRequests` (`AuthorizationFilter`) | `bd55cd0b9` | Only rule is `anyRequest().authenticated()` — semantically identical; separate commit for surgical revert |
+| ~~`authorizeRequests` → `authorizeHttpRequests`~~ — **REVERTED** (login redirect loop, `ERR_TOO_MANY_REDIRECTS`) | `bd55cd0b9`, reverted | **Key architecture discovery:** `SecurityConfig`'s `anyRequest().authenticated()` is a *placeholder*, not the real rule set. `UpdateSecurityFilterHandlerMethod` (a `BeanPostProcessor`) intercepts the `FilterSecurityInterceptor` and swaps in XNAT's actual authorization map — `XnatAppInfo.getOpenUrls()` (incl. the login page) → `permitAll`, `getAdminUrls()` → `hasRole(ADMIN)`, default → `hasRole(ROLE_USER)`/`permitAll` per the runtime `requireLogin` preference — at startup and whenever the preference changes. `authorizeHttpRequests` builds an `AuthorizationFilter` instead of a `FilterSecurityInterceptor`, so the post-processor never fires, the placeholder goes live, the (un-permitted) login page redirects to itself. `authorizeRequests` must stay until `UpdateSecurityFilterHandlerMethod` is ported to the `AuthorizationManager` API — needed for Spring Security **7**, not for 6.x (`FilterSecurityInterceptor` is deprecated-but-present in 6) |
 
 **Runtime verification needed:** form login/logout, basic-auth REST (golden-capture uses it), guest
 access, concurrent-session limit. Remaining known Phase 1 security items: `spring-security-openid`
-(removed in 6), legacy `spring-security-oauth2` project, `ChannelProcessingFilter` deprecation.
+(removed in 6), legacy `spring-security-oauth2` project, `ChannelProcessingFilter` deprecation, and
+(SS7 horizon) porting `UpdateSecurityFilterHandlerMethod`'s dynamic metadata-source swap to
+`AuthorizationManager`.

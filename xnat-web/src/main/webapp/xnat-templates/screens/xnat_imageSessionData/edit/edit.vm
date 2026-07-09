@@ -141,7 +141,7 @@ $page.setVlinkColor($ui.vlink)
                 <select class="date month" id="${om.getXSIType()}.date.month" name="${om.getXSIType()}.date.month" onchange="validateDate()">
                     <option value="bad">Month</option>
                     #foreach ($month in $months)
-                        #set ($monthCount = $velocityCount - 1)
+                        #set ($monthCount = $foreach.count - 1)
                         <option value="$monthCount" #if ( $monthCount == $!expt_date.getMonth()) defaultSelected="true" selected="true" #end>
                             $month
                         </option>

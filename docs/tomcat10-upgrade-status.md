@@ -4,12 +4,19 @@ Status tracker for the staged real port (see the full plan and
 [`phase0-compile-migration-summary.md`](phase0-compile-migration-summary.md) /
 [`tomcat9-deploy-stack.md`](tomcat9-deploy-stack.md) for detail). Branch: `feature/turbine-5x`.
 
-**Last updated:** 2026-07-06
+**Last updated:** 2026-07-09
 
 **Legend:** 🟢 Complete · 🟡 In progress · ⚪ Open
 
-**Rollup:** Phase 0a 🟢 code complete, 🟡 runtime verification · Phase 0b 🟢 code + boot + deploy,
-🟡 breadth/render verification · Phase 1 ⚪ not started.
+**Rollup:** Phase 0a 🟢 code + runtime verified (known-state fixture + goldens) · Phase 0b 🟢 code +
+boot + deploy + email/render verification, 🟡 remaining screen breadth · Phase 1 ⚪ not started, but
+Spring Security 6 prep (1-2) landed early and Torque (1-5) downgraded to likely-delete.
+
+Test harness: `docs/tools/build-known-state.sh` (REST fixture: 3 users / 5 projects / subjects /
+MR-CT-PET sessions / files / stored searches / project config, Mailpit SMTP sink on :8025) +
+`docker/golden-capture.sh` (normalize-and-diff goldens in `docs/goldens/`, local-only) +
+`docs/data-rest-endpoint-reference.md(.json)` + REST smoke spec drafted in `xnat-test-automation`
+(`s1600-rest-migration-smoke`, registered in `playwright.config.ts`).
 
 Strategy: do the framework API rewrites on javax / Tomcat 9 first (Phase 0, fully testable), then one
 atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
@@ -27,14 +34,16 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 0a-5 | Replace internal `com.noelios.restlet.http.*` usage | 🟢 | |
 | 0a-6 | Re-add explicit `MODE_STARTS_WITH` / query matching (`XNATApplication`, `XNATVirtualHost`, `XNATRestletFactory`) | 🟢 | routing works at runtime |
 | 0a-7 | Update `XnatWebAppInitializer` servlet wiring | 🟢 | |
-| 0a-8 | `SecureResource` shim: `post/put/delete`→`handleX`, `getAllowedMethods` (405), variant negotiation | 🟢 | verified for GET/DELETE at runtime |
+| 0a-8 | `SecureResource` shim: `post/put/delete`→`handleX`, `getAllowedMethods` (405), variant negotiation | 🟢 | incl. **no-variant** `post/put/delete` bridge (prearchive delete/move/rebuild 405 fix) |
 | 0a-9 | `XnatServerResourceFinder` (no-arg Finder ctor) | 🟢 | |
-| 0a-10 | Disposition API migration | 🟢 | |
-| 0a-11 | `getFileItem`→`getPart` / `DiskFileItem`→`DiskPart` | 🟢 | compiles; upload not yet exercised |
-| 0a-12 | Runtime verify `/data` GET in json / xml / html (content negotiation) | 🟡 | config-resource GET + 404 path confirmed; full negotiation matrix pending |
+| 0a-10 | Disposition API migration | 🟢 | typed `Disposition` + `CacheDirective` emission (see 0a-17) |
+| 0a-11 | `getFileItem`→`getPart` / `DiskFileItem`→`DiskPart` | 🟢 | upload exercised via known-state builder |
+| 0a-12 | Runtime verify `/data` GET in json / xml / html (content negotiation) | 🟢 | golden captures: projects/subjects/experiments × json/xml/html + session detail |
 | 0a-13 | Runtime verify `/data` POST/PUT with XML body | 🟢 | `SearchResource.handlePost`: YUI Connect prepends the URL query to the POST body → form-wrapped XML. Fixed via `extractSearchXml()` (+ unit test). Fixes the Subjects tab "Failed to create search results." |
-| 0a-14 | Runtime verify zip/tar download (`ZipRepresentation` Disposition) | ⚪ | |
-| 0a-15 | Runtime verify multipart upload (`RestletFileUpload`) | ⚪ | |
+| 0a-14 | Runtime verify zip/tar download (`ZipRepresentation` Disposition) | 🟢 | file download golden capture; Content-Disposition emits via typed API |
+| 0a-15 | Runtime verify multipart upload (`RestletFileUpload`) | 🟢 | inbody + file up/download exercised by known-state builder |
+| 0a-16 | Restore **both** Restlet 1.1 router defaults in `createInboundRoot()`: `MODE_STARTS_WITH` matching **and** `MODE_BEST_MATCH` routing | 🟢 | 2.x defaults (`EQUALS`+`FIRST_MATCH`) broke trailing-path URIs (`getRemainingPart()`: file by name, catalog subpaths) and, with `STARTS_WITH` alone, misrouted writes to first-attached prefix routes |
+| 0a-17 | Response headers: `org.restlet.http.headers` must be `Series<Header>` (was `Form`) — CCE→500 *after* body commit; `Cache-Control`/`Content-Disposition` are STANDARD_HEADERS (silently dropped from raw Series) → routed through `getCacheDirectives()` / typed `Disposition` + `applyDisposition()` in the bridges | 🟢 | Restlet errors log via JUL → Tomcat `localhost.<date>.log`, NOT the app console |
 
 ## Phase 0b — Turbine 2.3.3 → 5.1 + Velocity 1.7 → 2.4.1 (javax, Tomcat 9)
 
@@ -68,14 +77,14 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 0b-17 | Disable vestigial `DBSecurityService` / `turbine-om.properties` include | 🟢 | |
 | 0b-18 | `$ui` UIManager → `UITool` + declare `UIService` | 🟢 | |
 | 0b-19 | `TemplateService.default.extension=vm` | 🟢 | fixed "Page not found: Default" |
-| 0b-20 | `DefaultHomepageTargetValve` (restore `template.homepage` default) | 🟢 | + `default.jsp` root redirect |
+| 0b-20 | `DefaultHomepageTargetValve` (restore `template.homepage` default) | 🟢 | + `default.jsp` root redirect. Corrected to the exact 2.3.3 `TemplateSessionValidator` condition (`!hasScreen() && empty template`, **no action check**) — message-only action paths (e.g. QuickSearch no-match) otherwise 500 with "Couldn't map Template null" |
 
 ### Templates (~1,038 `.vm`)
 | # | Step | Status | Notes |
 |---|------|:------:|-------|
 | 0b-21 | `$page.addAttribute` → `$page.addBodyAttribute` | 🟢 | 5 templates found/fixed so far |
-| 0b-22 | Sweep `$velocityCount`/`$velocityHasNext` → `$foreach.*` | 🟡 | fix-on-sight; no full sweep yet |
-| 0b-23 | Hyphen-in-identifier + `#if` null-check (`directive.if.empty_check`) semantics | ⚪ | not audited; may need `parser.allow_hyphen_in_identifiers=true` |
+| 0b-22 | Sweep `$velocityCount`/`$velocityHasNext` → `$foreach.*` | 🟢 | **full static sweep done**: 44 occurrences / 18 templates → `$foreach.count` (all innermost-loop, no counter-config overrides → semantics-preserving); `$velocityHasNext` 0 hits. Month dropdowns + search tabs verified in browser |
+| 0b-23 | Hyphen-in-identifier + `#if` null-check (`directive.if.empty_check`) semantics | 🟡 | hyphen-identifiers: static sweep found **0** — done. `#if` empty-check semantics not audited |
 | 0b-24 | Non-UTF-8 template encoding check | ⚪ | |
 
 ### Runtime bring-up (Tomcat 9 deploy)
@@ -94,24 +103,24 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 0b-31 | `TurbineBootTest` (service container + pipeline + security + resourceExists + homepage valve) | 🟢 | green |
 | 0b-32 | Tomcat 9 deploy stack (compose: Tomcat 9 + Postgres + ActiveMQ) | 🟢 | |
 | 0b-33 | `docker/health-check.sh` | 🟢 | |
-| 0b-34 | `docker/golden-capture.sh` (golden-master capture/check) | 🟢 | baselines not yet captured |
-| 0b-35 | Exercise email render path (`AdminUtils` templates) | 🟡 | wired; not triggered |
-| 0b-36 | Exercise item text render (`BaseElement`) | 🟡 | wired; not triggered |
-| 0b-37 | Screen breadth: report / edit / search / PDF / XML raw screens | 🟡 | Index, login, create/edit, delete flows verified |
-| 0b-38 | Turbine security realm empty (`isAnonymousUser` true) — `$sessionData`/permission pull tools | ⚪ | bridge Turbine-user↔Spring-user only if a template needs it |
+| 0b-34 | `docker/golden-capture.sh` (golden-master capture/check) | 🟢 | baselines captured against the known-state fixture; all checks passing. Goldens are local-only (`docs/goldens/` gitignored) |
+| 0b-35 | Exercise email render path (`AdminUtils` templates) | 🟢 | verified end-to-end via Mailpit: `ReportIssue` (`populateVmTemplate`→`VelocityUtils.render`, both text+html templates, zero unrendered `$refs`) + `XDATForgotLogin` both branches (username-by-email, password-reset incl. `RESET_URL` token). NB pre-existing upstream text/html arg swap in `ReportIssue`, preserved |
+| 0b-36 | Exercise item text render (`BaseElement`) | 🟡 | same `populateVmTemplate` mechanism as 0b-35 (validated); `BaseElement` call site itself not triggered |
+| 0b-37 | Screen breadth: report / edit / search / PDF / XML raw screens | 🟡 | Index, login, create/edit, delete, QuickSearch (incl. multi-match screen), search-results tabs, edit-form month dropdowns verified. Report/PDF/XML raw still open |
+| 0b-38 | Turbine security realm empty (`isAnonymousUser` true) — `$sessionData`/permission pull tools | 🟢 | **Resolved: NOT a bug (vestigial).** All user/permission resolution goes through Spring (`XDAT.getUserDetails()` ← `SecurityContextHolder`); templates call the realm user `data.getUser()` 0 times. No bridge needed — do not wire the realm at 7.0 either |
 | 0b-39 | Full `./gradlew build` + test-compile green | 🟢 | |
-| 0b-40 | `xnat-rest-tests` regression (REST `/data` + `/xapi`) | ⚪ | after smoke tests pass |
-| 0b-41 | Golden-master baseline capture (2.3.3 vs 5.1 on same DB) | ⚪ | needs `develop` build on same DB |
+| 0b-40 | `xnat-rest-tests` regression (REST `/data` + `/xapi`) | 🟡 | S1600 REST smoke spec drafted (dispatch probes, content negotiation, router round-trips) + `rest-migration-smoke` project registered in `playwright.config.ts`; not yet run in CI |
+| 0b-41 | Golden-master baseline capture (2.3.3 vs 5.1 on same DB) | ⚪ | goldens currently characterize the migrated build against the fixture; the cross-version diff (develop vs 5.1, same DB) still needs a `develop` build |
 
 ## Phase 1 — Atomic Jakarta cutover to Tomcat 10
 
 | # | Step | Status | Notes |
 |---|------|:------:|-------|
 | 1-1 | Spring 5.3 → 6.x | ⚪ | |
-| 1-2 | Spring Security 5.7 → 6.x | ⚪ | |
+| 1-2 | Spring Security 5.7 → 6.x | 🟡 | **Prep landed early on 5.7 (testable):** `WebSecurityConfigurerAdapter` (removed in 6) → component style: `@Bean SecurityFilterChain` (lambda DSL) + explicit `@Bean AuthenticationManager`; `XnatSecurityExtension` hooks preserved; login/logout verified. **Keep `authorizeRequests`** — XNAT's real rules come from `UpdateSecurityFilterHandlerMethod` (BeanPostProcessor) swapping the `FilterSecurityInterceptor` metadata source (openUrls/adminUrls/requireLogin, live-updatable); `authorizeHttpRequests` builds an `AuthorizationFilter` the post-processor never sees → login redirect loop (tried + reverted). `AuthorizationManager` port is an SS**7** task. Remaining at cutover: version bump, `spring-security-openid` removal, legacy `oauth2` project, `ChannelProcessingFilter` deprecation |
 | 1-3 | tomcat-embed 9 → 10 | ⚪ | |
 | 1-4 | servlet-api javax → jakarta 5+ | ⚪ | |
-| 1-5 | Torque 5 → 6 | ⚪ | |
+| 1-5 | Torque 5 → 6 | ⚪ | **Likely delete instead of upgrade:** zero source references to `org.apache.torque` or `com.workingdogs.village` in xnat-web/xdat — pure classpath ballast from Turbine 2.3.3 (its OM security is already replaced by Fulcrum in-memory, see 0b-17/26). Verify nothing reflects it at runtime, then drop the deps |
 | 1-6 | Restlet 2.5.2 → 2.6.0 (Jakarta) | ⚪ | |
 | 1-7 | Turbine 5.1 → 7.0 (Jakarta build) | ⚪ | requires Java 17+, Torque 6 |
 | 1-8 | Pin Velocity 2.4.1 (confirm Turbine 7 tolerates override) | ⚪ | |
@@ -139,7 +148,11 @@ is therefore a Phase-1 task (1-16/1-17), not Phase-0b.
 ---
 
 ## Known blockers / next up
-1. **0b-35/36** — exercise the newly-wired email + text render paths end-to-end.
-2. **0b-37** — walk the remaining screen types (report / PDF / XML raw) via the smoke-test checklist.
-3. **0b-14/15** — `/data` zip/tar download + multipart upload still unverified (Restlet 2.x Disposition + `RestletFileUpload`).
-4. **0b-22/23** — decide whether to do a full `.vm` audit now or continue fix-on-sight.
+1. **0b-37** — walk the remaining screen types (report / PDF / XML raw) via the smoke-test checklist;
+   0b-36 (`BaseElement` item-text) closes with it.
+2. **0b-23/24** — `#if` empty-check semantics audit + template encoding check (small, static).
+3. **0b-40** — run the drafted S1600 REST smoke suite against the fixture instance.
+4. **0b-41** — cross-version golden diff: stand up `develop` on a copy of the known-state DB, capture,
+   diff against the 5.1 goldens.
+5. **Phase 1 kickoff** — with 1-2 prepped and 1-5 likely a deletion, the cutover is close to the
+   intended shape: namespace (`javax`→`jakarta`) + version bumps + `ext.fileupload` replacement (1-11).

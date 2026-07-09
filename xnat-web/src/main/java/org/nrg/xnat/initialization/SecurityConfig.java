@@ -323,11 +323,7 @@ public class SecurityConfig {
         http.authenticationManager(authenticationManager);
 
         // This is what the adapter's super.configure() used to install, minus httpBasic().
-        // authorizeHttpRequests (AuthorizationFilter) replaces authorizeRequests
-        // (FilterSecurityInterceptor), which is deprecated and removed in Spring Security 7; for the
-        // single anyRequest().authenticated() rule the semantics are identical (anonymous and
-        // unauthenticated requests are rejected and sent to the entry point).
-        http.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated());
+        http.authorizeRequests(authorize -> authorize.anyRequest().authenticated());
         http.formLogin(withDefaults());
 
         // Don't let browser-generated asset/probe requests hijack the post-login redirect. The default

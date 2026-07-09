@@ -42,10 +42,10 @@ import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.ChannelAttributeFactory;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
@@ -54,6 +54,7 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.RedirectStrategy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.channel.ChannelDecisionManagerImpl;
 import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 import org.springframework.security.web.access.channel.InsecureChannelProcessor;
@@ -84,13 +85,21 @@ import java.util.*;
 
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_OBJECT_ARRAY;
 import static org.nrg.xdat.security.helpers.Users.DEFAULT_GUEST_USERNAME;
+import static org.springframework.security.config.Customizer.withDefaults;
 import static org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED;
 
+/**
+ * Component-based Spring Security configuration (no {@code WebSecurityConfigurerAdapter}, which is
+ * removed in Spring Security 6): the HTTP security rules live in the {@link #securityFilterChain}
+ * bean and the authentication manager is built explicitly in {@link #authenticationManager}. Both
+ * preserve the exact behavior of the former adapter overrides, including the
+ * {@link XnatSecurityExtension} hooks for plugins.
+ */
 @Configuration
 @EnableWebSecurity
 @ComponentScan({"org.nrg.xnat.security.alias", "org.nrg.xnat.security.preferences", "org.nrg.xnat.security.provider"})
 @Slf4j
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig {
     @Autowired
     public SecurityConfig(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final AliasTokenService aliasTokenService,
                           final XdatUserAuthService userAuthService, final DateValidation dateValidation, final MessageSource messageSource,
@@ -134,7 +143,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    @Override
     public UserDetailsService userDetailsService() {
         return new XnatDatabaseUserDetailsService(_dataSource);
     }
@@ -261,17 +269,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return authenticationProvider;
     }
 
+    /**
+     * Replaces the {@code WebSecurityConfigurerAdapter} overrides of {@code authenticationManager()} and
+     * {@code configure(AuthenticationManagerBuilder)}: the same providers are registered on an explicit
+     * builder (with {@link #customAuthenticationManager()} as the parent) and built into the manager the
+     * {@link #securityFilterChain} installs via {@code http.authenticationManager(...)}. Extensions get
+     * the same {@link AuthenticationManagerBuilder} callback they always did.
+     */
     @Bean
-    @Override
-    protected AuthenticationManager authenticationManager() throws Exception {
-        return super.authenticationManager();
-    }
-
-    @Override
-    protected void configure(final AuthenticationManagerBuilder builder) throws Exception {
-        if (builder == null) {
-            return;
-        }
+    public AuthenticationManager authenticationManager(final ObjectPostProcessor<Object> objectPostProcessor) throws Exception {
+        final AuthenticationManagerBuilder builder = new AuthenticationManagerBuilder(objectPostProcessor);
 
         final AuthenticationProvider dbAuthProvider = xnatDatabaseAuthenticationProvider();
         builder.parentAuthenticationManager(customAuthenticationManager());
@@ -289,10 +296,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 extension.configure(builder);
             }
         }
+
+        return builder.build();
     }
 
-    @Override
-    protected void configure(final HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain securityFilterChain(final HttpSecurity http, final AuthenticationManager authenticationManager) throws Exception {
         // Set whether session cookie should be set to secure only based on the site URL. This can only be done during application start-up, so
         // changing to the site URL to use https won't change the secure setting until the application has been restarted. Cookies should ALWAYS
         // be http-only, so we can just set that now and be done with it.
@@ -309,8 +318,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         config.setSecure(isSecure && !allowInsecureCookies);
         config.setHttpOnly(true);
 
-        // This is basically what super.configure() does, minus httpBasic().
-        http.authorizeRequests().anyRequest().authenticated().and().formLogin();
+        // Use the manager built in authenticationManager() (also the shared object XnatBasicAuthConfigurer
+        // reads); the adapter used to wire this up implicitly via configure(AuthenticationManagerBuilder).
+        http.authenticationManager(authenticationManager);
+
+        // This is what the adapter's super.configure() used to install, minus httpBasic().
+        http.authorizeRequests(authorize -> authorize.anyRequest().authenticated());
+        http.formLogin(withDefaults());
 
         // Don't let browser-generated asset/probe requests hijack the post-login redirect. The default
         // HttpSessionRequestCache saves *every* unauthenticated request (overwriting on each one), and
@@ -318,28 +332,31 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // last unauthenticated hit before login is a background fetch (e.g. Chrome DevTools' probe of
         // /.well-known/appspecific/com.chrome.devtools.json, or a favicon), the user lands on that 404
         // instead of the XNAT landing page. Only cache real navigations.
-        http.requestCache().requestCache(navigationOnlyRequestCache());
+        http.requestCache(cache -> cache.requestCache(navigationOnlyRequestCache()));
 
         final InteractiveAgentDetector     detector                 = interactiveAgentDetector();
         final XnatAuthenticationEntryPoint authenticationEntryPoint = loginUrlAuthenticationEntryPoint(_preferences, detector);
 
         http.apply(new XnatBasicAuthConfigurer<>(authenticationEntryPoint, _aliasTokenService, _template));
 
-        http.sessionManagement()
+        http.sessionManagement(session -> session
             .sessionCreationPolicy(IF_REQUIRED)
             .sessionAuthenticationStrategy(sessionAuthenticationStrategy())
             .maximumSessions(_preferences.getConcurrentMaxSessions())
             .maxSessionsPreventsLogin(true)
             .sessionRegistry(sessionRegistry())
-            .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)));
+            .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector))));
 
-        http.headers().frameOptions().sameOrigin().cacheControl().disable().contentSecurityPolicy(CONTENT_SECURITY_POLICY)
+        http.headers(headers -> headers
+            .frameOptions().sameOrigin()
+            .cacheControl().disable()
+            .contentSecurityPolicy(CONTENT_SECURITY_POLICY)
             .and().referrerPolicy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
-            .and().httpStrictTransportSecurity().disable()
-            .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
-            .and().csrf().disable()
-            .anonymous().key(Users.ANONYMOUS_AUTH_PROVIDER_KEY).principal(DEFAULT_GUEST_USERNAME)
-            .and().logout().invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser");
+            .and().httpStrictTransportSecurity().disable());
+        http.exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint));
+        http.csrf(csrf -> csrf.disable());
+        http.anonymous(anonymous -> anonymous.key(Users.ANONYMOUS_AUTH_PROVIDER_KEY).principal(DEFAULT_GUEST_USERNAME));
+        http.logout(logout -> logout.invalidateHttpSession(true).logoutSuccessHandler(logoutSuccessHandler()).logoutUrl("/app/action/LogoutUser"));
 
         // If we can get the default channel processing filter as a bean, we could remove this.
         http.addFilter(channelProcessingFilter())
@@ -354,6 +371,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 extension.configure(http);
             }
         }
+
+        return http.build();
     }
 
     @Bean

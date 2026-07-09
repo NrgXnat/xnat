@@ -123,7 +123,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 1-14 | (Optional) `tomcat-jakartaee-migration` smoke-test of the Phase-0 WAR on Tomcat 10 | ⚪ | disposable milestone |
 | 1-15 | Playwright suite (`xnat-web/tests/playwright/`) on Tomcat 10 | ⚪ | |
 | 1-16 | Unify logging on Logback (the log4j2↔Logback reconciliation) | ⚪ | **Deferred here deliberately — not doable on 5.1** (see note). At 7.0 Turbine logs via `java.lang.System.Logger`; add `org.slf4j:slf4j-jdk-platform-logging` and drop the log4j2 impls |
-| 1-17 | Consume the upstream Turbine log4j-decoupling PR | ⚪ | PR prepared against Turbine 7.0 trunk (`../turbine-core`, branch `feature/decouple-log4j-core-from-transitive-deps`); marks log4j2 impls `<optional>`. If merged by 7.0 release, no exclusion needed; else exclude `log4j-core`/`log4j-jpl` in XNAT's build |
+| 1-17 | Consume the upstream Turbine log4j-decoupling PR | ⚪ | PR prepared against Turbine 7.0 trunk (`../turbine-core`, branch `feature/decouple-log4j-core-from-transitive-deps`); marks log4j2 impls `<optional>`. If merged by 7.0 release, no exclusion needed; else exclude `log4j-core`/`log4j-jpl` in XNAT's build. **XNAT does not depend on this PR merging** — the PR only changes the upstream default. Because 7.0 logs via `System.Logger` (no hard cast to `core.LoggerContext`, unlike 5.1), log4j-core is a swappable backend, so 1-16 can exclude it in XNAT's own build regardless of the PR. The PR's value is ecosystem-wide (default posture, transitive fan-out, Log4Shell surface, expressing upstream intent), not a gate for us |
 
 ### Decision — logging stays dual on 5.1; unify at 7.0
 Turbine **5.1** hard-uses log4j-core in code: `Turbine.configureLogging()` calls

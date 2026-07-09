@@ -8,6 +8,24 @@
 #
 # Service names MUST stay xnat-postgresql / xnat-activemq: the Dockerfile bakes those
 # hostnames into xnat-conf.properties at build time (see Dockerfile ARG defaults).
+
+# The stack persists state in two named volumes:
+#  - xnat-db → PostgreSQL data (/var/lib/postgresql/data)
+#  - xnat-data → XNAT archive/prearchive (/data/xnat)
+#
+#  The clean bring-up
+#
+#  cd /Volumes/Offload/projects/xnatworks/rtv/xnat
+#  ./docker/stage-war.sh          # only if you changed XNAT code since last build
+#  docker compose down -v         # stop containers AND remove the named volumes
+#  docker compose up --build      # fresh DB + archive; first boot re-runs schema creation
+#
+#- down -v removes the compose-declared volumes (xnat-db, xnat-data). Plain down keeps them, so the DB would survive.
+#- First boot runs XNAT's schema creation and site setup — give it a few minutes before http://localhost:8080 responds.
+#
+#  Verify it's actually gone
+#  docker volume ls | grep xnat     # should NOT list xnat_xnat-db / xnat_xnat-data after down -v
+#
 services:
   xnat-postgresql:
     image: postgres:13-alpine

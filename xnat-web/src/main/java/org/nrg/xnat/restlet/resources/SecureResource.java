@@ -282,7 +282,9 @@ public abstract class SecureResource extends ServerResource {
     }
 
     static boolean isBodylessOk(final Representation entity, final Status status) {
-        return entity == null && Status.SUCCESS_OK.equals(status);
+        // A zero-size entity (e.g. FileList's StringRepresentation("") on upload success) reports
+        // isAvailable()==false and gets the same 204 rewrite as a null entity, so mark both.
+        return Status.SUCCESS_OK.equals(status) && (entity == null || !entity.isAvailable());
     }
 
     static Status okParity(final boolean bodylessOk, final Status status) {

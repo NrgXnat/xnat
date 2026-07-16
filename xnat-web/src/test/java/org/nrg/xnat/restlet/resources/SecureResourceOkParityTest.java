@@ -23,6 +23,14 @@ public class SecureResourceOkParityTest {
     }
 
     @Test
+    public void marksHandlerThatSetAnEmptyEntityWithOk() {
+        // e.g. FileList upload success: setStatus(SUCCESS_OK) + StringRepresentation("") — a
+        // zero-size entity reports isAvailable()==false, so ServerResource.handle() still
+        // rewrites the 200 to 204 unless marked.
+        assertTrue(SecureResource.isBodylessOk(new StringRepresentation(""), Status.SUCCESS_OK));
+    }
+
+    @Test
     public void doesNotMarkWhenHandlerSetAnEntity() {
         assertFalse(SecureResource.isBodylessOk(new StringRepresentation("body"), Status.SUCCESS_OK));
     }

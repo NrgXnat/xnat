@@ -10,7 +10,7 @@
 package org.nrg.xnat.restlet.services;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload2.core.FileUploadException;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;

@@ -19,7 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload2.core.DiskFileItem;
+import org.apache.commons.fileupload2.core.DiskFileItemFactory;
+import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -735,18 +737,17 @@ private void deleteTriageResource(XnatProjectdata proj ,String projectPath,Strin
 	}
 	
 
-	@SuppressWarnings("deprecation")
 	private boolean handleAttachedTriageFileUpload(String projectPath, String dirString, String requestedName) {
-		
-		org.apache.commons.fileupload.DefaultFileItemFactory factory = new org.apache.commons.fileupload.DefaultFileItemFactory();
-		org.nrg.xnat.restlet.util.fileupload.RestletFileUpload upload = new  org.nrg.xnat.restlet.util.fileupload.RestletFileUpload(factory);
-	
-	    List<FileItem> fileItems;
+
+		DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
+		JakartaServletFileUpload<DiskFileItem, DiskFileItemFactory> upload = new JakartaServletFileUpload<>(factory);
+
+	    List<DiskFileItem> fileItems;
 		try {
-			
-			fileItems = upload.parseRequest(this.getRequest());
-	
-			for (FileItem fi:fileItems) {    						         
+
+			fileItems = upload.parseRequest(getHttpServletRequest());
+
+			for (DiskFileItem fi:fileItems) {
 		    	
 				if (fi.isFormField()) {
                 	// Load form field to passed parameters map
@@ -775,7 +776,7 @@ private void deleteTriageResource(XnatProjectdata proj ,String projectPath,Strin
 		        		}
 		        	}
 		        }*/
-	        	fi.write(new File(dirString + "/" + fileName));
+	        	fi.write(new File(dirString + "/" + fileName).toPath());
 			
 		    }
 			return true;

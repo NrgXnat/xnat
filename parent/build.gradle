@@ -166,7 +166,8 @@ dependencies {
         api libs.commons.dbcp2
         api libs.commons.digester
         api libs.commons.discovery
-        api libs.commons.fileupload
+        api libs.commons.fileupload2.core
+        api libs.commons.fileupload2.jakarta
         api libs.commons.io
         api libs.commons.lang
         api libs.commons.lang3

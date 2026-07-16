@@ -9,7 +9,8 @@
 
 package org.nrg.xnat.helpers;
 
-import org.apache.commons.fileupload.FileItem;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.fileupload2.core.FileItem;
 import org.apache.commons.io.IOUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.restlet.representation.Representation;
@@ -19,20 +20,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+@Slf4j
 public class FileWriterWrapper implements FileWriterWrapperI {
-    private final FileItem fi;
+    private final FileItem<?> fi;
     private final Representation entry;
     private final String name;
     private final String nestedPath;
 
-    public FileWriterWrapper(final FileItem fi, final String name) {
+    public FileWriterWrapper(final FileItem<?> fi, final String name) {
         this.fi = fi;
         this.entry = null;
         this.name = name;
         this.nestedPath = null;
     }
 
-    public FileWriterWrapper(final FileItem fi, final String name, final String nestedPath) {
+    public FileWriterWrapper(final FileItem<?> fi, final String name, final String nestedPath) {
         this.fi = fi;
         this.entry = null;
         this.name = name;
@@ -60,7 +62,11 @@ public class FileWriterWrapper implements FileWriterWrapperI {
     @Override
     public void delete(){
         if (fi!=null) {
-            fi.delete();
+            try {
+                fi.delete();
+            } catch (IOException e) {
+                log.warn("Failed to delete the uploaded file item {}", name, e);
+            }
         }
     }
 
@@ -121,7 +127,7 @@ public class FileWriterWrapper implements FileWriterWrapperI {
                 }
             }
         } else {
-            fi.write(f);
+            fi.write(f.toPath());
         }
     }
 }

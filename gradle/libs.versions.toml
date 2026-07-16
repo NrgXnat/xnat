@@ -32,7 +32,7 @@ commons-dbcp2 = "2.9.0"
 commons-digester = "1.8.1"
 commons-discovery = "0.5"
 commons-email = "1.5"
-commons-fileupload = "1.5"
+commons-fileupload = "2.0.0-M5"
 commons-io = "2.15.1"
 commons-lang = "2.6"
 commons-lang3 = "3.17.0"
@@ -148,11 +148,10 @@ pixelmed-imageio = "20200328"
 quartz = "2.3.2"
 redisson = "3.22.0"
 reflections = "0.10.2"
-restlet = "2.6.0"                # Jakarta edition (1-6); ext.fileupload replaced by org.nrg.xnat.restlet.util.fileupload (1-11)
+restlet = "2.6.0"                # Jakarta edition (1-6); ext.fileupload (dropped after 2.5.2) replaced by commons-fileupload2 jakarta-servlet6 (1-11)
 saxon = "9.1.0.8"
 jsp-api = "3.1.1"              # jakarta.servlet.jsp-api (JSP 3.1 = Tomcat 10.1), compileOnly for custom tags
 servlet-api = "6.0.0"           # jakarta.servlet (Servlet 6.0 = Tomcat 10.1); Turbine 7 pulls 6.1 transitively
-servlet-api-javax-legacy = "3.1.0"  # compileOnly in xnat-web ONLY: commons-fileupload 1.5 FileUploadBase has deprecated javax overloads javac must resolve
 slf4j = "2.0.17"       # 1-16 unification: slf4j 2.0 (logback 1.4+ SPI; dcm4che 5.x's slf4j 2.x now natural)
 snakeyaml = "2.3"      # matches jackson-dataformat-yaml 2.18 (no direct snakeyaml API usage in XNAT)
 spotbugs = "4.7.3.4"
@@ -239,7 +238,8 @@ commons-dbcp2 = { group = "org.apache.commons", name = "commons-dbcp2", version.
 commons-digester = { group = "commons-digester", name = "commons-digester", version.ref = "commons-digester" }
 commons-discovery = { group = "commons-discovery", name = "commons-discovery", version.ref = "commons-discovery" }
 commons-email = { group = "org.apache.commons", name = "commons-email", version.ref = "commons-email" }
-commons-fileupload = { group = "commons-fileupload", name = "commons-fileupload", version.ref = "commons-fileupload" }
+commons-fileupload2-core = { group = "org.apache.commons", name = "commons-fileupload2-core", version.ref = "commons-fileupload" }
+commons-fileupload2-jakarta = { group = "org.apache.commons", name = "commons-fileupload2-jakarta-servlet6", version.ref = "commons-fileupload" }
 commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
 commons-lang = { group = "commons-lang", name = "commons-lang", version.ref = "commons-lang" }
 commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commons-lang3" }
@@ -391,7 +391,6 @@ restlet-org-restlet = { group = "org.restlet", name = "org.restlet", version.ref
 saxon-saxon = { group = "net.sourceforge.saxon", name = "saxon", version.ref = "saxon" }
 sbrannen-spring-test-junit5 = { group = "com.github.sbrannen", name = "spring-test-junit5", version.ref = "spring-test-junit5" }
 servlet-javax-servlet-api = { group = "jakarta.servlet", name = "jakarta.servlet-api", version.ref = "servlet-api" }  # alias name kept to avoid build.gradle churn
-servlet-javax-legacy-api = { group = "javax.servlet", name = "javax.servlet-api", version.ref = "servlet-api-javax-legacy" }
 servlet-jsp-api = { group = "jakarta.servlet.jsp", name = "jakarta.servlet.jsp-api", version.ref = "jsp-api" }
 servlet-jstl = { group = "org.glassfish.web", name = "jakarta.servlet.jsp.jstl", version.ref = "jstl" }  # alias name kept
 servlet-jstl-api = { group = "jakarta.servlet.jsp.jstl", name = "jakarta.servlet.jsp.jstl-api", version.ref = "jstl-api" }

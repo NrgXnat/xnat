@@ -10,8 +10,10 @@
 package org.nrg.xnat.restlet.resources.search;
 
 import org.restlet.ext.servlet.ServletUtils;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload2.core.DiskFileItem;
+import org.apache.commons.fileupload2.core.DiskFileItemFactory;
+import org.apache.commons.fileupload2.core.FileUploadException;
+import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.display.DisplayFieldReferenceI;
@@ -93,12 +95,12 @@ public class SearchResource extends SecureResource {
             final UserI user = getUser();
             if (entity != null && entity.getMediaType() != null && entity.getMediaType().getName().equals(MediaType.MULTIPART_FORM_DATA.getName())) {
                 try {
-                    @SuppressWarnings("deprecation") org.apache.commons.fileupload.DefaultFileItemFactory factory = new org.apache.commons.fileupload.DefaultFileItemFactory();
-                    org.nrg.xnat.restlet.util.fileupload.RestletFileUpload upload = new org.nrg.xnat.restlet.util.fileupload.RestletFileUpload(factory);
+                    final DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
+                    final JakartaServletFileUpload<DiskFileItem, DiskFileItemFactory> upload = new JakartaServletFileUpload<>(factory);
 
-                    List<FileItem> items = upload.parseRequest(getRequest());
+                    List<DiskFileItem> items = upload.parseRequest(getHttpServletRequest());
 
-                    for (final FileItem fi : items) {
+                    for (final DiskFileItem fi : items) {
                         if (fi.getName().endsWith(".xml")) {
                             SAXReader reader = new SAXReader(user);
                             try {

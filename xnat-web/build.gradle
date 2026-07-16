@@ -256,7 +256,8 @@ dependencies {
     implementation libs.commons.configuration
     implementation libs.commons.digester
     implementation libs.commons.discovery
-    implementation libs.commons.fileupload
+    implementation libs.commons.fileupload2.core
+    implementation libs.commons.fileupload2.jakarta
     implementation libs.commons.net
     implementation libs.commons.configuration2
     implementation libs.commons.math
@@ -309,10 +310,6 @@ dependencies {
     // --- Provided (container) ---
     compileOnly libs.google.jsr305
     compileOnly libs.servlet.javax.servlet.api
-    // javax.servlet-api for javac overload resolution only: commons-fileupload 1.5 FileUploadBase
-    // declares deprecated parseRequest/isMultipartContent(javax HttpServletRequest) overloads.
-    // compileOnly => never packaged; runtime is pure jakarta.
-    compileOnly libs.servlet.javax.legacy.api
     compileOnly libs.servlet.jsp.api
     compileOnly libs.metainf.services.metainf.services
 

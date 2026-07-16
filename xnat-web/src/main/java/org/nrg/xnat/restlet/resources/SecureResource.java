@@ -14,9 +14,10 @@ import com.google.common.collect.Maps;
 import org.restlet.engine.header.HeaderConstants;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.fileupload.DefaultFileItemFactory;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload2.core.DiskFileItem;
+import org.apache.commons.fileupload2.core.DiskFileItemFactory;
+import org.apache.commons.fileupload2.core.FileUploadException;
+import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -98,7 +99,6 @@ import org.restlet.data.Status;
 import org.restlet.*;
 import org.restlet.routing.*;
 import org.restlet.representation.*;
-import org.nrg.xnat.restlet.util.fileupload.RestletFileUpload;
 import org.restlet.resource.*;
 import org.restlet.util.Series;
 import org.nrg.xnat.restlet.util.XnatWebDavStatus;
@@ -939,12 +939,12 @@ public abstract class SecureResource extends ServerResource {
                 //handle multi part form data (where xml is being submitted as a field in a multi part form)
                 //req_format is checked to allow the body parsing to use the form method rather then file fields.
                 try {
-                    org.apache.commons.fileupload.DefaultFileItemFactory factory = new DefaultFileItemFactory();
-                    org.nrg.xnat.restlet.util.fileupload.RestletFileUpload upload = new RestletFileUpload(factory);
+                    final DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
+                    final JakartaServletFileUpload<DiskFileItem, DiskFileItemFactory> upload = new JakartaServletFileUpload<>(factory);
 
-                    List<FileItem> items = upload.parseRequest(getRequest());
+                    List<DiskFileItem> items = upload.parseRequest(getHttpServletRequest());
 
-                    for (FileItem fi : items) {
+                    for (DiskFileItem fi : items) {
                         if (fi.getName().endsWith(".xml")) {
                             SAXReader reader = new SAXReader(user);
                             if (item != null) {
@@ -1482,16 +1482,21 @@ public abstract class SecureResource extends ServerResource {
                 wrappers.add(new FileWriterWrapper(entity, fileName));
             }
         } else if (RequestUtil.isMultiPartFormData(entity)) {
-            final DefaultFileItemFactory factory = new DefaultFileItemFactory();
-            final RestletFileUpload upload = new RestletFileUpload(factory);
+            final DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
+            final JakartaServletFileUpload<DiskFileItem, DiskFileItemFactory> upload = new JakartaServletFileUpload<>(factory);
 
-            List<FileItem> items = upload.parseRequest(getRequest());
+            List<DiskFileItem> items = upload.parseRequest(getHttpServletRequest());
 
-            for (final FileItem item : items) {
+            for (final DiskFileItem item : items) {
                 if (item.isFormField()) {
                     // Load form field to passed parameters map
                     String fieldName = item.getFieldName();
-                    String value = item.getString();
+                    final String value;
+                    try {
+                        value = item.getString();
+                    } catch (IOException e) {
+                        throw new FileUploadException("Unable to read the value of the form field " + fieldName, e);
+                    }
                     if (fieldName.equals("reference")) {
                         throw new FileUploadException("multi-part form posts may not be used to upload files via reference.");
                     } else {

@@ -43,7 +43,6 @@ dependencies {
     implementation libs.httpcomponents.httpclient
     implementation libs.commons.lang3
     implementation libs.commons.text
-    implementation libs.commons.fileupload
     implementation(libs.turbine.turbine) { transitive = false }
     // Turbine 5.1 pulls parser/intake from Fulcrum; xdat uses turbine transitive=false, so add explicitly.
     implementation libs.fulcrum.parser

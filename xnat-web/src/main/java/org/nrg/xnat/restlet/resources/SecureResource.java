@@ -249,19 +249,53 @@ public abstract class SecureResource extends ServerResource {
     @Override
     protected Representation post(final Representation entity, final Variant variant) throws ResourceException {
         handlePost();
+        markBodylessOk();
         return applyDisposition(getResponse().getEntity());
     }
 
     @Override
     protected Representation put(final Representation entity, final Variant variant) throws ResourceException {
         handlePut();
+        markBodylessOk();
         return applyDisposition(getResponse().getEntity());
     }
 
     @Override
     protected Representation delete(final Variant variant) throws ResourceException {
         handleDelete();
+        markBodylessOk();
         return applyDisposition(getResponse().getEntity());
+    }
+
+    // Restlet 1.1 answered entity-less success with 200 (OK); 2.x ServerResource.handle() rewrites
+    // an entity-less 200 to 204 (No Content) after the handler returns. XNAT's REST clients and the
+    // xnat_rest_tests harness assert the 1.1 behavior (e.g. logout's DELETE /data/JSESSION expects
+    // 200). The rewrite only fires when the handler finished with the DEFAULT bodyless OK, so mark
+    // exactly that case in the bridge and restore the 200 after super.handle(). Handlers that
+    // explicitly set 204 (or any other status) are never marked and stay untouched.
+    private static final String BODYLESS_OK_ATTR = SecureResource.class.getName() + ".bodylessOk";
+
+    private void markBodylessOk() {
+        if (isBodylessOk(getResponse().getEntity(), getResponse().getStatus())) {
+            getRequest().getAttributes().put(BODYLESS_OK_ATTR, Boolean.TRUE);
+        }
+    }
+
+    static boolean isBodylessOk(final Representation entity, final Status status) {
+        return entity == null && Status.SUCCESS_OK.equals(status);
+    }
+
+    static Status okParity(final boolean bodylessOk, final Status status) {
+        return bodylessOk && Status.SUCCESS_NO_CONTENT.equals(status) ? Status.SUCCESS_OK : status;
+    }
+
+    @Override
+    public Representation handle() {
+        final Representation result = super.handle();
+        getResponse().setStatus(okParity(
+                Boolean.TRUE.equals(getRequest().getAttributes().get(BODYLESS_OK_ATTR)),
+                getResponse().getStatus()));
+        return result;
     }
 
     // No-variant forms. When a resource declares no variants (getVariants() empty), Restlet 2.x's

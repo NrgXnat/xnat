@@ -35,6 +35,16 @@ public class XnatServerResourceFinder extends Finder {
         } catch (NoSuchMethodException e) {
             // Resource doesn't use the legacy constructor; fall back to the 2.x no-arg + init() path.
             return super.find(request, response);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            // XNAT resources reject requests from the constructor by throwing ResourceException
+            // with a meaningful status (403/400/...). Restlet 1.1 honored it; the 2.x Finder maps a
+            // null find() result to 404, so propagate and let the status service answer with the
+            // embedded status instead of rewriting the rejection to 404.
+            if (e.getCause() instanceof org.restlet.resource.ResourceException) {
+                throw (org.restlet.resource.ResourceException) e.getCause();
+            }
+            getLogger().log(Level.WARNING, "Unable to instantiate resource " + targetClass.getName(), e.getCause());
+            return null;
         } catch (Exception e) {
             getLogger().log(Level.WARNING, "Unable to instantiate resource " + targetClass.getName(), e);
             return null;

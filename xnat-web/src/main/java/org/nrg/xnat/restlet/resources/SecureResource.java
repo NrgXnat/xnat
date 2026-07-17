@@ -515,7 +515,8 @@ public abstract class SecureResource extends ServerResource {
         Map<String, String> map = Maps.newLinkedHashMap();
         if (q != null) {
             for (String s : q.getValuesMap().keySet()) {
-                map.put(s, TurbineUtils.escapeParam(q.getFirstValue(s)));
+                // emptyToNull: Restlet 1.1 delivered ?a= as a null value (see getQueryVariable)
+                map.put(s, TurbineUtils.escapeParam(emptyToNull(q.getFirstValue(s))));
             }
         }
         return map;
@@ -578,7 +579,7 @@ public abstract class SecureResource extends ServerResource {
     public String getBodyVariable(String key) {
         Form f = getBodyAsForm();
         if (f != null) {
-            return TurbineUtils.escapeParam(f.getFirstValue(key));
+            return TurbineUtils.escapeParam(emptyToNull(f.getFirstValue(key)));
         }
         return null;
     }
@@ -618,9 +619,20 @@ public abstract class SecureResource extends ServerResource {
     public static String getQueryVariable(String key, Request request) {
         Form f = getQueryVariableForm(request);
         if (f != null && f.getValuesMap().containsKey(key)) {
-            return TurbineUtils.escapeParam(f.getFirstValue(key));
+            return TurbineUtils.escapeParam(emptyToNull(f.getFirstValue(key)));
         }
         return null;
+    }
+
+    /**
+     * Restlet 1.1 parsed an empty-valued parameter ({@code ?a=}) to a null value; 2.x parses it to
+     * the empty string. XNAT's handlers treat null as "absent" (PopulateItem skips the field) but
+     * set an empty string verbatim — which for typed columns fails in the database (e.g. PUT with
+     * {@code tracer/startTime=} → "invalid input syntax for type timestamp"). Normalize to the
+     * 1.1 semantics at the readers.
+     */
+    private static String emptyToNull(final String value) {
+        return StringUtils.isEmpty(value) ? null : value;
     }
 
     public boolean containsQueryVariable(String key) {
@@ -636,7 +648,10 @@ public abstract class SecureResource extends ServerResource {
         Form f = getQueryVariableForm();
         if (f != null) {
             for (Parameter p : f) {
-                params.put(p.getName(), p.getValue());
+                // skip empty values: Restlet 1.1 parsed ?a= to null, which a Hashtable can't hold
+                if (StringUtils.isNotEmpty(p.getValue())) {
+                    params.put(p.getName(), p.getValue());
+                }
             }
         }
         return params;

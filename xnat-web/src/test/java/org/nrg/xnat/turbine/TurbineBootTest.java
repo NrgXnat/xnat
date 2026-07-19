@@ -111,6 +111,26 @@ public class TurbineBootTest {
             org.junit.Assert.assertNotEquals("TemplateService default page is the bare 'Default' (no real module)",
                     "Default", ts.getDefaultPage());
             System.out.println("[boot] OK: TemplateService default page -> " + ts.getDefaultPage());
+
+            // Velocity 2.x #if semantics: directive.if.empty_check=true (the 2.x default) makes empty
+            // strings/collections and zero numbers falsy in #if($ref). XNAT's templates carry ~2,000
+            // bare-reference #if sites written against 1.7 truthiness (any non-null, non-false object
+            // is TRUE), so TurbineResources.properties turns empty_check off. Evaluate a probe through
+            // the service's actual engine to pin that the setting reaches the runtime.
+            final Object velocityService = TurbineServices.getInstance().getService("VelocityService");
+            final java.lang.reflect.Field engineField = velocityService.getClass().getDeclaredField("velocity");
+            engineField.setAccessible(true);
+            final org.apache.velocity.app.VelocityEngine engine =
+                    (org.apache.velocity.app.VelocityEngine) engineField.get(velocityService);
+            final org.apache.velocity.VelocityContext probe = new org.apache.velocity.VelocityContext();
+            probe.put("emptyString", "");
+            probe.put("emptyList", new java.util.ArrayList<>());
+            final java.io.StringWriter probeOut = new java.io.StringWriter();
+            engine.evaluate(probe, probeOut, "empty-check-probe",
+                    "#if($emptyString)S#{else}s#end#if($emptyList)L#{else}l#end");
+            org.junit.Assert.assertEquals("directive.if.empty_check must be OFF (Velocity 1.7 #if "
+                    + "truthiness): empty string/collection must be truthy in #if($ref)", "SL", probeOut.toString());
+            System.out.println("[boot] OK: #if empty_check disabled (1.7 truthiness preserved)");
         } finally {
             try {
                 config.dispose();

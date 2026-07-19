@@ -4,12 +4,13 @@ Status tracker for the staged real port (see the full plan and
 [`phase0-compile-migration-summary.md`](phase0-compile-migration-summary.md) /
 [`tomcat9-deploy-stack.md`](tomcat9-deploy-stack.md) for detail). Branch: `feature/turbine-5x`.
 
-**Last updated:** 2026-07-09
+**Last updated:** 2026-07-19
 
 **Legend:** 🟢 Complete · 🟡 In progress · ⚪ Open
 
 **Rollup:** Phase 0a 🟢 code + runtime verified (known-state fixture + goldens) · Phase 0b 🟢 code +
-boot + deploy + email/render verification, 🟡 remaining screen breadth · Phase 1 ⚪ not started, but
+boot + deploy + email/render verification + template semantics/encoding (0b-21..24 all closed),
+🟡 remaining screen breadth + REST smoke run + cross-version diff · Phase 1 ⚪ not started, but
 Spring Security 6 prep (1-2) landed early and Torque (1-5) downgraded to likely-delete.
 
 Test harness: `docs/tools/build-known-state.sh` (REST fixture: 3 users / 5 projects / subjects /
@@ -84,8 +85,8 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 |---|------|:------:|-------|
 | 0b-21 | `$page.addAttribute` → `$page.addBodyAttribute` | 🟢 | 5 templates found/fixed so far |
 | 0b-22 | Sweep `$velocityCount`/`$velocityHasNext` → `$foreach.*` | 🟢 | **full static sweep done**: 44 occurrences / 18 templates → `$foreach.count` (all innermost-loop, no counter-config overrides → semantics-preserving); `$velocityHasNext` 0 hits. Month dropdowns + search tabs verified in browser |
-| 0b-23 | Hyphen-in-identifier + `#if` null-check (`directive.if.empty_check`) semantics | 🟡 | hyphen-identifiers: static sweep found **0** — done. `#if` empty-check semantics not audited |
-| 0b-24 | Non-UTF-8 template encoding check | ⚪ | |
+| 0b-23 | Hyphen-in-identifier + `#if` null-check (`directive.if.empty_check`) semantics | 🟢 | hyphen-identifiers: static sweep found **0**. `#if`: Velocity 2.x defaults `empty_check=true` (empty string/collection, zero number → falsy) vs 1.7 (any non-null, non-false object → truthy); ~2,000 bare-ref `#if($x)` sites in ~600 templates → per-site audit rejected, set `services.VelocityService.directive.if.empty_check=false` in `TurbineResources.properties`. `TurbineBootTest` evaluates a probe through the service's actual engine to pin it |
+| 0b-24 | Non-UTF-8 template encoding check | 🟢 | all 1,038 `.vm` decode as valid UTF-8 (`iconv` sweep) — safe under Velocity 2.x's UTF-8 default (1.7 defaulted ISO-8859-1) |
 
 ### Runtime bring-up (Tomcat 9 deploy)
 | # | Step | Status | Notes |
@@ -103,7 +104,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 0b-31 | `TurbineBootTest` (service container + pipeline + security + resourceExists + homepage valve) | 🟢 | green |
 | 0b-32 | Tomcat 9 deploy stack (compose: Tomcat 9 + Postgres + ActiveMQ) | 🟢 | |
 | 0b-33 | `docker/health-check.sh` | 🟢 | |
-| 0b-34 | `docker/golden-capture.sh` (golden-master capture/check) | 🟢 | baselines captured against the known-state fixture; all checks passing. Goldens are local-only (`docs/goldens/` gitignored) |
+| 0b-34 | `docker/golden-capture.sh` (golden-master capture/check) | 🟢 | baselines captured against the known-state fixture; all checks passing. Goldens are local-only (`docs/goldens/` gitignored). NB `GOLDEN_DIR` default is cwd-relative — run from the repo root, or captures land elsewhere (a 2026-07-08 run from `docker/` put them in `docker/docs/goldens/`; relocated) |
 | 0b-35 | Exercise email render path (`AdminUtils` templates) | 🟢 | verified end-to-end via Mailpit: `ReportIssue` (`populateVmTemplate`→`VelocityUtils.render`, both text+html templates, zero unrendered `$refs`) + `XDATForgotLogin` both branches (username-by-email, password-reset incl. `RESET_URL` token). NB pre-existing upstream text/html arg swap in `ReportIssue`, preserved |
 | 0b-36 | Exercise item text render (`BaseElement`) | 🟡 | same `populateVmTemplate` mechanism as 0b-35 (validated); `BaseElement` call site itself not triggered |
 | 0b-37 | Screen breadth: report / edit / search / PDF / XML raw screens | 🟡 | Index, login, create/edit, delete, QuickSearch (incl. multi-match screen), search-results tabs, edit-form month dropdowns verified. Report/PDF/XML raw still open |
@@ -149,10 +150,10 @@ is therefore a Phase-1 task (1-16/1-17), not Phase-0b.
 
 ## Known blockers / next up
 1. **0b-37** — walk the remaining screen types (report / PDF / XML raw) via the smoke-test checklist;
-   0b-36 (`BaseElement` item-text) closes with it.
-2. **0b-23/24** — `#if` empty-check semantics audit + template encoding check (small, static).
-3. **0b-40** — run the drafted S1600 REST smoke suite against the fixture instance.
-4. **0b-41** — cross-version golden diff: stand up `develop` on a copy of the known-state DB, capture,
+   0b-36 (`BaseElement` item-text) closes with it. NB: the `empty_check=false` change (0b-23) affects
+   rendered screens — spot-check a couple of already-verified screens too.
+2. **0b-40** — run the drafted S1600 REST smoke suite against the fixture instance.
+3. **0b-41** — cross-version golden diff: stand up `develop` on a copy of the known-state DB, capture,
    diff against the 5.1 goldens.
 5. **Phase 1 kickoff** — with 1-2 prepped and 1-5 likely a deletion, the cutover is close to the
    intended shape: namespace (`javax`→`jakarta`) + version bumps + `ext.fileupload` replacement (1-11).

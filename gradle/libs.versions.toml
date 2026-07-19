@@ -61,10 +61,10 @@ fop = "0.20.5"
 # Turbine 5.1 does NOT pull these Fulcrum components transitively (confirmed by the boot sandbox);
 # XNAT's YAAFI config references GlobalCacheService + UploadService, so declare them explicitly.
 fulcrum-cache = "2.0.1"
-fulcrum-intake = "2.0.0"
-fulcrum-parser = "2.0.1"
+fulcrum-intake = "4.0.0"    # Turbine 7 / jakarta generation
+fulcrum-parser = "4.0.0"    # Turbine 7 / jakarta generation
 fulcrum-yaafi = "2.0.1"
-fulcrum-security = "2.1.0"
+fulcrum-security = "4.0.0"  # Turbine 7 / jakarta generation
 fulcrum-upload = "2.0.0"
 glassfish-jakarta-el = "4.0.2"
 glassfish-javax-el = "3.0.1-b12"
@@ -140,24 +140,24 @@ pixelmed-imageio = "20200328"
 quartz = "2.3.2"
 redisson = "3.22.0"
 reflections = "0.10.2"
-restlet = "2.5.2"
+restlet = "2.6.0"                # Jakarta edition (1-6); ext.fileupload pinned separately (1-11)
+restlet-fileupload = "2.5.2"    # dropped upstream after 2.5.2 — replace with commons-fileupload direct (1-11)
 saxon = "9.1.0.8"
-servlet-api = "3.1.0"
+servlet-api = "6.0.0"           # jakarta.servlet (Servlet 6.0 = Tomcat 10.1); Turbine 7 pulls 6.1 transitively
 slf4j = "1.7.30"
 snakeyaml = "1.33"
 spotbugs = "4.7.3.4"
-spring-framework = "5.3.39"
+spring-framework = "6.2.19"
 spring-jwt = "1.1.1.RELEASE"
 spring-ldap = "2.4.2"
 spring-oauth2 = "2.5.2.RELEASE"
-spring-security = "5.7.13"
+spring-security = "6.5.11"
 spring-test-junit5 = "1.5.0"
 springockito = "1.0.5"
 swagger = "2.9.2"
 testcontainers = "1.21.4"
-tomcat-embed = "9.0.93"
-torque = "3.3"
-turbine = "5.1"
+tomcat-embed = "10.1.57"
+turbine = "7.0"
 user-agent-utils = "1.20"
 velocity = "2.4.1"
 velocity-tools = "3.1"
@@ -195,7 +195,6 @@ apache-jena-core = { group = "org.apache.jena", name = "jena-core", version.ref 
 apache-jena-tdb = { group = "org.apache.jena", name = "jena-tdb", version.ref = "jena-tdb" }
 apache-tomcat-embed-core = { group = "org.apache.tomcat.embed", name = "tomcat-embed-core", version.ref = "tomcat-embed" }
 apache-tomcat-embed-jasper = { group = "org.apache.tomcat.embed", name = "tomcat-embed-jasper", version.ref = "tomcat-embed" }
-apache-tomcat-embed-logging-juli = { group = "org.apache.tomcat.embed", name = "tomcat-embed-logging-juli", version.ref = "tomcat-embed" }
 apache-velocity = { group = "org.apache.velocity", name = "velocity-engine-core", version.ref = "velocity" }
 apache-velocity-tools = { group = "org.apache.velocity.tools", name = "velocity-tools-generic", version.ref = "velocity-tools" }
 apache-xbean-spring = { group = "org.apache.xbean", name = "xbean-spring", version.ref = "xbean" }
@@ -298,9 +297,9 @@ hamcrest-core = { group = "org.hamcrest", name = "hamcrest-core", version.ref = 
 hamcrest-hamcrest = { group = "org.hamcrest", name = "hamcrest", version.ref = "hamcrest2" }
 hamcrest-library = { group = "org.hamcrest", name = "hamcrest-library", version.ref = "hamcrest" }
 hibernate-commons-annotations = { group = "org.hibernate.common", name = "hibernate-commons-annotations", version.ref = "hibernate-commons" }
-hibernate-core = { group = "org.hibernate", name = "hibernate-core", version.ref = "hibernate" }
+hibernate-core = { group = "org.hibernate", name = "hibernate-core-jakarta", version.ref = "hibernate" }
 hibernate-ehcache = { group = "org.hibernate", name = "hibernate-ehcache", version.ref = "hibernate" }
-hibernate-envers = { group = "org.hibernate", name = "hibernate-envers", version.ref = "hibernate" }
+hibernate-envers = { group = "org.hibernate", name = "hibernate-envers-jakarta", version.ref = "hibernate" }
 hibernate-jcache = { group = "org.hibernate", name = "hibernate-jcache", version.ref = "hibernate" }
 hibernate-jpa-api = { group = "org.hibernate.javax.persistence", name = "hibernate-jpa-2.1-api", version.ref = "hibernate-jpa-api" }
 hibernate-validator = { group = "org.hibernate", name = "hibernate-validator", version.ref = "hibernate-validator" }
@@ -375,10 +374,10 @@ reflections-reflections = { group = "org.reflections", name = "reflections", ver
 restlet-com-noelios-restlet = { group = "org.restlet", name = "org.restlet", version.ref = "restlet" }
 restlet-com-noelios-restlet-ext-servlet = { group = "org.restlet", name = "org.restlet.ext.servlet", version.ref = "restlet" }
 restlet-org-restlet = { group = "org.restlet", name = "org.restlet", version.ref = "restlet" }
-restlet-org-restlet-ext-fileupload = { group = "org.restlet", name = "org.restlet.ext.fileupload", version.ref = "restlet" }
+restlet-org-restlet-ext-fileupload = { group = "org.restlet", name = "org.restlet.ext.fileupload", version.ref = "restlet-fileupload" }
 saxon-saxon = { group = "net.sourceforge.saxon", name = "saxon", version.ref = "saxon" }
 sbrannen-spring-test-junit5 = { group = "com.github.sbrannen", name = "spring-test-junit5", version.ref = "spring-test-junit5" }
-servlet-javax-servlet-api = { group = "javax.servlet", name = "javax.servlet-api", version.ref = "servlet-api" }
+servlet-javax-servlet-api = { group = "jakarta.servlet", name = "jakarta.servlet-api", version.ref = "servlet-api" }  # alias name kept to avoid build.gradle churn
 servlet-jstl = { group = "javax.servlet", name = "jstl", version.ref = "jstl" }
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 slf4j-jcl-over-slf4j = { group = "org.slf4j", name = "jcl-over-slf4j", version.ref = "slf4j" }
@@ -407,7 +406,6 @@ spring-security-spring-security-config = { group = "org.springframework.security
 spring-security-spring-security-core = { group = "org.springframework.security", name = "spring-security-core", version.ref = "spring-security" }
 spring-security-spring-security-jwt = { group = "org.springframework.security", name = "spring-security-jwt", version.ref = "spring-jwt" }
 spring-security-spring-security-ldap = { group = "org.springframework.security", name = "spring-security-ldap", version.ref = "spring-security" }
-spring-security-spring-security-openid = { group = "org.springframework.security", name = "spring-security-openid", version.ref = "spring-security" }
 spring-security-spring-security-taglibs = { group = "org.springframework.security", name = "spring-security-taglibs", version.ref = "spring-security" }
 spring-security-spring-security-test = { group = "org.springframework.security", name = "spring-security-test", version.ref = "spring-security" }
 spring-security-spring-security-web = { group = "org.springframework.security", name = "spring-security-web", version.ref = "spring-security" }
@@ -425,8 +423,6 @@ testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql",
 testcontainers-testcontainers = { group = "org.testcontainers", name = "testcontainers", version.ref = "testcontainers" }
 tomakehurst-wiremock = { group = "com.github.tomakehurst", name = "wiremock", version.ref = "wiremock" }
 tools-checkstyle = { group = "com.puppycrawl.tools", name = "checkstyle", version.ref = "checkstyle" }
-torque-torque = { group = "torque", name = "torque", version.ref = "torque" }
-torque-village = { group = "torque", name = "village", version.ref = "torque" }
 ttddyy-datasource-proxy = { group = "net.ttddyy", name = "datasource-proxy", version.ref = "datasource-proxy" }
 turbine-turbine = { group = "org.apache.turbine", name = "turbine", version.ref = "turbine" }
 twmacinta-fast-md5 = { group = "com.twmacinta", name = "fast-md5", version.ref = "fastmd5" }

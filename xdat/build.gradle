@@ -47,7 +47,6 @@ dependencies {
     // Turbine 5.1 pulls parser/intake from Fulcrum; xdat uses turbine transitive=false, so add explicitly.
     implementation libs.fulcrum.parser
     implementation libs.fulcrum.intake
-    implementation(libs.torque.torque) { transitive = false }
     implementation libs.apache.velocity
     implementation libs.apache.velocity.tools
     implementation libs.restlet.com.noelios.restlet.ext.servlet

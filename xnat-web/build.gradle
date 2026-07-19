@@ -224,11 +224,11 @@ dependencies {
     // --- Reactor (from satellite merge) ---
     implementation libs.reactor.bus
 
-    // --- Turbine/Torque (from satellite merge) ---
-    // transitive=false would cut off torque (turbine's core dep) and cause
-    // NoClassDefFoundError: GroupPeerManagerConstants at Tomcat runtime.
-    // Use precise excludes for legacy/conflicting artifacts instead.
+    // --- Turbine ---
+    // Torque is fully excluded (Phase 1-5): XNAT has zero source references to it; the 2.3.3-era
+    // OM security it backed is replaced by the Fulcrum in-memory stack below.
     implementation(libs.turbine.turbine) {
+        exclude group: 'org.apache.torque'
         exclude group: 'commons-dbcp'
         exclude group: 'commons-email'
         exclude group: 'commons-pool'
@@ -247,8 +247,7 @@ dependencies {
         exclude group: 'tomcat'
         exclude group: 'xerces'
     }
-    implementation libs.torque.village
-    // Turbine 5.1 omits these Fulcrum components transitively — required by XNAT's YAAFI config.
+    // Fulcrum components not pulled transitively — required by XNAT's YAAFI config.
     implementation libs.fulcrum.cache
     implementation libs.fulcrum.upload
     // Turbine 5.1's TurbineYaafiComponentService (the service container) is an optional Turbine dep; add it.

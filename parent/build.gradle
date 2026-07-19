@@ -59,7 +59,6 @@ dependencies {
         api libs.spring.security.spring.security.config
         api libs.spring.security.spring.security.core
         api libs.spring.security.spring.security.ldap
-        api libs.spring.security.spring.security.openid
         api libs.spring.security.spring.security.taglibs
         api libs.spring.security.spring.security.web
         api libs.spring.security.spring.security.test
@@ -70,8 +69,10 @@ dependencies {
         // Hibernate
         api libs.hibernate.core
         api libs.hibernate.envers
-        api libs.hibernate.ehcache
-        api libs.hibernate.jcache
+        // ehcache/jcache have no -jakarta variants; exclude their javax hibernate-core so only
+        // hibernate-core-jakarta (the libs.hibernate.core alias) is on the classpath
+        api(libs.hibernate.ehcache) { exclude group: 'org.hibernate', module: 'hibernate-core' }
+        api(libs.hibernate.jcache)  { exclude group: 'org.hibernate', module: 'hibernate-core' }
         api libs.hibernate.validator
         api libs.hibernate.validator.cdi
         api libs.hibernate.jpa.api
@@ -268,8 +269,6 @@ dependencies {
 
         // Legacy
         api libs.turbine.turbine
-        api libs.torque.torque
-        api libs.torque.village
         api libs.apache.velocity
         api libs.apache.velocity.tools
         api libs.ecs.ecs

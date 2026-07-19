@@ -4,7 +4,7 @@ Status tracker for the staged real port (see the full plan and
 [`phase0-compile-migration-summary.md`](phase0-compile-migration-summary.md) /
 [`tomcat9-deploy-stack.md`](tomcat9-deploy-stack.md) for detail). Branch: `feature/turbine-5x`.
 
-**Last updated:** 2026-07-19
+**Last updated:** 2026-07-19 (evening — Jakarta cutover boots + verified on Tomcat 10)
 
 **Legend:** 🟢 Complete · 🟡 In progress · ⚪ Open
 
@@ -117,19 +117,19 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 
 | # | Step | Status | Notes |
 |---|------|:------:|-------|
-| 1-1 | Spring 5.3 → 6.x | 🟢 | 6.2.19; compile-verified (HC5 factory port, `WebMvcConfigurerAdapter`→`WebMvcConfigurer`); runtime bring-up pending |
+| 1-1 | Spring 5.3 → 6.x | 🟢 | 6.2.19, **runtime-verified on Tomcat 10**. Boot required javac `-parameters` (Spring 6.1 removed `LocalVariableTableParameterNameDiscoverer` — aspects + `@RequestParam` binding) |
 | 1-2 | Spring Security 5.7 → 6.x | 🟡 | **6.5.11 landed + compiles** (openid removed, test configs component-style, `authenticationIsRequired` visibility). Remaining: runtime verify, legacy `spring-security-oauth2` 2.5.2.RELEASE still on classpath, `AntPathRequestMatcher` removal warnings (SS7). Original prep notes: | **Prep landed early on 5.7 (testable):** `WebSecurityConfigurerAdapter` (removed in 6) → component style: `@Bean SecurityFilterChain` (lambda DSL) + explicit `@Bean AuthenticationManager`; `XnatSecurityExtension` hooks preserved; login/logout verified. **Keep `authorizeRequests`** — XNAT's real rules come from `UpdateSecurityFilterHandlerMethod` (BeanPostProcessor) swapping the `FilterSecurityInterceptor` metadata source (openUrls/adminUrls/requireLogin, live-updatable); `authorizeHttpRequests` builds an `AuthorizationFilter` the post-processor never sees → login redirect loop (tried + reverted). `AuthorizationManager` port is an SS**7** task. Remaining at cutover: version bump, `spring-security-openid` removal, legacy `oauth2` project, `ChannelProcessingFilter` deprecation |
 | 1-3 | tomcat-embed 9 → 10 | 🟢 | 10.1.57 (catalog-only; no direct consumers) |
 | 1-4 | servlet-api javax → jakarta 5+ | 🟢 | jakarta.servlet-api 6.0.0 via the kept `servlet-javax-servlet-api` alias; javax 3.1 kept **compileOnly in xnat-web only** for commons-fileupload 1.5 `FileUploadBase` deprecated-overload resolution |
 | 1-5 | Torque 5 → 6 | 🟢 | **Deleted** (catalog + all decl sites; `org.apache.torque` excluded from Turbine 7). Runtime-reflection check rides the 1-12 audit |
 | 1-6 | Restlet 2.5.2 → 2.6.0 (Jakarta) | 🟢 | now on Maven Central; 2.6 removed the WebDAV statuses (207/422/423/424/507) → `XnatWebDavStatus` constants (27 files) |
-| 1-7 | Turbine 5.1 → 7.0 (Jakarta build) | 🟡 | 7.0 released on Central; dep landed (Fulcrum parser/intake/security → 4.0.0 jakarta gen), compiles. Torque NOT required (excluded). Runtime config compat (TurbineResources/pipeline/YAAFI on 7.0) + boot test still open |
-| 1-8 | Pin Velocity 2.4.1 (confirm Turbine 7 tolerates override) | ⚪ | |
+| 1-7 | Turbine 5.1 → 7.0 (Jakarta build) | 🟢 | 7.0 from Central + Fulcrum 4.0.0. **XNAT's 5.1-format config boots unchanged on 7.0** (`TurbineBootTest` green incl. the `empty_check` probe) and screens render byte-identical on Tomcat 10 |
+| 1-8 | Pin Velocity 2.4.1 (confirm Turbine 7 tolerates override) | 🟢 | 2.4.1 wins over Turbine 7's 2.3 transitive; boot probe + byte-identical screen renders confirm |
 | 1-9 | `javax.*` → `jakarta.*` across ~73 servlet source files | 🟢 | selective scripted sweep, 315 files (servlet/persistence/validation/mail/jms/inject/activation/el/interceptor/EE-annotation/EE-transaction/xml.bind); JSR-305, JCache, JDK javax.* untouched. Forced couplings: jakarta mail/jms/validation/xml.bind APIs, ActiveMQ 6.2.7, hibernate-validator 8, jakarta.inject-api **2.0.1** (1.0.x still ships javax packages!) |
-| 1-10 | `web.xml` / Spring XML+Java config / JSP / TLD namespace migration | ⚪ | incl. the new `default.jsp` |
+| 1-10 | `web.xml` / Spring XML+Java config / JSP / TLD namespace migration | 🟢 | web.xml → jakartaee web-app_6_0; JSTL sun URIs → `jakarta.tags.*` (37 files) + glassfish JSTL 3.0.1; `default.jsp` needs nothing (implicit objects only); no Spring XML carried javax |
 | 1-11 | Remove Restlet `ext.fileupload` (dropped after 2.5.2) → commons-fileupload direct (~5 files) | 🟢 | XNAT-owned `RestletFileUpload`/`RepresentationContext` adapters (ports of the Apache-2.0 Restlet 2.5.2 classes) over commons-fileupload core — no servlet types; 6 call-site files re-imported |
 | 1-12 | Hand-audit reflection / string-built class names OpenRewrite can't see | ⚪ | |
-| 1-13 | Flip local dev + CI to Tomcat 10 / Java 17+ | ⚪ | |
+| 1-13 | Flip local dev + CI to Tomcat 10 / Java 17+ | 🟡 | compose still defaults Tomcat 9; the cutover runs via `--build-arg TOMCAT_BASE=tomcat:10.1-jdk21-temurin`. Flip the default + CI when the branch merges |
 | 1-14 | (Optional) `tomcat-jakartaee-migration` smoke-test of the Phase-0 WAR on Tomcat 10 | 🟢 | **Done 2026-07-19 — converted WAR fully functional on Tomcat 10.1.57.** `jakartaee-migration-1.0.12 -profile=EE` converts the 221MB Phase-0 WAR in 30s, zero warnings. Parallel container (jdk21 base, `xnat_t10` DB copy, fresh archive volume): boots clean in ~20s, health 8/8, **S1600 REST smoke 24/24** (incl. file up/download round-trip through bytecode-converted `ext.fileupload`), report + XML screens render (XML byte-identical to Tomcat 9). Goldens: 7/11 byte-identical; rest explained — `app-*` differ only in the Content-Type charset label (**Tomcat 10/Servlet 6 defaults responses to UTF-8**, was ISO-8859-1 — expect this at the real cutover), buildinfo carries the tool's `-migrated-1.0.12` version stamp, file-download 404 = empty archive volume (also the sole log ERROR, `SystemPathVerification`). Torn down after |
 | 1-15 | Playwright suite (`xnat-web/tests/playwright/`) on Tomcat 10 | ⚪ | |
 | 1-16 | Unify logging on Logback (the log4j2↔Logback reconciliation) | ⚪ | **Deferred here deliberately — not doable on 5.1** (see note). At 7.0 Turbine logs via `java.lang.System.Logger`; add `org.slf4j:slf4j-jdk-platform-logging` and drop the log4j2 impls |
@@ -147,6 +147,21 @@ XNAT → Logback → stdout (0b-29 console appender); both visible in `docker lo
 is therefore a Phase-1 task (1-16/1-17), not Phase-0b.
 
 ---
+
+### Jakarta cutover — runtime verification (2026-07-19, branch `feature/jakarta-cutover`)
+Source-ported WAR boots clean on Tomcat 10.1.57 + Turbine 7 + Restlet 2.6 + Spring 6/SS 6.5:
+health 8/8 · goldens 7/11 with only the known-cosmetic diffs (charset labels, empty-archive 404) —
+**screen bodies byte-identical under Turbine 7** · S1600 24/24 (incl. multipart through the new
+fileupload shim) · form login/logout + session persistence + report/XML screens verified.
+Boot-blocker fixes, in order hit: javamelody 2.8 (javax listener), javac `-parameters`,
+ehcache `jakarta` classifier (javax-JAXB config parser), jakarta EL for validator 8,
+SS 6.4 `ObjectPostProcessor` package move, SS6 explicit `SecurityContextRepository` on
+`XnatAuthenticationFilter` (form-login session persistence).
+
+**Remaining Phase-1 follow-ups:** springdoc-openapi to replace removed springfox (swagger UI gone);
+1-12 reflection audit; 1-15 Playwright suite; 1-16/17 logging unification (logback 1.5/slf4j 2);
+full `./gradlew test` suite run; legacy `spring-security-oauth2` jar removal decision;
+`AntPathRequestMatcher` deprecations (SS7 prep); 1-13 flip compose/CI defaults.
 
 ## Known blockers / next up
 **Phase 0 is complete, and the 1-14 scout run proves the Jakarta runtime works**: the

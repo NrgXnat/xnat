@@ -77,6 +77,9 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.context.DelegatingSecurityContextRepository;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.web.filter.RequestContextFilter;
 
 import jakarta.servlet.SessionCookieConfig;
@@ -216,7 +219,14 @@ public class SecurityConfig {
 
     @Bean
     public XnatAuthenticationFilter customAuthenticationFilter() {
-        return new XnatAuthenticationFilter();
+        final XnatAuthenticationFilter filter = new XnatAuthenticationFilter();
+        // Spring Security 6: manually-added authentication filters default to
+        // RequestAttributeSecurityContextRepository, so a successful form login was forgotten on
+        // the next request (immediate bounce back to Login.vm). Save to the HTTP session as well.
+        filter.setSecurityContextRepository(new DelegatingSecurityContextRepository(
+                new RequestAttributeSecurityContextRepository(),
+                new HttpSessionSecurityContextRepository()));
+        return filter;
     }
 
     @Bean

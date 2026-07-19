@@ -175,7 +175,7 @@ dependencies {
     implementation libs.hibernate.jcache
     implementation libs.hibernate.validator
     implementation libs.hibernate.envers
-    implementation libs.ehcache.ehcache
+    implementation variantOf(libs.ehcache.ehcache) { classifier('jakarta') }
     implementation libs.vladmihalcea.hibernate.types55
     implementation(libs.redisson.redisson) {
         // redisson 3.22 pulls reactor-core 3.x; framework needs 2.x (forced in convention plugin).

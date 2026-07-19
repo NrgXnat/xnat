@@ -71,7 +71,7 @@ dependencies {
     implementation libs.commons.dbcp2
     implementation libs.bitwalker.useragentutils
     implementation libs.apache.ant
-    implementation libs.ehcache.ehcache
+    implementation variantOf(libs.ehcache.ehcache) { classifier('jakarta') }
     implementation libs.postgresql.postgresql
     implementation libs.slf4j.log4j.over.slf4j
     implementation libs.commons.compress

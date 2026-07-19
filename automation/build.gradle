@@ -28,7 +28,7 @@ dependencies {
     implementation libs.commons.lang3
 
     runtimeOnly libs.hibernate.jcache
-    runtimeOnly libs.ehcache.ehcache
+    runtimeOnly variantOf(libs.ehcache.ehcache) { classifier('jakarta') }
     runtimeOnly libs.redisson.redisson
 
     compileOnly libs.servlet.javax.servlet.api

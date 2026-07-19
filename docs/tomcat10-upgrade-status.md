@@ -130,7 +130,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 1-11 | Remove Restlet `ext.fileupload` (dropped after 2.5.2) → commons-fileupload direct (~5 files) | ⚪ | |
 | 1-12 | Hand-audit reflection / string-built class names OpenRewrite can't see | ⚪ | |
 | 1-13 | Flip local dev + CI to Tomcat 10 / Java 17+ | ⚪ | |
-| 1-14 | (Optional) `tomcat-jakartaee-migration` smoke-test of the Phase-0 WAR on Tomcat 10 | ⚪ | disposable milestone |
+| 1-14 | (Optional) `tomcat-jakartaee-migration` smoke-test of the Phase-0 WAR on Tomcat 10 | 🟢 | **Done 2026-07-19 — converted WAR fully functional on Tomcat 10.1.57.** `jakartaee-migration-1.0.12 -profile=EE` converts the 221MB Phase-0 WAR in 30s, zero warnings. Parallel container (jdk21 base, `xnat_t10` DB copy, fresh archive volume): boots clean in ~20s, health 8/8, **S1600 REST smoke 24/24** (incl. file up/download round-trip through bytecode-converted `ext.fileupload`), report + XML screens render (XML byte-identical to Tomcat 9). Goldens: 7/11 byte-identical; rest explained — `app-*` differ only in the Content-Type charset label (**Tomcat 10/Servlet 6 defaults responses to UTF-8**, was ISO-8859-1 — expect this at the real cutover), buildinfo carries the tool's `-migrated-1.0.12` version stamp, file-download 404 = empty archive volume (also the sole log ERROR, `SystemPathVerification`). Torn down after |
 | 1-15 | Playwright suite (`xnat-web/tests/playwright/`) on Tomcat 10 | ⚪ | |
 | 1-16 | Unify logging on Logback (the log4j2↔Logback reconciliation) | ⚪ | **Deferred here deliberately — not doable on 5.1** (see note). At 7.0 Turbine logs via `java.lang.System.Logger`; add `org.slf4j:slf4j-jdk-platform-logging` and drop the log4j2 impls |
 | 1-17 | Consume the upstream Turbine log4j-decoupling PR | ⚪ | PR prepared against Turbine 7.0 trunk (`../turbine-core`, branch `feature/decouple-log4j-core-from-transitive-deps`); marks log4j2 impls `<optional>`. If merged by 7.0 release, no exclusion needed; else exclude `log4j-core`/`log4j-jpl` in XNAT's build. **XNAT does not depend on this PR merging** — the PR only changes the upstream default. Because 7.0 logs via `System.Logger` (no hard cast to `core.LoggerContext`, unlike 5.1), log4j-core is a swappable backend, so 1-16 can exclude it in XNAT's own build regardless of the PR. The PR's value is ecosystem-wide (default posture, transitive fan-out, Log4Shell surface, expressing upstream intent), not a gate for us |
@@ -149,11 +149,13 @@ is therefore a Phase-1 task (1-16/1-17), not Phase-0b.
 ---
 
 ## Known blockers / next up
-**Phase 0 is complete.** Next: Phase 1 kickoff — the atomic Jakarta cutover. With 1-2 prepped and
-1-5 likely a deletion, the cutover shape is: version bumps (Spring 6 / tomcat-embed 10 / Restlet
-2.6 / Turbine 7.0), `javax`→`jakarta` namespace (~73 servlet files + web.xml/JSP/TLD), and the
-`ext.fileupload` replacement (1-11). Suggested first step: 1-14 (throwaway
-`tomcat-jakartaee-migration` smoke of the Phase-0 WAR on Tomcat 10) to scout runtime surprises
-before the real port.
+**Phase 0 is complete, and the 1-14 scout run proves the Jakarta runtime works**: the
+bytecode-converted Phase-0 WAR is fully functional on Tomcat 10.1.57 (S1600 24/24, health 8/8,
+screens render). The remaining Phase-1 risk is therefore the *source-level* port, not the runtime:
+version bumps (Spring 6 / Spring Security 6 / tomcat-embed 10 / Restlet 2.6 / Turbine 7.0 /
+Torque-delete), `javax`→`jakarta` namespace (~73 servlet files + web.xml/JSP/TLD, 1-9/1-10), and
+the `ext.fileupload` replacement (1-11). Known cutover expectations from the scout: Tomcat 10
+defaults response charsets to UTF-8 (golden header diffs) and the empty-archive
+`SystemPathVerification` error is environmental.
 5. **Phase 1 kickoff** — with 1-2 prepped and 1-5 likely a deletion, the cutover is close to the
    intended shape: namespace (`javax`→`jakarta`) + version bumps + `ext.fileupload` replacement (1-11).

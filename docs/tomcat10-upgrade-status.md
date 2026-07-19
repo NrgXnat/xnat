@@ -9,8 +9,8 @@ Status tracker for the staged real port (see the full plan and
 **Legend:** 🟢 Complete · 🟡 In progress · ⚪ Open
 
 **Rollup:** Phase 0a 🟢 code + runtime verified (known-state fixture + goldens) · Phase 0b 🟢 code +
-boot + deploy + email/render + full screen breadth (0b-21..24, 0b-35..38 all closed), 🟡 only the
-REST smoke run (0b-40) + cross-version diff (0b-41) remain · Phase 1 ⚪ not started, but
+boot + deploy + email/render + full screen breadth + REST smoke 24/24 (0b-21..24, 0b-35..40 all
+closed), 🟡 only the cross-version golden diff (0b-41) remains · Phase 1 ⚪ not started, but
 Spring Security 6 prep (1-2) landed early and Torque (1-5) downgraded to likely-delete.
 
 Test harness: `docs/tools/build-known-state.sh` (REST fixture: 3 users / 5 projects / subjects /
@@ -110,7 +110,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 0b-37 | Screen breadth: report / edit / search / PDF / XML raw screens | 🟢 | Index, login, create/edit, delete, QuickSearch (incl. multi-match), search-results tabs, month dropdowns (earlier). 2026-07-19: **report** screens 200 + error-free for projectData / subjectData / mr / ct / petSessionData (`DisplayItemAction`; only stray `$ref` is the pre-existing upstream `HeaderIncludes.vm` `current_uri` else-branch calling `$om.getSubjectId()` on a project — identical under Velocity 1.7). **XML raw** (`XMLScreen` via `DisplayXMLAction` + `XDATActionRouter/xdataction/xml`, and `XMLSearch?data_type&id`) all return well-formed `text/xml`, both routes byte-identical. **PDF** (`XDATScreen_pdf`, MR-only — the sole `pdf/*_fo.xsl`): fails `NoClassDefFoundError org/apache/batik` — **pre-existing on `develop`** (monorepo commit `ba8c58d1f` excludes `batik` from fop, but FOP 0.20.5 `Driver.<init>` class-loads it unconditionally); not a migration regression — Turbine 5.1's `handleException` renders the error screen properly. Un-exclude `batik` if PDF is ever wanted |
 | 0b-38 | Turbine security realm empty (`isAnonymousUser` true) — `$sessionData`/permission pull tools | 🟢 | **Resolved: NOT a bug (vestigial).** All user/permission resolution goes through Spring (`XDAT.getUserDetails()` ← `SecurityContextHolder`); templates call the realm user `data.getUser()` 0 times. No bridge needed — do not wire the realm at 7.0 either |
 | 0b-39 | Full `./gradlew build` + test-compile green | 🟢 | |
-| 0b-40 | `xnat-rest-tests` regression (REST `/data` + `/xapi`) | 🟡 | S1600 REST smoke spec drafted (dispatch probes, content negotiation, router round-trips) + `rest-migration-smoke` project registered in `playwright.config.ts`; not yet run in CI |
+| 0b-40 | `xnat-rest-tests` regression (REST `/data` + `/xapi`) | 🟢 | **24/24 passed (2026-07-19)** against the fixture instance: 12 GET dispatch probes (prearchive/search/scanners/scan_types/investigators/pars/automation×4/status/dicomdump), 3 no-op DELETE 405-guards, 3 prearchive batch POSTs, 4-format content negotiation, + both router round-trips (BEST_MATCH nested write, STARTS_WITH file-by-name up/download; throwaway project cleaned up, goldens still 11/11). Run **standalone**: `tests/s1600-rest-migration-smoke/playwright.config.ts` (new) — the repo's main config wires globalSetup/Teardown that create site prereqs + force "site default state", not fixture-safe (a first attempt's teardown did enable sitewide anonymization + reset session-timeout/admin-email/auth settings on the fixture — benign for goldens/REST, noted). Also fixed a latent `*/`-in-block-comment syntax error in the draft spec. Node ≥18 required (`/usr/local/bin/node` v23; repo `.nvmrc` wants 20 — nvm here only has 14/17). CI wiring still open but out of Phase-0b scope |
 | 0b-41 | Golden-master baseline capture (2.3.3 vs 5.1 on same DB) | ⚪ | goldens currently characterize the migrated build against the fixture; the cross-version diff (develop vs 5.1, same DB) still needs a `develop` build |
 
 ## Phase 1 — Atomic Jakarta cutover to Tomcat 10
@@ -149,9 +149,9 @@ is therefore a Phase-1 task (1-16/1-17), not Phase-0b.
 ---
 
 ## Known blockers / next up
-1. **0b-40** — run the drafted S1600 REST smoke suite against the fixture instance.
-2. **0b-41** — cross-version golden diff: stand up `develop` on a copy of the known-state DB, capture,
+1. **0b-41** — cross-version golden diff: stand up `develop` on a copy of the known-state DB, capture,
    diff against the 5.1 goldens. NB goldens re-baselined 2026-07-19 (post-`empty_check=false` +
    fixture edits from earlier edit-form testing): the develop capture should be diffed against these.
+2. **Phase 1 kickoff** — everything else in Phase 0 is closed.
 5. **Phase 1 kickoff** — with 1-2 prepped and 1-5 likely a deletion, the cutover is close to the
    intended shape: namespace (`javax`→`jakarta`) + version bumps + `ext.fileupload` replacement (1-11).

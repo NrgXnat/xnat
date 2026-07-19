@@ -32,3 +32,4 @@ docker-context/
 docs/goldens/
 # Python bytecode from docs/tools scripts
 __pycache__/
+docs/goldens-develop/

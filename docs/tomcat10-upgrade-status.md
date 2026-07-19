@@ -9,8 +9,8 @@ Status tracker for the staged real port (see the full plan and
 **Legend:** 🟢 Complete · 🟡 In progress · ⚪ Open
 
 **Rollup:** Phase 0a 🟢 code + runtime verified (known-state fixture + goldens) · Phase 0b 🟢 code +
-boot + deploy + email/render verification + template semantics/encoding (0b-21..24 all closed),
-🟡 remaining screen breadth + REST smoke run + cross-version diff · Phase 1 ⚪ not started, but
+boot + deploy + email/render + full screen breadth (0b-21..24, 0b-35..38 all closed), 🟡 only the
+REST smoke run (0b-40) + cross-version diff (0b-41) remain · Phase 1 ⚪ not started, but
 Spring Security 6 prep (1-2) landed early and Torque (1-5) downgraded to likely-delete.
 
 Test harness: `docs/tools/build-known-state.sh` (REST fixture: 3 users / 5 projects / subjects /
@@ -106,8 +106,8 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 0b-33 | `docker/health-check.sh` | 🟢 | |
 | 0b-34 | `docker/golden-capture.sh` (golden-master capture/check) | 🟢 | baselines captured against the known-state fixture; all checks passing. Goldens are local-only (`docs/goldens/` gitignored). NB `GOLDEN_DIR` default is cwd-relative — run from the repo root, or captures land elsewhere (a 2026-07-08 run from `docker/` put them in `docker/docs/goldens/`; relocated) |
 | 0b-35 | Exercise email render path (`AdminUtils` templates) | 🟢 | verified end-to-end via Mailpit: `ReportIssue` (`populateVmTemplate`→`VelocityUtils.render`, both text+html templates, zero unrendered `$refs`) + `XDATForgotLogin` both branches (username-by-email, password-reset incl. `RESET_URL` token). NB pre-existing upstream text/html arg swap in `ReportIssue`, preserved |
-| 0b-36 | Exercise item text render (`BaseElement`) | 🟡 | same `populateVmTemplate` mechanism as 0b-35 (validated); `BaseElement` call site itself not triggered |
-| 0b-37 | Screen breadth: report / edit / search / PDF / XML raw screens | 🟡 | Index, login, create/edit, delete, QuickSearch (incl. multi-match screen), search-results tabs, edit-form month dropdowns verified. Report/PDF/XML raw still open |
+| 0b-36 | Exercise item text render (`BaseElement`) | 🟢 | **Closed: no live call site in core.** `BaseElement.output(template)` has zero callers in xnat-web/xdat (no Java site passes a template name; no `.vm` calls `.output(`) — plugin-facing API only. Its mechanism (`TurbineUtils.resourceExists` + `VelocityUtils.render` via the service) is exactly the 0b-35-verified email path + the boot-test engine probe |
+| 0b-37 | Screen breadth: report / edit / search / PDF / XML raw screens | 🟢 | Index, login, create/edit, delete, QuickSearch (incl. multi-match), search-results tabs, month dropdowns (earlier). 2026-07-19: **report** screens 200 + error-free for projectData / subjectData / mr / ct / petSessionData (`DisplayItemAction`; only stray `$ref` is the pre-existing upstream `HeaderIncludes.vm` `current_uri` else-branch calling `$om.getSubjectId()` on a project — identical under Velocity 1.7). **XML raw** (`XMLScreen` via `DisplayXMLAction` + `XDATActionRouter/xdataction/xml`, and `XMLSearch?data_type&id`) all return well-formed `text/xml`, both routes byte-identical. **PDF** (`XDATScreen_pdf`, MR-only — the sole `pdf/*_fo.xsl`): fails `NoClassDefFoundError org/apache/batik` — **pre-existing on `develop`** (monorepo commit `ba8c58d1f` excludes `batik` from fop, but FOP 0.20.5 `Driver.<init>` class-loads it unconditionally); not a migration regression — Turbine 5.1's `handleException` renders the error screen properly. Un-exclude `batik` if PDF is ever wanted |
 | 0b-38 | Turbine security realm empty (`isAnonymousUser` true) — `$sessionData`/permission pull tools | 🟢 | **Resolved: NOT a bug (vestigial).** All user/permission resolution goes through Spring (`XDAT.getUserDetails()` ← `SecurityContextHolder`); templates call the realm user `data.getUser()` 0 times. No bridge needed — do not wire the realm at 7.0 either |
 | 0b-39 | Full `./gradlew build` + test-compile green | 🟢 | |
 | 0b-40 | `xnat-rest-tests` regression (REST `/data` + `/xapi`) | 🟡 | S1600 REST smoke spec drafted (dispatch probes, content negotiation, router round-trips) + `rest-migration-smoke` project registered in `playwright.config.ts`; not yet run in CI |
@@ -149,11 +149,9 @@ is therefore a Phase-1 task (1-16/1-17), not Phase-0b.
 ---
 
 ## Known blockers / next up
-1. **0b-37** — walk the remaining screen types (report / PDF / XML raw) via the smoke-test checklist;
-   0b-36 (`BaseElement` item-text) closes with it. NB: the `empty_check=false` change (0b-23) affects
-   rendered screens — spot-check a couple of already-verified screens too.
-2. **0b-40** — run the drafted S1600 REST smoke suite against the fixture instance.
-3. **0b-41** — cross-version golden diff: stand up `develop` on a copy of the known-state DB, capture,
-   diff against the 5.1 goldens.
+1. **0b-40** — run the drafted S1600 REST smoke suite against the fixture instance.
+2. **0b-41** — cross-version golden diff: stand up `develop` on a copy of the known-state DB, capture,
+   diff against the 5.1 goldens. NB goldens re-baselined 2026-07-19 (post-`empty_check=false` +
+   fixture edits from earlier edit-form testing): the develop capture should be diffed against these.
 5. **Phase 1 kickoff** — with 1-2 prepped and 1-5 likely a deletion, the cutover is close to the
    intended shape: namespace (`javax`→`jakarta`) + version bumps + `ext.fileupload` replacement (1-11).

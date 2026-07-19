@@ -91,6 +91,9 @@ configurations.configureEach {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    // Spring 6.1 removed LocalVariableTableParameterNameDiscoverer: aspect arg binding and
+    // @RequestParam/@PathVariable name resolution now require javac -parameters metadata.
+    options.compilerArgs << '-parameters'
 }
 
 tasks.withType(Javadoc).configureEach {

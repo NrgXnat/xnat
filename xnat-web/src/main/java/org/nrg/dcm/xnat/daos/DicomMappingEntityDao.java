@@ -15,7 +15,7 @@ import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nullable;
-import javax.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 

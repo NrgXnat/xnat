@@ -16,6 +16,7 @@ publishing {
 dependencies {
     api project(':notify')
     api project(':config')
+    api libs.jakarta.validation.api
     api project(':mail')
     api project(':framework')
     api project(':automation')

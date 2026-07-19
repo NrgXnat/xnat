@@ -8,7 +8,7 @@ import org.nrg.framework.orm.hibernate.QueryBuilder;
 import org.nrg.xnat.entities.ResourceSurveyRequest;
 import org.springframework.stereotype.Repository;
 
-import javax.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

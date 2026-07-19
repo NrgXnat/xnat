@@ -37,6 +37,7 @@ import org.restlet.Response;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 
 import java.sql.SQLException;
 
@@ -216,7 +217,7 @@ public class ReconResource extends ItemResource {
 
 				create(session,recon,false,allowDataDeletion,newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(recon.getXSIType(), recon==null)));
 			}else{
-				this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Only reconstruction documents can be PUT to this address.");
+				this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Only reconstruction documents can be PUT to this address.");
 			}
 		} catch (ActionException e) {
 			this.getResponse().setStatus(e.getStatus(),e.getMessage());

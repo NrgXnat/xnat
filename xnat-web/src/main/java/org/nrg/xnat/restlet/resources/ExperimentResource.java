@@ -49,6 +49,7 @@ import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.xml.sax.SAXException;
 
 public class ExperimentResource extends ItemResource {
@@ -153,7 +154,7 @@ public class ExperimentResource extends ItemResource {
             }
 
             if (!item.instanceOf("xnat:experimentData")) {
-                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
+                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
                 return;
             }
 
@@ -246,7 +247,7 @@ public class ExperimentResource extends ItemResource {
                         }
                     }
                 } else {
-                    getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted experiment record must include the project attribute.");
+                    getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted experiment record must include the project attribute.");
                     return;
                 }
 

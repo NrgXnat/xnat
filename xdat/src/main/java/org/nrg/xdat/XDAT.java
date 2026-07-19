@@ -82,8 +82,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
-import javax.jms.Destination;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.jms.Destination;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileWriter;

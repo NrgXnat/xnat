@@ -31,7 +31,7 @@ import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.security.UserI;
 import org.springframework.mail.MailException;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 import java.io.StringWriter;
 import java.util.*;
 

@@ -4,7 +4,7 @@ import lombok.*;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xnat.compute.models.HardwareScope;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 

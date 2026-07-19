@@ -54,8 +54,8 @@ import org.springframework.security.core.session.SessionRegistryImpl;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URL;
 import java.util.*;

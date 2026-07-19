@@ -33,6 +33,7 @@ import org.restlet.Response;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -244,7 +245,7 @@ public class ReconList extends QueryOrganizerResource {
 				
 				this.returnSuccessfulCreateFromList(recon.getId());
 				}else{
-					this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Only Scan documents can be PUT to this address.");
+					this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Only Scan documents can be PUT to this address.");
 				}
 		} catch (ActionException e) {
 			this.getResponse().setStatus(e.getStatus(),e.getMessage());

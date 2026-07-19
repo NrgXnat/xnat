@@ -35,8 +35,8 @@ import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.UserUtils;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;

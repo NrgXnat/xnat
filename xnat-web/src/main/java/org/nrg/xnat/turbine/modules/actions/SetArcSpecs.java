@@ -15,7 +15,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
 import org.nrg.notify.entities.*;

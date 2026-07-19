@@ -16,7 +16,7 @@ import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;

@@ -2,7 +2,7 @@ package org.nrg.xnat.customforms.customvariable.migration.model;
 
 import org.nrg.xnat.customforms.customvariable.migration.event.CustomVariableMigrationEvent;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;

@@ -65,6 +65,7 @@ import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
@@ -342,7 +343,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     //https://radiologics.atlassian.net/browse/XNAT-8719
                     dataset.addAll(split.fmi);
                 } catch (IOException e) {
-                    throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
+                    throw new ServerException(XnatWebDavStatus.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
                 }
 
                 if (XDAT.getSiteConfigPreferences().getEnableNativeDicomPreCompression()) {

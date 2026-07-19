@@ -20,7 +20,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.security.UserI;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 import java.util.Date;
 
 

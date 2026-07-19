@@ -29,7 +29,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 @Service
 public class ContextService implements NrgService, ApplicationContextAware, ServletContextAware {

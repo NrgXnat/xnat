@@ -12,8 +12,8 @@ package org.nrg.xdat.turbine.modules.screens;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.turbine.modules.screens.RawScreen;
 import org.apache.turbine.pipeline.PipelineData;

@@ -19,12 +19,12 @@ import org.nrg.framework.orm.hibernate.audit.NrgRevisionEntity;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.framework.scope.EntityResolver;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
  * Represents a preference within the preferences service. The preference can either be a default value without a

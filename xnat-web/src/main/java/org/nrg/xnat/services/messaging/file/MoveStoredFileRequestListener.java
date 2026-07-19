@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 
 import static lombok.AccessLevel.PRIVATE;
 

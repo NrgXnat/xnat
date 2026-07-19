@@ -43,6 +43,7 @@ import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.representation.StringRepresentation;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 
 import java.util.*;
 
@@ -418,7 +419,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                         dc.setValue(d, false);
                         orCC.add(dc);
                     } catch (RuntimeException e) {
-                        resource.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+                        resource.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
                     }
                 }
 
@@ -431,7 +432,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                         dc.setValue("% " + user.getLogin() + " %", false);
                         orCC.addCriteria(dc);
                     } catch (RuntimeException e) {
-                        resource.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+                        resource.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
                     }
                 }
 
@@ -444,7 +445,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                         dc.setValue("% " + user.getLogin() + " %", false);
                         orCC.addCriteria(dc);
                     } catch (RuntimeException e) {
-                        resource.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+                        resource.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
                     }
                 }
 

@@ -42,6 +42,7 @@ import org.restlet.Response;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -93,7 +94,7 @@ public class SearchResource extends SecureResource {
             if (entity != null && entity.getMediaType() != null && entity.getMediaType().getName().equals(MediaType.MULTIPART_FORM_DATA.getName())) {
                 try {
                     @SuppressWarnings("deprecation") org.apache.commons.fileupload.DefaultFileItemFactory factory = new org.apache.commons.fileupload.DefaultFileItemFactory();
-                    org.restlet.ext.fileupload.RestletFileUpload upload = new org.restlet.ext.fileupload.RestletFileUpload(factory);
+                    org.nrg.xnat.restlet.util.fileupload.RestletFileUpload upload = new org.nrg.xnat.restlet.util.fileupload.RestletFileUpload(factory);
 
                     List<FileItem> items = upload.parseRequest(getRequest());
 
@@ -115,7 +116,7 @@ public class SearchResource extends SecureResource {
                                 }
                             } catch (SAXParseException e) {
                                 logger.error("", e);
-                                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
+                                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
                                 throw e;
                             } catch (Exception e) {
                                 logger.error("", e);
@@ -146,7 +147,7 @@ public class SearchResource extends SecureResource {
                         }
                     } catch (SAXParseException e) {
                         logger.error("", e);
-                        getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
+                        getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
                         throw e;
                     } catch (Exception e) {
                         logger.error("", e);
@@ -156,7 +157,7 @@ public class SearchResource extends SecureResource {
             }
 
             if (item == null || !item.instanceOf("xdat:stored_search")) {
-                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
                 return;
             }
 
@@ -259,7 +260,7 @@ public class SearchResource extends SecureResource {
             returnDefaultRepresentation();
         } catch (SAXException e) {
             logger.error("Failed POST", e);
-            getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
         } catch (Exception e) {
             logger.error("Failed POST", e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);

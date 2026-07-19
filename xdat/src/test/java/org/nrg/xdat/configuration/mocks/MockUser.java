@@ -16,7 +16,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.security.UserI;
 import org.springframework.security.core.GrantedAuthority;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;

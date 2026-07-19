@@ -18,8 +18,8 @@ import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
 import java.security.GeneralSecurityException;
 
 import java.io.Serial;

@@ -8,7 +8,7 @@ import com.google.auto.value.AutoValue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
+import jakarta.validation.constraints.Null;
 
 @AutoValue
 @JsonInclude(JsonInclude.Include.ALWAYS)

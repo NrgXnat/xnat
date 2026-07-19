@@ -15,8 +15,8 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Hashtable;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;

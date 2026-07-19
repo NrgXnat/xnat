@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import javax.servlet.http.Part;
+import jakarta.servlet.http.Part;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.pipeline.PipelineData;
@@ -44,7 +44,7 @@ import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.xml.sax.SAXException;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.Calendar;

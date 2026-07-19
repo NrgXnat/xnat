@@ -21,9 +21,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.zip.ZipOutputStream;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
-import javax.servlet.http.Part;
+import jakarta.servlet.http.Part;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
 import org.apache.turbine.pipeline.PipelineData;

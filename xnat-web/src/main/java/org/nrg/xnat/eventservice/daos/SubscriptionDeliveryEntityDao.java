@@ -11,8 +11,8 @@ import org.nrg.xnat.eventservice.entities.TimedEventStatusEntity;
 import org.nrg.xnat.eventservice.services.SubscriptionDeliveryEntityPaginatedRequest;
 import org.springframework.stereotype.Repository;
 
-import javax.persistence.Query;
-import javax.persistence.criteria.Predicate;
+import jakarta.persistence.Query;
+import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

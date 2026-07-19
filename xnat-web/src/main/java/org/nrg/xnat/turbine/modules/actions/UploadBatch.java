@@ -15,9 +15,9 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
-import javax.servlet.http.Part;
+import jakarta.servlet.http.Part;
 import org.apache.log4j.Logger;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;

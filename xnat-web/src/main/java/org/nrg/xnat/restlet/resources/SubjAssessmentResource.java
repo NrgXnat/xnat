@@ -50,6 +50,7 @@ import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.xml.sax.SAXException;
 
@@ -311,7 +312,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                             }
                         }
                     } else {
-                        this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted experiment record must include the project attribute.");
+                        this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted experiment record must include the project attribute.");
                         return;
                     }
 
@@ -436,7 +437,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
                     }
 
                     if (this.subject == null) {
-                        this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted experiment record must include the subject.");
+                        this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted experiment record must include the subject.");
                         return;
                     }
 
@@ -539,7 +540,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 
                 this.returnString(expt.getId(), (existing == null) ? Status.SUCCESS_CREATED : Status.SUCCESS_OK);
             } else {
-                this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
+                this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
             }
         } catch (InvalidValueException e) {
             this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);

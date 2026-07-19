@@ -13,7 +13,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Comparator;
 import java.util.List;
 

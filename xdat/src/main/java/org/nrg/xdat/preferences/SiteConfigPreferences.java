@@ -37,7 +37,7 @@ import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.nio.file.Path;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;

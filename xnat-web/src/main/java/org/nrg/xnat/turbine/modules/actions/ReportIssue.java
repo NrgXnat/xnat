@@ -10,7 +10,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import lombok.extern.slf4j.Slf4j;
-import javax.servlet.http.Part;
+import jakarta.servlet.http.Part;
 import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.fulcrum.parser.ParameterParser;

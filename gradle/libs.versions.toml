@@ -2,7 +2,7 @@
 # Auto-extracted from parent/pom.xml
 # Source: parent 1.10.0 tag (updated 2026-04-28 for Phase 2)
 
-activemq = "5.16.7"
+activemq = "6.2.7"      # jakarta.jms generation (matches the activemq-classic 6.x broker in compose)
 activemq-protobuf = "1.1"
 ant = "1.9.8"
 antlr3 = "3.5.3"
@@ -77,10 +77,11 @@ hamcrest2 = "2.2"
 hibernate = "5.6.15.Final"
 hibernate-commons = "5.1.2.Final"
 hibernate-jpa-api = "1.0.2.Final"
-hibernate-validator = "5.4.3.Final"
+hibernate-validator = "8.0.4.Final"  # jakarta.validation generation
 hikaricp = "4.0.3"
 hsqldb = "2.7.4"
 httpcomponents-client = "4.5.13"
+httpcomponents-client5 = "5.6.2"   # Spring 6 HttpComponentsClientHttpRequestFactory is HC5-based
 httpcomponents-core = "4.4.6"
 httpcomponents-mime = "4.5.14"
 imagej = "1.53c"
@@ -90,22 +91,28 @@ jackson = "2.13.5"
 jacoco = "0.8.12"
 jai-imageio = "1.1"
 jakarta-annotation = "3.0.0"
-jakarta-inject = "1.0.3"
+jakarta-validation = "3.0.2"    # bean validation api (jakarta generation, matches hibernate-validator 8)
+jakarta-xml-bind = "4.0.5"
+jaxb-runtime = "4.0.9"
+
+jakarta-inject = "2.0.1"        # 1.0.x still shipped javax.inject packages; jakarta namespace starts at 2.0
 jakarta-el = "4.0.2"
 jargon = "1.4.25"
 java-getopt = "1.0.13"
 java-uuid-generator = "3.1.4"
 javamelody = "1.91.0"
 javassist = "3.24.0-GA"
-javax-activation = "1.2.0"
+javax-activation = "2.1.3"      # jakarta.activation-api
+angus-activation = "2.0.2"
 javax-annotation = "1.3.2"
 javax-cache-api = "1.1.1"
 javax-el = "2.2.5"
 javax-inject = "1"
 javax-interceptor = "1.2.2"
 javax-j2ee-api = "1.1.1"
-javax-jms-api = "2.0.1"
-javax-mail = "1.5.6"
+javax-jms-api = "3.1.0"          # jakarta.jms (alias names kept)
+javax-mail = "2.1.5"            # jakarta.mail-api (alias names kept)
+angus-mail = "2.0.5"            # jakarta.mail impl (successor of com.sun.mail)
 jayway = "2.8.0"
 jcalendar = "1.4"
 jcs = "1.3"
@@ -140,10 +147,10 @@ pixelmed-imageio = "20200328"
 quartz = "2.3.2"
 redisson = "3.22.0"
 reflections = "0.10.2"
-restlet = "2.6.0"                # Jakarta edition (1-6); ext.fileupload pinned separately (1-11)
-restlet-fileupload = "2.5.2"    # dropped upstream after 2.5.2 — replace with commons-fileupload direct (1-11)
+restlet = "2.6.0"                # Jakarta edition (1-6); ext.fileupload replaced by org.nrg.xnat.restlet.util.fileupload (1-11)
 saxon = "9.1.0.8"
 servlet-api = "6.0.0"           # jakarta.servlet (Servlet 6.0 = Tomcat 10.1); Turbine 7 pulls 6.1 transitively
+servlet-api-javax-legacy = "3.1.0"  # compileOnly in xnat-web ONLY: commons-fileupload 1.5 FileUploadBase has deprecated javax overloads javac must resolve
 slf4j = "1.7.30"
 snakeyaml = "1.33"
 spotbugs = "4.7.3.4"
@@ -170,8 +177,8 @@ xbean = "3.17"
 [libraries]
 # Auto-extracted from parent/pom.xml dependencyManagement
 
-activation-javax-activation-api = { group = "javax.activation", name = "javax.activation-api", version.ref = "javax-activation" }
-activation-com-sun-javax-activation = { group = "com.sun.activation", name = "javax.activation", version.ref = "javax-activation" }
+activation-javax-activation-api = { group = "jakarta.activation", name = "jakarta.activation-api", version.ref = "javax-activation" }
+activation-com-sun-javax-activation = { group = "org.eclipse.angus", name = "angus-activation", version.ref = "angus-activation" }
 activemq-all = { group = "org.apache.activemq", name = "activemq-all", version.ref = "activemq" }
 activemq-broker = { group = "org.apache.activemq", name = "activemq-broker", version.ref = "activemq" }
 activemq-client = { group = "org.apache.activemq", name = "activemq-client", version.ref = "activemq" }
@@ -183,7 +190,7 @@ activemq-openwire-legacy = { group = "org.apache.activemq", name = "activemq-ope
 activemq-protobuf = { group = "org.apache.activemq.protobuf", name = "activemq-protobuf", version.ref = "activemq-protobuf" }
 activemq-spring = { group = "org.apache.activemq", name = "activemq-spring", version.ref = "activemq" }
 activemq-stomp = { group = "org.apache.activemq", name = "activemq-stomp", version.ref = "activemq" }
-annotation-javax-annotation-api = { group = "javax.annotation", name = "javax.annotation-api", version.ref = "javax-annotation" }
+annotation-javax-annotation-api = { group = "jakarta.annotation", name = "jakarta.annotation-api", version.ref = "jakarta-annotation" }  # alias name kept; JSR-305 @Nullable/@Nonnull still come from jsr305
 antlr4 = { group = "org.antlr", name = "antlr4", version.ref = "antlr4" }
 antlr4-runtime = { group = "org.antlr", name = "antlr4-runtime", version.ref = "antlr4" }
 antlr-antlr = { group = "org.antlr", name = "antlr", version.ref = "antlr3" }
@@ -306,13 +313,17 @@ hibernate-validator = { group = "org.hibernate", name = "hibernate-validator", v
 hibernate-validator-cdi = { group = "org.hibernate", name = "hibernate-validator-cdi", version.ref = "hibernate-validator" }
 hsqldb-hsqldb = { group = "org.hsqldb", name = "hsqldb", version.ref = "hsqldb" }
 httpcomponents-httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "httpcomponents-client" }
+httpcomponents-httpclient5 = { group = "org.apache.httpcomponents.client5", name = "httpclient5", version.ref = "httpcomponents-client5" }
 httpcomponents-httpcore = { group = "org.apache.httpcomponents", name = "httpcore", version.ref = "httpcomponents-core" }
 httpcomponents-httpcore-nio = { group = "org.apache.httpcomponents", name = "httpcore-nio", version.ref = "httpcomponents-core" }
 httpcomponents-httpmime = { group = "org.apache.httpcomponents", name = "httpmime", version.ref = "httpcomponents-mime" }
 imagej-ij = { group = "net.imagej", name = "ij", version.ref = "imagej" }
-inject-javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javax-inject" }
+inject-javax-inject = { group = "jakarta.inject", name = "jakarta.inject-api", version.ref = "jakarta-inject" }  # alias name kept
 interceptor-javax-interceptor-api = { group = "javax.interceptor", name = "javax.interceptor-api", version.ref = "javax-interceptor" }
 jakarta-annotation-api = { group = "jakarta.annotation", name = "jakarta.annotation-api", version.ref = "jakarta-annotation" }
+jakarta-validation-api = { group = "jakarta.validation", name = "jakarta.validation-api", version.ref = "jakarta-validation" }
+jakarta-xml-bind-api = { group = "jakarta.xml.bind", name = "jakarta.xml.bind-api", version.ref = "jakarta-xml-bind" }
+glassfish-jaxb-runtime = { group = "org.glassfish.jaxb", name = "jaxb-runtime", version.ref = "jaxb-runtime" }
 jakarta-inject-api = { group = "jakarta.inject", name = "jakarta.inject-api", version.ref = "jakarta-inject" }
 j2ee-javax-management-j2ee-api = { group = "javax.management.j2ee", name = "javax.management.j2ee-api", version.ref = "javax-j2ee-api" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
@@ -326,7 +337,7 @@ jackson-datatype-hibernate4 = { group = "com.fasterxml.jackson.datatype", name =
 jackson-datatype-hibernate5 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-hibernate5", version.ref = "jackson" }
 jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jdk8", version.ref = "jackson" }
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
-jackson-module-jaxb-annotations = { group = "com.fasterxml.jackson.module", name = "jackson-module-jaxb-annotations", version.ref = "jackson" }
+jackson-module-jaxb-annotations = { group = "com.fasterxml.jackson.module", name = "jackson-module-jakarta-xmlbind-annotations", version.ref = "jackson" }
 jackson-module-parameter-names = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names", version.ref = "jackson" }
 javamelody-core = { group = "net.bull.javamelody", name = "javamelody-core", version.ref = "javamelody" }
 javassist-javassist = { group = "org.javassist", name = "javassist", version.ref = "javassist" }
@@ -334,7 +345,7 @@ jcraft-jzlib = { group = "com.jcraft", name = "jzlib", version.ref = "jzlib" }
 jcs-jcs = { group = "jcs", name = "jcs", version.ref = "jcs" }
 jetty-jetty = { group = "org.mortbay.jetty", name = "jetty", version.ref = "jetty" }
 jgit-org-eclipse-jgit = { group = "org.eclipse.jgit", name = "org.eclipse.jgit", version.ref = "eclipse-jgit" }
-jms-javax-jms-api = { group = "javax.jms", name = "javax.jms-api", version.ref = "javax-jms-api" }
+jms-javax-jms-api = { group = "jakarta.jms", name = "jakarta.jms-api", version.ref = "javax-jms-api" }
 joda-time-joda-time = { group = "joda-time", name = "joda-time", version.ref = "joda-time" }
 jruby-jruby = { group = "org.jruby", name = "jruby", version.ref = "jruby" }
 json-json = { group = "org.json", name = "json", version.ref = "json" }
@@ -350,8 +361,8 @@ logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.
 logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = "logback" }
 logback-logstash-logback-encoder = { group = "net.logstash.logback", name = "logstash-logback-encoder", version.ref = "logstash" }
 lowagie-itext = { group = "com.lowagie", name = "itext", version.ref = "itext" }
-mail-javax-mail = { group = "com.sun.mail", name = "javax.mail", version.ref = "javax-mail" }
-mail-javax-mail-api = { group = "javax.mail", name = "javax.mail-api", version.ref = "javax-mail" }
+mail-javax-mail = { group = "org.eclipse.angus", name = "jakarta.mail", version.ref = "angus-mail" }
+mail-javax-mail-api = { group = "jakarta.mail", name = "jakarta.mail-api", version.ref = "javax-mail" }
 media-jai_imageio = { group = "com.sun.media", name = "jai_imageio", version.ref = "jai-imageio" }
 metainf-services-metainf-services = { group = "org.kohsuke.metainf-services", name = "metainf-services", version.ref = "metainf-services" }
 mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
@@ -374,10 +385,10 @@ reflections-reflections = { group = "org.reflections", name = "reflections", ver
 restlet-com-noelios-restlet = { group = "org.restlet", name = "org.restlet", version.ref = "restlet" }
 restlet-com-noelios-restlet-ext-servlet = { group = "org.restlet", name = "org.restlet.ext.servlet", version.ref = "restlet" }
 restlet-org-restlet = { group = "org.restlet", name = "org.restlet", version.ref = "restlet" }
-restlet-org-restlet-ext-fileupload = { group = "org.restlet", name = "org.restlet.ext.fileupload", version.ref = "restlet-fileupload" }
 saxon-saxon = { group = "net.sourceforge.saxon", name = "saxon", version.ref = "saxon" }
 sbrannen-spring-test-junit5 = { group = "com.github.sbrannen", name = "spring-test-junit5", version.ref = "spring-test-junit5" }
 servlet-javax-servlet-api = { group = "jakarta.servlet", name = "jakarta.servlet-api", version.ref = "servlet-api" }  # alias name kept to avoid build.gradle churn
+servlet-javax-legacy-api = { group = "javax.servlet", name = "javax.servlet-api", version.ref = "servlet-api-javax-legacy" }
 servlet-jstl = { group = "javax.servlet", name = "jstl", version.ref = "jstl" }
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 slf4j-jcl-over-slf4j = { group = "org.slf4j", name = "jcl-over-slf4j", version.ref = "slf4j" }

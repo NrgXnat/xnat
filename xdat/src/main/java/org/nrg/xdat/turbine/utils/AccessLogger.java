@@ -23,8 +23,8 @@ import org.nrg.xft.security.UserI;
 import org.restlet.Request;
 import org.slf4j.helpers.MessageFormatter;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;

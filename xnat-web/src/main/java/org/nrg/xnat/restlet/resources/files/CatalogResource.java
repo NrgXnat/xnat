@@ -50,6 +50,7 @@ import org.restlet.Response;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -161,7 +162,7 @@ public class CatalogResource extends XNATCatalogTemplate {
                             if (XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(catResource.getXnatAbstractresourceId(), user, false) != null) {
                                 getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT, "Specified catalog already exists.");
                             } else {
-                                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Contains erroneous generated fields (xnat_abstractresource_id).");
+                                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Contains erroneous generated fields (xnat_abstractresource_id).");
                             }
                             return;
                         }
@@ -191,7 +192,7 @@ public class CatalogResource extends XNATCatalogTemplate {
 
                         insertCatalogWrap(catResource,wrk,user);
                     } else {
-                        getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only ResourceCatalog documents can be PUT to this address.");
+                        getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only ResourceCatalog documents can be PUT to this address.");
                     }
                 } else {
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to modify this session.");
@@ -294,7 +295,7 @@ public class CatalogResource extends XNATCatalogTemplate {
                     getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Deletion failed for all resources: " + StringUtils.join(failed, ", "));
                     return;
                 } else {
-                    getResponse().setStatus(Status.SUCCESS_MULTI_STATUS, "Deleted resources as requested, but the following resources failed somehow: " + StringUtils.join(failed, ", "));
+                    getResponse().setStatus(XnatWebDavStatus.SUCCESS_MULTI_STATUS, "Deleted resources as requested, but the following resources failed somehow: " + StringUtils.join(failed, ", "));
                 }
             }
             XDAT.triggerXftItemEvent(xsiType, securityId, XftItemEvent.UPDATE);

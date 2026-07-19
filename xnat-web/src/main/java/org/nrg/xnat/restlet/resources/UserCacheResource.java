@@ -30,6 +30,7 @@ import org.restlet.Response;
 import org.restlet.data.Status;
 import org.restlet.representation.StringRepresentation;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 
 import java.io.File;
 import java.io.IOException;
@@ -405,7 +406,7 @@ public class UserCacheResource extends SecureResource {
 	private boolean handleAttachedUserFileUpload(String dirString, String requestedName) {
 		
 		org.apache.commons.fileupload.DefaultFileItemFactory factory = new org.apache.commons.fileupload.DefaultFileItemFactory();
-		org.restlet.ext.fileupload.RestletFileUpload upload = new  org.restlet.ext.fileupload.RestletFileUpload(factory);
+		org.nrg.xnat.restlet.util.fileupload.RestletFileUpload upload = new  org.nrg.xnat.restlet.util.fileupload.RestletFileUpload(factory);
 	
 	    List<FileItem> fileItems;
 		try {
@@ -470,7 +471,7 @@ public class UserCacheResource extends SecureResource {
 	    	zipper.extract(is,dirString);
 	   } catch (Exception e) {
 		   
-			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"FILE:  " + fileName +
+			this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"FILE:  " + fileName +
 							" - Archive file is corrupt or not a valid archive archive file type.");
 			return false;
 	   }

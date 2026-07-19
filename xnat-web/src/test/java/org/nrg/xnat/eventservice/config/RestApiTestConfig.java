@@ -14,13 +14,13 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
 @Configuration
 @Import({ObjectMapperConfig.class})
-public class RestApiTestConfig extends WebMvcConfigurerAdapter {
+public class RestApiTestConfig implements WebMvcConfigurer {
 
     @Bean
     public RoleHolder mockRoleHolder(final RoleServiceI roleServiceI, final NamedParameterJdbcTemplate template) {

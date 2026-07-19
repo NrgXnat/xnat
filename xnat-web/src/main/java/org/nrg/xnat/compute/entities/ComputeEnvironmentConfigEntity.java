@@ -6,7 +6,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.compute.models.ComputeEnvironmentConfig;
 import org.nrg.xnat.compute.models.ComputeEnvironmentScope;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.util.HashSet;

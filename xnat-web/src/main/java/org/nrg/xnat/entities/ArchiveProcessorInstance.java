@@ -22,7 +22,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xnat.archive.GradualDicomImporter;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.util.*;

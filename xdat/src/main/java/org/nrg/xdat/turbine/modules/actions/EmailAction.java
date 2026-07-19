@@ -19,7 +19,7 @@ import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 
 /**
  * @author Tim

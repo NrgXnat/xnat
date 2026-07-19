@@ -12,7 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 import static org.nrg.xdat.turbine.modules.screens.XMLUpload.MESSAGE_NO_GUEST_PERMISSIONS;
 
 import lombok.extern.slf4j.Slf4j;
-import javax.servlet.http.Part;
+import jakarta.servlet.http.Part;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.turbine.services.pull.tools.TemplateLink;
 import org.apache.turbine.pipeline.PipelineData;

@@ -98,9 +98,10 @@ import org.restlet.data.Status;
 import org.restlet.*;
 import org.restlet.routing.*;
 import org.restlet.representation.*;
-import org.restlet.ext.fileupload.RestletFileUpload;
+import org.nrg.xnat.restlet.util.fileupload.RestletFileUpload;
 import org.restlet.resource.*;
 import org.restlet.util.Series;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
@@ -108,9 +109,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -188,17 +189,17 @@ public abstract class SecureResource extends ServerResource {
 
         _serializer = XDAT.getSerializerService();
         if (null == _serializer) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: Serializer service was not properly initialized.");
         }
         _template = XDAT.getNamedParameterJdbcTemplate();
         if (_template == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Named parameter JDBC template was not properly initialized.");
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "Named parameter JDBC template was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: Named parameter JDBC template was not properly initialized.");
         }
         _userDataCache = XDAT.getContextService().getBean(UserDataCache.class);
         if (_userDataCache == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "User data cache was not properly initialized.");
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "User data cache was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: User data cache was not properly initialized.");
         }
 
@@ -888,7 +889,7 @@ public abstract class SecureResource extends ServerResource {
                 //req_format is checked to allow the body parsing to use the form method rather then file fields.
                 try {
                     org.apache.commons.fileupload.DefaultFileItemFactory factory = new DefaultFileItemFactory();
-                    org.restlet.ext.fileupload.RestletFileUpload upload = new RestletFileUpload(factory);
+                    org.nrg.xnat.restlet.util.fileupload.RestletFileUpload upload = new RestletFileUpload(factory);
 
                     List<FileItem> items = upload.parseRequest(getRequest());
 
@@ -912,16 +913,16 @@ public abstract class SecureResource extends ServerResource {
                                 }
                             } catch (SAXParseException e) {
                                 logger.error("An error occurred parsing the XML", e);
-                                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred parsing the XML: " + e.getMessage());
-                                throw new ClientException(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
+                                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred parsing the XML: " + e.getMessage());
+                                throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
                             } catch (IOException e) {
                                 logger.error("An error occurred reading the XML", e);
                                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "An error occurred reading the XML: " + e.getMessage());
                                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
                             } catch (SAXException e) {
                                 logger.error("An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself.", e);
-                                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself: " + e.getMessage());
-                                throw new ClientException(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
+                                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself: " + e.getMessage());
+                                throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
                             } catch (Exception e) {
                                 logger.error("An unknown error occurred", e);
                                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "An unknown error occurred: " + e.getMessage());
@@ -958,16 +959,16 @@ public abstract class SecureResource extends ServerResource {
 
                 } catch (SAXParseException e) {
                     logger.error("An error occurred parsing the XML", e);
-                    getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred parsing the XML: " + e.getMessage());
-                    throw new ClientException(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
+                    getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred parsing the XML: " + e.getMessage());
+                    throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
                 } catch (IOException e) {
                     logger.error("An error occurred reading the XML", e);
                     getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "An error occurred reading the XML: " + e.getMessage());
                     throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
                 } catch (SAXException e) {
                     logger.error("An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself.", e);
-                    getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself: " + e.getMessage());
-                    throw new ClientException(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
+                    getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself: " + e.getMessage());
+                    throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
                 } catch (Exception e) {
                     logger.error("An unknown error occurred", e);
                     getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "An unknown error occurred: " + e.getMessage());

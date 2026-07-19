@@ -21,7 +21,7 @@ import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.Labels;
 
 import javax.annotation.Nullable;
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

@@ -166,7 +166,6 @@ dependencies {
         api libs.commons.dbcp2
         api libs.commons.digester
         api libs.commons.discovery
-        api libs.commons.email
         api libs.commons.fileupload
         api libs.commons.io
         api libs.commons.lang
@@ -215,6 +214,9 @@ dependencies {
         api libs.jms.javax.jms.api
         api libs.mail.javax.mail
         api libs.mail.javax.mail.api
+        // JAXB left the JDK at 11; jakarta 4.x api + runtime for the javax.xml.bind -> jakarta.xml.bind sweep
+        api libs.jakarta.xml.bind.api
+        api libs.glassfish.jaxb.runtime
         api libs.j2ee.javax.management.j2ee.api
         api libs.servlet.javax.servlet.api
         api libs.servlet.jstl
@@ -280,7 +282,6 @@ dependencies {
         api libs.restlet.org.restlet
         api libs.restlet.com.noelios.restlet
         api libs.restlet.com.noelios.restlet.ext.servlet
-        api libs.restlet.org.restlet.ext.fileupload
 
         // Scripting
         api libs.groovy.all

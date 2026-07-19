@@ -49,6 +49,7 @@ dependencies {
     annotationProcessor libs.metainf.services.metainf.services
 
     testImplementation project(':test')
+    testImplementation libs.jakarta.validation.api
     testImplementation libs.junit.junit
     testImplementation libs.spring.test
     testImplementation libs.imagej.ij

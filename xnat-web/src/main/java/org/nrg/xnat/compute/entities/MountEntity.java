@@ -3,7 +3,7 @@ package org.nrg.xnat.compute.entities;
 import lombok.*;
 import org.nrg.xnat.compute.models.Mount;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 
 @Embeddable
 @Builder

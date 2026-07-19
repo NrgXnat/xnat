@@ -28,6 +28,7 @@ import org.restlet.Response;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ public class CachedSearchResource extends SecureResource {
 			try {
 				offset = Integer.valueOf(this.getQueryVariable("offset"));
 			} catch (NumberFormatException e) {
-				response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				response.setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 				return;
 			}
 		}
@@ -62,7 +63,7 @@ public class CachedSearchResource extends SecureResource {
 			try {
 				rowsPerPage = Integer.valueOf(this.getQueryVariable("limit"));
 			} catch (NumberFormatException e) {
-				response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				response.setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 				return;
 			}
 		}
@@ -71,7 +72,7 @@ public class CachedSearchResource extends SecureResource {
 			sortBy = this.getQueryVariable("sortBy");
 			if (PoolDBUtils.HackCheck(sortBy)) {
 				AdminUtils.sendAdminEmail(user, "Possible SQL Injection Attempt", "SORT BY:" + sortOrder);
-				response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				response.setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 				return;
 			}
 			sortBy = StringUtils.replace(sortBy, " ", "");
@@ -81,7 +82,7 @@ public class CachedSearchResource extends SecureResource {
 			sortOrder = this.getQueryVariable("sortOrder");
 			if (PoolDBUtils.HackCheck(sortOrder)) {
 				AdminUtils.sendAdminEmail(user, "Possible SQL Injection Attempt", "SORT ORDER:" + sortOrder);
-				response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				response.setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 				return;
 			}
 			sortOrder = StringUtils.replace(sortOrder, " ", "");

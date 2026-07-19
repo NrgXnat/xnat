@@ -31,7 +31,7 @@ import org.restlet.representation.StringRepresentation;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Slf4j
 public class XnatSecureGuard extends Filter {

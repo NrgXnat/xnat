@@ -31,6 +31,7 @@ import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.representation.StringRepresentation;
 import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -211,7 +212,7 @@ public class ScriptResource extends AutomationResource {
             _runnerService.setScript(_scriptId, properties);
             recordAutomationEvent(_scriptId, Scope.Site.code(), "Update", Script.class);
         } catch (NrgServiceException e) {
-            getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e, "An error occurred saving the script " + _scriptId);
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e, "An error occurred saving the script " + _scriptId);
         }
     }
 

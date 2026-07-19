@@ -23,8 +23,8 @@ import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nullable;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;

@@ -78,6 +78,7 @@ import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.security.web.context.DelegatingSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.web.filter.RequestContextFilter;
@@ -217,15 +218,25 @@ public class SecurityConfig {
         return new XnatLogoutSuccessHandler(_preferences.getRequireLogin(), "/", "/app/template/Login.vm");
     }
 
+    /**
+     * Spring Security 6: authentication filters default to RequestAttributeSecurityContextRepository
+     * (the SS 5.8+ explicit-save model), so a successful login is forgotten on the next request
+     * unless the filter saves to the HTTP session. This shared bean is wired into the HttpSecurity
+     * DSL in {@link #securityFilterChain} AND set on XNAT's own filter; plugin filters added via
+     * {@link XnatSecurityExtension} should autowire it for the same reason — a manually-added
+     * filter does NOT inherit it automatically.
+     */
+    @Bean
+    public SecurityContextRepository securityContextRepository() {
+        return new DelegatingSecurityContextRepository(
+                new RequestAttributeSecurityContextRepository(),
+                new HttpSessionSecurityContextRepository());
+    }
+
     @Bean
     public XnatAuthenticationFilter customAuthenticationFilter() {
         final XnatAuthenticationFilter filter = new XnatAuthenticationFilter();
-        // Spring Security 6: manually-added authentication filters default to
-        // RequestAttributeSecurityContextRepository, so a successful form login was forgotten on
-        // the next request (immediate bounce back to Login.vm). Save to the HTTP session as well.
-        filter.setSecurityContextRepository(new DelegatingSecurityContextRepository(
-                new RequestAttributeSecurityContextRepository(),
-                new HttpSessionSecurityContextRepository()));
+        filter.setSecurityContextRepository(securityContextRepository());
         return filter;
     }
 
@@ -331,6 +342,10 @@ public class SecurityConfig {
         // Use the manager built in authenticationManager() (also the shared object XnatBasicAuthConfigurer
         // reads); the adapter used to wire this up implicitly via configure(AuthenticationManagerBuilder).
         http.authenticationManager(authenticationManager);
+
+        // Share one session-backed SecurityContextRepository across the whole chain so every
+        // authentication mechanism (form login, basic, extensions) persists consistently.
+        http.securityContext(securityContext -> securityContext.securityContextRepository(securityContextRepository()));
 
         // This is what the adapter's super.configure() used to install, minus httpBasic().
         http.authorizeRequests(authorize -> authorize.anyRequest().authenticated());

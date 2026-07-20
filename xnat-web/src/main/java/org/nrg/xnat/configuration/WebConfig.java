@@ -28,6 +28,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -88,6 +89,12 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void configureMessageConverters(final List<HttpMessageConverter<?>> converters) {
+        // configureMessageConverters REPLACES Spring's defaults, so the default ByteArrayHttpMessageConverter
+        // is gone. Without it, a controller returning byte[] with produces=application/json (e.g. springdoc's
+        // /xapi/v3/api-docs OpenApiWebMvcResource) falls through to Jackson, which serializes byte[] as a
+        // base64 string — corrupting the payload. Register it first (matching Spring's default ordering) so
+        // byte[] is written raw.
+        converters.add(new ByteArrayHttpMessageConverter());
         converters.add(stringHttpMessageConverter());
         converters.add(mappingJackson2HttpMessageConverter());
         converters.add(marshallingHttpMessageConverter());

@@ -162,9 +162,9 @@ spring-ldap = "2.4.2"
 spring-oauth2 = "2.5.2.RELEASE"
 spring-security = "6.5.11"
 spring-test-junit5 = "1.5.0"
+springdoc = "2.8.6"             # OpenAPI 3 / swagger-ui for Spring 6 (replaces dead springfox 2.9); wired manually (non-Boot WAR)
 springockito = "1.0.5"
-swagger = "2.9.2"
-swagger-annotations = "1.5.20"  # keeps @Api/@ApiOperation metadata compiling after springfox removal (springdoc later)
+swagger-annotations = "1.5.20"  # Swagger 1.x @Api/@ApiOperation still on 2591 legacy annotations; springdoc ignores them (docs auto-generated from MVC mappings)
 testcontainers = "1.21.4"
 tomcat-embed = "10.1.57"
 turbine = "7.0"
@@ -429,9 +429,8 @@ spring-test = { group = "org.springframework", name = "spring-test", version.ref
 spring-tx = { group = "org.springframework", name = "spring-tx", version.ref = "spring-framework" }
 spring-web = { group = "org.springframework", name = "spring-web", version.ref = "spring-framework" }
 spring-webmvc = { group = "org.springframework", name = "spring-webmvc", version.ref = "spring-framework" }
-springfox-swagger-ui = { group = "io.springfox", name = "springfox-swagger-ui", version.ref = "swagger" }
+springdoc-openapi-starter-webmvc-ui = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 swagger-annotations = { group = "io.swagger", name = "swagger-annotations", version.ref = "swagger-annotations" }
-springfox-swagger2 = { group = "io.springfox", name = "springfox-swagger2", version.ref = "swagger" }
 swinglabs-wizard = { group = "org.swinglabs", name = "wizard", version.ref = "wizard" }
 thedeanda-lorem = { group = "com.thedeanda", name = "lorem", version.ref = "lorem" }
 toedter-jcalendar = { group = "com.toedter", name = "jcalendar", version.ref = "jcalendar" }

@@ -14,8 +14,7 @@ dependencies {
 
     implementation libs.spring.webmvc
     implementation libs.spring.security.spring.security.core
-    implementation libs.springfox.swagger2
-    implementation libs.springfox.swagger.ui
+    implementation libs.swagger.annotations
     implementation libs.jackson.databind
     implementation libs.jackson.dataformat.yaml
     implementation libs.jackson.dataformat.xml

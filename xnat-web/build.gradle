@@ -147,6 +147,7 @@ dependencies {
     // --- Spring ---
     api libs.spring.web
     implementation libs.swagger.annotations
+    implementation libs.springdoc.openapi.starter.webmvc.ui
     api libs.spring.jms
     api libs.spring.jdbc
     api libs.spring.beans

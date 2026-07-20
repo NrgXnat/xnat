@@ -166,10 +166,62 @@ empty relocation jar at 8.x, which silently disabled Hibernate's AUTO bean-valid
 removal, and a long-inert null `actionProviders()` stub bean in EventServiceTestConfig that Spring 6's
 by-name resolution shortcut suddenly matched once `-parameters` exposed parameter names.
 
-**Remaining Phase-1 follow-ups:** springdoc-openapi to replace removed springfox (swagger UI gone);
-1-12 reflection audit; 1-15 Playwright suite; 1-16/17 logging unification (logback 1.5/slf4j 2);
- legacy `spring-security-oauth2` jar removal decision;
+**Remaining Phase-1 follow-ups:** 1-12 reflection audit; 1-15 Playwright suite; 1-16/17 logging
+unification (logback 1.5/slf4j 2); legacy `spring-security-oauth2` jar removal decision;
 `AntPathRequestMatcher` deprecations (SS7 prep); 1-13 flip compose/CI defaults.
+
+**DONE — springfox → springdoc-openapi (2026-07-20).** Removed the dead springfox 2.9 jars
+(`parent` api export, `spawner` — swapped to a direct `swagger-annotations` dep since it was leaning on
+springfox to pull it transitively, `xnat-data-builder` runtimeOnly; catalog `swagger=2.9.2` + aliases
+dropped, `springdoc=2.8.6` added) and restored the Swagger UI at `/xapi/swagger-ui.html` via
+springdoc-openapi 2.8.6. springdoc is Boot-oriented but XNAT is a non-Boot WAR, so `OpenApiConfig`
+manually `@Import`s the three config classes (core → web-mvc → ui, ordered so the
+`@ConditionalOnMissingBean` back-off resolves as under Boot), supplies the `@ConfigurationProperties`
+beans programmatically (no Boot relaxed binding), and provides an `OpenAPI` bean carrying the old
+`apiInfo.*` metadata + `/xapi` server base path (the `Docket.pathMapping("/xapi")` equivalent). The 2591
+legacy `io.swagger.annotations` (Swagger 1.x) are inert under springdoc — the spec is generated from the
+Spring MVC mappings (348 paths documented); a full annotation rewrite to OpenAPI 3 (`@Operation`/
+`@Parameter`/…) is deferred as optional doc-fidelity polish. `SiteConfigApi` got an explicit
+`@Tag(name = "site-config-api")` so the `page/admin/content.jsp` deep-link
+`/xapi/swagger-ui.html#/site-config-api` still resolves (springfox auto-derived that kebab-case group
+from the class name; springdoc defaults to the class simple name).
+
+*Servlet-path root cause (the integration wrinkle):* XNAT's DispatcherServlet is mapped at `/xapi/*`
+(not root), a manual non-Boot registration springdoc can't discover, and springdoc builds every
+generated URL — the `/swagger-ui.html`→`/swagger-ui/index.html` redirect (`SwaggerUiHome`) and the UI's
+spec/config URLs (`SwaggerWelcomeWebMvc`) — from context-path + the `spring.mvc.servlet.path` property.
+Publishing that property as `/xapi` (via a static `BeanFactoryPostProcessor` so it lands before
+springdoc's `@Value` fields resolve) fixes the redirect **and** the spec-fetch URLs with one mechanism.
+
+*Bug found + fixed during verification (`WebConfig`):* the `/xapi/v3/api-docs` spec came back
+base64-encoded inside a JSON string. Root cause — `WebConfig.configureMessageConverters` **replaces**
+Spring's default converter list, dropping the default `ByteArrayHttpMessageConverter`; springdoc's
+`OpenApiWebMvcResource` returns `byte[]` (produces `application/json`), which then fell through to
+`MappingJackson2HttpMessageConverter` and was serialized as base64. Fixed by registering
+`ByteArrayHttpMessageConverter` first. **Bug class = "byte[] response with no raw byte[] converter →
+Jackson base64"; swept all `xnat-web`/`xdat` controllers for `byte[]`/`ResponseEntity<byte[]>` returns —
+springdoc's endpoint is the only one, so the fix is general and zero-regression** (health-check 8/8
+green: JSON/XML/HTML/text all intact). Verified: swagger-ui.html→index 200, api-docs/swagger-config raw
+JSON under `/xapi`, `servers:[/xapi]`, `site-config-api` tag present (11 tagged ops).
+
+**DEFERRED — do not re-investigate: commons-fileupload 1.5 → commons-fileupload2 (2026-07-20).**
+Evaluated whether moving to fileupload2 lets us drop the `servlet-api-javax-legacy` (3.1.0) compileOnly
+shim in `xnat-web/build.gradle:315-318`. Conclusion: **not worth it now.** The shim is a single
+`compileOnly` line, *never packaged* (runtime is already pure jakarta); it exists only so javac can
+resolve fileupload 1.5 `FileUploadBase`'s deprecated `javax.HttpServletRequest` overloads, which XNAT
+never calls. fileupload2 *would* remove it (fu2-core carries zero servlet types — verified against the
+`2.0.0-M5` core jar: package is entirely `org.apache.commons.fileupload2.core`, `RequestContext`-based,
+no javax/jakarta servlet imports), **but it is a ground-up API rewrite, not a bump**: `FileUpload` →
+abstract `AbstractFileUpload<R,I,F>` (3 type params, 3 abstract methods) forcing a full rewrite of the
+custom `RestletFileUpload`/`RepresentationContext` bridge (1-11); `FileUploadBase` and
+`DefaultFileItemFactory` deleted (→ `DiskFileItemFactory.builder().get()`, 4 sites); `UploadContext` →
+`RequestContext`; `FileItemIterator` → `FileItemInputIterator`; `FileItem.write(File)` →
+`write(Path)`; `FileUploadException` repackaged (5 files); `List<FileItem>` → `List<DiskFileItem>`
+generics. **Dominant risk: fileupload2 has no GA release** (latest `2.0.0-M5`, a milestone) and this is
+the library parsing untrusted multipart upload input (DICOM/zip import). fileupload 1.5 is the
+CVE-2023-24998–patched release and runs fine on jakarta via its servlet-agnostic core. Revisit only
+when fileupload2 reaches GA *or* an independent forcing function appears (new 1.5 CVE, or
+Servlet 6.1/Tomcat 11 breaking the core — the A-1 scout did **not** show this).
 
 ## Known blockers / next up
 **Phase 0 is complete, and the 1-14 scout run proves the Jakarta runtime works**: the

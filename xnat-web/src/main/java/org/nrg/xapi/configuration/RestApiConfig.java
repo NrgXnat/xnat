@@ -19,13 +19,14 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 
 /**
  * Jakarta cutover note: the springfox @EnableSwagger2/Docket machinery was removed here —
- * springfox 2.9 cannot initialize on Spring 6 (dead project). The XAPI controllers themselves
- * are unaffected; only the generated swagger.json / swagger-ui page is gone. Replacement via
- * springdoc-openapi is tracked as a Phase-1 follow-up in docs/tomcat10-upgrade-status.md.
+ * springfox 2.9 cannot initialize on Spring 6 (dead project). The OpenAPI spec + Swagger UI are
+ * now served by springdoc-openapi, wired for XNAT's non-Boot WAR in {@link OpenApiConfig}
+ * (imported below). The legacy {@code io.swagger.annotations} (Swagger 1.x) on the controllers are
+ * inert under springdoc — docs are generated from the Spring MVC mappings.
  */
 @Configuration
 @ComponentScan(value = {"org.nrg.xapi.model.users", "org.nrg.xapi.rest", "org.nrg.xnat.eventservice.rest", "org.nrg.xnat.snapshot.rest"}, includeFilters = @Filter(ControllerAdvice.class))
-@Import({SpawnerConfig.class})
+@Import({SpawnerConfig.class, OpenApiConfig.class})
 @Slf4j
 public class RestApiConfig {
 }

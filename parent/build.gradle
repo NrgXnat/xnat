@@ -196,9 +196,8 @@ dependencies {
         api libs.google.collections
         api libs.google.jsr305
 
-        // Swagger
-        api libs.springfox.swagger2
-        api libs.springfox.swagger.ui
+        // OpenAPI / Swagger UI (springdoc replaces dead springfox 2.9)
+        api libs.springdoc.openapi.starter.webmvc.ui
 
         // Bouncy Castle
         api libs.bouncycastle.bcpkix.jdk18on

@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.util.NestedServletException;
+import jakarta.servlet.ServletException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,7 +64,7 @@ public class ComputeEnvironmentConfigsApiTest {
         when(mockUser.getPassword()).thenReturn("mockUserPassword");
         when(mockUser.getID()).thenReturn(1);
         when(mockRoleService.isSiteAdmin(mockUser)).thenReturn(true);
-        mockAuthentication = new TestingAuthenticationToken(mockUser, mockUser.getPassword());
+        mockAuthentication = new TestingAuthenticationToken(mockUser, mockUser.getPassword(), "ROLE_ADMIN");  // 3-arg ctor: SS6 requires isAuthenticated()
 
         // Setup the compute environment config
         computeEnvironmentConfig = new ComputeEnvironmentConfig();
@@ -182,7 +182,7 @@ public class ComputeEnvironmentConfigsApiTest {
         verify(mockComputeEnvironmentConfigService, times(1)).update(eq(computeEnvironmentConfig));
     }
 
-    @Test(expected = NestedServletException.class)
+    @Test(expected = ServletException.class)
     public void testUpdateComputeEnvironmentConfig_IdMismatch() throws Exception {
         final MockHttpServletRequestBuilder request = MockMvcRequestBuilders
                 .put("/compute/environments/2")

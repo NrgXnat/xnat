@@ -66,7 +66,7 @@ fulcrum-parser = "4.0.0"    # Turbine 7 / jakarta generation
 fulcrum-yaafi = "2.0.1"
 fulcrum-security = "4.0.0"  # Turbine 7 / jakarta generation
 fulcrum-upload = "2.0.0"
-glassfish-jakarta-el = "4.0.2"
+glassfish-jakarta-el = "5.0.0"     # org.glassfish.expressly (EL 5 impl — hibernate-validator 8 requires Jakarta EL 5)
 glassfish-javax-el = "3.0.1-b12"
 groovy = "2.4.20"
 gson = "2.9.0"
@@ -96,7 +96,7 @@ jakarta-xml-bind = "4.0.5"
 jaxb-runtime = "4.0.9"
 
 jakarta-inject = "2.0.1"        # 1.0.x still shipped javax.inject packages; jakarta namespace starts at 2.0
-jakarta-el = "4.0.2"
+jakarta-el = "5.0.1"            # jakarta.el-api 5 (EE10)
 jargon = "1.4.25"
 java-getopt = "1.0.13"
 java-uuid-generator = "3.1.4"
@@ -291,7 +291,7 @@ fulcrum-parser = { group = "org.apache.fulcrum", name = "fulcrum-parser", versio
 fulcrum-yaafi = { group = "org.apache.fulcrum", name = "fulcrum-yaafi", version.ref = "fulcrum-yaafi" }
 fulcrum-security-memory = { group = "org.apache.fulcrum", name = "fulcrum-security-memory", version.ref = "fulcrum-security" }
 fulcrum-upload = { group = "org.apache.fulcrum", name = "fulcrum-upload", version.ref = "fulcrum-upload" }
-glassfish-jakarta-el = { group = "org.glassfish", name = "jakarta.el", version.ref = "glassfish-jakarta-el" }
+glassfish-jakarta-el = { group = "org.glassfish.expressly", name = "expressly", version.ref = "glassfish-jakarta-el" }  # alias name kept; impl moved to Expressly at EL 5
 glassfish-javax-el = { group = "org.glassfish", name = "javax.el", version.ref = "glassfish-javax-el" }
 google-auto-value = { group = "com.google.auto.value", name = "auto-value", version.ref = "auto-value" }
 google-auto-value-annotations = { group = "com.google.auto.value", name = "auto-value-annotations", version.ref = "auto-value" }
@@ -311,8 +311,8 @@ hibernate-ehcache = { group = "org.hibernate", name = "hibernate-ehcache", versi
 hibernate-envers = { group = "org.hibernate", name = "hibernate-envers-jakarta", version.ref = "hibernate" }
 hibernate-jcache = { group = "org.hibernate", name = "hibernate-jcache", version.ref = "hibernate" }
 hibernate-jpa-api = { group = "org.hibernate.javax.persistence", name = "hibernate-jpa-2.1-api", version.ref = "hibernate-jpa-api" }
-hibernate-validator = { group = "org.hibernate", name = "hibernate-validator", version.ref = "hibernate-validator" }
-hibernate-validator-cdi = { group = "org.hibernate", name = "hibernate-validator-cdi", version.ref = "hibernate-validator" }
+hibernate-validator = { group = "org.hibernate.validator", name = "hibernate-validator", version.ref = "hibernate-validator" }  # groupId moved at 6.0; the org.hibernate one is an empty relocation jar
+hibernate-validator-cdi = { group = "org.hibernate.validator", name = "hibernate-validator-cdi", version.ref = "hibernate-validator" }
 hsqldb-hsqldb = { group = "org.hsqldb", name = "hsqldb", version.ref = "hsqldb" }
 httpcomponents-httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "httpcomponents-client" }
 httpcomponents-httpclient5 = { group = "org.apache.httpcomponents.client5", name = "httpclient5", version.ref = "httpcomponents-client5" }

@@ -204,7 +204,15 @@ springdoc's endpoint is the only one, so the fix is general and zero-regression*
 green: JSON/XML/HTML/text all intact). Verified: swagger-ui.html→index 200, api-docs/swagger-config raw
 JSON under `/xapi`, `servers:[/xapi]`, `site-config-api` tag present (11 tagged ops).
 
-**OPEN — Restlet 2.6 default success status 200 → 204 (found 2026-07-20 via xnat-test-automation).**
+**RESOLVED 2026-07-20 (cherry-picked from `features/turbine7-clean`) — Restlet 2.6 default success
+status 200 → 204 (found via xnat-test-automation).** Fixed by cherry-picking Bin Zhang's
+`SecureResource` okParity commits (`2a5366b83` + `d6bd8eea7`) — the parallel turbine7-clean effort hit
+the identical bug (from `DELETE /data/JSESSION`) and its root-cause + fix altitude match this branch's
+analysis exactly. Mechanism: `SecureResource` (the shared base bridge) marks handlers that finish with
+a default bodyless-OK (null **or** zero-size entity) via a request attribute in `post/put/delete`, then
+overrides `handle()` to restore `SUCCESS_OK` after `super.handle()` performs Restlet 2.x's 200→204
+rewrite; handlers that set 204 (or any explicit status) are never marked. Verified: `okParity` unit
+test 7/7. Original finding notes retained below for context.
 `PUT /data/projects/{ID}` now returns **204 No Content** where clients expect **200 OK** — confirmed on
 both the :8080 stack and a disposable scout (so it's the migrated WAR, not env). The project **is**
 created; only the status changed. Root cause: `ProjectResource.handlePut()`

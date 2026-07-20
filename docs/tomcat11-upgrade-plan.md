@@ -4,7 +4,9 @@ Follow-on to the Tomcat 10 / Jakarta cutover (see
 [`tomcat10-upgrade-status.md`](tomcat10-upgrade-status.md)). Drafted 2026-07-20, before the
 Tomcat 10 branch (`feature/jakarta-cutover`) has merged; sequencing assumes it lands first.
 
-**Status: PLANNED — no work started.**
+**Status: A-1 scout complete (2026-07-20).** Container itself is a non-event; the one real risk
+the scout found is **A-5's parameter-parsing throw**, and it is sharper and more specific than
+the migration guide implied — see the A-1/A-5 rows below. Rest of Track A not started.
 
 ---
 
@@ -59,11 +61,11 @@ Spring 6.2 runs on Tomcat 11 as a runtime (Servlet 6.1 is backward-compatible wi
 
 | # | Step | Notes |
 |---|------|-------|
-| A-1 | **Scout** (analog of 1-14): run the current jakarta WAR unmodified on `tomcat:11.0-jdk21-temurin` via `--build-arg TOMCAT_BASE=...`, disposable DB copy, full harness (health, goldens, S1600, Playwright) | The compose parameterization makes this a ~30-minute experiment; do it FIRST — it will surface most of A-4..A-6 empirically |
+| A-1 | **Scout** (analog of 1-14): run the current jakarta WAR unmodified on `tomcat:11.0-jdk21-temurin` via `--build-arg TOMCAT_BASE=...`, disposable DB copy, full harness (health, goldens, S1600, Playwright) | 🟢 **Done 2026-07-20.** Boots clean (0 SEVERE/ERROR beyond the expected empty-archive notice), Apache Tomcat/11.0.24 confirmed in-container. Health 8/8, goldens 10/11 (the 1 diff is the same empty-archive 404 every fresh scratch instance shows — not a T11 regression), S1600 24/24, `xnat-web` Playwright 15/15 — all byte-for-byte matching the Tomcat 10.1 baseline. **Surfaced the real finding: see A-5.** Container change itself is a non-event for XNAT |
 | A-2 | Catalog bumps: `servlet-api` 6.0.0 → 6.1.0; `jsp-api` 3.1.1 → 4.0.0; `jakarta-el` 5.0.1 → 6.0.1; `expressly` 5.0.0 → 6.0.0; `tomcat-embed` 10.1.x → 11.0.x | All verified available. Turbine 7 already targets servlet-api 6.1 |
 | A-3 | JSTL on JSP 4.0: glassfish JSTL has no 4.0 line (3.0.1 latest) — verify runtime compat in the scout | Our `<xnat:import>` tag already replaces the broken `c:import var=` capture, which reduces JSTL surface |
-| A-4 | **`maxParameterCount` 10,000 → 1,000**: measure XNAT's largest form posts (site-config save, user edit, search forms) and set the connector value explicitly in `server.xml`/Dockerfile if any exceed ~800 | Silent-truncation-turned-error class; measure, don't guess |
-| A-5 | **`getParameter()` now throws on parse failure**: audit Turbine parameter parsing (fulcrum-parser), Restlet form handling, and `XDATAjaxServlet` for paths that previously tolerated malformed bodies; add a malformed-body probe to S1600 | Behavior change most likely to bite at runtime, not compile |
+| A-4 | **`maxParameterCount` 10,000 → 1,000**: measure XNAT's largest form posts (site-config save, user edit, search forms) and set the connector value explicitly in `server.xml`/Dockerfile if any exceed ~800 | 🟡 **Scouted 2026-07-20 — real, but easy.** POST-body probe (500/1500 form fields) confirmed: T10.1 accepts 1,500 params (200), T11 rejects (500) at the documented 1,000 default. Fix is a one-line connector attribute (`maxParameterCount="10000"` or whatever XNAT's largest real form needs) — no code change. Still need the actual max-fields measurement across site-config/user-edit/search forms before setting the number |
+| A-5 | **`getParameter()` now throws on parse failure**: audit Turbine parameter parsing (fulcrum-parser), Restlet form handling, and `XDATAjaxServlet` for paths that previously tolerated malformed bodies; add a malformed-body probe to S1600 | 🟡 **Scouted 2026-07-20 — sharper than the guide implied, and it's the same mechanism as A-4.** Both the malformed-percent-encoding probe and the too-many-params probe throw the identical `org.apache.tomcat.util.http.InvalidParameterException` from `Parameters.processParameters` (`Parameters.java:433` decode / `:425` count) — confirmed via the container's `localhost.<date>.log` stack traces (not in `docker logs`; Restlet/servlet exceptions there log via JUL). **The trigger path is Restlet's own bridge code**, not XNAT's: `org.restlet.ext.servlet.internal.ServletCall.getRequestEntity()` calls `HttpServletRequest.getParameterMap()` while building the request `Entity` for *every* request through `XNATRestletServlet` (i.e. all of `/data/*` and `/REST/*`), which is what turns a previously-tolerated malformed or oversized query string/body into an unhandled 500 for the entire REST surface, not just isolated form posts. (The call passes through Spring Security's `StrictHttpFirewall$StrictFirewalledRequest.getParameterMap()` on the way, but that's a passthrough wrapper — not the source.) Because both failure modes share one root cause, A-4's connector fix (raise `maxParameterCount`) closes the count case for free; the decode-failure case still needs either a Restlet-layer error handler that maps this exception to a clean 4xx, or upstream Tomcat/Restlet guidance — evaluate both before committing. Add both probes (malformed encoding, oversized param count) to S1600 as permanent regression guards once the fix lands |
 | A-6 | Cookie quote-handling and byte→char strictness: covered by the harness; watch login/session cookies in the scout | |
 | A-7 | Flip compose/Dockerfile default to `tomcat:11.0-jdk21-temurin`; goldens re-baseline if headers shift | Same mechanics as the 10.1 flip (1-13) |
 | A-8 | Verification: boot test, goldens, S1600 24/24, Playwright 15/15, cross-version diff (t10 vs t11 on same DB — reuse the WAR-swap + pg_dump bracket procedure) | The harness is the asset; all of it transfers unchanged |
@@ -94,8 +96,16 @@ Ordered by dependency; B-1 is the long pole and is prerequisite to B-2.
    `AuthorizationManager` model has no mutable metadata source; the live-update requirement
    needs a custom `AuthorizationManager` that consults XNAT preferences at decision time
    (which may actually simplify it — no more filter-swapping).
-3. **JSTL has no JSP-4.0 release** — if the scout shows breakage, options are the Wasp/glassfish
-   successor line (check at kickoff) or widening `<xnat:import>`-style local tags.
+3. **JSTL has no JSP-4.0 release** — **partially de-risked, re-verify at A-2/A-3.** The A-1 scout
+   ran the WAR *unmodified* — confirmed by inspecting `docker-context/xnat.war`, it still packages
+   `jakarta.servlet.jsp.jstl-3.0.1`/`jstl-api-3.0.0` and the `xnat:import` tag still compiles
+   against `jakarta.servlet.jsp-api:3.1.1` (Track A's catalog bumps, A-2, haven't landed). What
+   the scout actually showed: those JSP-3.1-era artifacts run correctly on Tomcat 11's JSP-4.0
+   Jasper engine via its backward-compat path — goldens on JSTL-bearing pages (`app-index`,
+   `app-quicksearch`) passed byte-for-byte. That's a good signal but doesn't retire the open
+   question — A-3 still needs to bump to `jsp-api 4.0.0` and re-verify glassfish JSTL 3.0.1 (still
+   the latest on Maven Central as of this writing) against the real JSP-4.0 API, not just the
+   JSP-4.0 *runtime*.
 4. **Plugin ecosystem**: Track A is invisible to plugins; Track B (SS7) breaks any plugin
    touching `AntPathRequestMatcher`/`authorizeRequests` — plan a `plugin-migration-guide.md`
    section and a deprecation window.
@@ -105,8 +115,48 @@ Ordered by dependency; B-1 is the long pole and is prerequisite to B-2.
 ## Suggested sequencing
 
 1. Merge the Tomcat 10 cutover; let it settle (CI flip, plugin feedback).
-2. Run A-1 (scout) opportunistically — it is nearly free and informs everything.
-3. Ship Track A as the "Tomcat 11 migration".
+2. ~~Run A-1 (scout) opportunistically~~ **Done 2026-07-20** — see A-1/A-4/A-5 above.
+3. Ship Track A as the "Tomcat 11 migration": A-2 (catalog bumps) → A-3 (re-verify JSTL against
+   the real JSP 4.0 API) → the A-4/A-5 fix (raise `maxParameterCount` after measuring XNAT's
+   largest form; decide the Restlet-layer handling for the decode-failure case) → A-6/A-7/A-8.
 4. Kick off B-1 (Hibernate 6 on Spring 6.2) as its own tracked phase with a compile-picture
    spike; B-2..B-7 follow as one coordinated platform phase, mirroring the Phase-0/Phase-1
    staging that worked for Tomcat 10.
+
+---
+
+## A-1 scout log (2026-07-20)
+
+Raw evidence backing the A-1/A-4/A-5 findings above, run against a disposable `xnat_t11`
+database (fixture snapshot restore) and `docker build --build-arg TOMCAT_BASE=tomcat:11.0-jdk21-temurin`,
+port 8081, alongside the untouched Tomcat 10.1 stack on 8080:
+
+- Boot: 0 SEVERE/ERROR beyond the expected empty-archive `SystemPathVerification` notice.
+  `Apache Tomcat/11.0.24` confirmed via `catalina.<date>.log`.
+- Health check 8/8, goldens 10/11 (`data-file-download` 404 — empty archive, not a regression),
+  S1600 24/24, `xnat-web/tests/playwright` 15/15 — all matching the Tomcat 10.1 baseline exactly.
+- `maxParameterCount`: POST body with 1,500 `x-www-form-urlencoded` fields to `/data/JSESSION` —
+  Tomcat 10.1.57 returns 200, Tomcat 11.0.24 returns 500. 500-field POST returns 200 on both
+  (under the 1,000 default).
+  - *Correction en route*: an initial probe sent the 1,500 params as a query string instead of a
+    POST body and got 400 on **both** versions — that was `maxHttpHeaderSize` (the request-line
+    length limit), not `maxParameterCount`, coincidentally masking the real difference. The
+    corrected POST-body probe is the one that isolates the actual behavior change.
+- `getParameter()` throw-on-malformed-input: POST body `field=%zz%gg&other=%` (invalid
+  percent-encoding) to `/data/JSESSION` — Tomcat 10.1.57 returns 200 (decodes tolerantly, ignores
+  the bad field), Tomcat 11.0.24 returns 500.
+- Both T11 500s trace to the identical exception, read directly from the container's
+  `/usr/local/tomcat/logs/localhost.<date>.log` (Restlet/servlet exceptions log there via JUL,
+  not to `docker logs`):
+  `org.apache.tomcat.util.http.InvalidParameterException` thrown from
+  `org.apache.tomcat.util.http.Parameters.processParameters` (`Parameters.java:433` for the
+  decode failure, `:425` for the count-exceeded case), reached via
+  `Request.getParameterMap()` → `RequestFacade.getParameterMap()` →
+  `StrictHttpFirewall$StrictFirewalledRequest.getParameterMap()` (Spring Security, passthrough
+  only — not the source) → **`org.restlet.ext.servlet.internal.ServletCall.getRequestEntity()`**
+  → `HttpRequest.getEntity()` → `Decoder.beforeHandle()`. The trigger is Restlet's own servlet
+  bridge eagerly reading `getParameterMap()` while building the request `Entity` for every call —
+  meaning this fires for any request through `XNATRestletServlet` (`/data/*`, `/REST/*`), not
+  just XNAT's own form-handling code.
+- Teardown: scout container, image, and `xnat_t11` database all removed; confirmed the Tomcat
+  10.1 stack on :8080 unaffected throughout (`data/projects?format=json` → 200 after teardown).

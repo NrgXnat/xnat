@@ -1,5 +1,7 @@
-# Local Tomcat 9 + PostgreSQL + ActiveMQ stack for runtime-validating the Phase 0
-# migration WAR (Restlet 2.5.2 / Turbine 5.1 / Velocity 2.4.1, still javax / Tomcat 9).
+# Local Tomcat 10 + PostgreSQL + ActiveMQ stack for the Jakarta-cutover WAR
+# (Restlet 2.6 / Turbine 7.0 / Velocity 2.4.1 / Spring 6, jakarta.* / Tomcat 10.1).
+# For the Phase-0 javax WAR (feature/turbine-5x), override TOMCAT_BASE back to
+# tomcat:9-jdk21-temurin — a javax WAR will not boot on the Tomcat 10 default.
 #
 # Quick start:
 #   ./docker/stage-war.sh        # builds :xnat-web:war -> docker-context/xnat.war
@@ -67,7 +69,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        TOMCAT_BASE: tomcat:9-jdk21-temurin
+        TOMCAT_BASE: tomcat:10.1-jdk21-temurin
     depends_on:
       xnat-postgresql:
         condition: service_healthy

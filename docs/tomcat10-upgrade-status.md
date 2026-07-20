@@ -129,7 +129,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 1-10 | `web.xml` / Spring XML+Java config / JSP / TLD namespace migration | 🟢 | web.xml → jakartaee web-app_6_0; JSTL sun URIs → `jakarta.tags.*` (37 files) + glassfish JSTL 3.0.1; `default.jsp` needs nothing (implicit objects only); no Spring XML carried javax |
 | 1-11 | Remove Restlet `ext.fileupload` (dropped after 2.5.2) → commons-fileupload direct (~5 files) | 🟢 | XNAT-owned `RestletFileUpload`/`RepresentationContext` adapters (ports of the Apache-2.0 Restlet 2.5.2 classes) over commons-fileupload core — no servlet types; 6 call-site files re-imported |
 | 1-12 | Hand-audit reflection / string-built class names OpenRewrite can't see | ⚪ | |
-| 1-13 | Flip local dev + CI to Tomcat 10 / Java 17+ | 🟡 | compose still defaults Tomcat 9; the cutover runs via `--build-arg TOMCAT_BASE=tomcat:10.1-jdk21-temurin`. Flip the default + CI when the branch merges |
+| 1-13 | Flip local dev + CI to Tomcat 10 / Java 17+ | 🟡 | **Local flipped (2026-07-19):** compose + Dockerfile default to `tomcat:10.1-jdk21-temurin`; jakarta WAR staged in `docker-context/`. Override `TOMCAT_BASE=tomcat:9-jdk21-temurin` for the javax WAR. CI flip remains for merge time. NB first `docker compose up --build` after switching also needs a golden re-baseline (UTF-8 charset labels) |
 | 1-14 | (Optional) `tomcat-jakartaee-migration` smoke-test of the Phase-0 WAR on Tomcat 10 | 🟢 | **Done 2026-07-19 — converted WAR fully functional on Tomcat 10.1.57.** `jakartaee-migration-1.0.12 -profile=EE` converts the 221MB Phase-0 WAR in 30s, zero warnings. Parallel container (jdk21 base, `xnat_t10` DB copy, fresh archive volume): boots clean in ~20s, health 8/8, **S1600 REST smoke 24/24** (incl. file up/download round-trip through bytecode-converted `ext.fileupload`), report + XML screens render (XML byte-identical to Tomcat 9). Goldens: 7/11 byte-identical; rest explained — `app-*` differ only in the Content-Type charset label (**Tomcat 10/Servlet 6 defaults responses to UTF-8**, was ISO-8859-1 — expect this at the real cutover), buildinfo carries the tool's `-migrated-1.0.12` version stamp, file-download 404 = empty archive volume (also the sole log ERROR, `SystemPathVerification`). Torn down after |
 | 1-15 | Playwright suite (`xnat-web/tests/playwright/`) on Tomcat 10 | ⚪ | |
 | 1-16 | Unify logging on Logback (the log4j2↔Logback reconciliation) | ⚪ | **Deferred here deliberately — not doable on 5.1** (see note). At 7.0 Turbine logs via `java.lang.System.Logger`; add `org.slf4j:slf4j-jdk-platform-logging` and drop the log4j2 impls |
@@ -158,9 +158,16 @@ ehcache `jakarta` classifier (javax-JAXB config parser), jakarta EL for validato
 SS 6.4 `ObjectPostProcessor` package move, SS6 explicit `SecurityContextRepository` on
 `XnatAuthenticationFilter` (form-login session persistence).
 
+**Full `./gradlew test` suite GREEN on the jakarta stack (2026-07-19).** Cutover-era test fixes:
+hibernate-validator groupId (org.hibernate → org.hibernate.validator — the old coordinate is an
+empty relocation jar at 8.x, which silently disabled Hibernate's AUTO bean-validation!), Jakarta EL 5
+(expressly), SS6 `TestingAuthenticationToken` 3-arg ctor (isAuthenticated), `NestedServletException`
+removal, and a long-inert null `actionProviders()` stub bean in EventServiceTestConfig that Spring 6's
+by-name resolution shortcut suddenly matched once `-parameters` exposed parameter names.
+
 **Remaining Phase-1 follow-ups:** springdoc-openapi to replace removed springfox (swagger UI gone);
 1-12 reflection audit; 1-15 Playwright suite; 1-16/17 logging unification (logback 1.5/slf4j 2);
-full `./gradlew test` suite run; legacy `spring-security-oauth2` jar removal decision;
+ legacy `spring-security-oauth2` jar removal decision;
 `AntPathRequestMatcher` deprecations (SS7 prep); 1-13 flip compose/CI defaults.
 
 ## Known blockers / next up

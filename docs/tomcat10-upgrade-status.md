@@ -204,6 +204,22 @@ springdoc's endpoint is the only one, so the fix is general and zero-regression*
 green: JSON/XML/HTML/text all intact). Verified: swagger-ui.html→index 200, api-docs/swagger-config raw
 JSON under `/xapi`, `servers:[/xapi]`, `site-config-api` tag present (11 tagged ops).
 
+**OPEN — Restlet 2.6 default success status 200 → 204 (found 2026-07-20 via xnat-test-automation).**
+`PUT /data/projects/{ID}` now returns **204 No Content** where clients expect **200 OK** — confirmed on
+both the :8080 stack and a disposable scout (so it's the migrated WAR, not env). The project **is**
+created; only the status changed. Root cause: `ProjectResource.handlePut()`
+(`xnat-web/src/main/java/org/nrg/xnat/restlet/resources/ProjectResource.java:133-280`) sets a status
+only on error paths — the happy path sets none, so the success code comes from **Restlet's default**,
+which is 204 in Restlet 2.6 (was 200 in 1.1). The xnat-test-automation suite (calibrated on
+develop-branch/pre-migration cloud instances) hard-checks `=== 200` and aborts, which is what surfaced
+it. **Bug class:** every Restlet resource whose happy path relies on the default success status now
+returns 204 instead of 200 — breaks any client checking for exactly 200 (test harness, pyxnat/XNATpy,
+upload scripts, pipeline engine). Also observed once: a project `DELETE` returned 500 on the scout where
+:8080 returned 204 — possible second instance, not yet chased. **NOT confirmed against a pre-migration
+WAR baseline yet** (that + the fix are the TODO). Likely fix altitude: a shared Restlet response filter
+that maps empty-body success → 200 (or explicit `SUCCESS_OK` in the affected resources), then sweep all
+resources relying on the default. Decision needed: restore 200 vs. accept 204 and update clients.
+
 **DEFERRED — do not re-investigate: commons-fileupload 1.5 → commons-fileupload2 (2026-07-20).**
 Evaluated whether moving to fileupload2 lets us drop the `servlet-api-javax-legacy` (3.1.0) compileOnly
 shim in `xnat-web/build.gradle:315-318`. Conclusion: **not worth it now.** The shim is a single

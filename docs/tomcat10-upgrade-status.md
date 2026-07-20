@@ -8,10 +8,11 @@ Status tracker for the staged real port (see the full plan and
 
 **Legend:** 🟢 Complete · 🟡 In progress · ⚪ Open
 
-**Rollup:** Phase 0a 🟢 · **Phase 0b 🟢 COMPLETE** (code + boot + deploy + email/render + full screen
-breadth + REST smoke 24/24 + cross-version golden diff: develop and 5.1 render semantically
-identically on the same DB) · Phase 1 ⚪ not started, but Spring Security 6 prep (1-2) landed early
-and Torque (1-5) downgraded to likely-delete.
+**Rollup:** Phase 0a 🟢 · Phase 0b 🟢 · **Phase 1: cutover LANDED and runtime-verified** on branch
+`feature/jakarta-cutover` — full test suite green, local stack switched to Tomcat 10.1.57 /
+Turbine 7.0 / Restlet 2.6 / Spring 6. Remaining 🟡/⚪ rows are the tail: hardening + breadth
+(1-12 reflection audit, 1-15 Playwright suite), merge-time work (CI flip in 1-13, oauth2/
+`AntPathRequestMatcher` in 1-2), and quality follow-ups (1-16/17 logging, springdoc).
 
 Test harness: `docs/tools/build-known-state.sh` (REST fixture: 3 users / 5 projects / subjects /
 MR-CT-PET sessions / files / stored searches / project config, Mailpit SMTP sink on :8025) +
@@ -118,7 +119,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | # | Step | Status | Notes |
 |---|------|:------:|-------|
 | 1-1 | Spring 5.3 → 6.x | 🟢 | 6.2.19, **runtime-verified on Tomcat 10**. Boot required javac `-parameters` (Spring 6.1 removed `LocalVariableTableParameterNameDiscoverer` — aspects + `@RequestParam` binding) |
-| 1-2 | Spring Security 5.7 → 6.x | 🟡 | **6.5.11 landed + compiles** (openid removed, test configs component-style, `authenticationIsRequired` visibility). Remaining: runtime verify, legacy `spring-security-oauth2` 2.5.2.RELEASE still on classpath, `AntPathRequestMatcher` removal warnings (SS7). Original prep notes: | **Prep landed early on 5.7 (testable):** `WebSecurityConfigurerAdapter` (removed in 6) → component style: `@Bean SecurityFilterChain` (lambda DSL) + explicit `@Bean AuthenticationManager`; `XnatSecurityExtension` hooks preserved; login/logout verified. **Keep `authorizeRequests`** — XNAT's real rules come from `UpdateSecurityFilterHandlerMethod` (BeanPostProcessor) swapping the `FilterSecurityInterceptor` metadata source (openUrls/adminUrls/requireLogin, live-updatable); `authorizeHttpRequests` builds an `AuthorizationFilter` the post-processor never sees → login redirect loop (tried + reverted). `AuthorizationManager` port is an SS**7** task. Remaining at cutover: version bump, `spring-security-openid` removal, legacy `oauth2` project, `ChannelProcessingFilter` deprecation |
+| 1-2 | Spring Security 5.7 → 6.x | 🟡 | **6.5.11 landed + compiles** (openid removed, test configs component-style, `authenticationIsRequired` visibility). **Runtime-verified on the live stack** (form login/session persistence via explicit `SecurityContextRepository`, logout, Basic auth, `ObjectPostProcessor` package move). Remaining: legacy `spring-security-oauth2` 2.5.2.RELEASE jar decision (classpath-only, zero core source refs — plugin-facing), `AntPathRequestMatcher` removal warnings (SS7 prep). Original prep notes: | **Prep landed early on 5.7 (testable):** `WebSecurityConfigurerAdapter` (removed in 6) → component style: `@Bean SecurityFilterChain` (lambda DSL) + explicit `@Bean AuthenticationManager`; `XnatSecurityExtension` hooks preserved; login/logout verified. **Keep `authorizeRequests`** — XNAT's real rules come from `UpdateSecurityFilterHandlerMethod` (BeanPostProcessor) swapping the `FilterSecurityInterceptor` metadata source (openUrls/adminUrls/requireLogin, live-updatable); `authorizeHttpRequests` builds an `AuthorizationFilter` the post-processor never sees → login redirect loop (tried + reverted). `AuthorizationManager` port is an SS**7** task. Remaining at cutover: version bump, `spring-security-openid` removal, legacy `oauth2` project, `ChannelProcessingFilter` deprecation |
 | 1-3 | tomcat-embed 9 → 10 | 🟢 | 10.1.57 (catalog-only; no direct consumers) |
 | 1-4 | servlet-api javax → jakarta 5+ | 🟢 | jakarta.servlet-api 6.0.0 via the kept `servlet-javax-servlet-api` alias; javax 3.1 kept **compileOnly in xnat-web only** for commons-fileupload 1.5 `FileUploadBase` deprecated-overload resolution |
 | 1-5 | Torque 5 → 6 | 🟢 | **Deleted** (catalog + all decl sites; `org.apache.torque` excluded from Turbine 7). Runtime-reflection check rides the 1-12 audit |

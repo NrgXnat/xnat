@@ -98,8 +98,14 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void configurePathMatch(final PathMatchConfigurer matcher) {
         matcher.setUseRegisteredSuffixPatternMatch(true);
+        // Spring 6 flipped the trailing-slash default to false, so every XAPI URL built with a
+        // trailing slash (e.g. dicomScpManager's scpUrl(id) -> PUT /xapi/dicomscp/{id}/) 404s and
+        // the write silently no-ops. XNAT's JS builds such URLs in many places; restore the
+        // pre-6 lenient matching app-wide. (Deprecated but functional through 6.2.x.)
+        matcher.setUseTrailingSlashMatch(true);
     }
 
     @Override

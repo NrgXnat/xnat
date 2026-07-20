@@ -1,6 +1,6 @@
 <%@ page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %><%@ taglib prefix="xnat" uri="http://www.xnat.org/tags" %>
+<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
 <%--
   ~ web: index.jsp
@@ -20,7 +20,7 @@
             <c:set var="incl" value="/page/${param.view}/content.jsp"/>
         </c:if>
 
-        <xnat:import url="${incl}"/>
+        <jsp:include page="${incl}"/>
 
     </pg:xnat>
 </pg:wrapper>

@@ -398,11 +398,22 @@ public class ConfigResource extends SecureResource {
             getResponse().setStatus(response);
         } catch (ConfigServiceException e) {
             log.error("Configuration service error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path, e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            setInternalErrorWithRawMessage(e);
         } catch (Exception e) {
             log.error("Unknown error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path, e);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            setInternalErrorWithRawMessage(e);
         }
+    }
+
+    /**
+     * Answer 500 with the raw message as a plain-text entity. Restlet 1.1's status page carried the
+     * description verbatim; 2.x HTML-escapes it (Couldn't becomes Couldn&amp;apos;t), which breaks
+     * clients matching on the body text — the REST test harness tolerates the "disable a config that
+     * was never set" failure by matching "Couldn't find the site configuration...".
+     */
+    private void setInternalErrorWithRawMessage(final Exception e) {
+        getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+        getResponse().setEntity(new StringRepresentation(StringUtils.defaultString(e.getMessage()), MediaType.TEXT_PLAIN));
     }
 
     @Override

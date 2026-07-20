@@ -1,6 +1,6 @@
 <%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
+<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %><%@ taglib prefix="xnat" uri="http://www.xnat.org/tags" %>
 
 <%--
   ~ web: index.jsp
@@ -16,7 +16,7 @@
 <pg:wrapper>
     <pg:xnat title="Manage Spawner">
 
-        <jsp:include page="content.jsp"/>
+        <xnat:import url="content.jsp"/>
 
     </pg:xnat>
 </pg:wrapper>

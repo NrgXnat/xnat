@@ -11,7 +11,7 @@
     <tag>
         <description>
             Include a context-relative URL and capture its response body into a scoped variable.
-            Replaces JSTL c:import var=".."; see org.nrg.xnat.web.tags.ImportTag for why.
+            Replaces JSTL c:import (and jsp:include inside tag files); see org.nrg.xnat.web.tags.ImportTag for why. Without var, the captured body is written inline.
         </description>
         <name>import</name>
         <tag-class>org.nrg.xnat.web.tags.ImportTag</tag-class>
@@ -23,7 +23,7 @@
         </attribute>
         <attribute>
             <name>var</name>
-            <required>true</required>
+            <required>false</required>
             <rtexprvalue>false</rtexprvalue>
         </attribute>
         <attribute>

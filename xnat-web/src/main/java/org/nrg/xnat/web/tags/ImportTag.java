@@ -56,7 +56,13 @@ public class ImportTag extends SimpleTagSupport {
         } catch (ServletException e) {
             throw new JspException("Failed to include " + url, e);
         }
-        pageContext.setAttribute(var, wrapper.getCaptured(), toScopeConstant(scope));
+        if (var != null) {
+            pageContext.setAttribute(var, wrapper.getCaptured(), toScopeConstant(scope));
+        } else {
+            // No var: emit inline. Also the replacement for <jsp:include> inside tag-file bodies,
+            // where Tomcat 10.1's include writes into a fragment buffer that never reaches the page.
+            pageContext.getOut().write(wrapper.getCaptured());
+        }
     }
 
     private static int toScopeConstant(final String scope) {

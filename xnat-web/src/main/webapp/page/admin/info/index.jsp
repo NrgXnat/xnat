@@ -1,6 +1,6 @@
 <%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %><%@ taglib prefix="xnat" uri="http://www.xnat.org/tags" %>
 
 <%--
   ~ web: index.jsp
@@ -14,7 +14,7 @@
 <pg:wrapper>
     <pg:xnat title="Info.">
 
-        <jsp:include page="content.jsp"/>
+        <xnat:import url="content.jsp"/>
 
     </pg:xnat>
 </pg:wrapper>

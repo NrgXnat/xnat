@@ -1,6 +1,6 @@
 <%@ page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
+<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %><%@ taglib prefix="xnat" uri="http://www.xnat.org/tags" %>
 
 <%--
   ~ web: content.jsp
@@ -17,8 +17,8 @@
 
 <pg:restricted msg="${MSG}">
 
-    <c:import url="/xapi/siteConfig" var="siteConfig"/>
-    <c:import url="/xapi/notifications" var="notifications"/>
+    <xnat:import url="/xapi/siteConfig" var="siteConfig"/>
+    <xnat:import url="/xapi/notifications" var="notifications"/>
 
     <script>
         XNAT.data = extend({}, XNAT.data, {

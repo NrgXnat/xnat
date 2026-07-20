@@ -1,12 +1,12 @@
 <%@ page contentType="application/json" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
+<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %><%@ taglib prefix="xnat" uri="http://www.xnat.org/tags" %>
 
 <%--@elvariable id="hibernateSpawnerService" type="org.nrg.xnat.spawner.services.SpawnerService"--%>
 
     <c:set var="loggedInUser" value="${sessionScope.userHelper.user.username}"/>
-    <c:import url="/xapi/users/${loggedInUser}/roles" var="loggedInUserRoles"/>
+    <xnat:import url="/xapi/users/${loggedInUser}/roles" var="loggedInUserRoles"/>
 
     <div id="page-body">
         <div class="pad">
@@ -60,13 +60,13 @@
                         <%-- only get 'siteSettings' items --%>
                         <c:if test="${fn:endsWith(namespace, 'siteSettings')}">
                              <c:catch var="jspResponseError1">
-                                <c:import url="/xapi/spawner/resolve/${namespace}/siteSettings" var="pluginTabsConfig"/>
+                                <xnat:import url="/xapi/spawner/resolve/${namespace}/siteSettings" var="pluginTabsConfig"/>
                             </c:catch>
                             <c:if test="${not empty jspError1 && empty pluginTabsConfig}">
                                 <%-- originally 'siteSettings' was the expected name of
                                      the root element, but now 'root' is preferred --%>
                                 <c:catch var="jspResponseError2">
-                                <c:import url="/xapi/spawner/resolve/${namespace}/root" var="pluginTabsConfig"/>
+                                <xnat:import url="/xapi/spawner/resolve/${namespace}/root" var="pluginTabsConfig"/>
                                 </c:catch>
                             </c:if>
                             <c:if test="${empty jspError1 && empty jspError2}">

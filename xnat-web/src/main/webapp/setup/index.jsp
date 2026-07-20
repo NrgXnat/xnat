@@ -1,6 +1,6 @@
 <%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
+<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %><%@ taglib prefix="xnat" uri="http://www.xnat.org/tags" %>
 
 <%--
   ~ web: index.jsp
@@ -31,8 +31,8 @@
 
                     <pg:restricted msg="${message}">
 
-                        <c:import url="/xapi/siteConfig" var="siteConfig"/>
-                        <c:import url="/xapi/notifications" var="notifications"/>
+                        <xnat:import url="/xapi/siteConfig" var="siteConfig"/>
+                        <xnat:import url="/xapi/notifications" var="notifications"/>
 
                         <script>
                             (function(XNAT){

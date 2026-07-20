@@ -316,6 +316,7 @@ dependencies {
     // declares deprecated parseRequest/isMultipartContent(javax HttpServletRequest) overloads.
     // compileOnly => never packaged; runtime is pure jakarta.
     compileOnly libs.servlet.javax.legacy.api
+    compileOnly libs.servlet.jsp.api
     compileOnly libs.metainf.services.metainf.services
 
     // --- Runtime only ---

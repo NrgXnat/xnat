@@ -1,6 +1,6 @@
 <%@ page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
+<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %><%@ taglib prefix="xnat" uri="http://www.xnat.org/tags" %>
 
 <%--
   ~ web: content.jsp
@@ -22,7 +22,7 @@
 
     <h1>Some info</h1>
 
-    <c:import url="/xapi/users" var="userList"/>
+    <xnat:import url="/xapi/users" var="userList"/>
 
     <h2>Users</h2>
     <p id="user-list-raw">

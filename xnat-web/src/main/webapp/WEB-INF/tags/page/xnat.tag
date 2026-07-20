@@ -4,7 +4,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
+<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %><%@ taglib prefix="xnat" uri="http://www.xnat.org/tags" %>
 
 <%@ attribute name="page" %>
 <%@ attribute name="title" %>
@@ -46,7 +46,7 @@
     <c:set var="csrfToken" value="${sessionScope.csrfToken}"/>
     <c:set var="USERNAME" value="${sessionScope.username}"/>
 
-    <c:import var="cacheLastModified" url="/xapi/access/displays/modified" scope="session"/>
+    <xnat:import var="cacheLastModified" url="/xapi/access/displays/modified" scope="session"/>
 
     <pg:jsvars/>
 

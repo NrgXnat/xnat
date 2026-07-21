@@ -186,6 +186,17 @@ Spring MVC mappings (348 paths documented); a full annotation rewrite to OpenAPI
 `/xapi/swagger-ui.html#/site-config-api` still resolves (springfox auto-derived that kebab-case group
 from the class name; springdoc defaults to the class simple name).
 
+**HELD at springdoc 2.8.6 — do NOT bump to 2.8.17 (2026-07-21).** `features/turbine7-clean` runs
+springdoc 2.8.17, but bumping it here **breaks Turbine**: 2.8.17's `starter-common` requires a newer
+`spring-boot-autoconfigure`, cascading **spring-boot 3.4.4 → 3.5.13**, whose `spring-boot-starter-logging`
+pulls **`org.apache.logging.log4j:log4j-to-slf4j`**. That bridge collides with Turbine 7's `log4j-core`
+(which Turbine casts to a log4j2 `LoggerContext` at init), so YAAFI/Avalon service loading fails —
+`TurbineBootTest.turbineServiceContainerBoots` dies with `ServiceBroker: unknown service
+AvalonComponentService`. Confirmed by A/B: green at 2.8.6, fails at 2.8.17 (bisected to the
+`log4j-to-slf4j` pull). turbine7-clean's different graph (Hibernate 6) masks it. The 2.8.6↔2.8.17
+divergence is therefore a **deliberate hold**, not deferred debt; revisit only if springdoc decouples its
+spring-boot floor or we exclude `log4j-to-slf4j` (untested against Turbine's log4j-core cast).
+
 *Servlet-path root cause (the integration wrinkle):* XNAT's DispatcherServlet is mapped at `/xapi/*`
 (not root), a manual non-Boot registration springdoc can't discover, and springdoc builds every
 generated URL — the `/swagger-ui.html`→`/swagger-ui/index.html` redirect (`SwaggerUiHome`) and the UI's

@@ -87,7 +87,7 @@ httpcomponents-mime = "4.5.14"
 imagej = "1.53c"
 io-projectreactor = "2.0.8.RELEASE"
 itext = "2.1.7"
-jackson = "2.13.5"
+jackson = "2.18.4"
 jacoco = "0.8.12"
 jai-imageio = "1.1"
 jakarta-annotation = "3.0.0"
@@ -154,7 +154,7 @@ jsp-api = "3.1.1"              # jakarta.servlet.jsp-api (JSP 3.1 = Tomcat 10.1)
 servlet-api = "6.0.0"           # jakarta.servlet (Servlet 6.0 = Tomcat 10.1); Turbine 7 pulls 6.1 transitively
 servlet-api-javax-legacy = "3.1.0"  # compileOnly in xnat-web ONLY: commons-fileupload 1.5 FileUploadBase has deprecated javax overloads javac must resolve
 slf4j = "2.0.17"       # 1-16 unification: slf4j 2.0 (logback 1.4+ SPI; dcm4che 5.x's slf4j 2.x now natural)
-snakeyaml = "1.33"
+snakeyaml = "2.3"      # matches jackson-dataformat-yaml 2.18 (no direct snakeyaml API usage in XNAT)
 spotbugs = "4.7.3.4"
 spring-framework = "6.2.19"
 spring-jwt = "1.1.1.RELEASE"

@@ -12,7 +12,7 @@ package org.nrg.xnat.services.logging.impl;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.util.ContextInitializer;
+import ch.qos.logback.classic.util.DefaultJoranConfigurator;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
@@ -132,7 +132,8 @@ public class DefaultLoggingService implements LoggingService {
         _runnableTasks = new HashMap<>();
 
         _context     = (LoggerContext) LoggerFactory.getILoggerFactory();
-        _initializer = new ContextInitializer(_context);
+        _initializer = new DefaultJoranConfigurator();
+        _initializer.setContext(_context);
         if (log.isDebugEnabled()) {
             StatusPrinter.printInCaseOfErrorsOrWarnings(_context);
         }
@@ -639,8 +640,9 @@ public class DefaultLoggingService implements LoggingService {
     @Nullable
     private Resource getPrimaryLogConfiguration() {
         final LoggerContext      context     = (LoggerContext) LoggerFactory.getILoggerFactory();
-        final ContextInitializer initializer = new ContextInitializer(context);
-        final URL                url         = initializer.findURLOfDefaultConfigurationFile(true);
+        final DefaultJoranConfigurator configurator = new DefaultJoranConfigurator();
+        configurator.setContext(context);
+        final URL url = configurator.findURLOfDefaultConfigurationFile(true);
         if (url == null) {
             log.warn("No primary logback configuration found.");
             return null;
@@ -909,5 +911,5 @@ public class DefaultLoggingService implements LoggingService {
     private final Map<String, Set<String>> _primaryElements;
     private final Map<String, StopWatch>   _runnableTasks;
     private final LoggerContext            _context;
-    private final ContextInitializer       _initializer;
+    private final DefaultJoranConfigurator _initializer;
 }

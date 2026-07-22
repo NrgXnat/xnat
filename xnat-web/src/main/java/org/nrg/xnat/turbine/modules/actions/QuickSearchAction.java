@@ -349,8 +349,4 @@ public class QuickSearchAction extends SecureAction {
         }
     }
 
-    public void doQuickview(RunData data,Context context)
-    {
-       
-    }
 }

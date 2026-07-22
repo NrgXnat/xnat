@@ -50,7 +50,7 @@ services:
     expose:
       - "61616"
     ports:
-      - "8161:8161"   # web console (admin/admin) — optional
+      - "${ACTIVEMQ_CONSOLE_PORT:-8161}:8161"   # web console (admin/admin) — optional
 
   xnat-mail:
     # Dev SMTP sink so notifications (new-user emails, etc.) never fail against a
@@ -62,14 +62,16 @@ services:
     expose:
       - "1025"        # SMTP (in-network, reachable as xnat-mail:1025)
     ports:
-      - "8025:8025"   # web UI
+      - "${MAILPIT_UI_PORT:-8025}:8025"   # web UI
 
   xnat:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        TOMCAT_BASE: tomcat:10.1-jdk21-temurin
+        # Env-overridable; DEFAULTS to Tomcat 10.1 (the jakarta target). Override e.g.
+        # TOMCAT_BASE=tomcat:11.0-jdk21-temurin for a Tomcat 11 trial, or :9 for the Phase-0 javax WAR.
+        TOMCAT_BASE: ${TOMCAT_BASE:-tomcat:10.1-jdk21-temurin}
     depends_on:
       xnat-postgresql:
         condition: service_healthy
@@ -78,13 +80,13 @@ services:
       xnat-mail:
         condition: service_started
     ports:
-      - "8080:8080"
-      # DICOM C-STORE receiver ports published to the host for external tests.
+      - "${XNAT_PORT:-8080}:8080"
+      # DICOM C-STORE receiver ports published to the host for external tests (env-overridable host ports).
       # 8104 = the enabled "XNAT" receiver; 8131/8132 = the PWDBG receivers
       # (left disabled in XNAT — the mapping is here so tests can reach them if/when enabled).
-      - "8104:8104"
-      - "8131:8131"
-      - "8132:8132"
+      - "${XNAT_DICOM_PORT:-8104}:8104"
+      - "${XNAT_DICOM_PORT_2:-8131}:8131"
+      - "${XNAT_DICOM_PORT_3:-8132}:8132"
     volumes:
       - xnat-data:/data/xnat
 

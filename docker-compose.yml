@@ -79,6 +79,12 @@ services:
         condition: service_started
     ports:
       - "8080:8080"
+      # DICOM C-STORE receiver ports published to the host for external tests.
+      # 8104 = the enabled "XNAT" receiver; 8131/8132 = the PWDBG receivers
+      # (left disabled in XNAT — the mapping is here so tests can reach them if/when enabled).
+      - "8104:8104"
+      - "8131:8131"
+      - "8132:8132"
     volumes:
       - xnat-data:/data/xnat
 

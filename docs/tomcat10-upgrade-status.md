@@ -121,14 +121,14 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 1-1 | Spring 5.3 → 6.x | 🟢 | 6.2.19, **runtime-verified on Tomcat 10**. Boot required javac `-parameters` (Spring 6.1 removed `LocalVariableTableParameterNameDiscoverer` — aspects + `@RequestParam` binding) |
 | 1-2 | Spring Security 5.7 → 6.x | 🟡 | **6.5.11 landed + compiles** (openid removed, test configs component-style, `authenticationIsRequired` visibility). **Runtime-verified on the live stack** (form login/session persistence via explicit `SecurityContextRepository`, logout, Basic auth, `ObjectPostProcessor` package move). Remaining: legacy `spring-security-oauth2` 2.5.2.RELEASE jar decision (classpath-only, zero core source refs — plugin-facing), `AntPathRequestMatcher` removal warnings (SS7 prep). Original prep notes: | **Prep landed early on 5.7 (testable):** `WebSecurityConfigurerAdapter` (removed in 6) → component style: `@Bean SecurityFilterChain` (lambda DSL) + explicit `@Bean AuthenticationManager`; `XnatSecurityExtension` hooks preserved; login/logout verified. **Keep `authorizeRequests`** — XNAT's real rules come from `UpdateSecurityFilterHandlerMethod` (BeanPostProcessor) swapping the `FilterSecurityInterceptor` metadata source (openUrls/adminUrls/requireLogin, live-updatable); `authorizeHttpRequests` builds an `AuthorizationFilter` the post-processor never sees → login redirect loop (tried + reverted). `AuthorizationManager` port is an SS**7** task. Remaining at cutover: version bump, `spring-security-openid` removal, legacy `oauth2` project, `ChannelProcessingFilter` deprecation |
 | 1-3 | tomcat-embed 9 → 10 | 🟢 | 10.1.57 (catalog-only; no direct consumers) |
-| 1-4 | servlet-api javax → jakarta 5+ | 🟢 | jakarta.servlet-api 6.0.0 via the kept `servlet-javax-servlet-api` alias; javax 3.1 kept **compileOnly in xnat-web only** for commons-fileupload 1.5 `FileUploadBase` deprecated-overload resolution |
+| 1-4 | servlet-api javax → jakarta 5+ | 🟢 | jakarta.servlet-api 6.0.0 via the kept `servlet-javax-servlet-api` alias. The javax 3.1 `servlet-api-javax-legacy` compileOnly shim was **removed 2026-07-22** with the fileupload2 migration (it existed only for fileupload 1.5's deprecated javax overloads; fu2-core has no servlet types) |
 | 1-5 | Torque 5 → 6 | 🟢 | **Deleted** (catalog + all decl sites; `org.apache.torque` excluded from Turbine 7). Runtime-reflection check rides the 1-12 audit |
 | 1-6 | Restlet 2.5.2 → 2.6.0 (Jakarta) | 🟢 | now on Maven Central; 2.6 removed the WebDAV statuses (207/422/423/424/507) → `XnatWebDavStatus` constants (27 files) |
 | 1-7 | Turbine 5.1 → 7.0 (Jakarta build) | 🟢 | 7.0 from Central + Fulcrum 4.0.0. **XNAT's 5.1-format config boots unchanged on 7.0** (`TurbineBootTest` green incl. the `empty_check` probe) and screens render byte-identical on Tomcat 10 |
 | 1-8 | Pin Velocity 2.4.1 (confirm Turbine 7 tolerates override) | 🟢 | 2.4.1 wins over Turbine 7's 2.3 transitive; boot probe + byte-identical screen renders confirm |
 | 1-9 | `javax.*` → `jakarta.*` across ~73 servlet source files | 🟢 | selective scripted sweep, 315 files (servlet/persistence/validation/mail/jms/inject/activation/el/interceptor/EE-annotation/EE-transaction/xml.bind); JSR-305, JCache, JDK javax.* untouched. Forced couplings: jakarta mail/jms/validation/xml.bind APIs, ActiveMQ 6.2.7, hibernate-validator 8, jakarta.inject-api **2.0.1** (1.0.x still ships javax packages!) |
 | 1-10 | `web.xml` / Spring XML+Java config / JSP / TLD namespace migration | 🟢 | web.xml → jakartaee web-app_6_0; JSTL sun URIs → `jakarta.tags.*` (37 files) + glassfish JSTL 3.0.1; `default.jsp` needs nothing (implicit objects only); no Spring XML carried javax |
-| 1-11 | Remove Restlet `ext.fileupload` (dropped after 2.5.2) → commons-fileupload direct (~5 files) | 🟢 | XNAT-owned `RestletFileUpload`/`RepresentationContext` adapters (ports of the Apache-2.0 Restlet 2.5.2 classes) over commons-fileupload core — no servlet types; 6 call-site files re-imported |
+| 1-11 | Remove Restlet `ext.fileupload` (dropped after 2.5.2) → commons-fileupload2 jakarta-servlet6 | 🟢 | **Superseded 2026-07-22 (commit `e78cf03d0`):** the transitional XNAT-owned `RestletFileUpload`/`RepresentationContext` bridge is deleted; upload path now uses `JakartaServletFileUpload<DiskFileItem,…>` parsing the jakarta `HttpServletRequest` directly. See the fileupload2 note below |
 | 1-12 | Hand-audit reflection / string-built class names OpenRewrite can't see | 🟢 | **Audited 2026-07-19, clean on every vector.** (1) Java: zero EE-javax mentions remain — all hits are JSR-305/JDK/JCache namespaces that stay javax. (2) Runtime resources incl. the packaged WAR's 653 non-class files: only JAXP factory props + a JCache logger name. (3) Full fixture-DB data dump: zero `javax.` strings (no stored class names affected). (4) No composed `"javax"` string fragments. (5) All `Class.forName` feeders trace to those verified sources; Turbine valve/service configs additionally class-load-verified by `TurbineBootTest`. Residual risk is **third-party plugins** only — javax-era plugin jars need their own jakarta migration (see `plugin-migration-guide.md`) |
 | 1-13 | Flip local dev + CI to Tomcat 10 / Java 17+ | 🟡 | **Local flipped (2026-07-19):** compose + Dockerfile default to `tomcat:10.1-jdk21-temurin`; jakarta WAR staged in `docker-context/`. Override `TOMCAT_BASE=tomcat:9-jdk21-temurin` for the javax WAR. CI flip remains for merge time. **Switched 2026-07-19**: the local fixture stack now runs the Jakarta build on Tomcat 10.1.57 (health 8/8, S1600 24/24, form login OK, goldens re-baselined 11/11 — file-download byte-identical against the real archive). CI flip remains |
 | 1-14 | (Optional) `tomcat-jakartaee-migration` smoke-test of the Phase-0 WAR on Tomcat 10 | 🟢 | **Done 2026-07-19 — converted WAR fully functional on Tomcat 10.1.57.** `jakartaee-migration-1.0.12 -profile=EE` converts the 221MB Phase-0 WAR in 30s, zero warnings. Parallel container (jdk21 base, `xnat_t10` DB copy, fresh archive volume): boots clean in ~20s, health 8/8, **S1600 REST smoke 24/24** (incl. file up/download round-trip through bytecode-converted `ext.fileupload`), report + XML screens render (XML byte-identical to Tomcat 9). Goldens: 7/11 byte-identical; rest explained — `app-*` differ only in the Content-Type charset label (**Tomcat 10/Servlet 6 defaults responses to UTF-8**, was ISO-8859-1 — expect this at the real cutover), buildinfo carries the tool's `-migrated-1.0.12` version stamp, file-download 404 = empty archive volume (also the sole log ERROR, `SystemPathVerification`). Torn down after |
@@ -239,24 +239,32 @@ WAR baseline yet** (that + the fix are the TODO). Likely fix altitude: a shared 
 that maps empty-body success → 200 (or explicit `SUCCESS_OK` in the affected resources), then sweep all
 resources relying on the default. Decision needed: restore 200 vs. accept 204 and update clients.
 
-**DEFERRED — do not re-investigate: commons-fileupload 1.5 → commons-fileupload2 (2026-07-20).**
-Evaluated whether moving to fileupload2 lets us drop the `servlet-api-javax-legacy` (3.1.0) compileOnly
-shim in `xnat-web/build.gradle:315-318`. Conclusion: **not worth it now.** The shim is a single
-`compileOnly` line, *never packaged* (runtime is already pure jakarta); it exists only so javac can
-resolve fileupload 1.5 `FileUploadBase`'s deprecated `javax.HttpServletRequest` overloads, which XNAT
-never calls. fileupload2 *would* remove it (fu2-core carries zero servlet types — verified against the
-`2.0.0-M5` core jar: package is entirely `org.apache.commons.fileupload2.core`, `RequestContext`-based,
-no javax/jakarta servlet imports), **but it is a ground-up API rewrite, not a bump**: `FileUpload` →
-abstract `AbstractFileUpload<R,I,F>` (3 type params, 3 abstract methods) forcing a full rewrite of the
-custom `RestletFileUpload`/`RepresentationContext` bridge (1-11); `FileUploadBase` and
-`DefaultFileItemFactory` deleted (→ `DiskFileItemFactory.builder().get()`, 4 sites); `UploadContext` →
-`RequestContext`; `FileItemIterator` → `FileItemInputIterator`; `FileItem.write(File)` →
-`write(Path)`; `FileUploadException` repackaged (5 files); `List<FileItem>` → `List<DiskFileItem>`
-generics. **Dominant risk: fileupload2 has no GA release** (latest `2.0.0-M5`, a milestone) and this is
-the library parsing untrusted multipart upload input (DICOM/zip import). fileupload 1.5 is the
-CVE-2023-24998–patched release and runs fine on jakarta via its servlet-agnostic core. Revisit only
-when fileupload2 reaches GA *or* an independent forcing function appears (new 1.5 CVE, or
-Servlet 6.1/Tomcat 11 breaking the core — the A-1 scout did **not** show this).
+**DONE 2026-07-22: commons-fileupload 1.5 → commons-fileupload2 2.0.0-M5 (jakarta-servlet6).**
+Originally deferred on 2026-07-20 (keep 1.5 until fu2 reaches GA), then executed to converge with the
+second migration (`features/turbine7-clean` `f13a02162`), adapted per-hunk to this branch. Commit
+`e78cf03d0`. **GA-risk tradeoff accepted knowingly**: fu2's latest is the `2.0.0-M5` milestone and it
+parses untrusted multipart input (DICOM/zip import); accepted because turbine7-clean already runs it and
+both branches now share the upload path. Revisit if a fu2 milestone regression surfaces before GA.
+
+What changed:
+  - **Upload strategy switched, not just the lib.** 1-11's vendored bridge parsed the Restlet
+    `Representation`; fu2 parses the underlying jakarta `HttpServletRequest` directly via
+    `JakartaServletFileUpload<DiskFileItem, DiskFileItemFactory>` + `getHttpServletRequest()` (from
+    `commons-fileupload2-jakarta-servlet6`). `DefaultFileItemFactory` → `DiskFileItemFactory.builder().get()`;
+    `List<FileItem>` → `List<DiskFileItem>`; `FileItem.write(File)` → `write(Path)`; `FileUploadException`
+    repackaged to `fileupload2.core`; `getString()` now throws `IOException` (wrapped at call sites).
+  - **Vendored bridge deleted** — `org.nrg.xnat.restlet.util.fileupload.{RestletFileUpload,RepresentationContext}`
+    (1-11) is now dead code; fu2's jakarta-servlet6 integration replaces it. turbine7-clean never had it.
+  - **`servlet-api-javax-legacy` (3.1.0) compileOnly shim removed** — plus its catalog version + library
+    entries. Audit: `git grep` confirmed `libs.servlet.javax.legacy.api` had exactly one referent
+    (`xnat-web/build.gradle:316`), justified solely by fileupload 1.5 `FileUploadBase`'s deprecated javax
+    overloads. fu2-core carries zero servlet types, so the shim is dead. The *other* compileOnly
+    (`servlet.javax.servlet.api` = jakarta.servlet-api 6.0.0) is unrelated and kept.
+
+Call sites (8): SecureResource, TriageRestlet, UserCacheResource, SearchResource, FileList,
+ConfigResource, Importer, FileWriterWrapper. SecureResource conflicts were resolved **per-hunk** (fu2
+code only) to preserve this branch's okParity (204) + empty-param parity + the `XnatWebDavStatus` rename —
+never by taking the file wholesale. **Full suite green: 1543/0/0.**
 
 ## Known blockers / next up
 **Phase 0 is complete, and the 1-14 scout run proves the Jakarta runtime works**: the

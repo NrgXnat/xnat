@@ -61,7 +61,7 @@ Each row targets a specific piece that only a running server can validate.
 - The stack is **dev-only** (default `xnat`/`xnat` DB creds, unauthenticated broker). Do not expose it.
 
 ## Golden-master capture/check
-`./docker/golden-capture.sh` drives `docs/tools/golden_master.py` against the running stack: it hits a
+`./docker/golden-capture.sh` drives `docker/golden_master.py` against the running stack: it hits a
 curated set of `/app` screens + `/data`/`/xapi` endpoints, normalizes volatile bits (CSRF, session id,
 timestamps, cache-busters), and stores/compares each response.
 ```bash

@@ -63,6 +63,7 @@ RUN chmod +x /usr/local/bin/*.sh
 # for the WAR expansion below).
 RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
+        curl \
         netcat-traditional \
         iputils-ping \
         net-tools \

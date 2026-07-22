@@ -3,10 +3,16 @@
 # For the Phase-0 javax WAR (feature/turbine-5x), override TOMCAT_BASE back to
 # tomcat:9-jdk21-temurin — a javax WAR will not boot on the Tomcat 10 default.
 #
-# Quick start:
-#   ./docker/stage-war.sh        # builds :xnat-web:war -> docker-context/xnat.war
-#   docker compose up --build    # brings up db + broker + xnat
-#   open http://localhost:8080   # first boot runs schema creation; give it a few minutes
+# Quick start (3 phases — boot, then two scripts):
+#   ./docker/stage-war.sh              # builds :xnat-web:war -> docker-context/xnat.war
+#   docker compose up --build          # 1) boot db + broker + xnat, UNINITIALIZED (like develop)
+#   SMTP_PASS=... ./docker/init-xnat.sh   # 2) first-install setup + base site config + SMTP
+#   ./docker/build-known-state.sh  # 3) (optional) seed the reproducible data fixture
+#   open http://localhost:8080         # first boot runs schema creation; give it a few minutes
+#
+# The container boots UNINITIALIZED (empty DB -> setup wizard), the same as the develop branch —
+# the entrypoint no longer auto-inits. Complete first-install setup + config with init-xnat.sh,
+# then optionally populate fixture data with build-known-state.sh.
 #
 # Service names MUST stay xnat-postgresql / xnat-activemq: the Dockerfile bakes those
 # hostnames into xnat-conf.properties at build time (see Dockerfile ARG defaults).
@@ -23,7 +29,7 @@
 #  docker compose up --build      # fresh DB + archive; first boot re-runs schema creation
 #
 #- down -v removes the compose-declared volumes (xnat-db, xnat-data). Plain down keeps them, so the DB would survive.
-#- First boot runs XNAT's schema creation and site setup — give it a few minutes before http://localhost:8080 responds.
+#- First boot runs XNAT's schema creation — give it a few minutes before http://localhost:8080 responds; it comes up UNINITIALIZED (run docker/init-xnat.sh to complete setup).
 #
 #  Verify it's actually gone
 #  docker volume ls | grep xnat     # should NOT list xnat_xnat-db / xnat_xnat-data after down -v
@@ -52,18 +58,6 @@ services:
     ports:
       - "${ACTIVEMQ_CONSOLE_PORT:-8161}:8161"   # web console (admin/admin) — optional
 
-  xnat-mail:
-    # Dev SMTP sink so notifications (new-user emails, etc.) never fail against a
-    # missing mail server. XNAT reaches it as xnat-mail:1025; view captured mail at
-    # http://localhost:8025. Point XNAT at it once via:
-    #   POST /xapi/notifications/smtp?hostname=xnat-mail&port=1025
-    # (build-known-state.sh does this automatically). Mailpit is multi-arch (arm64).
-    image: axllent/mailpit:latest
-    expose:
-      - "1025"        # SMTP (in-network, reachable as xnat-mail:1025)
-    ports:
-      - "${MAILPIT_UI_PORT:-8025}:8025"   # web UI
-
   xnat:
     build:
       context: .
@@ -76,8 +70,6 @@ services:
       xnat-postgresql:
         condition: service_healthy
       xnat-activemq:
-        condition: service_started
-      xnat-mail:
         condition: service_started
     ports:
       - "${XNAT_PORT:-8080}:8080"

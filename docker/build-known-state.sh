@@ -23,8 +23,14 @@
 # so CT/PET stay shells. Set WITH_DICOM=0 to skip the real import; add your own datasets
 # via SESSION_DATASETS[] (see the import_dicom_zip hook).
 #
-# Requirements: httpie (`http`), an empty XNAT, admin credentials.
+# Phase 3 of the local dev/test workflow — this script only POPULATES data. It assumes XNAT is
+# already booted (docker compose up --build) AND initialized + configured by Phase 2
+# (docker/init-xnat.sh, which does first-install setup + base site config + mail). It fails
+# fast with a pointer if the target is still uninitialized.
+#
+# Requirements: httpie (`http`), an initialized (empty of data) XNAT, admin credentials.
 # Usage:
+#   ./docker/init-xnat.sh                                     # Phase 2 (once)
 #   BASE_URL=http://localhost:8080 ADMIN_USER=admin ADMIN_PASS=secret ./build-known-state.sh
 #   ./build-known-state.sh --dry-run          # print what it would do, make no changes
 #
@@ -46,11 +52,8 @@ USER_PASS="${USER_PASS:-Fixture_pw_1!}"
 # httpie output: quiet by default. Set HTTP_PRINT=hb (headers+body) to debug failures.
 PRINT_OPT="--print=${HTTP_PRINT:-}"
 
-# Dev SMTP sink (the docker-compose 'xnat-mail' / Mailpit service). Points XNAT's mail
-# host here so new-user and other notification emails never fail against a missing SMTP
-# server. Set SMTP_HOST="" to leave XNAT's mail config untouched.
-SMTP_HOST="${SMTP_HOST:-xnat-mail}"
-SMTP_PORT="${SMTP_PORT:-1025}"
+# NB: first-install setup, base site config, and the mail sink are Phase 2 — see
+# docker/init-xnat.sh. preflight() below only ASSERTS the target is already initialized.
 
 # Users: username|first|last|project-role  (role is how they'll be shared onto projects)
 USERS=(
@@ -86,7 +89,7 @@ WITH_FILES="${WITH_FILES:-1}"
 FILE_TIMEOUT="${FILE_TIMEOUT:-15}"
 
 WITH_DICOM="${WITH_DICOM:-1}"
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # PROJECT|SUBJECT|SESSION_LABEL|space-separated repo-relative globs of DICOM files
 DICOM_SOURCES=(
   "kstate_p1|kstate_p1_sub1|kstate_p1_sub1_MRreal|xnat-web/src/test/resources/dicom-web/1.MR.head_DHead.4.*.dcm"
@@ -151,26 +154,28 @@ sess_type() { printf 'xnat:%sSessionData' "$1"; }
 scan_type() { printf 'xnat:%sScanData' "$1"; }
 
 # ---- phases -------------------------------------------------------------------------
+
+# Verify the target is already initialized (Phase 2 / init-xnat.sh). This script populates data
+# only. A fresh XNAT routes EVERY non-setup request through the setup wizard (XnatInitCheckFilter):
+# basic-auth calls to a normal endpoint get 403 "Site has not yet been configured" until the
+# 'initialized' site preference is set — so bail early with a pointer instead of 403-ing partway.
 preflight() {
-  step "Preflight: httpie + XNAT reachability"
+  step "Preflight: httpie + XNAT initialized"
   command -v http >/dev/null 2>&1 || { echo "${C_ERR}httpie ('http') not found — install it (pip install httpie).${C_RST}"; exit 1; }
   [[ -n "$ADMIN_PASS" ]] || { echo "${C_ERR}ADMIN_PASS is empty — set it in the environment.${C_RST}"; exit 1; }
   if ! $DRY_RUN; then
+    local state
+    state=$(http --check-status --body --ignore-stdin --timeout=15 -a "$AUTH" \
+              GET "$BASE_URL/xapi/siteConfig/initialized" 2>/dev/null | tr -d '[:space:]' || true)
+    if [[ "$state" != "true" ]]; then
+      echo "${C_ERR}XNAT at $BASE_URL is not initialized (initialized=${state:-unreachable}).${C_RST}"
+      echo "${C_ERR}Run Phase 2 first:  ADMIN_PASS=$ADMIN_PASS ./docker/init-xnat.sh${C_RST}"
+      exit 1
+    fi
     http --check-status "$PRINT_OPT" --ignore-stdin --timeout=15 -a "$AUTH" GET "$BASE_URL/xapi/siteConfig/siteId" \
       || { echo "${C_ERR}Cannot reach/auth $BASE_URL — check BASE_URL/creds and that XNAT is up.${C_RST}"; exit 1; }
   fi
-  log "${C_OK}ok${C_RST} — target: $BASE_URL as $ADMIN_USER"
-}
-
-configure_mail() {
-  [[ -n "$SMTP_HOST" ]] || { log "  ${C_DIM}(SMTP_HOST empty — leaving XNAT mail config as-is)${C_RST}"; return 0; }
-  step "Mail sink"
-  # Set the SMTP server via POST /xapi/notifications with an embedded 'smtpServer' JSON.
-  # NB: the /xapi/notifications/smtp form-param endpoint mis-binds its trailing Properties
-  # arg and returns 500 ("argument type mismatch"), so use the @RequestBody map endpoint.
-  printf '{"smtpServer": "{\\"hostname\\":\\"%s\\",\\"port\\":%s}"}' "$SMTP_HOST" "$SMTP_PORT" \
-    | body_soft POST "$BASE_URL/xapi/notifications" application/json
-  log "  ${C_OK}smtp${C_RST} -> $SMTP_HOST:$SMTP_PORT (captured mail at http://localhost:8025)"
+  log "${C_OK}ok${C_RST} — target: $BASE_URL as $ADMIN_USER (initialized)"
 }
 
 create_users() {
@@ -396,7 +401,6 @@ summary() {
 
 # ---- main ---------------------------------------------------------------------------
 preflight
-configure_mail
 create_users
 build_hierarchy
 import_repo_dicom

@@ -2,19 +2,22 @@
 
 Status tracker for the staged real port (see the full plan and
 [`phase0-compile-migration-summary.md`](phase0-compile-migration-summary.md) /
-[`tomcat9-deploy-stack.md`](tomcat9-deploy-stack.md) for detail). Branch: `feature/turbine-5x`.
+[`tomcat9-deploy-stack.md`](tomcat9-deploy-stack.md) for detail). Branch: `feature/jakarta-cutover`
+(the Phase-0 baseline lives on `feature/turbine-5x`).
 
-**Last updated:** 2026-07-19 (evening — Jakarta cutover boots + verified on Tomcat 10)
+**Last updated:** 2026-07-23 (Restlet 2.6 www-form double-read regression fixed; tracker refreshed)
 
 **Legend:** 🟢 Complete · 🟡 In progress · ⚪ Open
 
 **Rollup:** Phase 0a 🟢 · Phase 0b 🟢 · **Phase 1: cutover LANDED and runtime-verified** on branch
 `feature/jakarta-cutover` — full test suite green, local stack switched to Tomcat 10.1.57 /
-Turbine 7.0 / Restlet 2.6 / Spring 6. Remaining 🟡/⚪ rows are the tail: hardening + breadth
-(1-12 reflection audit, 1-15 Playwright suite), merge-time work (CI flip in 1-13, oauth2/
-`AntPathRequestMatcher` in 1-2), and quality follow-ups (1-16/17 logging, springdoc).
+Turbine 7.0 / Restlet 2.6 / Spring 6. Remaining 🟡/⚪ rows are the tail only: **1-2** (oauth2 jar
+decision + `AntPathRequestMatcher` SS7-prep), **1-13** (CI flip — local dev already on Tomcat 10),
+**1-17** (optional upstream Turbine log4j PR), **1-19** (Restlet 2.6 param-model refactor follow-up).
+Everything else is 🟢 — namespace, all version bumps, logging (1-16), reflection audit (1-12),
+Playwright (1-15), springdoc, fileupload2.
 
-Test harness: `docs/tools/build-known-state.sh` (REST fixture: 3 users / 5 projects / subjects /
+Test harness: `docker/build-known-state.sh` (REST fixture: 3 users / 5 projects / subjects /
 MR-CT-PET sessions / files / stored searches / project config, Mailpit SMTP sink on :8025) +
 `docker/golden-capture.sh` (normalize-and-diff goldens in `docs/goldens/`, local-only) +
 `docs/data-rest-endpoint-reference.md(.json)` + REST smoke spec drafted in `xnat-test-automation`
@@ -119,7 +122,7 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | # | Step | Status | Notes |
 |---|------|:------:|-------|
 | 1-1 | Spring 5.3 → 6.x | 🟢 | 6.2.19, **runtime-verified on Tomcat 10**. Boot required javac `-parameters` (Spring 6.1 removed `LocalVariableTableParameterNameDiscoverer` — aspects + `@RequestParam` binding) |
-| 1-2 | Spring Security 5.7 → 6.x | 🟡 | **6.5.11 landed + compiles** (openid removed, test configs component-style, `authenticationIsRequired` visibility). **Runtime-verified on the live stack** (form login/session persistence via explicit `SecurityContextRepository`, logout, Basic auth, `ObjectPostProcessor` package move). Remaining: legacy `spring-security-oauth2` 2.5.2.RELEASE jar decision (classpath-only, zero core source refs — plugin-facing), `AntPathRequestMatcher` removal warnings (SS7 prep). Original prep notes: | **Prep landed early on 5.7 (testable):** `WebSecurityConfigurerAdapter` (removed in 6) → component style: `@Bean SecurityFilterChain` (lambda DSL) + explicit `@Bean AuthenticationManager`; `XnatSecurityExtension` hooks preserved; login/logout verified. **Keep `authorizeRequests`** — XNAT's real rules come from `UpdateSecurityFilterHandlerMethod` (BeanPostProcessor) swapping the `FilterSecurityInterceptor` metadata source (openUrls/adminUrls/requireLogin, live-updatable); `authorizeHttpRequests` builds an `AuthorizationFilter` the post-processor never sees → login redirect loop (tried + reverted). `AuthorizationManager` port is an SS**7** task. Remaining at cutover: version bump, `spring-security-openid` removal, legacy `oauth2` project, `ChannelProcessingFilter` deprecation |
+| 1-2 | Spring Security 5.7 → 6.x | 🟡 | **6.5.11 landed + compiles** (openid removed, test configs component-style, `authenticationIsRequired` visibility). **Runtime-verified on the live stack** (form login/session persistence via explicit `SecurityContextRepository`, logout, Basic auth, `ObjectPostProcessor` package move). Remaining: legacy `spring-security-oauth2` 2.5.2.RELEASE jar decision (classpath-only, zero core source refs — plugin-facing), `AntPathRequestMatcher` removal warnings (SS7 prep). Original prep notes: **Prep landed early on 5.7 (testable):** `WebSecurityConfigurerAdapter` (removed in 6) → component style: `@Bean SecurityFilterChain` (lambda DSL) + explicit `@Bean AuthenticationManager`; `XnatSecurityExtension` hooks preserved; login/logout verified. **Keep `authorizeRequests`** — XNAT's real rules come from `UpdateSecurityFilterHandlerMethod` (BeanPostProcessor) swapping the `FilterSecurityInterceptor` metadata source (openUrls/adminUrls/requireLogin, live-updatable); `authorizeHttpRequests` builds an `AuthorizationFilter` the post-processor never sees → login redirect loop (tried + reverted). `AuthorizationManager` port is an SS**7** task. Remaining at cutover: version bump, `spring-security-openid` removal, legacy `oauth2` project, `ChannelProcessingFilter` deprecation |
 | 1-3 | tomcat-embed 9 → 10 | 🟢 | 10.1.57 (catalog-only; no direct consumers) |
 | 1-4 | servlet-api javax → jakarta 5+ | 🟢 | jakarta.servlet-api 6.0.0 via the kept `servlet-javax-servlet-api` alias. The javax 3.1 `servlet-api-javax-legacy` compileOnly shim was **removed 2026-07-22** with the fileupload2 migration (it existed only for fileupload 1.5's deprecated javax overloads; fu2-core has no servlet types) |
 | 1-5 | Torque 5 → 6 | 🟢 | **Deleted** (catalog + all decl sites; `org.apache.torque` excluded from Turbine 7). Runtime-reflection check rides the 1-12 audit |
@@ -139,6 +142,9 @@ atomic Jakarta cutover to Tomcat 10 (Phase 1, namespace + DI-version only).
 | 1-19 | Restlet 2.6 servlet param model — collapse the body+query double-read (`SecureResource`) | ⚪ | **Follow-up to a shipped cutover regression fix (found via `TestPrearchiveMgmt#testArchiveEmptySessionAfterProjectAnonRejection`).** *Bug:* under Restlet 2.6's servlet connector (`org.restlet.ext.servlet.ServletUtils`), an `application/x-www-form-urlencoded` POST is parsed by the container, which **merges the query string and form body** into one decoded namespace (`jakarta.servlet.ServletRequest#getParameterMap`, Servlet 6.0 §3.1) and consumes the body stream; Restlet then rebuilds the request **entity from that merged map**. Restlet 1.1 (`com.noelios.…ServletCall`) exposed only the raw body. `SecureResource.handlePost()` reads params from **both** `loadBodyVariables()` (`getBodyAsForm()` → entity → merged) **and** `loadQueryVariables()` (`getQueryAsForm()` → query), so every query param was counted **twice**. In `Archiver`/`BatchPrearchiveActionsA` a lone `src` became two → `sessions.size()!=1` → the empty-session archive took the **async batch** path `PrearcDatabase.archive(List)` (fire-and-forget; swallows the `SyncFailedException`) → **HTTP 200 where the sync single-session path returns 500**. **A/B proven on live stacks:** develop-baseline WAR on Tomcat 9 → **500** (test passes, routes via `PrearchiveOperationRequestListener` sync); jakarta on Tomcat 10 → **200** (routes via `PrearcDatabase$12.run` batch, double-processes the session → the `SPP_…MR2.xml Premature end of file` noise). Isolated to the `x-www-form-urlencoded` Content-Type by curl (empty www-form body + one `src` in query → batch; no Content-Type → single) and by proxy-capturing REST-assured's request (`Content-Type: application/x-www-form-urlencoded`, `Content-Length: 0`, `src` once in query). **Shipped fix (surgical):** `SecureResource.bodyOnlyForm()` reduces the entity form to `merged − query` inside `getBodyAsForm()`, restoring a body-only view (the only way to recover it in 2.x, since the raw body stream is already consumed). Bug class = "`SecureResource` POST/PUT that reads params from both body and query under www-form" — swept: **4** double-read dispatchers (`SecureResource`, `PrearcSessionResource`, `MailRestlet`, `BatchPrearchiveActionsA`) + **3** other `getBodyAsForm`/`getBodyVariable` users — all funnel through the one patched method. Verified on the rebuilt Tomcat-10 stack: the failing test now **passes** (500, sync path), full `TestPrearchiveMgmt`+`TestArchive` **11/11** green. **This item = the cleaner long-term model, not the fix:** stop splitting body vs query — read the merged namespace **once** (`RequestUtil.getHttpServletRequest(getRequest()).getParameterMap()`, or the entity form with a query fallback) in a single `loadParameters()`, replacing the `loadBodyVariables()`+`loadQueryVariables()` pairs. `getQueryVariable` (query-only, **52** call sites) stays; **audit the 4 `getBodyVariable` sites** — a merged read gives them query visibility they don't have today, so either keep `bodyOnlyForm` for them or confirm the merge is acceptable. Deliberate refactor (SS7 / Restlet-cleanup era), verified against the prearchive suite — **not** a cutover gate. **Verified A/B on the live stacks (2026-07-23), which corrected an initial assumption — the patch is _more correct than develop_, not a bug-for-bug clone.** Three `www-form` archive requests, fixed-Jakarta (:8080) vs develop-baseline (:8081): **(1)** `src` in query, **empty body** (the real REST-assured request) → both **SINGLE/500** ✅ — this is the reported bug and the case that matters; **(2)** `src` in **query + body** (same name) → Jakarta **BATCH** (2 `src`, per Servlet §3.1 query∪body) vs develop **SINGLE** (1 `src`); **(3)** `src` in **body only** → Jakarta **SINGLE** (body read) vs develop **404** (body dropped). *Mechanism of the divergence:* develop's Restlet 1.1 `com.noelios.…ServletCall` returns the **already-consumed (empty) body stream** for a `www-form` POST — Tomcat drained it into `getParameterMap()` — so develop **silently drops all `www-form` body params** and is effectively query-only; `bodyOnlyForm` instead recovers them (`merged − query`). The two coincide **only when the body is empty**, which is every real archive request, so the fix is correct and the full `TestPrearchiveMgmt`+`TestArchive` run is 11/11. **Behavior-change caveat:** for the 4 `getBodyVariable` sites a `www-form` body parameter that develop ignored is now **honored** — low-risk (no exercised client posts `www-form` body params) but a genuine semantic change, and the strongest argument for this item: reading `getParameterMap()` once yields the single Servlet-spec answer instead of three behaviors (develop's body-drop, raw-2.x's double-count, the subtraction's decoding-parity edge) |
 
 ### Decision — logging stays dual on 5.1; unify at 7.0
+**RESOLVED by 1-16 (2026-07-21): logging is now unified on Logback on the 7.0/jakarta stack.** The
+rationale below is retained as the Phase-0b history explaining why 5.1 kept dual logging.
+
 Turbine **5.1** hard-uses log4j-core in code: `Turbine.configureLogging()` calls
 `LogManager.getContext(false)` and **casts to `org.apache.logging.log4j.core.LoggerContext`** at init, so
 log4j-core cannot be removed (Turbine won't start) and cannot be swapped for `log4j-to-slf4j` (the cast
@@ -168,9 +174,11 @@ empty relocation jar at 8.x, which silently disabled Hibernate's AUTO bean-valid
 removal, and a long-inert null `actionProviders()` stub bean in EventServiceTestConfig that Spring 6's
 by-name resolution shortcut suddenly matched once `-parameters` exposed parameter names.
 
-**Remaining Phase-1 follow-ups:** 1-12 reflection audit; 1-15 Playwright suite; 1-16/17 logging
-unification (logback 1.5/slf4j 2); legacy `spring-security-oauth2` jar removal decision;
-`AntPathRequestMatcher` deprecations (SS7 prep); 1-13 flip compose/CI defaults.
+**Remaining Phase-1 follow-ups (2026-07-23):** 1-2 legacy `spring-security-oauth2` jar removal decision
++ `AntPathRequestMatcher` deprecations (SS7 prep); 1-13 flip **CI** to Tomcat 10 (local dev already
+flipped); 1-17 upstream Turbine log4j PR (optional); 1-19 Restlet 2.6 param-model refactor (follow-up
+to the shipped `bodyOnlyForm` fix). *(1-12 reflection audit, 1-15 Playwright, 1-16 logging unification,
+and springdoc are all now 🟢.)*
 
 **DONE — springfox → springdoc-openapi (2026-07-20).** Removed the dead springfox 2.9 jars
 (`parent` api export, `spawner` — swapped to a direct `swagger-annotations` dep since it was leaning on
@@ -235,11 +243,11 @@ which is 204 in Restlet 2.6 (was 200 in 1.1). The xnat-test-automation suite (ca
 develop-branch/pre-migration cloud instances) hard-checks `=== 200` and aborts, which is what surfaced
 it. **Bug class:** every Restlet resource whose happy path relies on the default success status now
 returns 204 instead of 200 — breaks any client checking for exactly 200 (test harness, pyxnat/XNATpy,
-upload scripts, pipeline engine). Also observed once: a project `DELETE` returned 500 on the scout where
-:8080 returned 204 — possible second instance, not yet chased. **NOT confirmed against a pre-migration
-WAR baseline yet** (that + the fix are the TODO). Likely fix altitude: a shared Restlet response filter
-that maps empty-body success → 200 (or explicit `SUCCESS_OK` in the affected resources), then sweep all
-resources relying on the default. Decision needed: restore 200 vs. accept 204 and update clients.
+upload scripts, pipeline engine). **Decision made + shipped: restore 200** — the okParity mechanism above
+(mark bodyless-OK, restore `SUCCESS_OK` after Restlet's 200→204 rewrite), verified `okParity` 7/7. So the
+original "restore 200 vs. accept 204" question and the "confirm against a pre-migration baseline" TODO are
+**closed**. **Still open:** a project `DELETE` that returned 500 on the scout where :8080 returned 204 — a
+possible second instance, not yet chased.
 
 **DONE 2026-07-22: commons-fileupload 1.5 → commons-fileupload2 2.0.0-M5 (jakarta-servlet6).**
 Originally deferred on 2026-07-20 (keep 1.5 until fu2 reaches GA), then executed to converge with the
@@ -268,14 +276,21 @@ ConfigResource, Importer, FileWriterWrapper. SecureResource conflicts were resol
 code only) to preserve this branch's okParity (204) + empty-param parity + the `XnatWebDavStatus` rename —
 never by taking the file wholesale. **Full suite green: 1543/0/0.**
 
-## Known blockers / next up
-**Phase 0 is complete, and the 1-14 scout run proves the Jakarta runtime works**: the
-bytecode-converted Phase-0 WAR is fully functional on Tomcat 10.1.57 (S1600 24/24, health 8/8,
-screens render). The remaining Phase-1 risk is therefore the *source-level* port, not the runtime:
-version bumps (Spring 6 / Spring Security 6 / tomcat-embed 10 / Restlet 2.6 / Turbine 7.0 /
-Torque-delete), `javax`→`jakarta` namespace (~73 servlet files + web.xml/JSP/TLD, 1-9/1-10), and
-the `ext.fileupload` replacement (1-11). Known cutover expectations from the scout: Tomcat 10
-defaults response charsets to UTF-8 (golden header diffs) and the empty-archive
-`SystemPathVerification` error is environmental.
-5. **Phase 1 kickoff** — with 1-2 prepped and 1-5 likely a deletion, the cutover is close to the
-   intended shape: namespace (`javax`→`jakarta`) + version bumps + `ext.fileupload` replacement (1-11).
+## Known blockers / next up (2026-07-23)
+**The Jakarta cutover has LANDED and is runtime-verified** on `feature/jakarta-cutover` —
+Tomcat 10.1.57 / Turbine 7.0 / Restlet 2.6 / Spring 6 + SS 6.5. Full `./gradlew test` green; the local
+fixture stack runs the jakarta build; the external REST suite is exercised against it (and surfaced +
+fixed 1-18 and the 1-19 Restlet param-model regression). The source-level port is complete — version
+bumps, `javax`→`jakarta` namespace, and `ext.fileupload`→commons-fileupload2 are all done (1-1…1-11 🟢).
+
+Only the tail remains:
+- **1-2** — legacy `spring-security-oauth2` jar removal decision + `AntPathRequestMatcher` deprecations (SS7 prep).
+- **1-13** — flip **CI** to Tomcat 10 / Java 21 (local dev already flipped; this is the main merge gate).
+- **1-17** — consume the upstream Turbine log4j-decoupling PR (optional; not a gate).
+- **1-19** — Restlet 2.6 param-model refactor (deliberate follow-up to the shipped `bodyOnlyForm` fix).
+- **Open thread** — a possible second Restlet 200→204 instance (a project `DELETE` → 500 on the scout), not yet chased.
+
+Merge readiness is gated by **1-13 (CI)** and the **1-2 oauth2 decision**; the rest are quality follow-ups.
+Known-benign cutover expectations (from the scout, all confirmed): Tomcat 10 / Servlet 6 default response
+charsets to UTF-8 (cosmetic golden header diffs) and the empty-archive `SystemPathVerification` error is
+environmental.

@@ -154,7 +154,7 @@ pull tools), and a full **create → save → 302 → report** action workflow.
    - Remaining breadth: wider `/app` screen coverage (item-text/report screens).
 
 Validation path: continue the [smoke-test checklist](tomcat9-deploy-stack.md) / `./docker/health-check.sh`,
-then automated regression — `xnat-rest-tests` (REST `/data` + `/xapi`) + golden-master (`docs/tools/golden_master.py`) for `/app` screens.
+then automated regression — `xnat-rest-tests` (REST `/data` + `/xapi`) + golden-master (`docker/golden_master.py`) for `/app` screens.
 
 ## Phase 1 prep done early (on the testable 5.7/javax stack)
 

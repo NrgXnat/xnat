@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Capture (or check) normalized responses from a running XNAT for golden-master testing.
-# Wraps docs/tools/golden_master.py: hits a curated set of /app screens and /data + /xapi endpoints,
+# Wraps docker/golden_master.py: hits a curated set of /app screens and /data + /xapi endpoints,
 # normalizes volatile bits (CSRF, session id, timestamps, cache-busters), and stores/compares each.
 #
 # Usage:
@@ -23,7 +23,7 @@ XNAT_PASS="${XNAT_PASS:-admin}"
 GOLDEN_DIR="${GOLDEN_DIR:-docs/goldens}"
 
 here="$(cd "$(dirname "$0")" && pwd)"
-GM="$here/../docs/tools/golden_master.py"
+GM="$here/golden_master.py"
 [ -f "$GM" ] || { echo "missing $GM"; exit 2; }
 mkdir -p "$GOLDEN_DIR"
 JAR="$(mktemp)"; BODY="$(mktemp)"; FULL="$(mktemp)"; trap 'rm -f "$JAR" "$BODY" "$FULL"' EXIT
@@ -33,7 +33,7 @@ JAR="$(mktemp)"; BODY="$(mktemp)"; FULL="$(mktemp)"; trap 'rm -f "$JAR" "$BODY" 
 # content negotiation; /xapi is Spring MVC (not migrated, sanity only).
 #
 # The fixture-specific rows below (data-session-detail, data-file-download) assume the known-state
-# data created by docs/tools/build-known-state.sh (project kstate_p1, subject kstate_p1_sub1, session
+# data created by docker/build-known-state.sh (project kstate_p1, subject kstate_p1_sub1, session
 # kstate_p1_sub1_mr1 with a NOTES/readme.txt file). They deliberately exercise the router matching
 # regression we fixed: nested detail (BEST_MATCH) and download-by-name (STARTS_WITH / getRemainingPart).
 FX="/data/projects/kstate_p1/subjects/kstate_p1_sub1/experiments/kstate_p1_sub1_mr1"

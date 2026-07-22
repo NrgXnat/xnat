@@ -258,7 +258,8 @@ public class ExptFileUpload extends SecureAction {
         }
     }
 
-    public void doFinalize(RunData data, Context context) throws Exception {
+    public void doFinalize(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         ItemI temp = TurbineUtils.GetItemBySearch(data,false);
         XnatImagesessiondata tempMR = (XnatImagesessiondata) org.nrg.xdat.base.BaseElement.GetGeneratedItem(temp);
         

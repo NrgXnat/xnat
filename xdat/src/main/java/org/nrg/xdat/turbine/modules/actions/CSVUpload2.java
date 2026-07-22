@@ -73,7 +73,8 @@ public class CSVUpload2 extends SecureAction {
         preserveVariables(data,context);
     }
 
-    public void doUpload(RunData data, Context context) throws Exception {
+    public void doUpload(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
         ParameterParser params = data.getParameters();
 
@@ -106,7 +107,8 @@ public class CSVUpload2 extends SecureAction {
         data.setScreenTemplate("XDATScreen_uploadCSV2_Save.vm");
     }
 
-    public void doStore(RunData data,Context context) throws Exception{
+    public void doStore(PipelineData pipelineData,Context context) throws Exception{
+        RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
         ArrayList rows = (ArrayList)data.getSession().getAttribute("rows");
 
@@ -316,7 +318,8 @@ public class CSVUpload2 extends SecureAction {
     }
 
 
-    public void doProcess(RunData data, Context context)  {
+    public void doProcess(PipelineData pipelineData, Context context)  {
+        RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
         String project = ((String)TurbineUtils.GetPassedParameter("project",data));
 

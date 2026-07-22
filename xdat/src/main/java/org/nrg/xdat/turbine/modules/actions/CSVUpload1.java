@@ -50,7 +50,8 @@ public class CSVUpload1 extends SecureAction {
         }
     }
 
-    public void doPrep(RunData data, Context context) throws Exception {
+    public void doPrep(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         preserveVariables(data,context);
         
         String root = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("root_data_type",data));

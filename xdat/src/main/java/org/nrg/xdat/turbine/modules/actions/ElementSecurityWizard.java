@@ -51,7 +51,8 @@ public class ElementSecurityWizard extends AdminAction {
      * @param context
      * @throws Exception
      */
-    public void doStep1(RunData data, Context context) throws Exception{
+    public void doStep1(PipelineData pipelineData, Context context) throws Exception{
+        RunData data = pipelineData.getRunData();
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 
@@ -70,7 +71,8 @@ public class ElementSecurityWizard extends AdminAction {
      * @param context
      * @throws Exception
      */
-    public void doStep2(RunData data, Context context) throws Exception{
+    public void doStep2(PipelineData pipelineData, Context context) throws Exception{
+        RunData data = pipelineData.getRunData();
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 
@@ -107,7 +109,8 @@ public class ElementSecurityWizard extends AdminAction {
      * @param context
      * @throws Exception
      */
-    public void doStep3(RunData data, Context context) throws Exception{
+    public void doStep3(PipelineData pipelineData, Context context) throws Exception{
+        RunData data = pipelineData.getRunData();
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 
@@ -281,7 +284,8 @@ public class ElementSecurityWizard extends AdminAction {
      * @param context
      * @throws Exception
      */
-    public void doStep4(RunData data, Context context) throws Exception{
+    public void doStep4(PipelineData pipelineData, Context context) throws Exception{
+        RunData data = pipelineData.getRunData();
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 

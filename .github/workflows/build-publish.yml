@@ -41,8 +41,10 @@ jobs:
       publish-jfrog: ${{ github.event_name == 'push' || inputs.publish_jfrog }}
 
       # ──── GHCR ────
+      # Publishes to ghcr.io/nrgxnat/xnat (github.com/NrgXnat/xnat/pkgs/container/xnat).
+      # (The old 'xnat-web' package is linked to the legacy NrgXnat/xnat-web repo)
       publish-ghcr: ${{ github.event_name == 'push' || inputs.publish_ghcr }}
-      image-name: 'xnat-web'
+      image-name: 'xnat'
       dockerfile-path: './Dockerfile'
       docker-context-filename: 'xnat.war'
       logback-path-in-war: 'WEB-INF/classes/logback.xml'

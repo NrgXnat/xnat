@@ -31,6 +31,12 @@ ARG XNAT_INIT_HEAP=20.0
 ARG XNAT_MAX_HEAP=66.0
 ARG XNAT_ACTIVEMQ=xnat-activemq
 
+# Non-root runtime uid:gid. 1000:1000 = the helm chart's `tomcat` user/group,
+# matching its securityContext runAsUser: 1000 / fsGroup: 1000, so the image is
+# a drop-in for the chart with no runAsUser/runAsGroup override needed.
+ARG XNAT_UID=1000
+ARG XNAT_GID=1000
+
 # Container-aware heap sizing. Percentages refer to the cgroup limit;
 # they're harmless under plain `docker run` as well (default 75% MaxRAM).
 ENV CATALINA_OPTS="-XX:+UseContainerSupport \
@@ -41,7 +47,8 @@ ENV CATALINA_OPTS="-XX:+UseContainerSupport \
 
 ENV XNAT_HOME=${XNAT_HOME} \
     XNAT_DATASOURCE_USERNAME=${XNAT_DATASOURCE_USERNAME} \
-    PGPASSWORD=${XNAT_DATASOURCE_PASSWORD}
+    PGPASSWORD=${XNAT_DATASOURCE_PASSWORD} \
+    TZ=Etc/UTC
 
 # -----------------------------------------------------------------------------
 # Helper scripts. Copied from ./docker/ in the build context.
@@ -86,9 +93,23 @@ RUN /usr/local/bin/make-xnat-config.sh
 # rewritten WEB-INF/classes/logback.xml to ConsoleAppender via
 # scripts/edit-log.py, so no further log config patching needed here.
 COPY docker-context/xnat.war /tmp/ROOT.war
-RUN unzip -o -d ${TOMCAT_XNAT_FOLDER_PATH} /tmp/ROOT.war && rm /tmp/ROOT.war
+# Explode the WAR and, in the SAME layer, chown + group-write (g=u) the exploded
+# webapp to the non-root uid, so the recursive chown doesn't force a second
+# copy-up of the whole webapp into a later layer.
+RUN unzip -o -d ${TOMCAT_XNAT_FOLDER_PATH} /tmp/ROOT.war && rm /tmp/ROOT.war \
+ && chown -R ${XNAT_UID}:${XNAT_GID} ${CATALINA_HOME}/webapps \
+ && chmod -R g=u ${CATALINA_HOME}/webapps
+
+# Non-root: own the remaining writable paths as ${XNAT_UID}:${XNAT_GID},
+# group-writable (g=u) to match the chart's runAsUser: 1000 / fsGroup: 1000.
+# ${XNAT_ROOT} (=/data/xnat) covers ${XNAT_HOME} and the data dirs beneath it;
+# ${CATALINA_HOME}/{conf,work,temp,logs} let Tomcat write on a standalone run.
+# Runs before VOLUME so the seeded /data/xnat ownership sticks.
+RUN chown -R ${XNAT_UID}:${XNAT_GID} ${XNAT_ROOT} ${CATALINA_HOME}/conf ${CATALINA_HOME}/work ${CATALINA_HOME}/temp ${CATALINA_HOME}/logs \
+ && chmod -R g=u ${XNAT_ROOT} ${CATALINA_HOME}/conf ${CATALINA_HOME}/work ${CATALINA_HOME}/temp ${CATALINA_HOME}/logs
 
 VOLUME ["/data/xnat"]
 EXPOSE 8080
 
+USER ${XNAT_UID}:${XNAT_GID}
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh", "/usr/local/tomcat/bin/catalina.sh", "run"]

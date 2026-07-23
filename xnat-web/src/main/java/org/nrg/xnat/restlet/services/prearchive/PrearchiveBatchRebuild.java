@@ -46,8 +46,7 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
 	@Override
 	public void handleParam(final String key, final Object value) {
 		if (PARAM_OVERRIDE_LOCK.equals(key)) {
-			_overrideLock = Boolean.parseBoolean((String) value);
-			getAdditionalValues().put(PARAM_OVERRIDE_LOCK, _overrideLock);
+			getAdditionalValues().put(PARAM_OVERRIDE_LOCK, Boolean.parseBoolean((String) value));
 		} else {
 			super.handleParam(key, value);
 		}
@@ -152,6 +151,5 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
 		}
 	}
 
-	private boolean _overrideLock;
 	private boolean _failed;
 }

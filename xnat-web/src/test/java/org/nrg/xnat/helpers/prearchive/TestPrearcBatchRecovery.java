@@ -12,12 +12,9 @@ package org.nrg.xnat.helpers.prearchive;
 import org.junit.Test;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,11 +33,6 @@ import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus._BUILDING
  * blows up, and what the caller is told was done. See XNAT-8767.
  */
 public class TestPrearcBatchRecovery {
-    private static final Duration THRESHOLD = Duration.ofMinutes(30);
-    private static final Instant  NOW       = Instant.parse("2026-07-15T12:00:00Z");
-    private static final Date     STALE     = Date.from(NOW.minus(Duration.ofHours(6)));
-    private static final Date     FRESH     = Date.from(NOW.minus(Duration.ofMinutes(2)));
-
     /** Records what it was asked to do and answers from a script, so the batch logic can be tested on its own. */
     private static final class FakeExecutor implements PrearcBatchRecovery.Executor {
         private final Map<SessionDataTriple, SessionData> sessions   = new HashMap<>();
@@ -82,8 +74,8 @@ public class TestPrearcBatchRecovery {
         return triple;
     }
 
-    private static SessionData session(final PrearcStatus status, final Date lastModified) {
-        return new SessionData().setFolderName("ignored").setTimestamp("20260715_120000").setProject("PROJ").setStatus(status).setLastBuiltDate(lastModified);
+    private static SessionData session(final PrearcStatus status) {
+        return new SessionData().setFolderName("ignored").setTimestamp("20260715_120000").setProject("PROJ").setStatus(status);
     }
 
     private static List<PrearcRecoveryAction> actionsOf(final List<PrearcRecoveryOutcome> outcomes) {
@@ -106,9 +98,9 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple last   = triple("last");
 
         final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(first, session(_BUILDING, STALE));
+        executor.sessions.put(first, session(_BUILDING));
         executor.loadErrors.put(broken, new IllegalStateException("session directory is gone"));
-        executor.sessions.put(last, session(_BUILDING, STALE));
+        executor.sessions.put(last, session(_BUILDING));
 
         final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(first, broken, last), executor, true);
 
@@ -130,8 +122,8 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple queued  = triple("queued");
 
         final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(refused, session(READY, FRESH));
-        executor.sessions.put(queued, session(READY, FRESH));
+        executor.sessions.put(refused, session(READY));
+        executor.sessions.put(queued, session(READY));
         executor.refuseQueue.add(refused);
 
         final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(refused, queued), executor, true);
@@ -151,8 +143,8 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple crashed = triple("crashed");
 
         final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(queued, session(PrearcStatus.QUEUED_BUILDING, STALE));
-        executor.sessions.put(crashed, session(_BUILDING, STALE));
+        executor.sessions.put(queued, session(PrearcStatus.QUEUED_BUILDING));
+        executor.sessions.put(crashed, session(_BUILDING));
 
         final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(queued, crashed), executor, true);
 
@@ -168,8 +160,8 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple unlocked = triple("unlocked");
 
         final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(locked, session(_BUILDING, STALE));
-        executor.sessions.put(unlocked, session(READY, STALE));
+        executor.sessions.put(locked, session(_BUILDING));
+        executor.sessions.put(unlocked, session(READY));
 
         final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(locked, unlocked), executor, false);
 
@@ -185,8 +177,8 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple building  = triple("building");
 
         final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(archiving, session(_ARCHIVING, STALE));
-        executor.sessions.put(building, session(_BUILDING, STALE));
+        executor.sessions.put(archiving, session(_ARCHIVING));
+        executor.sessions.put(building, session(_BUILDING));
 
         final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(archiving, building), executor, true);
 

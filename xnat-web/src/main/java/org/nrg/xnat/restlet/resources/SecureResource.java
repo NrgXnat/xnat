@@ -500,11 +500,63 @@ public abstract class SecureResource extends ServerResource {
             final Representation entity = getRequest().getEntity();
             if (RequestUtil.isMultiPartFormData(entity) && entity.getSize() > 0) {
                 _mediaType = entity.getMediaType();
-                _body = new Form(entity);
+                _body = bodyOnlyForm(new Form(entity));
             }
         }
 
         return _body;
+    }
+
+    /**
+     * Reduce the parameter form parsed from the request entity to its <b>body-only</b> parameters.
+     *
+     * <p>Under Restlet 2.x's servlet connector ({@code org.restlet.ext.servlet.ServletUtils}), an
+     * {@code application/x-www-form-urlencoded} POST has already been parsed by the servlet container,
+     * which merges the query string and the form body into one decoded namespace
+     * ({@code jakarta.servlet.ServletRequest#getParameterMap()}, Servlet 6.0 §3.1) and consumes the body
+     * input stream in the process. Restlet therefore reconstructs the request entity <i>from</i> that
+     * merged map, so {@code new Form(entity)} yields query+body — the raw body alone is no longer
+     * recoverable. Computing {@code merged − query} is thus how a body-only view is obtained in 2.x, not
+     * a legacy shim: it is required because the entity is the container's merged parameters. (Restlet
+     * 1.1's {@code ServletCall} instead exposed the raw body, so no reduction was needed there.)</p>
+     *
+     * <p>This matters because callers read the query string separately via {@link #getQueryVariableForm()}
+     * / {@link #loadQueryVariables()}. Leaving the query in the body form counts every query parameter
+     * twice — which broke single- vs multi-session dispatch in
+     * {@link org.nrg.xnat.restlet.services.Archiver}: a lone {@code src} became two, so
+     * {@code sessions.size() != 1} routed an empty-session archive to the asynchronous batch path
+     * ({@code PrearcDatabase.archive(List)}), which is fire-and-forget and swallows the
+     * {@code SyncFailedException}, returning HTTP 200 where the synchronous single-session path returns
+     * 500.</p>
+     *
+     * <p>Multipart bodies are unaffected: their field name/value pairs do not match the query string, so
+     * nothing is removed. (A cleaner long-term model — reading the merged namespace once instead of
+     * splitting body vs. query — is tracked as a follow-up; see {@code docs/tomcat10-upgrade-status.md}.)</p>
+     *
+     * @param merged the parameter form parsed from the request entity (query+body under the servlet connector).
+     * @return the form with one occurrence of each query-string parameter removed (body-only).
+     */
+    private Form bodyOnlyForm(final Form merged) {
+        if (merged == null || merged.isEmpty() || getRequest() == null) {
+            return merged;
+        }
+        final Form query = getQueryVariableForm(getRequest());
+        if (query == null || query.isEmpty()) {
+            return merged;
+        }
+        final List<Parameter> body = new ArrayList<>(merged);
+        for (final Parameter q : query) {
+            for (final Iterator<Parameter> it = body.iterator(); it.hasNext(); ) {
+                final Parameter b = it.next();
+                if (Objects.equals(b.getName(), q.getName()) && Objects.equals(b.getValue(), q.getValue())) {
+                    it.remove();   // remove exactly one occurrence per query parameter
+                    break;
+                }
+            }
+        }
+        final Form result = new Form();
+        result.addAll(body);
+        return result;
     }
 
     protected MediaType getMediaType() {

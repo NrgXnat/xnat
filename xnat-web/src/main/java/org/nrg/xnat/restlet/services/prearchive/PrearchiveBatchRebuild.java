@@ -128,6 +128,9 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
 				// Logged at WARN deliberately: overriding a session lock is an exceptional action and this line is the
 				// audit trail for it. The org.nrg.xnat.restlet logger ships at WARN, so INFO would be invisible.
 				log.warn("Site administrator {} is forcing a rebuild of prearchive session {}, which is stranded in the {} state.", _user.getUsername(), triple, sessionData.getStatus());
+				// The session log gets the same record as the unlock-to-ERROR path, so the forced rebuild is visible
+				// in the session's own history, not just the server log.
+				PrearcUtils.log(sessionData, "Session was stranded in the " + sessionData.getStatus() + " state and was force-rebuilt by " + _user.getUsername() + ".");
 				// The handler re-checks the lock when it picks the request up, so it needs to know to override it too.
 				// Otherwise this is left as the caller sent it: PrearchiveOperationRequest also reads this parameter as
 				// getPrearcSessionDir's allowUnassigned flag, so overwriting it would break rebuilds of unassigned

@@ -43,8 +43,8 @@ public class GetSiteWideAnonScript extends AbstractInitializingTask {
                 final String siteWideScript = DefaultAnonUtils.getDefaultScript();
                 final String adminUser = _preferences.getReceivedFileUser();
                 if (adminUser != null) {
+                    // setSiteWideScript() also mirrors the script to the site-config preferences.
                     _anonUtils.setSiteWideScript(adminUser, siteWideScript);
-                    _preferences.setSitewideAnonymizationScript(siteWideScript);
                 } else {
                     throw new InitializingTaskException(InitializingTaskException.Level.Error, "Site administrator not found.");
                 }

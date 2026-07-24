@@ -4,34 +4,45 @@
 <!-- Title: Features -->
 <h1 class="edit_title">Advanced Site-wide Feature Management</h1>
 <p>Toggle feature access for site-wide user roles and project groups</p>
-<table id="group-type-features" class="xnat-table features" style="display:none;">
-    <thead class="header">
-    <tr>
-        <th class="featureGroup">Group</th>
-        #foreach($feature in $features)
-			#if($feature.isBanned())
-				<th class="featureBanned">$feature.getName()</th>
-			#else
-				<th class="featureEnabled">$feature.getName()</th>
-			#end
-        #end
-    </tr>
-    </thead>
-    <tbody id='featureBody'>
-    ## body built dynamically in manageFeatures.js
-    </tbody>
-</table>
+
+<div class="data-table-wrapper clean">
+    <table id="group-type-features" class="xnat-table features" style="display:none;">
+        <thead class="header">
+        <tr>
+            <th class="featureGroup">Group</th>
+            #foreach($feature in $features)
+                #if($feature.isBanned())
+                    <th class="featureBanned" title="Banned: $feature.getName()">$feature.getName()</th>
+                #else
+                    <th class="featureEnabled" title="$feature.getName()">$feature.getName()</th>
+                #end
+            #end
+        </tr>
+        </thead>
+        <tbody id='featureBody'>
+        ## body built dynamically in manageFeatures.js
+        </tbody>
+    </table>
+</div>
 
 <style>
-td.featureBanned{
-	text-decoration: line-through;
-}
-tr.siteRole{
-	background-color:#FBEFF8;
-}
-tr.siteRole:hover{
-	background-color:#E6D0E1;
-}
+    .xnat-table td.featureBanned{
+        text-decoration: line-through;
+    }
+    .xnat-table tr.siteRole{
+        background-color:#FBEFF8;
+    }
+    .xnat-table tr.siteRole:hover{
+        background-color:#E6D0E1;
+    }
+    .xnat-table.features th { vertical-align: top; }
+    .xnat-table th.featureEnabled {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: clip;
+        text-transform: capitalize;
+        white-space: normal;
+     }
 </style>
 
 ##moved common code to manageFeatures.js (also used in ManageProjectFeatures.vm)

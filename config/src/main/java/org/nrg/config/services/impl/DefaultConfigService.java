@@ -457,6 +457,12 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
             throw new ConfigServiceException("file size must be less than " + ConfigService.MAX_FILE_LENGTH + " characters.");
         }
 
+        // Serialize writers on this configuration across all nodes sharing the database. Version assignment
+        // below is a read-compute-write: unserialized, concurrent writers (two admins, or the same change
+        // replayed on another node) read the same predecessor and insert duplicate version numbers. See
+        // XNAT-5830 for the original single-node instance of this race.
+        lockForReplace(toolName, path, scope, entityId);
+
         //if a current config exists but has disabled status, we can only proceed if the incoming status is enabled.
         final Configuration     previousConfig     = getConfigImpl(toolName, path, scope, entityId);
         final ConfigurationData previousConfigData = previousConfig != null ? previousConfig.getConfigData() : null;
@@ -526,7 +532,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         configuration.setXnatUser(username);
         configuration.setReason(reason);
         configuration.setStatus(enabled ? Configuration.ENABLED_STRING : DISABLED_STRING);
-        configuration.setVersion((hasPreviousConfig && doVersion ? previousConfig.getVersion() : 0) + 1);
+        configuration.setVersion(hasPreviousConfig && doVersion ? getNextVersion(toolName, path, scope, entityId) : 1);
         configuration.setUnversioned(!doVersion);
 
         notifyListeners("preChange", toolName, path, configuration, true);//developers can insert pre-change logic that can prevent the storage of the configuration by throwing an exception
@@ -617,6 +623,45 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         } else {
             return project.toString();
         }
+    }
+
+    /**
+     * Computes the next version number for a configuration as one more than the highest existing version
+     * number. The previous implementation incremented the version of the most recent configuration by
+     * creation date, which computes duplicate version numbers when writers race (and the most recent by
+     * date is not necessarily the highest version). Must be called after {@link #lockForReplace(String,
+     * String, Scope, String)} so the maximum can't move between the read and the insert.
+     */
+    private int getNextVersion(final String toolName, final String path, final Scope scope, final String entityId) {
+        final List<Configuration> configurations = _dao.findByToolPathProject(toolName, path, scope, entityId);
+        return (configurations == null ? 0 : configurations.stream().mapToInt(Configuration::getVersion).max().orElse(0)) + 1;
+    }
+
+    /**
+     * Takes a Postgres transaction-scoped advisory lock on the (tool, path, scope, entity) tuple, serializing
+     * configuration writers across every node that shares the database. The lock is released automatically
+     * when the surrounding transaction commits or rolls back. Advisory locks are used rather than SELECT ...
+     * FOR UPDATE because there may be no existing row to lock (first version of a configuration).
+     *
+     * <p>DO NOT remove this call as an optimization: without it, concurrent writers — two admins, or the same
+     * change relayed to another node — read the same predecessor and insert duplicate version numbers (see
+     * XNAT-5830, where exactly that corrupted the site-wide anon script versioning).
+     *
+     * <p>The lock serializes the Hibernate write because this JdbcTemplate statement runs on the same
+     * connection and transaction as the Hibernate session: every public entry point to this service is
+     * {@code @Transactional}, and the HibernateTransactionManager XNAT configures binds the session's JDBC
+     * connection to the shared DataSource for the duration of the transaction, where JdbcTemplate picks it
+     * up (see OrmConfig.transactionManager() and DatabaseConfig.dataSource()/jdbcTemplate() in xnat-web).
+     * That only holds inside a transaction: from a non-transactional path — a lifecycle callback like
+     * afterPropertiesSet() above, or self-invocation, neither of which Spring's transaction proxy covers —
+     * this statement would run in autocommit and the lock would be released at the end of its own statement,
+     * protecting nothing. Annotating this private method {@code @Transactional} would not help for the same
+     * proxy reason, so any new caller must arrive through a {@code @Transactional} public method or supply
+     * its own transaction (as afterPropertiesSet() does with TransactionTemplate).
+     */
+    private void lockForReplace(final String toolName, final String path, final Scope scope, final String entityId) {
+        _jdbcTemplate.queryForObject("SELECT pg_advisory_xact_lock(hashtext(?))", Object.class,
+                                     StringUtils.joinWith(":", StringUtils.defaultString(toolName), path, scope, StringUtils.defaultString(entityId)));
     }
 
     private final ConfigurationDAO           _dao;

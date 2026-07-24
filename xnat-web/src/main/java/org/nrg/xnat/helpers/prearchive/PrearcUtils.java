@@ -1273,6 +1273,22 @@ public class PrearcUtils {
      * @throws Exception When an error occurs setting the prearchive session status or sending the JMS request.
      */
     public static boolean queuePrearchiveOperation(final PrearchiveOperationRequest request) throws Exception {
+        return queuePrearchiveOperation(request, false);
+    }
+
+    /**
+     * Update the prearchive session status to queued for the operation and queue the JMS request. If sending the JMS
+     * request throws an exception, attempt to restore the prearchive session status to its prior state.
+     *
+     * @param request      The request to be queued.
+     * @param overrideLock When true, the session is queued even if it is currently locked. Only site administrators
+     *                     should be able to reach this with a value of true: see XNAT-8767.
+     *
+     * @return true if the operation was queued, false otherwise.
+     *
+     * @throws Exception When an error occurs setting the prearchive session status or sending the JMS request.
+     */
+    public static boolean queuePrearchiveOperation(final PrearchiveOperationRequest request, final boolean overrideLock) throws Exception {
         final SessionData sessionData = request.getSessionData();
         final Operation operation = request.getOperation();
         final PrearcStatus originalStatus = sessionData.getStatus();
@@ -1283,7 +1299,7 @@ public class PrearcUtils {
             return false;
         }
 
-        if (!PrearcDatabase.setStatus(sessionData, operation.getQueuedStatus())) {
+        if (!PrearcDatabase.setStatus(sessionData, operation.getQueuedStatus(), overrideLock)) {
             log.warn("Unable to set prearchive status to {} for {} due to another active operation on the prearchive row",
                     operation.getQueuedStatus(), sessionData.getSessionDataTriple());
             return false;
@@ -1294,7 +1310,14 @@ public class PrearcUtils {
             return true;
         } catch (Exception e) {
             log.error("Unable to queue prearchive operation {} for {}", operation, sessionData, e);
-            PrearcDatabase.setStatus(sessionData, originalStatus);
+            // The session is no longer locked at this point, since we just set it to a queued status, so restoring a
+            // lock we were asked to override would succeed and strand the session all over again. Fail to ERROR
+            // instead, which leaves it visible and recoverable. See XNAT-8767.
+            //
+            // overrideLock is passed through rather than hard-coded: callers that did not ask to break a lock must
+            // keep the original behaviour of leaving the row alone if something else has taken it in the meantime.
+            final PrearcStatus rollbackStatus = overrideLock && PrearcLockRecovery.isLockedStatus(originalStatus) ? PrearcStatus.ERROR : originalStatus;
+            PrearcDatabase.setStatus(sessionData, rollbackStatus, overrideLock);
             throw e;
         }
     }

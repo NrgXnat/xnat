@@ -1209,8 +1209,25 @@ public final class PrearcDatabase {
      * @throws Exception if SQL transaction fails
      */
     public static boolean setStatus(final SessionData sessionData, final PrearcUtils.PrearcStatus status) throws Exception {
+        return setStatus(sessionData, status, false);
+    }
+
+    /**
+     * Set the status of an existing session, optionally overriding the session lock. All arguments must be non-null and non-empty.
+     *
+     * @param sessionData   The session data pojo.
+     * @param status        Status to be set.
+     * @param overrideLock  When true, the status is set even if the session is locked, i.e. its current status is one
+     *                      of the in-process statuses that begin with '_'. Only site administrators should be able to
+     *                      reach this with a value of true: see XNAT-8767.
+     *
+     * @return True if the status was set, false if the session was locked and overrideLock was false.
+     *
+     * @throws Exception if SQL transaction fails
+     */
+    public static boolean setStatus(final SessionData sessionData, final PrearcUtils.PrearcStatus status, final boolean overrideLock) throws Exception {
         return setStatus(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject(),
-                status, false);
+                status, overrideLock);
     }
 
     /**

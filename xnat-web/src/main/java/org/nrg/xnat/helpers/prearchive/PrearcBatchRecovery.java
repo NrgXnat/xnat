@@ -22,13 +22,13 @@ import java.util.List;
  * administrator clearing a backlog of stranded sessions should not lose the whole batch to one bad row. Callers get an
  * outcome per session and decide what to tell the user.
  * <p>
- * The database and the queue are reached through {@link Executor} so this class stays free of both, which is what
+ * The database and the queue are reached through {@link RecoveryOps} so this class stays free of both, which is what
  * makes the batch behaviour testable -- the REST resource it serves cannot be instantiated in a unit test.
  */
 @Slf4j
 public final class PrearcBatchRecovery {
     /** Everything {@link PrearcBatchRecovery} needs from the outside world. */
-    public interface Executor {
+    public interface RecoveryOps {
         /**
          * @param triple The session to read.
          *
@@ -68,22 +68,22 @@ public final class PrearcBatchRecovery {
      * Decides and carries out the recovery for each session in turn.
      *
      * @param triples     The sessions the user asked to rebuild.
-     * @param executor    Reaches the database and the queue.
+     * @param ops         Reaches the database and the queue.
      * @param isSiteAdmin Whether the requesting user holds the site administrator role.
      *
      * @return One outcome per session, in the order they were given.
      */
-    public static List<PrearcRecoveryOutcome> run(final List<SessionDataTriple> triples, final Executor executor, final boolean isSiteAdmin) {
+    public static List<PrearcRecoveryOutcome> run(final List<SessionDataTriple> triples, final RecoveryOps ops, final boolean isSiteAdmin) {
         final List<PrearcRecoveryOutcome> outcomes = new ArrayList<>();
         for (final SessionDataTriple triple : triples) {
-            outcomes.add(recover(triple, executor, isSiteAdmin));
+            outcomes.add(recover(triple, ops, isSiteAdmin));
         }
         return outcomes;
     }
 
-    private static PrearcRecoveryOutcome recover(final SessionDataTriple triple, final Executor executor, final boolean isSiteAdmin) {
+    private static PrearcRecoveryOutcome recover(final SessionDataTriple triple, final RecoveryOps ops, final boolean isSiteAdmin) {
         try {
-            final SessionData          sessionData = executor.load(triple);
+            final SessionData          sessionData = ops.load(triple);
             final PrearcRecoveryAction action      = PrearcLockRecovery.decide(sessionData.getStatus(), isSiteAdmin);
             switch (action) {
                 case ALREADY_QUEUED:
@@ -94,7 +94,7 @@ public final class PrearcBatchRecovery {
                     return PrearcRecoveryOutcome.refused(triple, action);
 
                 case UNLOCK_TO_ERROR:
-                    executor.unlockToError(triple, sessionData);
+                    ops.unlockToError(triple, sessionData);
                     return PrearcRecoveryOutcome.done(triple, action);
 
                 case FORCE_REBUILD:
@@ -102,7 +102,7 @@ public final class PrearcBatchRecovery {
                     // Both actions queue a rebuild; they differ only in whether the session's lock is overridden,
                     // which is what the third argument carries.
                     // A refused queue means the session was never rebuilt, so it must not be reported as done.
-                    return executor.queueRebuild(triple, sessionData, action == PrearcRecoveryAction.FORCE_REBUILD)
+                    return ops.queueRebuild(triple, sessionData, action == PrearcRecoveryAction.FORCE_REBUILD)
                            ? PrearcRecoveryOutcome.done(triple, action)
                            : PrearcRecoveryOutcome.refused(triple, action);
 

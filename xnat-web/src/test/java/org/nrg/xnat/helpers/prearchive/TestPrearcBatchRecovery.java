@@ -34,7 +34,7 @@ import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus._BUILDING
  */
 public class TestPrearcBatchRecovery {
     /** Records what it was asked to do and answers from a script, so the batch logic can be tested on its own. */
-    private static final class FakeExecutor implements PrearcBatchRecovery.Executor {
+    private static final class FakeRecoveryOps implements PrearcBatchRecovery.RecoveryOps {
         private final Map<SessionDataTriple, SessionData> sessions   = new HashMap<>();
         private final Map<SessionDataTriple, Exception>   loadErrors = new HashMap<>();
         private final List<SessionDataTriple>             rebuilt    = new ArrayList<>();
@@ -96,14 +96,14 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple broken = triple("broken");
         final SessionDataTriple last   = triple("last");
 
-        final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(first, session(_BUILDING));
-        executor.loadErrors.put(broken, new IllegalStateException("session directory is gone"));
-        executor.sessions.put(last, session(_BUILDING));
+        final FakeRecoveryOps ops = new FakeRecoveryOps();
+        ops.sessions.put(first, session(_BUILDING));
+        ops.loadErrors.put(broken, new IllegalStateException("session directory is gone"));
+        ops.sessions.put(last, session(_BUILDING));
 
-        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(first, broken, last), executor, true);
+        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(first, broken, last), ops, true);
 
-        assertThat(executor.forced).describedAs("both healthy sessions must still be forced").containsExactly(first, last);
+        assertThat(ops.forced).describedAs("both healthy sessions must still be forced").containsExactly(first, last);
         assertThat(outcomes).hasSize(3);
         assertThat(outcomes.get(1).succeeded()).isFalse();
         assertThat(outcomes.get(1).error()).hasMessage("session directory is gone");
@@ -120,12 +120,12 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple refused = triple("refused");
         final SessionDataTriple queued  = triple("queued");
 
-        final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(refused, session(READY));
-        executor.sessions.put(queued, session(READY));
-        executor.refuseQueue.add(refused);
+        final FakeRecoveryOps ops = new FakeRecoveryOps();
+        ops.sessions.put(refused, session(READY));
+        ops.sessions.put(queued, session(READY));
+        ops.refuseQueue.add(refused);
 
-        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(refused, queued), executor, true);
+        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(refused, queued), ops, true);
 
         assertThat(outcomes.get(0).succeeded()).describedAs("refused session must not count as done").isFalse();
         assertThat(outcomes.get(0).action()).isEqualTo(PROCEED);
@@ -141,15 +141,15 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple queued  = triple("queued");
         final SessionDataTriple crashed = triple("crashed");
 
-        final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(queued, session(PrearcStatus.QUEUED_BUILDING));
-        executor.sessions.put(crashed, session(_BUILDING));
+        final FakeRecoveryOps ops = new FakeRecoveryOps();
+        ops.sessions.put(queued, session(PrearcStatus.QUEUED_BUILDING));
+        ops.sessions.put(crashed, session(_BUILDING));
 
-        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(queued, crashed), executor, true);
+        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(queued, crashed), ops, true);
 
         assertThat(actionsOf(outcomes)).containsExactly(PrearcRecoveryAction.ALREADY_QUEUED, FORCE_REBUILD);
         assertThat(outcomes.get(0).succeeded()).describedAs("an already-queued session is not an error").isTrue();
-        assertThat(executor.rebuilt).describedAs("it must not be queued a second time").containsExactly(crashed);
+        assertThat(ops.rebuilt).describedAs("it must not be queued a second time").containsExactly(crashed);
     }
 
     /** A non-admin gets nothing forced on their behalf, but unlocked sessions still go through. */
@@ -158,15 +158,15 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple locked   = triple("locked");
         final SessionDataTriple unlocked = triple("unlocked");
 
-        final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(locked, session(_BUILDING));
-        executor.sessions.put(unlocked, session(READY));
+        final FakeRecoveryOps ops = new FakeRecoveryOps();
+        ops.sessions.put(locked, session(_BUILDING));
+        ops.sessions.put(unlocked, session(READY));
 
-        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(locked, unlocked), executor, false);
+        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(locked, unlocked), ops, false);
 
         assertThat(actionsOf(outcomes)).containsExactly(LOCKED_REQUIRES_ADMIN, PROCEED);
-        assertThat(executor.forced).isEmpty();
-        assertThat(executor.rebuilt).containsExactly(unlocked);
+        assertThat(ops.forced).isEmpty();
+        assertThat(ops.rebuilt).containsExactly(unlocked);
     }
 
     /** Locks left by destructive operations are unlocked, never rebuilt -- even in the middle of a batch. */
@@ -175,19 +175,19 @@ public class TestPrearcBatchRecovery {
         final SessionDataTriple archiving = triple("archiving");
         final SessionDataTriple building  = triple("building");
 
-        final FakeExecutor executor = new FakeExecutor();
-        executor.sessions.put(archiving, session(_ARCHIVING));
-        executor.sessions.put(building, session(_BUILDING));
+        final FakeRecoveryOps ops = new FakeRecoveryOps();
+        ops.sessions.put(archiving, session(_ARCHIVING));
+        ops.sessions.put(building, session(_BUILDING));
 
-        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(archiving, building), executor, true);
+        final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(Arrays.asList(archiving, building), ops, true);
 
         assertThat(actionsOf(outcomes)).containsExactly(UNLOCK_TO_ERROR, FORCE_REBUILD);
-        assertThat(executor.unlocked).containsExactly(archiving);
-        assertThat(executor.rebuilt).describedAs("an archiving session must never be sent to the rebuild queue").containsExactly(building);
+        assertThat(ops.unlocked).containsExactly(archiving);
+        assertThat(ops.rebuilt).describedAs("an archiving session must never be sent to the rebuild queue").containsExactly(building);
     }
 
     @Test
     public void anEmptyBatchIsNotAnError() {
-        assertThat(PrearcBatchRecovery.run(Collections.emptyList(), new FakeExecutor(), true)).isEmpty();
+        assertThat(PrearcBatchRecovery.run(Collections.emptyList(), new FakeRecoveryOps(), true)).isEmpty();
     }
 }

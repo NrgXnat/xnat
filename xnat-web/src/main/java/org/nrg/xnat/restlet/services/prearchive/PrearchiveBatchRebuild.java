@@ -65,7 +65,7 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
 
 		final UserI user = getUser();
 
-		final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(triples, new RestletExecutor(user), Roles.isSiteAdmin(user));
+		final List<PrearcRecoveryOutcome> outcomes = PrearcBatchRecovery.run(triples, new RestletRecoveryOps(user), Roles.isSiteAdmin(user));
 
 		// Only the sessions actually acted on are reported, and the response is written whatever happened, so a caller
 		// can always tell which of the sessions they selected were dealt with.
@@ -106,10 +106,10 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
 	}
 
 	/** Connects {@link PrearcBatchRecovery} to the prearchive database and the operation queue. */
-	private class RestletExecutor implements PrearcBatchRecovery.Executor {
+	private class RestletRecoveryOps implements PrearcBatchRecovery.RecoveryOps {
 		private final UserI _user;
 
-		RestletExecutor(final UserI user) {
+		RestletRecoveryOps(final UserI user) {
 			_user = user;
 		}
 

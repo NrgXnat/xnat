@@ -563,6 +563,12 @@
     <logger name="org.dcm4che" additivity="false" level="WARN">
         <appender-ref ref="dicom"/>
     </logger>
+    <logger name="org.dcm4che3" additivity="false" level="WARN">
+        <appender-ref ref="dicom"/>
+    </logger>
+    <logger name="org.dcm4che3.net" additivity="false" level="WARN">
+        <appender-ref ref="dicom"/>
+    </logger>
     <logger name="org.springframework.util" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>

@@ -99,6 +99,8 @@ public final class PrearcBatchRecovery {
 
                 case FORCE_REBUILD:
                 case PROCEED:
+                    // Both actions queue a rebuild; they differ only in whether the session's lock is overridden,
+                    // which is what the third argument carries.
                     // A refused queue means the session was never rebuilt, so it must not be reported as done.
                     return executor.queueRebuild(triple, sessionData, action == PrearcRecoveryAction.FORCE_REBUILD)
                            ? PrearcRecoveryOutcome.done(triple, action)

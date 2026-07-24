@@ -87,9 +87,8 @@ public class TestPrearcBatchRecovery {
     }
 
     /**
-     * The batch is best-effort. A session that cannot even be loaded must not cost the sessions after it their turn --
-     * the previous implementation of this endpoint attempted every session, and an administrator clearing a backlog
-     * of stranded sessions relies on that.
+     * The batch is best-effort: a session that cannot even be loaded must not cost the sessions after it their turn.
+     * An administrator clearing a backlog of stranded sessions relies on every selected session getting an attempt.
      */
     @Test
     public void oneSessionBlowingUpDoesNotCostTheOthersTheirTurn() {
@@ -113,8 +112,8 @@ public class TestPrearcBatchRecovery {
     }
 
     /**
-     * Reporting a session as rebuilt when the queue refused it would be a lie, and it is exactly the lie the previous
-     * code told by discarding queuePrearchiveOperation's return value.
+     * queuePrearchiveOperation reports a refusal through its return value, not an exception. Discarding that value
+     * would report the session as rebuilt when nothing happened.
      */
     @Test
     public void aSessionTheQueueRefusedIsNotReportedAsDone() {
@@ -134,8 +133,8 @@ public class TestPrearcBatchRecovery {
     }
 
     /**
-     * A session that is already queued must not be re-queued, but it is not a failure either -- the old endpoint
-     * reported it as a success and so must this one, or an admin re-clicking Rebuild gets a spurious error.
+     * A session that is already queued must not be re-queued, but it is not a failure either: it must count as a
+     * success, or an admin re-clicking Rebuild on a session that is already on its way gets a spurious error.
      */
     @Test
     public void alreadyQueuedSessionsAreReportedDoneWithoutBeingRequeued() {

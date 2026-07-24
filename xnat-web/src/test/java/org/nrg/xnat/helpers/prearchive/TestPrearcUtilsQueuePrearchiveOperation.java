@@ -60,9 +60,8 @@ public class TestPrearcUtilsQueuePrearchiveOperation {
     }
 
     /**
-     * The overrideLock flag has to reach PrearcDatabase.setStatus. Today it never does: this method calls the
-     * two-argument setStatus overload, which hard-codes overrideLock to false, so a locked session can never be
-     * queued no matter what the caller asked for.
+     * The overrideLock flag has to reach PrearcDatabase.setStatus, or a locked session can never be queued no matter
+     * what the caller asked for. This is the plumbing XNAT-8767 exists to connect.
      */
     @Test
     public void overrideLockReachesSetStatusSoALockedSessionCanBeQueued() throws Exception {

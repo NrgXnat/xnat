@@ -87,8 +87,8 @@ public class TestPrearcLockRecovery {
     }
 
     /**
-     * A session that is already queued has nothing wrong with it -- asking for a rebuild is simply redundant, and the
-     * old endpoint reported it as a success. Treating queuePrearchiveOperation's refusal as a failure would turn that
+     * A session that is already queued has nothing wrong with it -- asking for a rebuild is simply redundant and must
+     * count as a success. Treating queuePrearchiveOperation's refusal to queue it twice as a failure would turn that
      * into an error for a user who did nothing wrong.
      */
     @Test

@@ -11,6 +11,7 @@ package org.nrg.xnat.helpers.merge;
 
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.xapi.exceptions.DataFormatException;
 
 import java.util.List;
 
@@ -27,6 +28,35 @@ public interface AnonUtils {
      */
     String SITEWIDE_ANONYMIZATION_SCRIPT        = "sitewideAnonymizationScript";
     String ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT = "enableSitewideAnonymizationScript";
+
+    /**
+     * Parses the submitted site-wide anonymization enable flag into a tri-state value for
+     * {@link #setSiteWideSettings(String, String, Boolean)}: {@code null} means "leave the current
+     * enabled state unchanged", {@code TRUE}/{@code FALSE} set it explicitly.
+     *
+     * <p>A {@code null} argument yields {@code null}. Note that an absent request field and an explicit
+     * JSON {@code null} are indistinguishable here — both are deserialized to a Java {@code null} before
+     * reaching this method — so both mean "leave unchanged"; there is no separate JSON-null token to
+     * detect. This is deliberate: a client that serializes an omitted field as an explicit {@code null}
+     * cannot accidentally toggle de-identification.
+     *
+     * <p>A present value must be exactly "true" or "false" (case-insensitive). Anything else is rejected
+     * rather than silently coerced to {@code false}, because this flag turns de-identification of incoming
+     * DICOM on and off.
+     */
+    static Boolean parseEnableFlag(final Object value) throws DataFormatException {
+        if (value == null) {
+            return null;
+        }
+        final String text = value.toString();
+        if ("true".equalsIgnoreCase(text)) {
+            return Boolean.TRUE;
+        }
+        if ("false".equalsIgnoreCase(text)) {
+            return Boolean.FALSE;
+        }
+        throw new DataFormatException("The " + ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT + " value must be either true or false: " + text);
+    }
 
     Configuration getSiteWideScriptConfiguration();
 

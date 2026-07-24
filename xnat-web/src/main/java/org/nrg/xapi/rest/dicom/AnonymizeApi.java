@@ -123,7 +123,7 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         // anonymization.
         final Object  scriptValue = settings.get(SITEWIDE_ANONYMIZATION_SCRIPT);
         final String  script      = scriptValue != null ? scriptValue.toString() : null;
-        final Boolean enable      = parseEnable(settings.get(ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT));
+        final Boolean enable      = AnonUtils.parseEnableFlag(settings.get(ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT));
         try {
             _anonUtils.setSiteWideSettings(getSessionUser().getUsername(), script, enable);
         } catch (ConfigServiceException e) {
@@ -213,25 +213,6 @@ public class AnonymizeApi extends AbstractXapiProjectRestController {
         } else {
             _anonUtils.disableProjectSpecific(getSessionUser().getUsername(), projectId);
         }
-    }
-
-    /**
-     * Strictly parses the enable flag: null (absent or JSON null) means "leave unchanged", and anything
-     * other than true/false is rejected rather than silently coerced to false — this flag turns
-     * de-identification of incoming DICOM on and off.
-     */
-    private static Boolean parseEnable(final Object value) throws DataFormatException {
-        if (value == null) {
-            return null;
-        }
-        final String text = value.toString();
-        if ("true".equalsIgnoreCase(text)) {
-            return Boolean.TRUE;
-        }
-        if ("false".equalsIgnoreCase(text)) {
-            return Boolean.FALSE;
-        }
-        throw new DataFormatException("The " + ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT + " value must be either true or false: " + text);
     }
 
     private final AnonUtils _anonUtils;

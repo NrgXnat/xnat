@@ -208,7 +208,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
         // fields as explicit nulls can't accidentally clear the script or disable anonymization.
         final Object  scriptValue = properties.remove(SITEWIDE_ANONYMIZATION_SCRIPT);
         final String  script      = scriptValue != null ? scriptValue.toString() : null;
-        final Boolean enable      = parseEnable(properties.remove(ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT));
+        final Boolean enable      = AnonUtils.parseEnableFlag(properties.remove(ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT));
         if (script == null && enable == null) {
             return;
         }
@@ -218,25 +218,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
             log.error("The user {} tried to set the site-wide anonymization settings, but an error occurred", getSessionUser().getUsername(), e);
             throw new InitializationException("An error occurred storing the site-wide anonymization settings");
         }
-    }
-
-    /**
-     * Strictly parses the enable flag: null (absent or JSON null) means "leave unchanged", and anything
-     * other than true/false is rejected rather than silently coerced to false — this flag turns
-     * de-identification of incoming DICOM on and off.
-     */
-    private static Boolean parseEnable(final Object value) throws DataFormatException {
-        if (value == null) {
-            return null;
-        }
-        final String text = value.toString();
-        if ("true".equalsIgnoreCase(text)) {
-            return Boolean.TRUE;
-        }
-        if ("false".equalsIgnoreCase(text)) {
-            return Boolean.FALSE;
-        }
-        throw new DataFormatException("The " + ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT + " value must be either true or false: " + text);
     }
 
     private static void validateReCaptcha(Map<String, Object> properties) throws DataFormatException {
@@ -295,7 +276,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 if (StringUtils.equals(property, SITEWIDE_ANONYMIZATION_SCRIPT)) {
                     _anonUtils.setSiteWideScript(getSessionUser().getUsername(), value);
                 } else {
-                    _anonUtils.setSiteWideSettings(getSessionUser().getUsername(), null, parseEnable(value));
+                    _anonUtils.setSiteWideSettings(getSessionUser().getUsername(), null, AnonUtils.parseEnableFlag(value));
                 }
             } catch (ConfigServiceException e) {
                 log.error("The user {} tried to set the {} property, but an error occurred", getSessionUser().getUsername(), property, e);

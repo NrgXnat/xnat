@@ -72,6 +72,11 @@ services:
         condition: service_healthy
       xnat-activemq:
         condition: service_started
+    environment:
+      # Run the server in the timezone the Playwright suite assumes (SYSTEM_TIMEZONE=America/Chicago
+      # in its .env), so last-login timestamp assertions (e.g. T1002.1) resolve within tolerance.
+      # The base image defaults to UTC otherwise. Override with TZ=... for a different fixture tz.
+      TZ: ${TZ:-America/Chicago}
     ports:
       - "${XNAT_PORT:-8080}:8080"
       # DICOM C-STORE receiver ports published to the host for external tests (env-overridable host ports).

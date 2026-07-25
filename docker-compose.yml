@@ -5,6 +5,7 @@
 #
 # Quick start (3 phases — boot, then two scripts):
 #   ./docker/stage-war.sh              # builds :xnat-web:war -> docker-context/xnat.war
+#   ./docker/stage-plugins.sh          # (optional) build/stage the curated plugin set (docker/plugins.manifest)
 #   docker compose up --build          # 1) boot db + broker + xnat, UNINITIALIZED (like develop)
 #   SMTP_PASS=... ./docker/init-xnat.sh   # 2) first-install setup + base site config + SMTP
 #   ./docker/build-known-state.sh  # 3) (optional) seed the reproducible data fixture
@@ -81,6 +82,11 @@ services:
       - "${XNAT_DICOM_PORT_3:-8132}:8132"
     volumes:
       - xnat-data:/data/xnat
+      # Curated plugin set, staged by ./docker/stage-plugins.sh (see docker/plugins.manifest).
+      # This bind mount on the plugins subpath OVERRIDES the xnat-data named volume there, so an
+      # updated set appears on `docker compose restart xnat` — no rebuild, no `down -v`. XNAT scans
+      # ${xnat.home}/plugins (=/data/xnat/home/plugins) once at boot; read-only is all it needs.
+      - ./docker/plugins:/data/xnat/home/plugins:ro
 
 volumes:
   xnat-db:

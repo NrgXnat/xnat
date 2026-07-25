@@ -1,0 +1,22 @@
+# docker/plugins.manifest — curated XNAT plugins for the local dev/test stack.
+#
+# One entry per line; blank lines and #-comments are ignored. Staged by docker/stage-plugins.sh
+# into docker/plugins/ (git-ignored), which docker-compose bind-mounts read-only into the
+# container's ${xnat.home}/plugins. XNAT scans that dir once at boot, so after staging run
+# `docker compose restart xnat` to load new/updated plugins.
+#
+# Entry forms:
+#   source  <repo-dir> [git-ref]              build <repo-dir> with its gradlew xnatPluginJar, stage the -xpl jar.
+#                                             If [git-ref] (branch/tag/commit) is given, the repo is checked out
+#                                             to it first (refused if it has uncommitted changes).
+#   file    <path-to-jar>                     stage an already-built jar as-is
+#   coord   <group:artifact:version[:class]>  stage from Maven Local (~/.m2) — for published plugins
+#
+# Paths are relative to the xnat repo root. Keep this list curated and reviewed — every entry runs
+# inside the XNAT container.
+
+# Audit Trail Plugin — serves /REST/services/summary/audit/* (audit-trail screens + REST API,
+# e.g. WorkflowSummaryTable). The jakarta / Restlet 2.6 / Turbine 7 migration lives on the
+# feature/tomcat10 branch; it builds against org.nrg.xnat:web:1.11.0-SNAPSHOT (must be in Maven
+# Local — see the xnat publish step).
+source  ../audit_trail_plugin  feature/tomcat10

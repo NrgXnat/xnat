@@ -78,7 +78,9 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -1046,7 +1048,17 @@ public class XDAT {
 		Users.recordUserLogin(user, request);
 		final Authentication authentication = new UsernamePasswordAuthenticationToken(user, password, getGrantedAuthorities(user));
 		if (!user.isGuest()) {
-			SecurityContextHolder.getContext().setAuthentication(authentication);
+			final SecurityContext context = SecurityContextHolder.createEmptyContext();
+			context.setAuthentication(authentication);
+			SecurityContextHolder.setContext(context);
+			// Spring Security 6 removed the filter that auto-persisted the SecurityContextHolder to
+			// the HTTP session at end-of-request (SecurityContextPersistenceFilter). Without saving it
+			// explicitly, this programmatic login is request-local and lost on the next request, so
+			// email verification / password reset / external-auth registration land back on "guest".
+			// Only the request is available here, so store the context under the repository's session
+			// key directly (equivalent to HttpSessionSecurityContextRepository.saveContext, which would
+			// otherwise need the HttpServletResponse we don't have on this path).
+			request.getSession(true).setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 		}
 	}
 

@@ -290,6 +290,21 @@ Only the tail remains:
 - **1-19** — Restlet 2.6 param-model refactor (deliberate follow-up to the shipped `bodyOnlyForm` fix).
 - **Open thread** — a possible second Restlet 200→204 instance (a project `DELETE` → 500 on the scout), not yet chased.
 
+**1-20 🟢 — SS6 programmatic-login session-persistence regression** (found via Playwright T1002.1 forgot-
+password reset, 2026-07-25). `XDAT.loginUser` set `SecurityContextHolder.getContext().setAuthentication(…)`
+but never persisted the context to the HTTP session. On SS5 the `SecurityContextPersistenceFilter` saved it
+at end-of-request; SS6 removed that filter, so every **programmatic** login was request-local and lost on the
+next request — email-verification / password-reset / external-auth links landed back on **guest** (reset
+showed "Change Password for Guest"; `XDATScreen_UpdateUser`/`VerifyEmail`/`XDATRegisterUser` all identical to
+develop, so it was SS6 behavior, not a code diff). Fixed at the shared
+`loginUser(UserI, HttpServletRequest, String)` by storing the context in the session under
+`HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY` (only the request is available on that
+path). **Bug class = "programmatic login relying on SS5's implicit context persistence"; swept all 6 call
+sites** (VerifyEmail, XDATRegisterUser, XDATSudoLogin, XDATScreen_UpdateUser, RegisterExternalLogin,
+InactiveAccount) — all funnel through the one patched method. Verified: T1002.1 green, T1001.1/3/4 no
+regression. (Fixture-side: T1002.1's last-login assertion also needs the stack in the suite's timezone —
+docker-compose now sets `TZ=America/Chicago`.)
+
 Merge readiness is gated by **1-13 (CI)** and the **1-2 oauth2 decision**; the rest are quality follow-ups.
 Known-benign cutover expectations (from the scout, all confirmed): Tomcat 10 / Servlet 6 default response
 charsets to UTF-8 (cosmetic golden header diffs) and the empty-archive `SystemPathVerification` error is

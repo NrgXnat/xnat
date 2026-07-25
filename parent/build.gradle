@@ -69,10 +69,13 @@ dependencies {
         // Hibernate
         api libs.hibernate.core
         api libs.hibernate.envers
-        // ehcache/jcache have no -jakarta variants; exclude their javax hibernate-core so only
-        // hibernate-core-jakarta (the libs.hibernate.core alias) is on the classpath
-        api(libs.hibernate.ehcache) { exclude group: 'org.hibernate', module: 'hibernate-core' }
-        api(libs.hibernate.jcache)  { exclude group: 'org.hibernate', module: 'hibernate-core' }
+        // hibernate-ehcache/jcache have no -jakarta variant and transitively reference the javax
+        // hibernate-core. A java-platform only pins versions — it cannot carry an `exclude` (that
+        // closure was a no-op and broke module-metadata generation), so any exclusion of the javax
+        // hibernate-core is the consuming module's responsibility. libs.hibernate.core resolves to
+        // the differently-named hibernate-core-jakarta artifact, so the two do not collide here.
+        api libs.hibernate.ehcache
+        api libs.hibernate.jcache
         api libs.hibernate.validator
         api libs.hibernate.validator.cdi
         api libs.hibernate.jpa.api

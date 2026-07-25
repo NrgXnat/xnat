@@ -23,6 +23,14 @@ java {
 }
 
 repositories {
+    // Resolve locally-published org.nrg SNAPSHOTs (e.g. a freshly-bumped version published via
+    // publishToMavenLocal). Needed because xnat-data-builder consumes xnat-web by external
+    // coordinate (org.nrg.xnat:web:${version}), which otherwise only exists on Artifactory.
+    // Restricted to org.nrg.* so mavenLocal's partial third-party artifacts (e.g. classifier
+    // jars like ehcache-*-jakarta) never shadow the remote repositories.
+    mavenLocal {
+        content { includeGroupByRegex 'org\\.nrg.*' }
+    }
     maven { url 'https://nrgxnat.jfrog.io/nrgxnat/libs-release' }
     maven { url 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot' }
     mavenCentral()
@@ -161,7 +169,7 @@ publishing {
 // build.gradle has run — needed because modules like dicom-edit6
 // override `project.version` to a non-SNAPSHOT release (6.9.0).
 // If we evaluate `project.version` at the time this convention is
-// applied, we'd see the root-level 1.10.1-SNAPSHOT and lock the URL
+// applied, we'd see the root-level 1.11.0-SNAPSHOT and lock the URL
 // to the snapshot repo, which then rejects release artifacts with 409.
 afterEvaluate {
     publishing.repositories.named('XNAT_Artifactory').configure {

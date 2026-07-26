@@ -69,6 +69,12 @@ configurations.matching { it.name != 'xdatGenerator' }.configureEach {
     exclude group: 'ojb',                       module: 'ojb'
     exclude group: 'org.apache.geronimo.specs'
     exclude group: 'org.apache.struts'
+    // hibernate-ehcache/jcache have no -jakarta build and transitively drag in the javax
+    // org.hibernate:hibernate-core, which lands in WEB-INF/lib alongside hibernate-core-jakarta. Both
+    // jars define the same org.hibernate.* classes (incl. BeanValidationIntegrator), so the Tomcat 10
+    // web classloader can pick the javax one and fail to boot with
+    // NoClassDefFoundError: javax/validation/ValidatorFactory. We only ever use hibernate-core-jakarta.
+    exclude group: 'org.hibernate',             module: 'hibernate-core'
     exclude group: 'org.nrg',                   module: 'nrg'
     exclude group: 'org.nrg',                   module: 'nrgutil'
     exclude group: 'org.nrg',                   module: 'plexiviewer'

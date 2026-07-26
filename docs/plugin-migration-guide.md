@@ -326,6 +326,15 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   from the container's merged `getParameterMap()` (query ∪ body, Servlet 6 §3.1). → code that reads params
   from *both* the body form and the query double‑counts them. → read the merged namespace once, or subtract
   the query (`bodyOnlyForm`). *(item 1‑19)*
+- **A `x‑www‑form‑urlencoded` *raw* body is lost entirely.** If a client POSTs a non‑form payload (raw XML,
+  JSON, …) but leaves the default `application/x-www-form-urlencoded` content type, the container drains the
+  stream into `getParameterMap()` and Restlet rebuilds the entity from that map. A raw body has no
+  `name=value` structure to recover, so by the time the resource runs the payload is **gone**:
+  `getInputStream()` is at EOF, it is not a parameter, and `entity.getText()` returns only the query string
+  (→ e.g. SAX "Content is not allowed in prolog"). Restlet 1.1 handed back the raw body; 2.6 does not. → **fix
+  at the client: send the correct `Content-Type`** (`text/xml`, `application/json`) so Restlet keeps the raw
+  entity. Applies to any JS/HTTP caller (YUI `asyncRequest`, `fetch`, XHR) posting a body to a `/REST`|`/data`
+  resource that reads `entity.getText()`. *(item 1‑21, commit `4bb23dca7`)*
 - **Response headers must be `Series<Header>`, not `Form`.** The attribute is `org.restlet.http.headers`; a
   `Form` there throws a CCE *after* the body commits (→ opaque 500), and STANDARD_HEADERS
   (`Cache-Control`, `Content-Disposition`) set on a raw Series are silently dropped. → use the typed API

@@ -305,6 +305,25 @@ InactiveAccount) — all funnel through the one patched method. Verified: T1002.
 regression. (Fixture-side: T1002.1's last-login assertion also needs the stack in the suite's timezone —
 docker-compose now sets `TZ=America/Chicago`.)
 
+**1-21 🟢 — Search UI 422: stored-search XML lost from a www-form POST body** (found via Playwright
+S1004/S1008/S1009, 2026-07-25). A second, **client-side** face of the 1-19 bug class. `dataTableSearch.js`
+POSTed the stored-search bundle XML as the `application/x-www-form-urlencoded` **body** of
+`/REST/search`. Under Tomcat 10 / Restlet 2.6 the servlet parameter parser drains the body before
+`SearchResource.handlePost` runs, and the XML is exposed **nowhere**: `getParameterMap()` holds only the
+query-string params, `getInputStream()` is at EOF (`len=0`), and `entity.getText()` returns just the query
+string — so the SAX reader got a body starting with `XNAT_CSRF=…` and every search 422'd with "Content is
+not allowed in prolog". (1-19 recovered *form-shaped* body params via `bodyOnlyForm`'s `merged − query`
+subtraction, but a **raw-XML** body has no `name=value` structure to recover — it is simply gone.) **Fix
+(client):** post the bundle as `text/xml` so Restlet keeps it as the raw request entity; `SearchResource`
+already accepts a bare-XML body, and Restlet 1.1 tolerates `text/xml` too (forward/backward compatible).
+**Fix (server, defence in depth):** `extractSearchXml`'s form-unwrap now uses a lenient percent-decoder
+(decodes `%XX`, leaves `+`/malformed `%` literal, never throws) instead of `URLDecoder.decode`, which threw
+on a stray `%` (e.g. a `LIKE '%x%'` wildcard) and turned `+`→space. Commit `4bb23dca7`. Verified: t1008.1
+PASS, S1008 0/10→4 (0 prolog/422 in the log). **Bug-class audit** (other YUI POSTs of a body to a Restlet
+`/REST`|`/data` endpoint): `ucfa.js:276` (move-files, `src=&dest=` body) and `manageFeatures.js:137,149`
+(features, JSON body) share the shape and may lose their bodies the same way — not exercised by a
+currently-failing test; flagged for verification when those suites run.
+
 Merge readiness is gated by **1-13 (CI)** and the **1-2 oauth2 decision**; the rest are quality follow-ups.
 Known-benign cutover expectations (from the scout, all confirmed): Tomcat 10 / Servlet 6 default response
 charsets to UTF-8 (cosmetic golden header diffs) and the empty-archive `SystemPathVerification` error is

@@ -60,36 +60,42 @@ Green on first run against the fixture stack — tests listed by number; ✅ all
 > projects / 10 subjects / 26 sessions / 25 files / 2 stored searches (`down -v` → fresh boot →
 > `init-xnat.sh` → `build-known-state.sh`). Plugin + TZ intact. This is the baseline for all runs below.
 
-### ⭐ ROOT CAUSE — Search‑UI cluster: `POST /REST/search` → 422 (migration regression) — HIGH VALUE
-**Gates ~26 tests** (all of S1004 quick‑search + S1008 advanced‑search, and likely S1009/S1025). The
-search UI (`dataTableSearch.js`, YUI Connect) POSTs the stored‑search XML as an
-`application/x-www-form-urlencoded` body (query string prepended). Under Restlet 2.6's servlet
-connector the container consumes/mangles that body, so `SearchResource.handlePost` (`:135`)
-`extractSearchXml(entity.getText())` doesn't recover the XML → SAX `Content is not allowed in prolog`
-→ `422` (confirmed in the XNAT log at `SearchResource.java:138`). No results → `#dataRows` never
-renders → every search test times out (some hang the full 600s). `SearchResource` already has an
-`extractSearchXml` fix (strips a leading `XNAT_CSRF=…` / `%3C%3Fxml`), but the current body appears
-**empty/query‑only** after the servlet drains it, so the XML is lost before recovery.
-**Fix (focused follow‑up, needs a rebuild‑debug cycle):** log the actual `entity.getText()` + raw
-`getHttpServletRequest()` body/params, then recover the search XML from the correct source (likely the
-merged parameter map, mirroring the `bodyOnlyForm` www‑form handling). *(diagnosed, not yet fixed)*
+### ⭐ ROOT CAUSE — Search‑UI cluster: `POST /REST/search` → 422 — 🔧 FIXED (`4bb23dca7`, tracker 1‑21)
+**Gated ~26 tests** (all of S1004 quick‑search + S1008 advanced‑search, and parts of S1009/S1025). The
+search UI (`dataTableSearch.js`, YUI Connect) POSTed the stored‑search bundle XML as the
+`application/x-www-form-urlencoded` **body** of `/REST/search`. Under Tomcat 10 / Restlet 2.6 the servlet
+parameter parser drains the body before `SearchResource.handlePost` runs, and the XML is exposed
+**nowhere** — instrumented and proven: `getParameterMap()` = only the 4 query params, `getInputStream()`
+`len=0` (EOF), `entity.getText()` = just the 82‑char query string. So the SAX reader got a body starting
+with `XNAT_CSRF=…` → `Content is not allowed in prolog` → `422`. This is the **client‑side** face of the
+1‑19 www‑form body‑consumption class (1‑19's `bodyOnlyForm` recovers *form‑shaped* params; a **raw‑XML**
+body has nothing to recover — it's gone).
+**Fix:** post the bundle as `text/xml` so Restlet keeps the raw entity (server already accepts bare XML;
+Restlet 1.1 tolerates `text/xml` too). Server‑side defence in depth: `extractSearchXml` now uses a lenient
+percent‑decoder (no throw on stray `%`, no `+`→space). **Verified:** t1008.1 PASS, S1008 0/10→4, 0
+prolog/422 in the log. Remaining S1008/S1004 failures are a **separate** client‑side data‑table render
+issue, not this 422.
+**Bug‑class audit:** `ucfa.js:276` (move‑files) + `manageFeatures.js:137,149` (features) POST bodies to
+Restlet the same way — flagged for verification when those suites run.
 
 > **Also:** s1005/s1007 fail on interactive `/app` navigation (legacy three‑button landing, top‑menu
 > dropdowns) — a separate, smaller `/app`‑nav cluster.
 
-### S1004 — Quick Search Home (❌ 12/14 fail, 2 pass) — DEFERRED
-Fails on `#dataRows` never becoming **visible**. **Confirmed NOT pollution** — still fails on the
-clean fixture (2 quick‑searches hang the full 600s). **Not a search‑backend bug** either: `/data/*`
-and `/REST/search` return 200; `/data/projects?format=html` renders `#dataRows` with rows. The
-break is the quick‑search **UI** render path (`POST /REST/search` → `format=xList` → JS builds
-`#dataRows`). Next: browser‑level dig into the `xList` response + quick‑search JS. *(no fix yet)*
-Passing: T1004.4.3 (subject YOB), T1004.4.… varies.
+### S1004 — Quick Search Home — 422 cleared, data‑table render remains
+The `POST /REST/search` 422 is fixed (`4bb23dca7`) — `/REST/search` returns 200 now. Residual failures are
+the **client‑side data‑table (`#dataRows`) render path** (`format=xList` → JS builds `#dataRows`), a
+separate cluster. Next: browser‑level dig into the `xList` response + the table‑render JS. *(search backend
+green; table‑render JS unfixed)*
 
-### S1008 — Advanced Search (❌ 0/10, 2 skip) — DEFERRED
-All fail — same `POST /REST/search` 422 root cause above (advanced search uses the same search‑results table). *(fix with the SearchResource fix)*
+### S1008 — Advanced Search (🔧 4/12, 6 fail, 2 skip) — search 422 FIXED
+Was 0/10 (all `POST /REST/search` 422). After the `text/xml` fix (`4bb23dca7`): **4 pass, 0 prolog/422 in
+the log**. Remaining 6 fail on the **separate** client‑side data‑table (`#dataRows`) render path, not the
+422. *(search root cause cleared; residual is the data‑table cluster)*
 
-### S1009 — Quick Search (❌ 2/4)
-T1009.1, T1009.1.1 (quick‑search navigation) ❌ — search‑UI 422 cluster. T1009.2 (no‑match), T1009.3 (usability) ✅.
+### S1009 — Quick Search (mixed)
+T1009.2 (no‑match), T1009.3 (usability) ✅. T1009.1/.1.1 (quick‑search navigation) still ❌ but **not** the
+422 — they now fail earlier in the `a[href="#taskbox"]` **top‑nav / createSubject** step (the `/app`
+Turbine screen cluster), before reaching search. *(search 422 no longer the blocker here)*
 
 ### S1005 — Three Button Landing (❌ 1/1) — DEFERRED
 T1005.1 (legacy three‑button landing navigation): sets the site landing to the legacy home screen,

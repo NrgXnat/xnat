@@ -17,6 +17,62 @@ per‑test "ref" column cites the commit.
 
 ---
 
+## ✅ A/B triage matrix (2026‑07‑26) — remaining failing clusters vs. develop baseline
+With both stacks running side‑by‑side (**develop `:8081`** = pre‑migration Tomcat 9/Java 21; **jakarta
+`:8080`**), each remaining cluster was triaged by running the same test against both. Verdict rule:
+*pass‑on‑develop + fail‑on‑jakarta = migration regression*; *fail‑identically = pre‑existing (not migration)*.
+Method validated by controls that **pass on both** (t1003.1 login, t1019.1) — develop is healthy, so
+"fails on both" is a real signal, not a globally broken baseline.
+
+| Test | Cluster | develop `:8081` | jakarta `:8080` | Verdict |
+|---|---|---|---|---|
+| t1003.1 | login (control) | ✅ PASS | ✅ PASS | control — harness valid |
+| t1019.1 | (control) | ✅ PASS | ✅ PASS | control — harness valid |
+| t1008.1 | search (fixed) | ✅ PASS | ✅ PASS | **fixed** (`4bb23dca7`) |
+| t1009.1 | `#taskbox` createSubject | ❌ same line | ❌ same line | not migration |
+| t1004.1 | data‑table `#dataRows` | ❌ same line | ❌ same line | not migration |
+| t1014.1 | prearchive data‑table | ❌ same line | ❌ same line | not migration |
+| t1016.1 | download | ❌ `download.saveAs ENOENT` | ❌ same | not migration (local harness path) |
+| t1011.1 | project report screen | ❌ `expect.toBe` | ❌ same | not migration |
+| t1013.1 | subject report screen | ❌ same line | ❌ same line | not migration |
+| t1005.1 | three‑button landing | ❌ same line | ❌ same line | not migration |
+| t1007.1 | top menu | ❌ same line | ❌ same line | not migration |
+| t1015.1 | request help | ❌ `toBeVisible` | ❌ same | not migration |
+| t1025.1 | (untested suite) | ❌ setup 401 | ❌ globalSetup:55 | not migration (harness site‑setup) |
+| t1101.1 | (untested suite) | ❌ setup | ❌ globalSetup:55 | not migration (harness site‑setup) |
+
+**Conclusion:** across every remaining failing cluster, **no new migration regression was found** — each
+fails identically on the develop baseline (or is a test‑harness/environment issue: missing local data files,
+a `download.saveAs` path, or the `global-setup.ts` site‑prereq step). The suite is calibrated against the
+reference cloud instance's UI/config/data, not a vanilla docker XNAT, so a large fraction of "failures" are
+pre‑existing test‑vs‑environment mismatches. **The only genuine jakarta‑cutover regressions surfaced by the
+Playwright suite are the ones already fixed:** search‑UI 422 (1‑21), SS6 programmatic‑login persistence
+(1‑20), Turbine `eventSubmit_` dispatch (1‑18), Restlet www‑form param double‑read (1‑19). The remaining red
+tests are **out of scope for the migration** and belong to a separate "port the suite to the current UI /
+provision fixture data" effort. *(Reproduce: run any test with `BASE_URL=http://localhost:8081` against the
+`xnatdev` stack at `/tmp/develop-stack`.)*
+
+---
+
+## ⚠️ A/B baseline finding (2026‑07‑25): the `#taskbox` "Tasks" menu cluster is **NOT a migration regression**
+A develop‑baseline stack (`/tmp/develop-stack`, develop WAR on **Tomcat 9 / Java 21**, `:8081`, project
+`xnatdev`) was stood up for A/B. Result:
+- **The authenticated top nav is byte‑for‑byte the same on both stacks** — Browse / New / Upload /
+  Administer / Tools / Help — for **both** admin and a freshly‑created non‑admin project member. **Neither
+  stack renders `a[href="#taskbox"]`**, and the string **`taskbox` appears nowhere in the repo** (develop or
+  jakarta).
+- **`t1009.1` fails on develop (`:8081`) at the *exact same* line** — `waiting for a[href="#taskbox"]` 10s
+  timeout — as on jakarta.
+**Conclusion:** the shared `createSubject`/`createManualQC` helpers (`resource-creation.ts`, `TopBarPage.ts`,
+`CreateFailedVisitPage.ts`) target a **"Tasks" top‑nav menu that this XNAT version does not have** (the suite
+was calibrated against an older UI / the reference cloud instance). This is a **test‑vs‑current‑UI mismatch
+that fails identically on develop**, so it is **out of scope for the jakarta migration** and must be fixed in
+the test suite (retarget to the "New"/"Upload" menus), not in XNAT. Affected (any test using those helpers):
+**S1008.4, S1009, S1012, S1027, S1028, S1106.3, ds1001**, etc. Mark these ❌ *"pre‑existing #taskbox test/UI
+mismatch — not migration (A/B‑confirmed on develop)"*, not as migration failures.
+
+---
+
 ## S1001 — User Registration (8)
 | Test | Name | Status | Problem → Fix (ref) |
 |---|---|---|---|
@@ -87,15 +143,23 @@ the **client‑side data‑table (`#dataRows`) render path** (`format=xList` →
 separate cluster. Next: browser‑level dig into the `xList` response + the table‑render JS. *(search backend
 green; table‑render JS unfixed)*
 
-### S1008 — Advanced Search (🔧 4/12, 6 fail, 2 skip) — search 422 FIXED
-Was 0/10 (all `POST /REST/search` 422). After the `text/xml` fix (`4bb23dca7`): **4 pass, 0 prolog/422 in
-the log**. Remaining 6 fail on the **separate** client‑side data‑table (`#dataRows`) render path, not the
-422. *(search root cause cleared; residual is the data‑table cluster)*
+### S1008 — Advanced Search (🔧 search 422 FIXED; residuals triaged) 
+Was 0/10 (all `POST /REST/search` 422). After the `text/xml` fix (`4bb23dca7`): 0 prolog/422 in the log and
+the search→table flow works (t1008.1, t1008.3 ✅). Residuals are **not** one cluster — per‑test triage:
+| Test | Now | Cause |
+|---|---|---|
+| T1008.1, T1008.3 | ✅ | pass (search + table render OK) |
+| T1008.2 | ❌ | **fixture data**: `File not found: /Users/drm/data/pw-test-data/PET_2.zip` (missing local test asset, not a migration bug) |
+| T1008.4 | ❌ | `a[href="#taskbox"]` top‑nav **Tasks menu** not visible in `createSubject` — the `/app`‑nav cluster |
+| T1008.5–.10 | ⚪/❌ | not yet individually triaged (mix of the above) |
+The search **backend** regression is cleared; the notable remaining UI blocker is the **`#taskbox` "Tasks"
+menu** helper (see below), also seen in T1009.1. It is context/state‑dependent (build‑known‑state.sh creates
+subjects through the same path fine), so it needs an A/B‑vs‑develop dig, not a blind fix.
 
 ### S1009 — Quick Search (mixed)
-T1009.2 (no‑match), T1009.3 (usability) ✅. T1009.1/.1.1 (quick‑search navigation) still ❌ but **not** the
-422 — they now fail earlier in the `a[href="#taskbox"]` **top‑nav / createSubject** step (the `/app`
-Turbine screen cluster), before reaching search. *(search 422 no longer the blocker here)*
+T1009.2 (no‑match), T1009.3 (usability) ✅. T1009.1/.1.1 (quick‑search navigation) ❌ on the
+`a[href="#taskbox"]` **createSubject** step — **A/B‑confirmed NOT migration** (fails identically on develop
+`:8081`; see the ⚠️ finding above). Reclassify as a test‑vs‑UI mismatch, not a jakarta failure.
 
 ### S1005 — Three Button Landing (❌ 1/1) — DEFERRED
 T1005.1 (legacy three‑button landing navigation): sets the site landing to the legacy home screen,

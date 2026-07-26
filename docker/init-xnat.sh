@@ -67,10 +67,25 @@ SMTP_STARTTLS="${SMTP_STARTTLS:-true}"
 
 # Small, dev-friendly base site config applied right after init. Override wholesale with
 # SITE_CONFIG_JSON (or set it to '' to skip). Defaults:
-#   passwordComplexity ^.*$              : allow simple fixture/test passwords
-#   userRegistration   true              : the self-registration flow (S1001 tests) is exercisable
-#   uiAllowNonAdminProjectCreation true  : non-admin owners can create projects in tests
-SITE_CONFIG_JSON="${SITE_CONFIG_JSON-{\"passwordComplexity\":\"^.*\$\",\"userRegistration\":true,\"uiAllowNonAdminProjectCreation\":true}}"
+#   passwordComplexity <strict regex>           : min 8 chars + digit + upper + lower. Matches the
+#                                                 Playwright suite's expected value (site-prereq-settings.ts)
+#                                                 so the password-validation tests (T1001.3) see the
+#                                                 rejection message. The data fixture's password
+#                                                 (Fixture_pw_1!) satisfies it. Do NOT weaken to ^.*$ --
+#                                                 that lets weak passwords through and breaks T1001.3.
+#   userRegistration   false                    : new users require ADMIN APPROVAL. XNAT ties
+#                                                 auto-enable to this flag (autoEnable = getUserRegistration
+#                                                 in XDATRegisterUser), so false => self-registered users
+#                                                 are created DISABLED until an admin enables them. This
+#                                                 matches the S1001 registration tests (e.g. T1001.4's
+#                                                 "verified-but-not-enabled user cannot log in").
+#   securityNewUserRegistrationDisabled false   : self-registration is still ALLOWED (the register form works;
+#                                                 this separate flag is what actually disables registration).
+#   uiAllowNonAdminProjectCreation true         : non-admin owners can create projects in tests
+# Built as a single-quoted literal so the complexity regex ({8,} and $) is not mangled by
+# ${VAR-default} brace/parameter parsing.
+_default_site_config='{"passwordComplexity":"^.*(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$","userRegistration":false,"securityNewUserRegistrationDisabled":false,"uiAllowNonAdminProjectCreation":true}'
+SITE_CONFIG_JSON="${SITE_CONFIG_JSON-$_default_site_config}"
 
 WAIT_SECS="${WAIT_SECS:-900}"
 

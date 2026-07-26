@@ -48,6 +48,11 @@ import static org.nrg.xdat.security.helpers.Users.ROLE_USER;
  */
 @Component
 @Slf4j
+// This class IS the deprecated FilterSecurityInterceptor model: it swaps the interceptor's
+// DefaultFilterInvocationSecurityMetadataSource (keyed by AntPathRequestMatcher) at runtime to apply the
+// live-updatable openUrls/adminUrls/requireLogin/securityChannel rules. All of it is redesigned onto
+// AuthorizationManager in the SS7 phase (upgrade-status B-5); suppress removal warnings class-wide until then.
+@SuppressWarnings("removal")
 public class UpdateSecurityFilterHandlerMethod extends AbstractXnatPreferenceHandlerMethod implements BeanPostProcessor {
     @Autowired
     public UpdateSecurityFilterHandlerMethod(final SiteConfigPreferences preferences, final XnatAppInfo appInfo, final XnatLogoutSuccessHandler logoutSuccessHandler) {

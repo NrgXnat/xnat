@@ -31,6 +31,10 @@ public class DefaultInteractiveAgentDetector implements InteractiveAgentDetector
      *
      * @param preferences A list of strings in Ant-style patterns indicating data paths.
      */
+    // dataPaths come from the admin-configurable getDataPaths() preference; PathPatternParser throws on the
+    // Ant-only patterns AntPathRequestMatcher tolerates, so this can't move to PathPatternRequestMatcher
+    // without a pattern-migration story — deferred to the SS7 matcher sweep (upgrade-status B-5).
+    @SuppressWarnings("removal")
     public DefaultInteractiveAgentDetector(final SiteConfigPreferences preferences) {
         for (final String interactiveAgent: preferences.getInteractiveAgentIds()) {
             log.debug("Adding interactive agent specifier: {}", interactiveAgent);

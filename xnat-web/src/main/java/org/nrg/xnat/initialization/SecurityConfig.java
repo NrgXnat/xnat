@@ -73,6 +73,7 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
@@ -172,10 +173,16 @@ public class SecurityConfig {
      * request the post-login handler redirects to. Add patterns here if other background fetches surface.
      */
     private RequestCache navigationOnlyRequestCache() {
+        // Non-deprecated SS6 matcher (AntPathRequestMatcher is deprecated-for-removal). Safe here because
+        // these are fixed, PathPattern-compatible literals used only to skip request caching — not an
+        // authorization decision. The remaining AntPathRequestMatcher sites take admin-supplied patterns
+        // (getDataPaths, openUrls/adminUrls) or belong to the deprecated FilterSecurityInterceptor model,
+        // so they stay until the SS7/AuthorizationManager redesign (upgrade-status B-5).
+        final PathPatternRequestMatcher.Builder matchers = PathPatternRequestMatcher.withDefaults();
         final RequestMatcher ignore = new OrRequestMatcher(
-                new AntPathRequestMatcher("/.well-known/**"),
-                new AntPathRequestMatcher("/favicon.ico"),
-                new AntPathRequestMatcher("/apple-touch-icon*.png"));
+                matchers.matcher("/.well-known/**"),
+                matchers.matcher("/favicon.ico"),
+                matchers.matcher("/apple-touch-icon*.png"));
         final HttpSessionRequestCache cache = new HttpSessionRequestCache();
         cache.setRequestMatcher(new NegatedRequestMatcher(ignore));
         return cache;
@@ -255,7 +262,11 @@ public class SecurityConfig {
         return filter;
     }
 
+    // ChannelProcessingFilter, DefaultFilterInvocationSecurityMetadataSource, and AntPathRequestMatcher are
+    // all deprecated-for-removal in SS6. This whole securityChannel model is redesigned onto redirectToHttps
+    // in the SS7 phase (upgrade-status B-5); suppress the removal warnings until then.
     @Bean
+    @SuppressWarnings("removal")
     public ChannelProcessingFilter channelProcessingFilter() {
         final ChannelDecisionManagerImpl decisionManager = new ChannelDecisionManagerImpl();
         decisionManager.setChannelProcessors(Arrays.asList(new SecureChannelProcessor(), new InsecureChannelProcessor()));
@@ -321,7 +332,15 @@ public class SecurityConfig {
         return builder.build();
     }
 
+    // authorizeRequests() is deprecated-for-removal in Spring Security 6, but it is deliberately retained
+    // here: it installs a FilterSecurityInterceptor, which UpdateSecurityFilterHandlerMethod grabs
+    // (instanceof FilterSecurityInterceptor) to swap in XNAT's live-updatable openUrls/adminUrls/requireLogin
+    // metadata source. The modern authorizeHttpRequests() builds an AuthorizationFilter instead, which that
+    // post-processor never sees, so every open URL falls back to anyRequest().authenticated() -> login
+    // redirect loop (tried and reverted). Migrating to a dynamic AuthorizationManager is an SS7 task
+    // (upgrade-status item 1-2); until then the deprecation is expected, hence @SuppressWarnings("removal").
     @Bean
+    @SuppressWarnings("removal")
     public SecurityFilterChain securityFilterChain(final HttpSecurity http, final AuthenticationManager authenticationManager) throws Exception {
         // Set whether session cookie should be set to secure only based on the site URL. This can only be done during application start-up, so
         // changing to the site URL to use https won't change the secure setting until the application has been restarted. Cookies should ALWAYS

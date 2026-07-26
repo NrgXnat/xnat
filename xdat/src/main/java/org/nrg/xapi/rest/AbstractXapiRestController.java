@@ -133,7 +133,10 @@ public abstract class AbstractXapiRestController {
      *
      * @deprecated All uses of this and similar methods should be replaced by {@link XapiRequestMapping#restrictTo()}.
      */
+    // Already superseded by XapiRequestMapping#restrictTo(); the deprecated AntPathRequestMatcher type retires
+    // with this method in the SS7 matcher sweep (upgrade-status B-5).
     @Deprecated
+    @SuppressWarnings("removal")
     protected HttpStatus isPermitted(final HttpServletRequest request, final Collection<AntPathRequestMatcher> openUrls, final String... ids) {
         // TODO: Open URLs in XAPI are currently limited to GET calls.
         if (StringUtils.equalsIgnoreCase(request.getMethod(), "GET") && openUrls.stream().anyMatch(matcher -> matcher.matches(request))) {

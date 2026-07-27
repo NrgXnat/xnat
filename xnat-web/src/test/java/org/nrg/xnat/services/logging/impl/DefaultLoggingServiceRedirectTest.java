@@ -37,7 +37,10 @@ public class DefaultLoggingServiceRedirectTest {
     public void replacesEveryFileAppenderWithAConsole() {
         final LoggerContext context = contextWithFileAppenders();
 
-        DefaultLoggingService.redirectFileAppendersToConsole(context, ConsoleFormat.PLAIN, PATTERN);
+        // security -> "security" and root -> "app" are two distinct file appenders; the returned count
+        // reflects that.
+        final int redirected = DefaultLoggingService.redirectFileAppendersToConsole(context, ConsoleFormat.PLAIN, PATTERN);
+        assertThat(redirected).isEqualTo(2);
 
         for (final Logger logger : context.getLoggerList()) {
             for (final Appender<ILoggingEvent> appender : appendersOf(logger)) {
@@ -53,13 +56,6 @@ public class DefaultLoggingServiceRedirectTest {
         assertThat(security.get(0).getName()).isEqualTo("security");
 
         assertThat(appendersOf(context.getLogger(Logger.ROOT_LOGGER_NAME))).anyMatch(ConsoleAppender.class::isInstance);
-    }
-
-    @Test
-    public void returnsCountOfDistinctRedirectedFileAppenders() {
-        // security -> "security", root -> "app": two distinct file appenders.
-        assertThat(DefaultLoggingService.redirectFileAppendersToConsole(contextWithFileAppenders(), ConsoleFormat.PLAIN, PATTERN))
-                .isEqualTo(2);
     }
 
     @Test
@@ -86,7 +82,7 @@ public class DefaultLoggingServiceRedirectTest {
         assertThat(((LogstashEncoder) console.getEncoder()).getCustomFields()).contains("\"appender\":\"security\"");
     }
 
-    /** The JSON path was never exercised on the source branch; prove logstash+jackson actually encode. */
+    /** Prove the JSON path actually encodes a parseable record (logstash + jackson), not just its type. */
     @Test
     public void jsonFormatEmitsParseableJson() {
         final LoggerContext context = contextWithFileAppenders();
@@ -121,7 +117,7 @@ public class DefaultLoggingServiceRedirectTest {
         assertThat(json).contains("we\\\"ird").contains("\"message\":\"m\"");
     }
 
-    // ---- reviewer-flagged gaps ----
+    // ---- edge cases, fail-safes, and resource handling ----
 
     /** Reproducible dup case: a logger already carrying a ConsoleAppender must not gain a second one. */
     @Test

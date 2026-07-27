@@ -310,6 +310,15 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
 - **Parameter names no longer read from bytecode.** Spring 6.1 dropped
   `LocalVariableTableParameterNameDiscoverer`. → `@RequestParam`/aspects that rely on parameter names fail
   to bind. → Compile with **`javac -parameters`**. *(item 1‑1)*
+  - **Plugins with a standalone build must opt in themselves.** XNAT core sets this in its build
+    convention (`buildSrc/.../buildlogic.java-common-conventions.gradle`), but a plugin repo has its own
+    Gradle build and does *not* inherit it. Symptom: the plugin compiles fine and loads, but a controller
+    whose handler args omit an explicit name 500s at request time —
+    `IllegalArgumentException: Name for argument of type [String] not specified … Ensure that the compiler
+    uses the '-parameters' flag`. container‑service's `GET /xapi/commands/available` did exactly this, and
+    because the project‑report page polls it, the 500 cascaded into UI instability (locators never "stable").
+    → add `tasks.withType(JavaCompile).configureEach { options.compilerArgs << '-parameters' }`. Verify with
+    `javap -v <Controller>.class | grep -c MethodParameters` (0 = missing the flag). *(container-service)*
 - **Trailing‑slash URL matching disabled.** → JS that PUTs to `/xapi/foo/{id}/` gets 404; saves silently
   no‑op. → `configurer.setUseTrailingSlashMatch(true)` (deprecated; revisit at Spring 7). *(item 1‑15)*
 - **By‑name bean resolution + `-parameters`.** Spring 6's by‑name shortcut can suddenly match a same‑named

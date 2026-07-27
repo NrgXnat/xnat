@@ -337,11 +337,13 @@ public class AdminUtils {
 		String primaryAdminEmail = null;
 		try {
 			final UserI adminUser = Users.getAdminUser();
-			primaryAdminEmail = adminUser != null ? adminUser.getEmail() : null;
+			if (adminUser != null) {
+				primaryAdminEmail = adminUser.getEmail();
+			}
 		} catch (Exception e) {
 			log.warn("Couldn't resolve the primary admin user to copy on a notification, falling back to the site admin email", e);
 		}
-		final String email = StringUtils.isNotBlank(primaryAdminEmail) ? primaryAdminEmail : XDAT.getSiteConfigPreferences().getAdminEmail();
+		final String email = StringUtils.defaultIfBlank(primaryAdminEmail, XDAT.getSiteConfigPreferences().getAdminEmail());
 		if (StringUtils.isBlank(email) || StringUtils.contains(XDAT.getSubscriberEmailsListAsString(event), email)) {
 			return null;
 		}

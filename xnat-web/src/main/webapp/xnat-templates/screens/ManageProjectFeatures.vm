@@ -4,20 +4,40 @@
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
 <!-- Title: Features -->
 
-<table id="project-features" class="xnat-table features" width="100%" style="display:none;">
-    <thead>
-    <tr>
-        <th class="featureProject">Project</th>
-        <th class="featureGroup">Group</th>
-        #foreach($feature in $features)
-            <th class="featureEnabled">$feature.getName()</th>
-        #end
-    </tr>
-    </thead>
-    <tbody id="featureBody">
-    ## body built dynamically in manageFeatures.js
-    </tbody>
-</table>
+<h1>Manage Project Features</h1>
+<p>Toggle feature access for user roles associated with this project.</p>
+
+<style>
+    .xnat-table.features th { vertical-align: top; }
+    .xnat-table th.featureEnabled {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: clip;
+        text-transform: capitalize;
+        white-space: normal;
+    }
+    .featureProject {
+        display: none;
+        visibility: none;
+    }
+</style>
+
+<div class="data-table-wrapper clean">
+    <table id="project-features" class="xnat-table features" width="100%" style="display:none;">
+        <thead>
+        <tr>
+            <th class="featureProject">Project</th>
+            <th class="featureGroup">Group</th>
+            #foreach($feature in $features)
+                <th class="featureEnabled" title="$feature.getName()">$feature.getName()</th>
+            #end
+        </tr>
+        </thead>
+        <tbody id="featureBody">
+        ## body built dynamically in manageFeatures.js
+        </tbody>
+    </table>
+</div>
 
 ##moved common code to manageFeatures.js (also used in ManageGroupTypeFeatures.vm)
 <script type="text/javascript" src="$content.getURI("scripts/features/manageFeatures.js")"></script>

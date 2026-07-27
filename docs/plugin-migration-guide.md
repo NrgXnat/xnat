@@ -352,9 +352,16 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   subpaths) 404, and writes misroute to the first prefix route. → restore `MODE_STARTS_WITH` matching +
   `MODE_BEST_MATCH` routing in `createInboundRoot()`. *(item 0a‑16)*
 - **Empty‑valued params** now surface as `""` where 1.1 gave `null`. → normalize empty → null for parity.
-  *(`101f83f42`)* — **WebDAV statuses** (207/422/423/424/507) removed → provide constants. *(item 1‑6)* —
-  **`ext.fileupload` dropped** after 2.5.2 → `commons-fileupload2` `jakarta-servlet6` (`JakartaServletFileUpload`
-  parsing the `HttpServletRequest` directly). *(item 1‑11)*
+  *(`101f83f42`)* — **`ext.fileupload` dropped** after 2.5.2 → `commons-fileupload2` `jakarta-servlet6`
+  (`JakartaServletFileUpload` parsing the `HttpServletRequest` directly). *(item 1‑11)*
+- **WebDAV `Status` constants removed** (207/422/423/424/507). A `SecureResource`/`ServerResource` subclass
+  that referenced e.g. `Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY` no longer compiles
+  (`cannot find symbol … location: class Status`). → use core's `org.nrg.xnat.restlet.util.XnatWebDavStatus`
+  constants (`XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY`, a `new Status(422, …)` on the plugin's
+  compile classpath via `org.nrg.xnat:web`) — matching how xnat-web's own `SecureResource` sets 422. The
+  standard 4xx/5xx constants (`CLIENT_ERROR_GONE`, `SERVER_ERROR_INTERNAL`, …) are still on `Status`; only the
+  WebDAV extensions moved. Verify replacements against the actual 2.6 `Status` bytecode before guessing a
+  rename — several 1.1 constants were dropped, not renamed. *(item 1‑6; xnat_cr_plugin)*
 
 ### Turbine 7 / Velocity 2
 - **`eventSubmit_doXxx` uses exact‑type dispatch.** Turbine 7 resolves the handler via

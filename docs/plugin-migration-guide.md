@@ -414,6 +414,18 @@ is rarely the last.
   core) plus the plugin's own `containerServiceThreadPoolExecutorFactoryBean`. A bean the plugin author "knew"
   was unique in their old test app is ambiguous inside a full XNAT. → add `@Qualifier("…")` (or `@Primary`).
   This is **not** a jakarta symptom — it just only surfaces once the plugin actually loads. *(container-service)*
+- **A bundled transitive that shadows a core library the host needs.** A fat‑jar plugin ships its own copy of
+  everything on `implementAndInclude`, and those classes can *win* over the host's on the plugin classloader.
+  container‑service bundled **commons‑io 2.15.1** (transitive via docker‑java); XNAT's Turbine stack needs
+  **commons‑io 2.21.0** (`commons-fileupload2-core` calls a build API only present in the newer copy). The stale
+  bundled copy shadowed it → `IllegalAccessError` in `DiskFileItemFactory` → `org.apache.fulcrum.upload`
+  init fails → **Turbine `init() failed`** → every `/app` screen (Login.vm, all `.vm` templates) returns empty
+  while REST (`/data`, `/xapi`) still answers `200`. The split REST‑works/screens‑dead symptom is the tell.
+  → Keep the library on the **compile** classpath (the source imports it) but strip it from the **bundle** so the
+  host's copy wins at runtime. Do the strip in the `fatJar` task's content filter
+  (`exclude "org/apache/commons/io/**"`), **not** as a `configurations { implementAndInclude { exclude … } }`
+  rule: a configuration‑level `exclude` propagates through `extendsFrom` to `compileClasspath` and breaks
+  compilation. Verify with `unzip -l <fat.jar> | grep -c 'org/apache/commons/io/'` == 0. *(container-service)*
 - **Diagnose from the container log, not `docker logs` alone**, and read the *innermost* `Caused by:` — Spring
   wraps the real error (here `NoUniqueBeanDefinitionException`) under a chain of `UnsatisfiedDependencyException`.
 - **A broken plugin takes the whole ROOT webapp down** (`Context initialization failed` → `Context [] startup

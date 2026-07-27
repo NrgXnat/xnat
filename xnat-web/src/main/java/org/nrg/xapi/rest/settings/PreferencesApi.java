@@ -17,15 +17,20 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xapi.exceptions.DataFormatException;
 import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xapi.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,11 +55,12 @@ import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 @Slf4j
 public class PreferencesApi extends AbstractXapiRestController {
     @Autowired
-    public PreferencesApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final List<AbstractPreferenceBean> preferences) {
+    public PreferencesApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final List<AbstractPreferenceBean> preferences, final AnonUtils anonUtils) {
         super(userManagementService, roleHolder);
         for (final AbstractPreferenceBean preferenceBean : preferences) {
             _preferences.put(preferenceBean.getToolId(), preferenceBean);
         }
+        _anonUtils = anonUtils;
     }
 
     @ApiOperation(value = "Returns the full map of preferences and values for this XNAT application.", response = Properties.class, responseContainer = "Map")
@@ -149,9 +155,33 @@ public class PreferencesApi extends AbstractXapiRestController {
                    @ApiResponse(code = 404, message = "Tool ID not found in the system."),
                    @ApiResponse(code = 500, message = "An unexpected error occurred.")})
     @XapiRequestMapping(value = "props/{toolId}/{preference}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.PUT, restrictTo = Admin)
-    public void setToolPreference(@PathVariable final String toolId, @PathVariable final String preference, final @RequestBody String value) throws NotFoundException {
+    public void setToolPreference(@PathVariable final String toolId, @PathVariable final String preference, final @RequestBody String value) throws NotFoundException, DataFormatException, InitializationException {
         if (!_preferences.containsKey(toolId)) {
             throw new NotFoundException("There is no tool with ID " + toolId + " in this system.");
+        }
+
+        // The site-wide anonymization settings are written through the anonymization service so that the
+        // config service copy — the one actually applied to incoming DICOM — is updated synchronously with
+        // the acting user and the preference mirror stays consistent. Writing only the preference here
+        // would leave the applied script stale while the preference reads as updated.
+        if (StringUtils.equals(toolId, SiteConfigPreferences.SITE_CONFIG_TOOL_ID)
+            && StringUtils.equalsAny(preference, AnonUtils.SITEWIDE_ANONYMIZATION_SCRIPT, AnonUtils.ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT)) {
+            log.info("User {} is setting the site-wide anonymization preference {} through the anonymization service.", getSessionUser().getUsername(), preference);
+            try {
+                if (StringUtils.equals(preference, AnonUtils.SITEWIDE_ANONYMIZATION_SCRIPT)) {
+                    _anonUtils.setSiteWideScript(getSessionUser().getUsername(), value);
+                } else {
+                    // The guard above restricts this branch to ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT.
+                    if (!StringUtils.equalsAnyIgnoreCase(value, "true", "false")) {
+                        throw new DataFormatException("The " + AnonUtils.ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT + " value must be either true or false: " + value);
+                    }
+                    _anonUtils.setSiteWideSettings(getSessionUser().getUsername(), null, Boolean.parseBoolean(value));
+                }
+            } catch (ConfigServiceException e) {
+                log.error("The user {} tried to set the {} preference, but an error occurred", getSessionUser().getUsername(), preference, e);
+                throw new InitializationException("An error occurred storing the site-wide anonymization settings");
+            }
+            return;
         }
 
         log.info("User {} is setting the value for preference {}/{}.", getSessionUser().getUsername(), toolId, preference);
@@ -183,6 +213,8 @@ public class PreferencesApi extends AbstractXapiRestController {
     }
 
     private static final Properties EMPTY_PROPERTIES = new Properties();
+
+    private final AnonUtils _anonUtils;
 
     private final Map<String, AbstractPreferenceBean> _preferences = new HashMap<>();
 }

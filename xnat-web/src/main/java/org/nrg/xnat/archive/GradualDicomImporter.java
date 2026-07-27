@@ -36,8 +36,6 @@ import org.nrg.dicom.mizer.objects.Dcm4cheConvert;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerService;
-import org.nrg.dicomtools.filters.DicomFilterService;
-import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
@@ -112,17 +110,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
         _directArchive &= _directArchiveSessionService != null;
     }
 
-    private int getMaxFilterTag(final SeriesImportFilter filter) {
-        if (filter == null || !filter.isEnabled()) {
-            return 0;
-        }
-       List<Integer> tags=filter.getFilterTags();
-       if (tags.isEmpty()) {
-           return 0;
-       }
-       return tags.get(tags.size()-1);
-    }
-
     public static boolean isAutoArchive(Map<String, Object> params) {
         if (params.containsKey(RequestUtil.AA) && (RequestUtil.TRUE.equalsIgnoreCase((String) params.get(RequestUtil.AA)))) {
             return true;
@@ -139,8 +126,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final String name = _fileWriter.getName();
         final XnatProjectdata project;
         final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
-        final SeriesImportFilter siteFilter = getDicomFilterService().getSeriesImportFilter();
-        final int lastTag = Math.max(getMaxFilterTag(siteFilter), Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription))+ 1;
+        final int lastTag = Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription) + 1;
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
              final DicomInputStream dis = new ResumableDicomInputStream(bis)) {
             Attributes fmi = dis.readFileMetaInformation();
@@ -182,43 +168,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
             dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
             if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicomObject, tempSession)) {
                 return returnEmptyList();
-            }
-            dataset = dicomObject.getAttributes();
-
-            final String projectId = project != null ? project.getId() : null;
-            final SeriesImportFilter projectFilter = StringUtils.isNotBlank(projectId) ? getDicomFilterService().getSeriesImportFilter(projectId) : null;
-            final int maxProjectTag = getMaxFilterTag(projectFilter)+1;
-            if (maxProjectTag > lastTag) {
-                try {
-                    dis.readAttributes(dataset, -1, maxProjectTag+1);
-                    dis.reset();
-                } catch (IOException e) {
-                    log.error("unable to re-read DICOM data stream for project filter", e);
-                    throw new ClientException("Unable to re-read DICOM data for project-specific filtering", e);
-                }
-            }
-            if (log.isDebugEnabled()) {
-                if (siteFilter != null) {
-                    if (projectFilter != null) {
-                        log.debug("Found " + (siteFilter.isEnabled() ? "enabled" : "disabled") + " site-wide series import filter and " + (siteFilter.isEnabled() ? "enabled" : "disabled") + " series import filter for the project " + projectId);
-                    } else if (StringUtils.isNotBlank(projectId)) {
-                        log.debug("Found " + (siteFilter.isEnabled() ? "enabled" : "disabled") + " site-wide series import filter and no series import filter for the project " + projectId);
-                    } else {
-                        log.debug("Found a site-wide series import filter and no project ID was specified");
-                    }
-                } else if (projectFilter != null) {
-                    log.debug("Found no site-wide series import filter and " + (projectFilter.isEnabled() ? "enabled" : "disabled") + " series import filter for the project " + projectId);
-                }
-            }
-
-            dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
-            if (!(shouldIncludeDicomObject(siteFilter, dicomObject) && shouldIncludeDicomObject(projectFilter, dicomObject))) {
-                return returnEmptyList();
-                /* TODO: Return information to user on rejected files. Unfortunately throwing an
-                 * exception causes DicomBrowser to display a panicked error message. Some way of
-                 * returning the information that a particular file type was not accepted would be
-                 * nice, though. Possibly record the information and display on an admin page.
-                 */
             }
             dataset = dicomObject.getAttributes();
 
@@ -682,32 +631,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    private boolean shouldIncludeDicomObject(final SeriesImportFilter filter, final DicomObjectI dicom) {
-        // If we don't have a filter or the filter is turned off, then we include the DICOM object by default (no filtering)
-        if (filter == null || !filter.isEnabled()) {
-            return true;
-        }
-        final boolean shouldInclude = filter.shouldIncludeDicomObject(dicom.getAttributes());
-        if (log.isDebugEnabled()) {
-            final String association = StringUtils.isBlank(filter.getProjectId()) ? "site" : "project " + filter.getProjectId();
-            log.debug("The series import filter for " + association + " indicated a DICOM object from series \"" +
-                    dicom.getString(Tag.SeriesDescription) + "\" " +
-                    (shouldInclude ? "should" : "shouldn't") + " be included.");
-        }
-        return shouldInclude;
-    }
-
-    private DicomFilterService getDicomFilterService() {
-        if (_filterService == null) {
-            synchronized (this) {
-                if (_filterService == null) {
-                    _filterService = XDAT.getContextService().getBean(DicomFilterService.class);
-                }
-            }
-        }
-        return _filterService;
-    }
-
     private PrearchiveCode shouldAutoArchive(final XnatProjectdata project, final Attributes o) {
         if (null == project) {
             return null;
@@ -799,7 +722,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private final String              _directArchiveOverwrite;
 
     private String     _transferSyntax;
-    private DicomFilterService _filterService;
 
     private final MizerService _mizer;
     private final ArchiveProcessorInstanceService _processorInstanceService;

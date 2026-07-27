@@ -215,9 +215,6 @@ public final class PrearcSessionValidator extends PrearcSessionArchiver  {
 		//validate files to confirm DICOM contents
 		validateDicomFiles();
 
-		//verify compliance with DICOM whitelist/blacklist
-		verifyCompliance();
-
 		try {
 			getApplyPluginValidationService().validate(src, params, user);
 		} catch (ClientException e) {

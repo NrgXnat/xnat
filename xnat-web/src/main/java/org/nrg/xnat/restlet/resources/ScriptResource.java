@@ -22,7 +22,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.resource.Representation;
@@ -58,9 +57,8 @@ public class ScriptResource extends AutomationResource {
         // If the user isn't a site admin, there's a limited set of operations they are permitted to perform.
         final UserI user = getUser();
         if (!Roles.isSiteAdmin(user)) {
-            // You can't put or post or delete a script and you can't retrieve a specific script OTHER THAN the split
-            // PET/MR script.
-            if (!request.getMethod().equals(Method.GET) || (StringUtils.isNotBlank(_scriptId) && !_scriptId.equals(PrearcDatabase.SPLIT_PETMR_SESSION_ID))) {
+            // You can't put or post or delete a script and you can't retrieve a specific script.
+            if (!request.getMethod().equals(Method.GET) || StringUtils.isNotBlank(_scriptId)) {
                 log.warn(getRequestContext("User " + user.getLogin() + " attempted to access forbidden script trigger template resources"));
                 response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins can view or update script resources.");
                 throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins can view or update script resources.");
@@ -109,14 +107,7 @@ public class ScriptResource extends AutomationResource {
                 }
                 else {
                     // They're requesting a specific script, so return that to them.
-                    Script script = getScript();
-
-                    // Here's a special case: if they're trying to get the split PET/MR script and it doesn't exist, give
-                    // them the default implementation.
-                    // TODO This should be expanded into a default script repository function.
-                    if (script == null && _scriptId.equalsIgnoreCase(PrearcDatabase.SPLIT_PETMR_SESSION_ID)) {
-                        script = PrearcDatabase.DEFAULT_SPLIT_PETMR_SESSION_SCRIPT;
-                    }
+                    final Script script = getScript();
 
                     // have to check if it's null, or else it will return a StringRepresentation containing the word null instead of a 404
                     if (script != null) {

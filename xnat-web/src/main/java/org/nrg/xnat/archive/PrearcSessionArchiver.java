@@ -13,14 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.util.TagUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.dicomtools.filters.DicomFilterService;
-import org.nrg.dicomtools.filters.SeriesImportFilter;
-import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -125,7 +119,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
     private ApplyPluginValidationService applyPluginValidationService;
     private ApplyPluginLabelingService   applyPluginLabelingService;
     private ScanIdValidator              scanIdValidator;
-    private DicomFilterService           filterService;
 
     protected PrearcSessionArchiver(final Object control, final XnatImagesessiondata src, final PrearcSession prearcSession, final UserI user, final String project, final Map<String, Object> params, final Boolean overrideExceptions, final Boolean allowSessionMerge, final Boolean waitFor, final Boolean overwriteFiles) {
         super(control, user);
@@ -506,10 +499,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                         validateDicomFiles();
                     }
 
-                    if (XDAT.getBoolSiteConfigurationProperty("verifyComplianceInPrearcSessionReview", false)) {
-                        verifyCompliance();
-                    }
-
                     try {
                         getApplyPluginValidationService().validate(src, params, user);
                     } catch (ClientException e) {
@@ -680,50 +669,6 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
             }
             return applyPluginLabelingService;
         }
-    }
-
-    /**
-     * This code is used by this class and PrearcSessionValidator to confirm that all scan data is compliant according to the SeriesImportFilters
-     *
-     * @throws ClientException When an error occurs on the client side.
-     */
-    protected void verifyCompliance() throws ClientException {
-        final SeriesImportFilter projectSpecific = StringUtils.isNotEmpty(project)
-                                                   ? getDicomFilterService().getSeriesImportFilter(project)
-                                                   : null;
-        if (projectSpecific == null || !projectSpecific.isEnabled()) {
-            return;
-        }
-        final List<Integer> filterTags = projectSpecific.getFilterTags();
-        if (filterTags.isEmpty()) {
-            return;
-        }
-        final int lastTag = Math.max(filterTags.getLast(), Tag.SeriesDescription) + 1;
-        log.trace("reading object into memory up to {}", TagUtils.toString(lastTag));
-        for (final XnatImagescandataI scan : src.getScans_scan()) {
-            for (final File file: getAllDicomFile(scan)) {
-                try {
-                    final Attributes attributes = DicomUtils.read(file, lastTag);
-                    if (!projectSpecific.shouldIncludeDicomObject(attributes)) {
-                        fail(22, String.format("Scan %1$s is non-compliant with this project's DICOM whitelist/blacklist.", scan.getId()));
-                        break;
-                    }
-                } catch (IOException e) {
-                    log.warn("Can't create DicomObject for file {}", file.getAbsolutePath());
-                }
-            }
-        }
-    }
-
-    private List<File> getAllDicomFile(final XnatImagescandataI scan ) {
-        List<File> dicomFiles = new ArrayList<>();
-        for(final XnatAbstractresourceI res: scan.getFile()){
-            if(((XnatAbstractresource)res).getFormat()!=null && ((XnatAbstractresource)res).getFormat().equals("DICOM")){
-                List<File> files= ((XnatAbstractresource)res).getCorrespondingFiles(src.getPrearchivepath());
-                dicomFiles.addAll(files);
-            }
-        }
-        return dicomFiles;
     }
 
     /**
@@ -1012,12 +957,4 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         throw new ClientException(Status.CLIENT_ERROR_CONFLICT, msg, new Exception());
     }
 
-    private DicomFilterService getDicomFilterService() {
-        if (filterService == null) {
-            synchronized (log) {
-                filterService = XDAT.getContextService().getBean(DicomFilterService.class);
-            }
-        }
-        return filterService;
-    }
 }

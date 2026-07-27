@@ -12,7 +12,6 @@ authenticated:
   - displayHostName
   - enableDicomReceiver
   - enableSitewideAnonymizationScript
-  - enableSitewideSeriesImportFilter
   - failMergeOn
   - processingUrl
   - projectAllowAutoArchive
@@ -31,8 +30,6 @@ authenticated:
   - sitewideAnonymizationScript
   - sitewidePetMr
   - sitewidePetTracers
-  - sitewideSeriesImportFilter
-  - sitewideSeriesImportFilterMode
   - uiAllowAdvancedSearch
   - uiAllowBlockedSubjectAssessorView
   - uiAllowMoreProjectInvestigators

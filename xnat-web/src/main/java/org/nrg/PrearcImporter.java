@@ -9,7 +9,6 @@
 package org.nrg;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.BUnzip2;
@@ -23,14 +22,11 @@ import org.dom4j.io.SAXReader;
 import org.nrg.attr.Utils;
 import org.nrg.dcm.xnat.DICOMSessionBuilder;
 import org.nrg.dcm.xnat.XnatAttrDef;
-import org.nrg.dicomtools.filters.DicomFilterService;
-import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.ecat.Variable;
 import org.nrg.ecat.xnat.PETSessionBuilder;
 import org.nrg.framework.status.*;
 import org.nrg.resources.SupplementalResourceBuilderUtils;
 import org.nrg.session.SessionBuilder.NoUniqueSessionException;
-import org.nrg.xdat.XDAT;
 import org.nrg.xnat.LabelType;
 
 import java.io.*;
@@ -52,8 +48,6 @@ public final class PrearcImporter implements StatusProducerI, Runnable {
     private static final FileFilter isFileFilter         = File::isFile;
     private static final FileFilter isDirectoryFilter    = File::isDirectory;
     private static final FileFilter isIMAFileFilter      = f -> f.isFile() && f.getName().matches(IMA_FILE_REGEX);
-
-    private static DicomFilterService filterService = null;
 
     private final BasicStatusPublisher publisher = new BasicStatusPublisher();
     private final StatusListenerI      listener  = publisher::publish;
@@ -235,9 +229,9 @@ public final class PrearcImporter implements StatusProducerI, Runnable {
                 final File[] files = dir.isDirectory() ? dir.listFiles(isFileFilter) : new File[]{dir};
                 if (files != null) {
                     for (final File file : files) {
-                        log.debug("checking inbox file " + file);
+                        log.debug("checking inbox file {}", file);
                         if (ud.unpack(file, tmpDir)) {
-                            log.debug("extracted and removed " + file);
+                            log.debug("extracted and removed {}", file);
                             file.delete();
                             dirs.add(tmpDir);
                             importFiles.add(tmpDir);
@@ -262,21 +256,10 @@ public final class PrearcImporter implements StatusProducerI, Runnable {
 
             final File[] sources = importFiles.toArray(new File[0]);
 
-            final List<SeriesImportFilter> filters    = new ArrayList<>();
-            final SeriesImportFilter       siteFilter = getDicomFilterService().getSeriesImportFilter();
-            if (siteFilter != null && siteFilter.isEnabled()) {
-                filters.add(siteFilter);
-            }
-            if (StringUtils.isNotBlank(project)) {
-                final SeriesImportFilter projectFilter = getDicomFilterService().getSeriesImportFilter(project);
-                if (projectFilter != null && projectFilter.isEnabled()) {
-                    filters.add(projectFilter);
-                }
-            }
             // Now turn the DICOM and ECAT restructurers loose
             org.nrg.dcm.Restructurer dicom;
             try {
-                dicom = new org.nrg.dcm.Restructurer(sources, prearc, filters);
+                dicom = new org.nrg.dcm.Restructurer(sources, prearc);
                 dicom.addStatusListener(listener);
                 dicom.run();
                 sessions.addAll(dicom.getSessions());
@@ -528,15 +511,6 @@ public final class PrearcImporter implements StatusProducerI, Runnable {
 
     private void publishSuccess(final Object o, final String message) {
         publisher.publish(new StatusMessage(o, StatusMessage.Status.COMPLETED, message));
-    }
-
-    private DicomFilterService getDicomFilterService() {
-        if (filterService == null) {
-            synchronized (this) {
-                filterService = XDAT.getContextService().getBean(DicomFilterService.class);
-            }
-        }
-        return filterService;
     }
 
     /**

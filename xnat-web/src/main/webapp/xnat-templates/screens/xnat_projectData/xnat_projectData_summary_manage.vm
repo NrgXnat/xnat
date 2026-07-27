@@ -173,7 +173,6 @@
 
 </style>
 
-<script type="text/javascript" src="$content.getURI("scripts/seriesImportFilter.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/settingsManager.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/xnat/app/eventsManager.js")"></script>
 
@@ -373,74 +372,6 @@
 
             YAHOO.util.Event.onDOMReady(addAnonymizationMgmtMonitor);
             //  putConfigurationControls('anonymization', ['anonScript', 'enableAnonScript']);
-        </script>
-    </div>
-    <h3>Series Import Filters</h3>
-    <div>
-        <table id="series_import_filter_table">
-            <tr>
-                <td>
-                    <div class="alert warning bold">
-                        Caution: This feature has been deprecated as of XNAT 1.8.10 and will be removed from XNAT in the 1.10 release. Series filtering and rejection can now be managed natively within DicomEdit anonymization scripts. See <a href="https://wiki.xnat.org/documentation/how-to-write-a-series-import-filter" target="_blank">documentation for details</a>. (Note: Support for modality maps will not be preserved.)
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="highlighted" id="series_import_filter_container">
-                ## WHY IS THIS IN A TABLE? C'MON MAN, IT'S 2015
-                    <table cellspacing="8">
-                        <tr>
-                            <td>
-                                This is the series import filter applied to incoming and archiving DICOM resources for your
-                                project. This filter can also be supplemented by the site-wide series import filter.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <label for="enable_series_import_filter">Enable Filter</label><input type="checkbox" name="enable_series_import_filter" id="enable_series_import_filter"/>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label for="series_import_filter_mode_list">Mode</label>
-                                <select name="series_import_filter_mode_list" id="series_import_filter_mode_list" disabled placeholder="Enter white- or blacklisted series import filters separated by newlines, e.g. <b>localizer</b> for localizer series. Enter a modality-mapped series import filter as JSON.">
-                                    <option value="whitelist">Whitelist</option>
-                                    <option value="blacklist">Blacklist</option>
-                                    <option value="modalityMap">Modality Map</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <textarea id="series_import_filter_text_area" class="code mono" rows="20" cols="80" disabled="disabled"></textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="info">
-                                    The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
-                                    <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are
-                                    case-insensitive, i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><input type="button" id="series_import_filter_save" value="Save" disabled="disabled"/>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        <script>
-            var filtersGet = new seriesImportFiltersGet({
-                'container': document.getElementById('series_import_filter_container'),
-                'project': '$project.getId()',
-                'enable_checkbox': 'enable_series_import_filter',
-                'mode_list': 'series_import_filter_mode_list',
-                'filters_text_area': 'series_import_filter_text_area',
-                'save_button': 'series_import_filter_save'
-            });
-            filtersGet.get();
         </script>
     </div>
 

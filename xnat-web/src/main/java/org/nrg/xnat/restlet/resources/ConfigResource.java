@@ -21,7 +21,6 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
@@ -43,11 +42,9 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class ConfigResource extends SecureResource {
@@ -328,8 +325,6 @@ public class ConfigResource extends SecureResource {
                 status = getQueryVariable("status");
             }
 
-            syncEnabledProjectsSeriesImportFilter(status);
-
             final boolean hasStatus      = StringUtils.isNotBlank(status);
             final boolean hasBodyContent = entity != null && entity.getAvailableSize() > 0 || jsonParams != null && jsonParams.containsKey("contents");
 
@@ -395,23 +390,6 @@ public class ConfigResource extends SecureResource {
         } catch (Exception e) {
             log.error("Unknown error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
-        }
-    }
-
-    private void syncEnabledProjectsSeriesImportFilter(String status) {
-        if (toolName.equals("seriesImportFilter") && path.equals("config") && StringUtils.isNotBlank(status)) {
-            SiteConfigPreferences siteConfigPreferences = XDAT.getSiteConfigPreferences();
-            String enabledProjects = siteConfigPreferences.getEnableProjectsSeriesImportFilter();
-            if (status.equals("enabled")) {
-                siteConfigPreferences.setEnableProjectsSeriesImportFilter(StringUtils.isNotBlank(enabledProjects)
-                        ? enabledProjects + "," + projectId
-                        : projectId);
-            }
-            if (status.equals("disabled")) {
-                siteConfigPreferences.setEnableProjectsSeriesImportFilter(Arrays.stream(enabledProjects.split(","))
-                        .filter(s -> !s.equals(projectId))
-                        .collect(Collectors.joining(",")));
-            }
         }
     }
 

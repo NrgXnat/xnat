@@ -17,7 +17,6 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -54,9 +53,8 @@ public class ScriptVersionsResource extends AutomationResource {
 
         // If the user isn't a site admin, there's a limited set of operations they are permitted to perform.
         if (!Roles.isSiteAdmin(user)) {
-            // You can't put or post or delete a script and you can't retrieve a specific script OTHER THAN the split
-            // PET/MR script.
-            if ((StringUtils.isNotBlank(_scriptId) && !_scriptId.equals(PrearcDatabase.SPLIT_PETMR_SESSION_ID))) {
+            // You can't put or post or delete a script and you can't retrieve a specific script.
+            if (StringUtils.isNotBlank(_scriptId)) {
                 _log.warn(getRequestContext("User " + user.getLogin() + " attempted to access forbidden script trigger template resources"));
                 response.setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins can view or update script resources.");
                 throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, "Only site admins can view or update script resources.");
@@ -85,17 +83,6 @@ public class ScriptVersionsResource extends AutomationResource {
         if (StringUtils.isNotBlank(_scriptId)) {
             try {
                 List<String> versions = _scriptService.getVersions(_scriptId);
-
-//                // They're requesting a specific script, so return that to them.
-//                List<Script> script = getScripts();
-//
-//                // Here's a special case: if they're trying to get the split PET/MR script and it doesn't exist, give
-//                // them the default implementation.
-//                // TODO This should be expanded into a default script repository function.
-//                if (script == null && _scriptId.equalsIgnoreCase(PrearcDatabase.SPLIT_PETMR_SESSION_ID)) {
-//                    script = new ArrayList<Script>();
-//                    script.add(PrearcDatabase.DEFAULT_SPLIT_PETMR_SESSION_SCRIPT);
-//                }
 
                 // have to check if it's null, or else it will return a StringRepresentation containing the word null instead of a 404
                 if (versions != null) {

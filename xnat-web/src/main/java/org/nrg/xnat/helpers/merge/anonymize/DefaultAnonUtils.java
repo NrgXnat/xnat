@@ -22,6 +22,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,12 +40,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DefaultAnonUtils implements AnonUtils {
     @Autowired
-    public DefaultAnonUtils(final ConfigService configService, final JCacheHelper cacheHelper) throws Exception {
+    public DefaultAnonUtils(final ConfigService configService, final SiteConfigPreferences preferences, final JCacheHelper cacheHelper) throws Exception {
         if (_instance != null) {
             throw new Exception("The AnonUtils service is already initialized, try calling getInstance() instead.");
         }
         _instance      = this;
         _configService = configService;
+        _preferences   = preferences;
         _cache         = cacheHelper.getCache(ANON_SCRIPT_CACHE, String.class, Configuration.class);
     }
 
@@ -215,18 +217,57 @@ public class DefaultAnonUtils implements AnonUtils {
     }
 
     @Override
-    public void setSiteWideScript(String login, String script) throws ConfigServiceException {
+    public void setSiteWideSettings(final String login, final String script, final Boolean enable) throws ConfigServiceException {
         if (log.isDebugEnabled()) {
-            log.debug("User {} is setting {} site-wide script", login, DicomEdit.ToolName);
+            log.debug("User {} is setting the site-wide {} settings: script {}, enable {}", login, DicomEdit.ToolName, script != null ? "updated" : "unchanged", enable != null ? enable : "preserved");
         }
-        _configService.replaceConfig(login, "", DicomEdit.ToolName, SITE_WIDE_PATH, script);
+
+        final Configuration current    = getSiteWideScriptConfiguration();
+        // A fresh install has no site-wide configuration and replaceConfig() creates it enabled, so treat
+        // "no config" as enabled when preserving status. This matches the XNAT-4825 semantics.
+        final boolean       wasEnabled = current == null || StringUtils.equals(current.getStatus(), Configuration.ENABLED_STRING);
+        final boolean       enabled    = enable != null ? enable : wasEnabled;
+
+        // Write the script first and the status second: replaceConfig() always creates the new revision
+        // enabled (XNAT-4825), so a disable must follow the script write. The brief enabled window is in the
+        // safe direction (extra anonymization), and both writes happen synchronously on this thread — the
+        // asynchronous, event-driven form of this same sequence is what produced XNAT-5830.
+        if (script != null && (current == null || !StringUtils.equals(script, current.getContents()))) {
+            _configService.replaceConfig(login, "", DicomEdit.ToolName, SITE_WIDE_PATH, script);
+        }
+        // Only touch the status when a configuration exists or was just written above: the config service
+        // throws for a status change on a missing configuration, and before the initialization task seeds
+        // the default script there's nothing to toggle. The preference mirror below still records the
+        // intent.
+        if (script != null || current != null) {
+            if (enabled) {
+                _configService.enable(login, "", DicomEdit.ToolName, SITE_WIDE_PATH);
+            } else {
+                _configService.disable(login, "", DicomEdit.ToolName, SITE_WIDE_PATH);
+            }
+        } else {
+            log.debug("No site-wide {} configuration exists and no script was provided: skipping the status update and mirroring the preferences only", DicomEdit.ToolName);
+        }
         invalidateSitewideAnonCache();
+
+        // Mirror to the site-config preferences last. The config service copy above is the one applied to
+        // incoming DICOM; the preference is display/compatibility data. Setting the preferences fires the
+        // preference events that dist-events relays to other nodes to invalidate their caches —
+        // AnonymizationHandlerMethod handles those events with cache invalidation ONLY and must never write.
+        if (script != null) {
+            _preferences.setSitewideAnonymizationScript(script);
+        }
+        _preferences.setEnableSitewideAnonymizationScript(enabled);
+    }
+
+    @Override
+    public void setSiteWideScript(String login, String script) throws ConfigServiceException {
+        setSiteWideSettings(login, script, null);
     }
 
     @Override
     public void enableSiteWide(String login) throws ConfigServiceException {
-        enableProjectSpecific(login, null);
-        invalidateSitewideAnonCache();
+        setSiteWideSettings(login, null, true);
     }
 
     @Override
@@ -241,8 +282,7 @@ public class DefaultAnonUtils implements AnonUtils {
 
     @Override
     public void disableSiteWide(final String login) throws ConfigServiceException {
-        disableProjectSpecific(login, null);
-        invalidateSitewideAnonCache();
+        setSiteWideSettings(login, null, false);
     }
 
     @Override
@@ -272,4 +312,5 @@ public class DefaultAnonUtils implements AnonUtils {
 
     private final Cache<String, Configuration> _cache;
     private final ConfigService                _configService;
+    private final SiteConfigPreferences        _preferences;
 }

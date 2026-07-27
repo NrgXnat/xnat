@@ -1713,7 +1713,7 @@ anonymization:
     label: "Anonymization Script (Site Wide)"
     method: POST
     contentType: json
-    url: /xapi/siteConfig
+    url: /xapi/anonymize/settings
     contents:
         enableSitewideAnonymizationScript:
             kind: panel.input.switchbox

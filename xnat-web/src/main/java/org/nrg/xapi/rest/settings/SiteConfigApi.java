@@ -37,6 +37,7 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,8 @@ import java.util.stream.Collectors;
 
 import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xnat.helpers.merge.AnonUtils.ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT;
+import static org.nrg.xnat.helpers.merge.AnonUtils.SITEWIDE_ANONYMIZATION_SCRIPT;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -80,13 +83,15 @@ public class SiteConfigApi extends AbstractXapiRestController {
             final XnatAppInfo appInfo,
             final SiteConfigAccess access,
             final NamedParameterJdbcTemplate template,
-            final ConfigService configService) {
+            final ConfigService configService,
+            final AnonUtils anonUtils) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
         _access = access;
         _template = template;
         _configService = configService;
+        _anonUtils = anonUtils;
     }
 
     @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -122,12 +127,19 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(consumes = {APPLICATION_FORM_URLENCODED_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = Admin)
-    public void setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) throws DataFormatException {
+    public void setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) throws DataFormatException, InitializationException {
         // Is this call initializing the system?
         final boolean isInitialized  = _appInfo.isInitialized();
         final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && getInitializedValue(properties.get("initialized"));
 
         validateReCaptcha(properties);
+
+        // The site-wide anonymization settings are written through the anonymization service so that the
+        // config service copy — the one actually applied to incoming DICOM — is updated synchronously with
+        // the session user, with the preferences mirrored as part of the same call. The keys are removed here
+        // so the generic loop below doesn't set the preferences a second time.
+        setAnonymizationProperties(properties);
+
         // First try to handle any submitted preferences that should be handled as a group.
         final List<? extends Set<String>> includedPrefsGroups = findPrefsGroups(properties.keySet());
         if (!includedPrefsGroups.isEmpty()) {
@@ -187,6 +199,27 @@ public class SiteConfigApi extends AbstractXapiRestController {
         }
     }
 
+    private void setAnonymizationProperties(final Map<String, Object> properties) throws DataFormatException, InitializationException {
+        if (!properties.containsKey(SITEWIDE_ANONYMIZATION_SCRIPT) && !properties.containsKey(ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT)) {
+            return;
+        }
+        // The keys are removed unconditionally so the generic loop below never sees them; JSON null values
+        // are treated the same as omitted keys — "leave unchanged" — so clients that serialize absent
+        // fields as explicit nulls can't accidentally clear the script or disable anonymization.
+        final Object  scriptValue = properties.remove(SITEWIDE_ANONYMIZATION_SCRIPT);
+        final String  script      = scriptValue != null ? scriptValue.toString() : null;
+        final Boolean enable      = AnonUtils.parseEnableFlag(properties.remove(ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT));
+        if (script == null && enable == null) {
+            return;
+        }
+        try {
+            _anonUtils.setSiteWideSettings(getSessionUser().getUsername(), script, enable);
+        } catch (ConfigServiceException e) {
+            log.error("The user {} tried to set the site-wide anonymization settings, but an error occurred", getSessionUser().getUsername(), e);
+            throw new InitializationException("An error occurred storing the site-wide anonymization settings");
+        }
+    }
+
     private static void validateReCaptcha(Map<String, Object> properties) throws DataFormatException {
         if (Boolean.TRUE.equals(properties.get("uiNewUserRequireCaptcha"))) {
             Object privateKey = properties.get("uiNewUserCaptchaPrivate");
@@ -232,11 +265,23 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{property}", consumes = {TEXT_PLAIN_VALUE, APPLICATION_JSON_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
     public void setSiteConfigProperty(@ApiParam(value = "The property to be set.", required = true) @PathVariable("property") final String property,
-                                      @ApiParam("The value to be set for the property.") @RequestBody final String value) throws InitializationException {
+                                      @ApiParam("The value to be set for the property.") @RequestBody final String value) throws DataFormatException, InitializationException {
         log.info("User '{}' set the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
 
         if (StringUtils.equals("initialized", property) && StringUtils.equals("true", value)) {
             _preferences.setInitialized(true);
+        } else if (StringUtils.equalsAny(property, SITEWIDE_ANONYMIZATION_SCRIPT, ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT)) {
+            // Route through the anonymization service: see setAnonymizationProperties() for the rationale.
+            try {
+                if (StringUtils.equals(property, SITEWIDE_ANONYMIZATION_SCRIPT)) {
+                    _anonUtils.setSiteWideScript(getSessionUser().getUsername(), value);
+                } else {
+                    _anonUtils.setSiteWideSettings(getSessionUser().getUsername(), null, AnonUtils.parseEnableFlag(value));
+                }
+            } catch (ConfigServiceException e) {
+                log.error("The user {} tried to set the {} property, but an error occurred", getSessionUser().getUsername(), property, e);
+                throw new InitializationException("An error occurred storing the site-wide anonymization settings");
+            }
         } else {
             try {
                 _preferences.set(value, property);
@@ -349,6 +394,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
     private static final String                      EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
     private static final List<? extends Set<String>> PREFS_GROUPS = Collections.singletonList(ImmutableSet.of("enableSitewideSeriesImportFilter", "sitewideSeriesImportFilterMode", "sitewideSeriesImportFilter"));
 
+    private final AnonUtils                  _anonUtils;
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;
     private final SiteConfigAccess           _access;

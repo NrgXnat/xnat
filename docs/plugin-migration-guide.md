@@ -373,9 +373,13 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   BOM's).
 
 ### Build / dependency‑resolution gotchas
-- **Lombok vs the JDK.** Lombok 1.18.34 throws `NoSuchFieldException com.sun.tools.javac.code.TypeTag.UNKNOWN`
-  on a too‑new JDK. → pin a **JDK 21 toolchain** (see J1) so javac+Lombok run on a supported JDK regardless of
-  the Gradle daemon's JDK.
+- **Lombok vs the JDK — and old jars vs the JDK.** Lombok 1.18.34 throws `NoSuchFieldException
+  com.sun.tools.javac.code.TypeTag.UNKNOWN` on a too‑new JDK. *Separately*, JDK 22+ tightened zip64 CEN
+  validation and **refuses to read old jars** on the compile classpath (e.g. `aspectjweaver-1.8.10`, which
+  the BOM still pins) with `error reading …: Invalid CEN header (invalid zip64 extra data field size)` — and
+  that then cascades into dozens of bogus `cannot find symbol` errors across the module. → pin a **JDK 21
+  toolchain** (see J1); it fixes both. A plugin with no explicit toolchain silently runs on the Gradle
+  launcher JDK. *(container-service)*
 - **`mavenLocal()` shadows partial third‑party artifacts.** `ehcache:3.10.8` uses a **`-jakarta` classifier**
   jar; if `~/.m2` has the base metadata but not that classifier, an unscoped high‑priority `mavenLocal()` locks
   resolution to `~/.m2` and fails (`Could not find ehcache-3.10.8-jakarta.jar`). → scope `mavenLocal` to
@@ -387,7 +391,31 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   the page and empties the var whenever the included servlet flushes. → replace `<c:import var=…>` with an
   XNAT‑owned import tag (or `<xnat:import>`). *(item 1‑15)*
 - **springfox is dead on Spring 6** → springdoc‑openapi (non‑Boot WARs need to `@Import` the config classes
-  manually). **javamelody** needs its 2.x (jakarta) line — a javax listener fails Tomcat 10 boot.
+  manually). For a *plugin* you usually don't touch the swagger annotations at all: drop the
+  `io.springfox:springfox-swagger2` / `springfox-swagger-ui` deps, add `io.swagger:swagger-annotations:1.5.20`
+  so the legacy `@Api`/`@ApiOperation` still compile, and let core's springdoc generate the docs from the MVC
+  mappings (it ignores the 1.x annotations). *(container-service)* **javamelody** needs its 2.x (jakarta)
+  line — a javax listener fails Tomcat 10 boot.
 - **java‑platform BOM constraints can't carry `exclude`** — it's a no‑op that only surfaces (as a hard error)
   when publishing Gradle module metadata (`generateMetadataFileForMavenPublication`). *(this session, `parent`)*
+- **`mavenLocal` shadowing, the other lever.** Where scoping `mavenLocal` to `org.nrg.*` isn't convenient (an
+  existing repos block), the targeted fix for the ehcache‑jakarta case is a per‑repo content filter:
+  `mavenLocal { content { excludeGroup "org.ehcache" } }` — pushes just that group to Central/jfrog where the
+  `-jakarta` classifier lives. *(container-service)*
+
+### Runtime — compile‑clean is not boot‑clean
+A jar that compiles and carries a valid `META-INF/xnat/*-plugin.properties` descriptor can still **fail XNAT
+startup**: the plugin's Spring beans are created in the *host* application context, so they interact with core's
+beans. Budget a **load‑into‑a‑real‑XNAT‑and‑iterate** pass after the compile is clean — the first failing bean
+is rarely the last.
+- **Unqualified injection whose type now has several candidates.** e.g. container‑service's
+  `KubernetesClientFactoryImpl(ExecutorService …)` broke boot with `NoUniqueBeanDefinitionException: expected
+  single matching bean but found 3` — `threadPoolExecutorFactoryBean` + `scheduledExecutorFactoryBean` (XNAT
+  core) plus the plugin's own `containerServiceThreadPoolExecutorFactoryBean`. A bean the plugin author "knew"
+  was unique in their old test app is ambiguous inside a full XNAT. → add `@Qualifier("…")` (or `@Primary`).
+  This is **not** a jakarta symptom — it just only surfaces once the plugin actually loads. *(container-service)*
+- **Diagnose from the container log, not `docker logs` alone**, and read the *innermost* `Caused by:` — Spring
+  wraps the real error (here `NoUniqueBeanDefinitionException`) under a chain of `UnsatisfiedDependencyException`.
+- **A broken plugin takes the whole ROOT webapp down** (`Context initialization failed` → `Context [] startup
+  failed`). Pull the jar from `${xnat.home}/plugins` and restart to recover while you fix it.
 

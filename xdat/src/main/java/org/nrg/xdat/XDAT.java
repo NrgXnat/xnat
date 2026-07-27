@@ -909,8 +909,16 @@ public class XDAT {
 	 * @param event    The site-wide event to find subscribers for.
 	 */
 	public static String getSubscriberEmailsListAsString(NotificationType event) {
-		final Channel channel = getHtmlMailChannel();
-		boolean created = false;
+		return StringUtils.join(getSubscriberEmails(event), ", ");
+	}
+
+	/**
+	 * This returns the email addresses of all subscribers to the given event.
+	 * @param event    The site-wide event to find subscribers for.
+	 */
+	public static Set<String> getSubscriberEmails(NotificationType event) {
+		// Creates the htmlMail channel if it doesn't exist yet.
+		getHtmlMailChannel();
 
 		final Definition definition = getOrCreateDefinition(event);
 
@@ -923,7 +931,7 @@ public class XDAT {
 			}
 		}
 
-		return StringUtils.join(emails, ", ");
+		return emails;
 	}
 
 	/**

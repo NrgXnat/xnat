@@ -344,7 +344,7 @@ public class AdminUtils {
 			log.warn("Couldn't resolve the primary admin user to copy on a notification, falling back to the site admin email", e);
 		}
 		final String email = StringUtils.defaultIfBlank(primaryAdminEmail, XDAT.getSiteConfigPreferences().getAdminEmail());
-		if (StringUtils.isBlank(email) || StringUtils.contains(XDAT.getSubscriberEmailsListAsString(event), email)) {
+		if (StringUtils.isBlank(email) || XDAT.getSubscriberEmails(event).stream().anyMatch(subscriber -> StringUtils.equalsIgnoreCase(subscriber, email))) {
 			return null;
 		}
 		return email;

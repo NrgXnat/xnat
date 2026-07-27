@@ -18,6 +18,10 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.security.UserI;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.function.Supplier;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
@@ -46,12 +50,24 @@ public class AdminUtilsTest {
 
     @Test
     public void skipsCopyWhenPrimaryAdminAlreadySubscribed() {
-        assertNull(resolveRecipient(true, primaryAdmin(PRIMARY_ADMIN_EMAIL), SITE_ADMIN_EMAIL + ", " + PRIMARY_ADMIN_EMAIL));
+        assertNull(resolveRecipient(true, primaryAdmin(PRIMARY_ADMIN_EMAIL), SITE_ADMIN_EMAIL, PRIMARY_ADMIN_EMAIL));
+    }
+
+    @Test
+    public void copiesWhenSubscriberMerelyContainsPrimaryAdminEmailAsSubstring() {
+        // A subscriber like siteadmin@example.test must not suppress the copy to admin@example.test
+        // just because the latter is a substring of the former.
+        assertEquals(PRIMARY_ADMIN_EMAIL, resolveRecipient(true, primaryAdmin(PRIMARY_ADMIN_EMAIL), "x" + PRIMARY_ADMIN_EMAIL));
+    }
+
+    @Test
+    public void skipsCopyWhenPrimaryAdminSubscribedWithDifferentCase() {
+        assertNull(resolveRecipient(true, primaryAdmin(PRIMARY_ADMIN_EMAIL), PRIMARY_ADMIN_EMAIL.toUpperCase()));
     }
 
     @Test
     public void fallsBackToSiteAdminEmailWhenPrimaryAdminUnavailable() {
-        assertEquals(SITE_ADMIN_EMAIL, resolveRecipient(true, null, PRIMARY_ADMIN_EMAIL));
+        assertEquals(SITE_ADMIN_EMAIL, resolveRecipient(true, () -> null, PRIMARY_ADMIN_EMAIL));
     }
 
     @Test
@@ -61,44 +77,38 @@ public class AdminUtilsTest {
 
     @Test
     public void skipsFallbackWhenSiteAdminEmailAlreadySubscribed() {
-        assertNull(resolveRecipient(true, null, SITE_ADMIN_EMAIL));
+        assertNull(resolveRecipient(true, () -> null, SITE_ADMIN_EMAIL));
     }
 
     @Test
     public void fallsBackToSiteAdminEmailWhenPrimaryAdminLookupFails() {
         // A misconfigured primaryAdminUsername makes XnatUserProvider.get() throw: notification
         // sending must survive that and fall back to the site admin email.
-        try (final MockedStatic<XDAT> xdat = mockStatic(XDAT.class);
-             final MockedStatic<Users> users = mockStatic(Users.class)) {
-            mockPreferences(xdat, true, PRIMARY_ADMIN_EMAIL);
-            users.when(Users::getAdminUser).thenThrow(new RuntimeException("User with name aaf-user could not be found."));
-            assertEquals(SITE_ADMIN_EMAIL, AdminUtils.getAdminNotificationCopyRecipient(NotificationType.Error));
-        }
+        assertEquals(SITE_ADMIN_EMAIL, resolveRecipient(true, () -> {
+            throw new RuntimeException("User with name aaf-user could not be found.");
+        }, PRIMARY_ADMIN_EMAIL));
     }
 
-    private static UserI primaryAdmin(final String email) {
+    private static Supplier<UserI> primaryAdmin(final String email) {
         final UserI user = mock(UserI.class);
         when(user.getEmail()).thenReturn(email);
-        return user;
+        return () -> user;
     }
 
-    private static String resolveRecipient(final boolean copyEnabled, final UserI primaryAdmin, final String subscribers) {
+    private static String resolveRecipient(final boolean copyEnabled, final Supplier<UserI> primaryAdmin, final String... subscribers) {
         try (final MockedStatic<XDAT> xdat = mockStatic(XDAT.class);
              final MockedStatic<Users> users = mockStatic(Users.class)) {
-            mockPreferences(xdat, copyEnabled, subscribers);
-            users.when(Users::getAdminUser).thenReturn(primaryAdmin);
+            final NotificationsPreferences notifications = mock(NotificationsPreferences.class);
+            when(notifications.getCopyAdminOnNotifications()).thenReturn(copyEnabled);
+            final SiteConfigPreferences siteConfig = mock(SiteConfigPreferences.class);
+            when(siteConfig.getAdminEmail()).thenReturn(SITE_ADMIN_EMAIL);
+
+            xdat.when(XDAT::getNotificationsPreferences).thenReturn(notifications);
+            xdat.when(XDAT::getSiteConfigPreferences).thenReturn(siteConfig);
+            xdat.when(() -> XDAT.getSubscriberEmails(NotificationType.Error)).thenReturn(new HashSet<>(Arrays.asList(subscribers)));
+            users.when(Users::getAdminUser).thenAnswer(invocation -> primaryAdmin.get());
+
             return AdminUtils.getAdminNotificationCopyRecipient(NotificationType.Error);
         }
-    }
-
-    private static void mockPreferences(final MockedStatic<XDAT> xdat, final boolean copyEnabled, final String subscribers) {
-        final NotificationsPreferences notifications = mock(NotificationsPreferences.class);
-        when(notifications.getCopyAdminOnNotifications()).thenReturn(copyEnabled);
-        final SiteConfigPreferences siteConfig = mock(SiteConfigPreferences.class);
-        when(siteConfig.getAdminEmail()).thenReturn(SITE_ADMIN_EMAIL);
-
-        xdat.when(XDAT::getNotificationsPreferences).thenReturn(notifications);
-        xdat.when(XDAT::getSiteConfigPreferences).thenReturn(siteConfig);
-        xdat.when(() -> XDAT.getSubscriberEmailsListAsString(NotificationType.Error)).thenReturn(subscribers);
     }
 }

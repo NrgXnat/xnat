@@ -18,8 +18,12 @@ import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
 import ch.qos.logback.core.OutputStreamAppender;
 import ch.qos.logback.core.encoder.Encoder;
+import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.spi.AppenderAttachable;
 import ch.qos.logback.core.util.StatusPrinter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -91,6 +95,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -110,6 +115,10 @@ public class DefaultLoggingService implements LoggingService {
     private static final String CONSOLE_ENV             = "XNAT_LOG_CONSOLE";
     private static final String CONSOLE_PROPERTY        = "xnat.logging.console";
     private static final String DEFAULT_CONSOLE_PATTERN = "%d [%t] %-5p %c - %m%n";
+    private static final ObjectMapper OBJECT_MAPPER     = new ObjectMapper();
+    // Matches a logback date conversion word (%d / %date, with an optional {pattern}) so the [name] tag
+    // can be inserted after the timestamp regardless of its format.
+    private static final Pattern DATE_CONVERSION        = Pattern.compile("%d(?:ate)?(?:\\{[^}]*\\})?");
 
     @Autowired
     public DefaultLoggingService(final Path xnatHome, final DocumentBuilder builder, final Transformer transformer, final XnatPluginBeanManager beans) throws IOException, SAXException {
@@ -182,29 +191,52 @@ public class DefaultLoggingService implements LoggingService {
     }
 
     /**
-     * Redirects every file appender to the container's stdout when {@code XNAT_LOG_CONSOLE} (or the
-     * {@code xnat.logging.console} system property) is set to {@code plain} or {@code json}. This is the
-     * runtime equivalent of the CI/init-container logback rewrites, applied after the core and plugin log
-     * configurations are merged so plugin appenders are covered too. Unset -- or any unrecognized value --
-     * leaves logging exactly as configured in logback.xml.
+     * Redirects file appenders to the container's stdout when {@code XNAT_LOG_CONSOLE} (or the
+     * {@code xnat.logging.console} system property) is {@code plain} or {@code json}. Invoked early from
+     * {@code XnatWebAppInitializer} (before the Spring context refresh, so startup and core logging reach
+     * stdout even if bootstrap fails) and again after the plugin log configs are merged (so plugin
+     * appenders are covered). Unset -- or any unrecognized value -- leaves logging exactly as configured in
+     * logback.xml.
+     *
+     * <p>All-or-nothing by design: there is no per-logger keep-on-file option. A deployment that must retain
+     * audit logs (e.g. {@code access}/{@code file_access}) on disk should not enable this, or should supply
+     * its own config via {@code -Dlogback.configurationFile}.
      */
-    private void redirectToConsoleIfRequested() {
+    public static void applyConsoleRedirectIfRequested() {
+        applyConsoleRedirectIfRequested((LoggerContext) LoggerFactory.getILoggerFactory());
+    }
+
+    public static void applyConsoleRedirectIfRequested(final LoggerContext context) {
         final ConsoleFormat format = requestedConsoleFormat();
         if (format != null) {
-            redirectFileAppendersToConsole(_context, format, DEFAULT_CONSOLE_PATTERN);
-            log.info("Console logging is enabled ({}={}); every file appender was redirected to stdout.", CONSOLE_ENV, format.token());
+            final int redirected = redirectFileAppendersToConsole(context, format, DEFAULT_CONSOLE_PATTERN);
+            log.info("Console logging enabled ({}={}); redirected {} file appender(s) to stdout.", CONSOLE_ENV, format.token(), redirected);
         }
+    }
+
+    private void redirectToConsoleIfRequested() {
+        applyConsoleRedirectIfRequested(_context);
+    }
+
+    /** Property wins when non-blank, otherwise the env var; blank counts as unset. Package-private for testing. */
+    static String coalesceConfigValue(@Nullable final String property, @Nullable final String env) {
+        return StringUtils.trimToNull(StringUtils.isNotBlank(property) ? property : env);
     }
 
     @Nullable
     private static ConsoleFormat requestedConsoleFormat() {
-        final String value = StringUtils.trimToNull(System.getProperty(CONSOLE_PROPERTY, System.getenv(CONSOLE_ENV)));
+        final String value = coalesceConfigValue(System.getProperty(CONSOLE_PROPERTY), System.getenv(CONSOLE_ENV));
         if (value == null) {
             return null;
         }
         final ConsoleFormat format = ConsoleFormat.from(value);
         if (format == null) {
-            log.warn("Unrecognized {} / -D{} value \"{}\"; expected \"plain\" or \"json\". Leaving file logging unchanged.", CONSOLE_ENV, CONSOLE_PROPERTY, value);
+            final String message = "Unrecognized " + CONSOLE_ENV + " / -D" + CONSOLE_PROPERTY + " value \"" + value
+                                   + "\"; expected \"plain\" or \"json\". Leaving file logging unchanged.";
+            log.warn(message);
+            // The WARN lands in whatever logback is still writing (a file); echo to stderr so an operator
+            // who enabled this precisely because they can't read files still sees the typo.
+            System.err.println("XNAT logging: " + message);
         }
         return format;
     }
@@ -230,36 +262,65 @@ public class DefaultLoggingService implements LoggingService {
     }
 
     /**
-     * Replaces every file appender in the context -- core and merged plugin configs alike -- with a
-     * {@link ConsoleAppender} on the same logger, so all logging reaches the container's stdout with no
-     * WAR/JAR surgery. A file appender shared by several loggers maps to a single console (reused across
-     * them). For {@link ConsoleFormat#PLAIN} each console keeps the source appender's name and prefixes
-     * its pattern with {@code [name]} (mirroring the CI/init-container rewrite); for
-     * {@link ConsoleFormat#JSON} the source appender name is carried as an {@code appender} JSON field.
-     * Package-private and static so it can be unit-tested against a bare context.
+     * Replaces file appenders in the context -- core and merged plugin configs alike -- with a
+     * {@link ConsoleAppender} on the same logger and returns how many distinct file appenders were
+     * redirected. A file appender shared by several loggers maps to a single console (reused by identity).
+     * Each logger ends with at most one console: a pre-existing console is kept and the file appenders
+     * dropped, and multiple file appenders on one logger collapse to one console -- so no event prints to
+     * stdout twice. For {@link ConsoleFormat#PLAIN} the console keeps the source appender's name and tags
+     * its pattern with {@code [name]}; for {@link ConsoleFormat#JSON} the name is carried as an
+     * {@code appender} field. Source filters (e.g. a {@code ThresholdFilter} that caps volume) are copied
+     * over. Appenders wrapped in an {@link AppenderAttachable} (e.g. AsyncAppender) are not unwrapped --
+     * they are counted and warned about. Package-private and static for unit testing.
      */
-    static void redirectFileAppendersToConsole(final LoggerContext context, final ConsoleFormat format, final String defaultPattern) {
-        final Map<Appender<ILoggingEvent>, ConsoleAppender<ILoggingEvent>> consoles = new IdentityHashMap<>();
+    static int redirectFileAppendersToConsole(final LoggerContext context, final ConsoleFormat format, final String defaultPattern) {
+        final Map<Appender<ILoggingEvent>, ConsoleAppender<ILoggingEvent>> consoles      = new IdentityHashMap<>();
+        final Set<Appender<ILoggingEvent>>                                 detachedFiles = Collections.newSetFromMap(new IdentityHashMap<>());
+        int wrapped = 0;
         for (final ch.qos.logback.classic.Logger logger : context.getLoggerList()) {
             final List<Appender<ILoggingEvent>> fileAppenders = new ArrayList<>();
+            boolean keepsConsole = false;
             for (final Iterator<Appender<ILoggingEvent>> it = logger.iteratorForAppenders(); it.hasNext(); ) {
                 final Appender<ILoggingEvent> appender = it.next();
                 if (appender instanceof FileAppender) {
                     fileAppenders.add(appender);
+                } else if (appender instanceof ConsoleAppender) {
+                    keepsConsole = true;
+                } else if (appender instanceof AppenderAttachable && wraps(FileAppender.class, (AppenderAttachable<?>) appender)) {
+                    wrapped++;
                 }
             }
             for (final Appender<ILoggingEvent> fileAppender : fileAppenders) {
                 logger.detachAppender(fileAppender);
-                logger.addAppender(consoles.computeIfAbsent(fileAppender, source -> consoleLike(context, source, format, defaultPattern)));
+                detachedFiles.add(fileAppender);
+            }
+            // At most one console per logger: reuse a pre-existing one, otherwise attach a single console
+            // built from the first file appender (shared by identity across loggers that referenced it).
+            if (!keepsConsole && !fileAppenders.isEmpty()) {
+                final Appender<ILoggingEvent> representative = fileAppenders.get(0);
+                logger.addAppender(consoles.computeIfAbsent(representative, source -> consoleLike(context, source, format, defaultPattern)));
             }
         }
-        for (final Appender<ILoggingEvent> replaced : consoles.keySet()) {
-            replaced.stop();
+        for (final Appender<ILoggingEvent> detached : detachedFiles) {
+            detached.stop();
         }
         final ch.qos.logback.classic.Logger root = context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
         if (!hasConsoleAppender(root)) {
             root.addAppender(consoleLike(context, null, format, defaultPattern));
         }
+        if (wrapped > 0) {
+            log.warn("{} wrapped file appender(s) (e.g. AsyncAppender) were left as-is; console redirect only rewrites direct file appenders.", wrapped);
+        }
+        return detachedFiles.size();
+    }
+
+    private static boolean wraps(final Class<?> type, final AppenderAttachable<?> attachable) {
+        for (final Iterator<?> it = attachable.iteratorForAppenders(); it.hasNext(); ) {
+            if (type.isInstance(it.next())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean hasConsoleAppender(final ch.qos.logback.classic.Logger logger) {
@@ -281,6 +342,13 @@ public class DefaultLoggingService implements LoggingService {
         console.setContext(context);
         console.setName(name);
         console.setEncoder(encoder);
+        // Preserve the source appender's filters (e.g. a ThresholdFilter that caps volume); dropping them
+        // would change how much is logged, not just where it goes.
+        if (source != null) {
+            for (final Filter<ILoggingEvent> filter : source.getCopyOfAttachedFiltersList()) {
+                console.addFilter(filter);
+            }
+        }
         console.start();
         return console;
     }
@@ -300,12 +368,22 @@ public class DefaultLoggingService implements LoggingService {
         final LogstashEncoder encoder = new LogstashEncoder();
         encoder.setContext(context);
         if (source != null) {
-            // The JSON analogue of the [name] pattern tag, so the merged stream stays attributable.
-            // Appender names are simple identifiers, so no JSON escaping is needed.
-            encoder.setCustomFields("{\"appender\":\"" + name + "\"}");
+            // The JSON analogue of the [name] pattern tag, so the merged stream stays attributable. Built
+            // with Jackson because appender names come from third-party plugin configs: a stray quote in a
+            // hand-built JSON string would make customFields unparseable and silently drop the appender.
+            encoder.setCustomFields(appenderField(name));
         }
         encoder.start();
         return encoder;
+    }
+
+    private static String appenderField(final String name) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(Collections.singletonMap("appender", name));
+        } catch (final JsonProcessingException e) {
+            log.warn("Could not encode appender name \"{}\" as a JSON field; omitting it.", name, e);
+            return "{}";
+        }
     }
 
     private static String patternOf(@Nullable final Appender<ILoggingEvent> appender, final String defaultPattern) {
@@ -321,11 +399,16 @@ public class DefaultLoggingService implements LoggingService {
         return defaultPattern;
     }
 
-    // Insert "[name] " right after the date conversion word, matching rewrite-logback.py's output.
-    private static String tagWithName(final String pattern, final String name) {
-        final String tag   = "[" + name + "] ";
-        final int    index = pattern.indexOf("%d ");
-        return index >= 0 ? pattern.substring(0, index + 3) + tag + pattern.substring(index + 3) : tag + pattern;
+    // Insert " [name]" right after the date/time conversion word (%d/%date, optional {pattern}), so the tag
+    // follows the timestamp regardless of its format. Falls back to prefixing when there's no date token.
+    // Package-private for testing.
+    static String tagWithName(final String pattern, final String name) {
+        final Matcher matcher = DATE_CONVERSION.matcher(pattern);
+        if (matcher.find()) {
+            final int end = matcher.end();
+            return pattern.substring(0, end) + " [" + name + "]" + pattern.substring(end);
+        }
+        return "[" + name + "] " + pattern;
     }
 
     /**

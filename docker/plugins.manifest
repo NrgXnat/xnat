@@ -29,3 +29,9 @@ source  ../../audit_trail_plugin  feature/tomcat10
 # Tomcat 10 migration lives on feature/tomcat10; builds against org.nrg:parent:1.11.0-SNAPSHOT (Maven Local).
 # Uses the fatJar task (bundles docker-java etc.) rather than xnatPluginJar, and a JDK 21 toolchain.
 source  ../../container-service  feature/tomcat10  fatJar  build/libs/*fat.jar
+
+# XNAT CR (Clinical Research) plugin — CR home screen (ThreeButtonLanding + enroll/upload/review images),
+# site splash/dashboard screens, PET/PET-MR report screens, QC experiment listing, stored-search filter
+# restlet. Provides the three-button landing page the Playwright S1005 suite exercises. Jakarta / Tomcat 10
+# migration lives on feature/tomcat10; builds against org.nrg:parent:1.11.0-SNAPSHOT (Maven Local).
+source  ../../xnat_cr_plugin  feature/tomcat10

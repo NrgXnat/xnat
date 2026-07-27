@@ -27,7 +27,7 @@ echo ">> Staging plugins from $MANIFEST -> $DEST/"
 abspath() { case "$1" in /*) printf '%s' "$1" ;; *) printf '%s/%s' "$REPO_ROOT" "$1" ;; esac; }
 
 staged=0
-while read -r kind arg ref || [ -n "${kind:-}" ]; do
+while read -r kind arg ref task jarglob || [ -n "${kind:-}" ]; do
     [[ -z "${kind// }" || "$kind" == \#* ]] && continue
     case "$kind" in
         source)
@@ -40,12 +40,16 @@ while read -r kind arg ref || [ -n "${kind:-}" ]; do
                 echo "   checking out pinned ref '$ref' in $arg ..."
                 git -C "$dir" checkout -q "$ref"
             fi
+            # Optional 4th/5th fields let a plugin override the default gradle task + jar glob
+            # (most XNAT plugins use xnatPluginJar -> *-xpl.jar; container-service uses fatJar -> *fat.jar).
+            gtask="${task:-xnatPluginJar}"
+            gglob="${jarglob:-build/libs/*-xpl.jar}"
             if [ "$SKIP_BUILD" != "--skip-build" ]; then
-                echo "   building $arg${ref:+ @ $ref}  (gradlew xnatPluginJar) ..."
-                ( cd "$dir" && ./gradlew xnatPluginJar -q )
+                echo "   building $arg${ref:+ @ $ref}  (gradlew $gtask) ..."
+                ( cd "$dir" && ./gradlew "$gtask" -q )
             fi
-            jar="$(ls -t "$dir"/build/libs/*-xpl.jar 2>/dev/null | head -1 || true)"
-            [ -n "$jar" ] || { echo "!! no *-xpl.jar in $dir/build/libs (build it, or drop --skip-build)" >&2; exit 1; }
+            jar="$(ls -t "$dir"/$gglob 2>/dev/null | head -1 || true)"
+            [ -n "$jar" ] || { echo "!! no jar matching '$gglob' in $dir (build it, or drop --skip-build)" >&2; exit 1; }
             ;;
         file)
             jar="$(abspath "$arg")"

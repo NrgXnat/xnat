@@ -6,9 +6,13 @@
 # `docker compose restart xnat` to load new/updated plugins.
 #
 # Entry forms:
-#   source  <repo-dir> [git-ref]              build <repo-dir> with its gradlew xnatPluginJar, stage the -xpl jar.
-#                                             If [git-ref] (branch/tag/commit) is given, the repo is checked out
-#                                             to it first (refused if it has uncommitted changes).
+#   source  <repo-dir> [git-ref] [task] [jar-glob]
+#                                             build <repo-dir> and stage the resulting jar. Defaults:
+#                                             task=xnatPluginJar, jar-glob=build/libs/*-xpl.jar. Override both
+#                                             for plugins that build differently (e.g. container-service uses
+#                                             fatJar -> build/libs/*fat.jar). If [git-ref] (branch/tag/commit)
+#                                             is given, the repo is checked out to it first (refused if it has
+#                                             uncommitted changes).
 #   file    <path-to-jar>                     stage an already-built jar as-is
 #   coord   <group:artifact:version[:class]>  stage from Maven Local (~/.m2) — for published plugins
 #
@@ -19,4 +23,9 @@
 # e.g. WorkflowSummaryTable). The jakarta / Restlet 2.6 / Turbine 7 migration lives on the
 # feature/tomcat10 branch; it builds against org.nrg.xnat:web:1.11.0-SNAPSHOT (must be in Maven
 # Local — see the xnat publish step).
-source  ../audit_trail_plugin  feature/tomcat10
+source  ../../audit_trail_plugin  feature/tomcat10
+
+# Container Service — Docker / Swarm / Kubernetes container execution + command configuration. Jakarta /
+# Tomcat 10 migration lives on feature/tomcat10; builds against org.nrg:parent:1.11.0-SNAPSHOT (Maven Local).
+# Uses the fatJar task (bundles docker-java etc.) rather than xnatPluginJar, and a JDK 21 toolchain.
+source  ../../container-service  feature/tomcat10  fatJar  build/libs/*fat.jar

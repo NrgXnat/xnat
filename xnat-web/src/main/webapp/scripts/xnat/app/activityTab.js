@@ -24,7 +24,7 @@ var XNAT = getObject(XNAT);
         return factory();
     }
 }(function(){
-    let activityTab, cookieTag;
+    let activityTab, storageTag;
     const minimized = 'minimized', 
         processes = 'processes';
 
@@ -33,12 +33,16 @@ var XNAT = getObject(XNAT);
     XNAT.app.activityTab = activityTab =
         getObject(XNAT.app.activityTab || {});
 
-    XNAT.app.activityTab.cookieTag = cookieTag = 'activities' + XNAT.sub64.dlxEnc(window.username).encoded;
+    XNAT.app.activityTab.storageTag = storageTag = 'activities' + XNAT.sub64.dlxEnc(window.username).encoded;
 
     activityTab.pollers = [];
 
     function getActivities() {
-        return JSON.parse(XNAT.cookie.get(cookieTag) || '{"' + minimized + '": false, "' + processes + '": {}}');
+        return JSON.parse(localStorage.getItem(storageTag) || '{"' + minimized + '": false, "' + processes + '": {}}');
+    }
+
+    function saveActivities(activities) {
+        localStorage.setItem(storageTag, JSON.stringify(activities));
     }
 
     activityTab.init = function() {
@@ -68,7 +72,7 @@ var XNAT = getObject(XNAT);
             timeout: timeout
         };
         activities[processes][key] = item;
-        XNAT.cookie.set(cookieTag, activities, {});
+        saveActivities(activities);
         activityTab.startPoll(item, key);
     };
 
@@ -108,12 +112,12 @@ var XNAT = getObject(XNAT);
             }
         }
         if ($.isEmptyObject(activities[processes])) {
-            XNAT.cookie.remove(cookieTag);
+            localStorage.removeItem(storageTag);
             const tab = $('#activity-tab');
             tab.css('visibility', 'hidden');
             tab.find('div.item').remove();
         } else {
-            XNAT.cookie.set(cookieTag, activities, {});
+            saveActivities(activities);
         }
     };
 
@@ -295,11 +299,11 @@ var XNAT = getObject(XNAT);
         return callback;
     }
 
-    function setMinimized(isMinimized, updateCookie) {
+    function setMinimized(isMinimized, updateStorage) {
         let activities = getActivities();
-        if (updateCookie) {
+        if (updateStorage) {
             activities[minimized] = isMinimized;
-            XNAT.cookie.set(cookieTag, activities, {});
+            saveActivities(activities);
         }
         if (isMinimized) {
             $('#activity-tab .panel-header span.count').text('(' + Object.keys(activities[processes]).length + ')');

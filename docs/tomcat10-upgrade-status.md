@@ -328,3 +328,33 @@ Merge readiness is gated by **1-13 (CI)** and the **1-2 oauth2 decision**; the r
 Known-benign cutover expectations (from the scout, all confirmed): Tomcat 10 / Servlet 6 default response
 charsets to UTF-8 (cosmetic golden header diffs) and the empty-archive `SystemPathVerification` error is
 environmental.
+
+## Nav `$user` lost in Velocity 2 / Turbine 7 on some screen renders (nav-$user)
+
+**Symptom.** On the CR plugin's SiteSplash landing (member's configured `siteLandingLayout`), the top nav
+rendered `[Turbine caught an Error in template navigations//DefaultTop.vm, l:131]` and the menu bar
+disappeared — Playwright `T1007.1` (member) failed at `openDropdownMenu("Tasks")` because CR's `Tasks`
+menu (a `#addGlobalCustomScreens("topBar")` injection) never rendered.
+
+**Root cause.** In the navigation velocity context under Turbine 7 / Velocity 2, `$user` comes back
+**null** on some screen renders (reproduced on CR SiteSplash; core `Index.vm` keeps it). `XDAT.getUserDetails()`
+is still valid — only the context variable is dropped. `DefaultTop.vm:131`'s
+`$!turbineUtils.getDisplayedUserIdentifier($user)` NPEs (suppressed by `$!`, so cosmetic on most pages), but
+`#addGlobalCustomScreens` calls `$user.isGuest()` / `$user.getUsername()` **unguarded**, so a null `$user`
+throws fatally there and aborts the whole nav template (banner + no menus). Instrumented markers confirmed
+`$user`=null but `$data`!=null and `$turbineUtils.getUser($data)` (== `XDAT.getUserDetails()`) = the real user.
+
+**Bug class + audit.** Any nav template / macro that calls a `$user` method unguarded. Swept
+`xnat-templates/navigations` + `xdat-templates/{navigations,macros}`: the five custom-screen macros
+(`addGlobalCustomScreens`, `addCustomScreens`, `addGlobalCustomScreenJS`, `addCustomScreenJS`,
+`hasCustomScreens`) and the `NoMenuTop.vm` / `NoninteractiveTop.vm` nav templates. (`DefaultTop.vm:119`
+short-circuits via `$!user != ""` so it was already crash-safe; it gets the rebound `$user` from the
+line-118 macro call.)
+
+**Fix.** Rebind at the template layer: `#if(!$user && $data)#set($user = $turbineUtils.getUser($data))#end`
+at the top of each of the five macros and the two nav templates. Velocity-2 macro `#set` propagates to the
+caller context here, so the DefaultTop line-118 macro call also repairs `$user` for lines 128/131.
+Verified: SiteSplash nav renders `Logged in as: admin`, 0 NPEs, `main_nav` present; `T1007.1` 2→3 passed
+with CR loaded. A/B confirmed CR is the trigger (0 nav NPEs with CR removed) but the fix is core, not CR —
+CR only exposes a latent core nav regression. Deeper question left open: *why* the nav context loses
+`$user` for heavy/plugin screens under Turbine 7 (the template rebind is defensive and sufficient).

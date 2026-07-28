@@ -1693,6 +1693,7 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 
 ##Used to load globally scoped VM files and inject them into parent VMs.
 #macro(addGlobalCustomScreenJS $subFolder)
+	#if(!$user && $data)#set($user = $turbineUtils.getUser($data))#end
 	#if($siteConfig.uiDebugExtensionPoints)document.write("<div class='extension_js'>/templates/screens/$subFolder</div>")#end
 	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
@@ -1712,6 +1713,7 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 
 ##Used to load  VM files for specfic data-types and their extensions and inject them into parent VMs.
 #macro(addCustomScreenJS $dataType $subFolder)
+	#if(!$user && $data)#set($user = $turbineUtils.getUser($data))#end
 	#if($siteConfig.uiDebugExtensionPoints)document.write("<div class='extension_js'>/templates/screens/$dataType/$subFolder</div>")#end
 	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
@@ -1731,6 +1733,10 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 
 ##Used to load globally scoped VM files and inject them into parent VMs.
 #macro(addGlobalCustomScreens $subFolder)
+	## Tomcat10/Velocity2: the navigation context can lose $user on some screen renders (e.g. CR SiteSplash),
+	## while XDAT.getUserDetails() (via turbineUtils.getUser) is still valid. Rebind it so the nav + injected
+	## custom screens/menus do not NPE on a null $user. See plugin-migration-guide (Turbine 7 / nav $user).
+	#if(!$user && $data)#set($user = $turbineUtils.getUser($data))#end
 	#if($siteConfig.uiDebugExtensionPoints)<div class="extension">/templates/screens/$subFolder</div>#end
 	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
@@ -1750,6 +1756,10 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 
 ##Used to load  VM files for specfic data-types and their extensions and inject them into parent VMs.
 #macro(addCustomScreens $dataType $subFolder)
+	## Tomcat10/Velocity2: the navigation context can lose $user on some screen renders (e.g. CR SiteSplash),
+	## while XDAT.getUserDetails() (via turbineUtils.getUser) is still valid. Rebind it so the nav + injected
+	## custom screens/menus do not NPE on a null $user. See plugin-migration-guide (Turbine 7 / nav $user).
+	#if(!$user && $data)#set($user = $turbineUtils.getUser($data))#end
 	#if($siteConfig.uiDebugExtensionPoints)<div class="extension">/templates/screens/$dataType/$subFolder</div>#end
 	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
@@ -1768,6 +1778,7 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 #end
 
 #macro(hasCustomScreens $dataType $subFolder)
+	#if(!$user && $data)#set($user = $turbineUtils.getUser($data))#end
     #set($hasCustomScreens = false)
     #foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
         #set($templateFileName=$screenProps.getProperty("path"))

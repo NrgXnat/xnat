@@ -434,6 +434,20 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   existing repos block), the targeted fix for the ehcache‑jakarta case is a per‑repo content filter:
   `mavenLocal { content { excludeGroup "org.ehcache" } }` — pushes just that group to Central/jfrog where the
   `-jakarta` classifier lives. *(container-service)*
+- **Old Gradle wrapper can't run on the launcher JDK.** Plugins that haven't been touched recently often pin
+  an old wrapper (e.g. **Gradle 8.14.3**) that the current launcher JDK (25) can't run — the *buildscript*
+  compile dies with `BUG! … Unsupported class file major version 69` (69 = Java 25) before any of your code
+  compiles. Note the JDK‑21 **toolchain** does NOT help here: it governs the plugin compile, not the Gradle
+  daemon's own JVM. → **bump the wrapper** to match the rest of the migrated set
+  (`gradle/wrapper/gradle-wrapper.properties`: `gradle-9.4.1-bin.zip`) so it runs on JDK 25 and also builds in
+  the docker staging pipeline; or, as a one‑off, run with `JAVA_HOME` pointing at JDK 21. *(ldap-auth-plugin)*
+- **Gradle 9 removed `AbstractCompile.destinationDir`.** After bumping an old wrapper to 9.x, a build script
+  reading `compileJava.destinationDir` (common in the `idea {}` block) fails with
+  `Could not get unknown property 'destinationDir' … JavaCompile`. → use the provider API:
+  `compileJava.destinationDirectory.get().asFile`. *(ldap-auth-plugin)*
+- **Merged satellite modules also bite the older base branches.** Bitbucket plugins based on a pre‑1.10
+  `java-upgrade`/`master` line still declare `org.nrg.xnat:xnat-data-models` (and friends from §3); these must
+  be dropped even when the rest of the build looks 1.10‑ready. *(ldap-auth-plugin)*
 
 ### Runtime — compile‑clean is not boot‑clean
 A jar that compiles and carries a valid `META-INF/xnat/*-plugin.properties` descriptor can still **fail XNAT

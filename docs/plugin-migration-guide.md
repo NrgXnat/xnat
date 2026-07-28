@@ -326,6 +326,14 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
 - **`byte[]` responses.** If you *replace* the MVC message‑converter list you drop the default
   `ByteArrayHttpMessageConverter`; a `byte[]`/`ResponseEntity<byte[]>` endpoint then serializes as base64
   via Jackson. → register `ByteArrayHttpMessageConverter` first. *(springdoc fix)*
+- **`HttpStatus` → `HttpStatusCode` return types.** Spring 6 introduced the `HttpStatusCode` interface and
+  changed methods that used to return the `HttpStatus` enum to return it — notably
+  `ResponseEntity.getStatusCode()` and `ClientResponse.statusCode()`. Compile error:
+  `incompatible types: HttpStatusCode cannot be converted to HttpStatus`. `value()` moved to
+  `HttpStatusCode`, but `getReasonPhrase()`/`series()`/the enum constants stay on `HttpStatus`. → keep the
+  variable as `HttpStatusCode` where you only need `value()`; where you need `getReasonPhrase()` or the enum,
+  resolve it back with `HttpStatus.resolve(code.value())` (may be null for non‑standard codes, so guard it) —
+  don't cast, a `ResponseEntity` can now hold a custom code. *(ohif-viewer-xnat-plugin)*
 
 ### Restlet 2.6
 - **Default success status 200 → 204** for handlers that finish with a bodyless/empty‑entity OK. → clients

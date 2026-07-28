@@ -210,7 +210,7 @@ public class DefaultLoggingService implements LoggingService {
         final ConsoleFormat format = requestedConsoleFormat();
         if (format != null) {
             final int redirected = redirectFileAppendersToConsole(context, format, DEFAULT_CONSOLE_PATTERN);
-            log.info("Console logging enabled ({}={}); redirected {} file appender(s) to stdout.", CONSOLE_ENV, format.token(), redirected);
+            log.info("Console logging enabled ({} format); redirected {} file appender(s) to stdout.", format.token(), redirected);
         }
     }
 

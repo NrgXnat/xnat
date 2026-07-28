@@ -448,6 +448,26 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
 - **Merged satellite modules also bite the older base branches.** Bitbucket plugins based on a pre‑1.10
   `java-upgrade`/`master` line still declare `org.nrg.xnat:xnat-data-models` (and friends from §3); these must
   be dropped even when the rest of the build looks 1.10‑ready. *(ldap-auth-plugin)*
+- **Gradle 9 forbids mutating a configuration after it's resolved.** The old spread/`all {}` exclude idiom —
+  `configurations { all*.exclude group: … ; all { exclude group: … } }` — throws
+  `Cannot mutate the dependencies of configuration ':…' after the configuration was resolved` under Gradle 9
+  (some plugin, e.g. the data‑builder or maven‑settings, realizes a configuration during the configuration
+  phase, and the `all { exclude }` then tries to add an exclude to it). → declare the config, do the
+  `extendsFrom`, and move the excludes into a **lazy** block:
+  `configurations.configureEach { exclude group: …; … }`. *(xnat-dicomweb-plugin)*
+- **`cannot access Status` (or other core supertypes) with no obvious cause.** Referencing
+  `org.nrg.action.ClientException`/`ActionException` — thrown all over `/data`‑style service code — forces the
+  compiler to load their supertype chain, which exposes **`org.restlet.data.Status`** in its API. If the
+  plugin doesn't otherwise touch Restlet, restlet isn't on the compile classpath and you get
+  `error: cannot access Status` at the `new ClientException(...)` site (not at any import). → add
+  `compileOnly "org.restlet:org.restlet"` even for a plugin with zero Restlet resources. The same
+  "transitive supertype not on the classpath" shape also produces `cannot access ParameterParser` (needs
+  `fulcrum-parser`/`fulcrum-pool`, see J1) — when an error names a type you never imported, it's this. *(xnat-dicomweb-plugin)*
+- **Core API signatures change across the 1.9→1.11 jump.** A plugin coming off an old base can call a core
+  method whose signature moved — e.g. `DirectArchiveSessionService.getOrCreate` lost its 2‑arg form in 1.11.0
+  (only `(SessionData, AtomicBoolean, String)` remains) → `method … cannot be applied to given types`. Where
+  the plugin already reflectively probes for one signature and hard‑calls another as a fallback, make the
+  fallback reflective too so it compiles against 1.11.0 yet still runs on an older XNAT. *(xnat-dicomweb-plugin)*
 
 ### Runtime — compile‑clean is not boot‑clean
 A jar that compiles and carries a valid `META-INF/xnat/*-plugin.properties` descriptor can still **fail XNAT

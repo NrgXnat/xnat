@@ -1,18 +1,13 @@
 #!/bin/bash
-# Container entrypoint: optional timezone setup, then exec the actual
-# Tomcat startup command passed in by Dockerfile ENTRYPOINT/CMD.
-#
-# Set timezone with:  docker run -e timezone=America/Chicago ...
-#
-# Ported from build_scripts_v2/xnat-docker-build/entrypoint.sh.
+# Container entrypoint. The container runs as a non-root uid, so timezone is set
+# via the standard TZ env var (read directly by glibc and the JVM) instead of the
+# old root-only /etc/localtime symlink. Override with `docker run -e TZ=...`; the
+# default (Etc/UTC) is set in the Dockerfile. The legacy lowercase `timezone` var
+# is still honored for backward compatibility.
+set -e
 
-set -x
-
-if [ -n "${timezone}" ]; then
-    unlink /etc/localtime 2>/dev/null || rm -f /etc/localtime
-    ln -s "/usr/share/zoneinfo/${timezone}" /etc/localtime
-else
-    echo "timezone environment variable is not set"
+if [ -n "${timezone:-}" ]; then
+    export TZ="${timezone}"
 fi
 
 exec "$@"

@@ -139,7 +139,14 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
             preference = new Preference(tool, preferenceName, scope, resolvedEntityId, value);
             getDao().create(preference);
         } else {
-            log.debug("Adding preference {} to tool {} with default value of {}, scope {} entity ID {}", preferenceName, tool.getToolId(), value, scope.code(), resolvedEntityId);
+            if (StringUtils.equals(preference.getValue(), value)) {
+                // No change: skip the write so Hibernate/Envers doesn't record a no-op revision. The admin UI submits
+                // every field on the page, not just the edited one, so without this a single save would record a
+                // revision for every preference on that page and bury the change the admin actually made.
+                log.debug("Preference {} on tool {} is unchanged ('{}'); skipping update", preferenceName, tool.getToolId(), value);
+                return;
+            }
+            log.debug("Updating preference {} on tool {} to value {}, scope {} entity ID {}", preferenceName, tool.getToolId(), value, scope.code(), resolvedEntityId);
             preference.setValue(value);
             getDao().update(preference);
         }

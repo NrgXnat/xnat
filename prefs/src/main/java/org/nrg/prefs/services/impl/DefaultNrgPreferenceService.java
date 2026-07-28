@@ -10,6 +10,7 @@
 package org.nrg.prefs.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -197,6 +198,11 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService {
     public void setPreferenceValue(final String toolId, final String preferenceName, final Scope scope, final String entityId, final String value) throws UnknownToolId, InvalidPreferenceName {
         final Preference preference = _preferenceService.getPreference(toolId, preferenceName, scope, entityId);
         if (preference != null) {
+            if (StringUtils.equals(preference.getValue(), value)) {
+                // No change: skip the write so Envers doesn't record a no-op revision. The admin UI submits every
+                // field on the page, not just the edited one.
+                return;
+            }
             preference.setValue(value);
             _preferenceService.update(preference);
         } else {

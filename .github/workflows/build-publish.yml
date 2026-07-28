@@ -67,7 +67,10 @@ jobs:
       image-name: 'xnat'
       dockerfile-path: './Dockerfile'
       docker-context-filename: 'xnat.war'
-      logback-path-in-war: 'WEB-INF/classes/logback.xml'
+      # No build-time logback surgery: the image ships the stock WAR (byte-identical to
+      # the JFrog artifact), and console logging is opt-in at runtime via XNAT_LOG_CONSOLE
+      # (XNAT-8782). Empty = the reusable workflow skips the rewrite step.
+      logback-path-in-war: ''
 
     # secrets: inherit passes XNAT_ARTIFACTORY_USER/TOKEN (org-level) and
     # the auto-injected GITHUB_TOKEN through to the reusable workflow.

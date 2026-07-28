@@ -34,6 +34,21 @@ public class ArchiveProcessorInstanceDAO extends AbstractHibernateDAO<ArchivePro
     public static final String PROCESSOR_CLASS = "processorClass";
     public static final String PRIORITY = "priority";
 
+    /**
+     * Overridden to apply updates with {@code Session.merge()} rather than {@code Session.update()}. This entity is
+     * audited, and processor updates arrive from {@link org.nrg.xapi.rest.dicom.ArchiveProcessorInstanceApi} as a
+     * detached instance whose changed element collections (scpWhitelist, scpBlacklist, parameters, projectIdsList)
+     * were replaced wholesale by {@link ArchiveProcessorInstance#update(ArchiveProcessorInstance)}. Reattaching such
+     * an instance recreates the replaced collections without their prior state, so Envers records additions but never
+     * removals, and revisions reconstruct removed whitelist/blacklist entries as though they were still present.
+     * Merging applies the incoming state to the managed collections, so Hibernate — and therefore Envers — sees the
+     * true delta. Note that {@link #saveOrUpdate} routes existing entities through this method as well.
+     */
+    @Override
+    public void update(final ArchiveProcessorInstance entity) {
+        getSession().merge(entity);
+    }
+
     public List<ArchiveProcessorInstance> getSiteArchiveProcessors() {
         return findByProperty(SCOPE, Scope.Site.code());
     }

@@ -326,6 +326,14 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
 - **`byte[]` responses.** If you *replace* the MVC message‑converter list you drop the default
   `ByteArrayHttpMessageConverter`; a `byte[]`/`ResponseEntity<byte[]>` endpoint then serializes as base64
   via Jackson. → register `ByteArrayHttpMessageConverter` first. *(springdoc fix)*
+- **`@Autowired` on a `@Bean` method is now a hard error.** Spring 5 tolerated (and deprecated) marking a
+  `@Bean` factory method `@Autowired`; Spring 6 rejects it at context-parse time:
+  `BeanDefinitionParsingException: @Bean method 'x' must not be declared as autowired; remove the
+  method-level @Autowired annotation`. This is a **boot** failure the compiler can't see, and because it
+  fails the plugin's `@Configuration` parse it takes the whole ROOT context down (`Context [] startup
+  failed` → REST 404). → just delete the `@Autowired` — a `@Bean` method's parameters are autowired by type
+  automatically, so it was always redundant. Grep the plugin for `@Autowired` immediately above `@Bean`.
+  *(query_tracker_plugin)*
 - **`HttpStatus` → `HttpStatusCode` return types.** Spring 6 introduced the `HttpStatusCode` interface and
   changed methods that used to return the `HttpStatus` enum to return it — notably
   `ResponseEntity.getStatusCode()` and `ClientResponse.statusCode()`. Compile error:

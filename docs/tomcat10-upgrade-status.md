@@ -358,3 +358,35 @@ Verified: SiteSplash nav renders `Logged in as: admin`, 0 NPEs, `main_nav` prese
 with CR loaded. A/B confirmed CR is the trigger (0 nav NPEs with CR removed) but the fix is core, not CR —
 CR only exposes a latent core nav regression. Deeper question left open: *why* the nav context loses
 `$user` for heavy/plugin screens under Turbine 7 (the template rebind is defensive and sufficient).
+
+### RESOLVED — the deeper cause: plugin templates re-fetch `$user` from a dead session attribute
+
+The "why does the nav lose `$user`" question is answered. It is **not** an auth,
+render-order, or shared-context-plumbing problem (all ruled out: `getUserDetails()`
+returns valid throughout; the nav and screen share the per-request `VELOCITY_CONTEXT`;
+`loadAdditionalVariables` correctly seeds a valid `$user`). It is a **plugin template
+line**: several screens do
+
+    #set($user=$data.getSession().getAttribute("user"))
+
+Old Turbine (2.3.3) stored the user under the servlet-session `"user"` attribute;
+**Turbine 7 / Tomcat 10 no longer does** (Spring Security owns auth), so it returns
+null. Velocity template `#set` mutates the *shared* per-request context, so this
+overwrites the valid `$user` that `loadAdditionalVariables` had put — and because the
+screen template renders **before** the navigations, `DefaultTop`/`DefaultLeft` then see
+null (NPE in `getDisplayedUserIdentifier`; stored-search security SQL renders
+`${user.getXdatUserId()}` unresolved). Isolation confirmed it fired on **exactly** the
+screens carrying that line (CR `SiteSplash.vm`), not on core search-heavy screens or the
+other CR screens.
+
+**Two-layer fix (both landed):**
+1. *Defensive, core:* rebind `$user` in the custom-screen macros + `NoMenuTop`/
+   `NoninteractiveTop` (commit `b212f7baa`) so the nav survives *any* template that nulls
+   `$user`.
+2. *Root cause, plugins:* replace the dead session-attribute lookup with
+   `#set($user=$turbineUtils.getUser($data))` in the four migrated plugins that carry it
+   — `xnat_cr_plugin` SiteSplash.vm, `esign_plugin` autoSign.vm, `pII_review_plugin`
+   DicomHeaderReview.vm, `query_tracker_plugin` confirmAndUpload.vm. This also repairs the
+   screens' own `$user` usage (SiteSplash's Reports stored-search list). Any not-yet-
+   migrated plugin with the same `#set($user=$data.getSession().getAttribute("user"))`
+   line will need the same change.

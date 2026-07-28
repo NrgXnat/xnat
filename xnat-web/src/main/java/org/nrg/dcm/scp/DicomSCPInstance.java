@@ -12,7 +12,10 @@ package org.nrg.dcm.scp;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import org.hibernate.envers.AuditOverride;
+import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
+import org.nrg.framework.orm.hibernate.audit.NrgRevisionEntity;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 
 import javax.persistence.*;
@@ -20,7 +23,24 @@ import javax.persistence.*;
 import java.io.Serial;
 import java.util.*;
 
+/**
+ * Configuration for a DICOM SCP receiver.
+ *
+ * <p>Changes are audited through Hibernate Envers, with the username of the user making the change recorded on the
+ * {@link NrgRevisionEntity revision}. Several of these settings govern how received data is handled —
+ * {@link #isAnonymizationEnabled() anonymization}, {@link #isWhitelistEnabled() whitelisting},
+ * {@link #isDirectArchive() direct archiving}, and the routing expressions — so a change here silently alters the
+ * handling of everything received afterward. See {@link #getWhitelist()} for why updates must reach the database
+ * through {@code Session.merge()}.
+ *
+ * <p>The inherited "enabled" property is explicitly audited because for a receiver it is real configuration — whether
+ * the receiver accepts connections at all, as the named query below relies on — rather than the soft-delete
+ * bookkeeping it represents on most entities. Envers does not audit
+ * {@link javax.persistence.MappedSuperclass} properties unless told to.
+ */
 @Entity
+@Audited
+@AuditOverride(forClass = AbstractHibernateEntity.class, name = "enabled")
 @NamedQueries({@NamedQuery(name = "getPortsWithEnabledInstances", query = "SELECT DISTINCT i.port FROM DicomSCPInstance i WHERE i.enabled = true")})
 public class DicomSCPInstance extends AbstractHibernateEntity {
     @Serial
@@ -66,6 +86,16 @@ public class DicomSCPInstance extends AbstractHibernateEntity {
     public boolean isWhitelistEnabled() {return _whitelistEnabled;}
     public void setWhitelistEnabled(boolean whitelistEnabled) { this._whitelistEnabled = whitelistEnabled;}
 
+    /**
+     * The AE titles and IP addresses permitted to send to this receiver when {@link #isWhitelistEnabled()
+     * whitelisting} is enabled. Audited along with the rest of the receiver configuration — but note that Envers
+     * derives element-collection history from Hibernate's collection events, which only include removals when the
+     * incoming state is applied to the managed collection. Receiver updates arrive from
+     * {@link DicomSCPManager#updateDicomSCPInstance} as detached, JSON-deserialized instances that replace this
+     * collection wholesale, so {@link org.nrg.dcm.scp.daos.DicomSCPInstanceDAO#update} applies them with
+     * {@code Session.merge()}; reverting that to {@code Session.update()} would silently drop whitelist removals from
+     * the audit history.
+     */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name="dicomSCPInstance_whitelist", joinColumns=@JoinColumn(name="scp_id"))
     @Column(name="whitelist")

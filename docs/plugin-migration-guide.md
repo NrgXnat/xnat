@@ -496,4 +496,22 @@ is rarely the last.
   wraps the real error (here `NoUniqueBeanDefinitionException`) under a chain of `UnsatisfiedDependencyException`.
 - **A broken plugin takes the whole ROOT webapp down** (`Context initialization failed` → `Context [] startup
   failed`). Pull the jar from `${xnat.home}/plugins` and restart to recover while you fix it.
+- **An unresponsive external ActiveMQ broker hangs startup *silently and forever*.** The jakarta cutover moved
+  JMS to `jakarta.jms` and bumped the client to **ActiveMQ 6.2.7** (`libs.versions.toml`), so any *external*
+  broker must be **ActiveMQ Classic 6.x** (compose uses `apache/activemq-classic:6.1.4`). Point XNAT at a broker
+  that isn't 6.x/healthy — e.g. a leftover pre‑migration **5.x** broker, or one that's wedged/flow‑controlled —
+  and the first JMS send blocks indefinitely: `DefaultGroupsAndPermissionsCache.initialize()` sends
+  `InitializeGroupRequest` *synchronously* on the init thread (`:333`), and `spring.activemq.broker-url`'s common
+  `?wireFormat.maxInactivityDuration=0` disables the dead‑connection timeout, so the send never returns. Because
+  `InitializeCachesTask` runs the caches sequentially on one thread, that freezes **all** initializing tasks
+  behind it — notably `UpdateUserAuthTable`, which backfills the `xhbm_xdat_user_auth` localdb mappings for
+  SQL‑seeded users (admin, guest). Net symptom: a fresh DB where the app boots and renders the login page, but
+  **every login fails `BadCredentialsException`** and `SELECT count(*) FROM xhbm_xdat_user_auth` is **0** — the
+  user exists in `xdat_user` but has no auth mapping. The tell is a thread dump of `taskScheduler-4` parked in
+  `ActiveMQConnection.syncSendPacket` → `…cache.initialize(:333)`. → Use the documented default embedded broker
+  `spring.activemq.broker-url=vm://localhost`, or ensure the external broker is a healthy 6.x (and drop
+  `maxInactivityDuration=0` / prefer a `failover:` URL so a broker blip defers cleanly instead of hanging boot).
+  Note the init tasks log to `configuration.log`/`tasks.log` (not `application.log`) and were `WARN` by default —
+  raise `org.nrg.xnat.initialization`/`…initialization.tasks` to `INFO` to see the stall. *(bin‑tomcat10 fresh‑DB
+  login failure; not a plugin bug — a deployment/broker‑version issue exposed by the client bump)*
 

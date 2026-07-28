@@ -595,7 +595,7 @@
         <appender-ref ref="spring"/>
         <appender-ref ref="console"/>
     </logger>
-    <logger name="org.nrg.xnat.initialization" additivity="false" level="WARN">
+    <logger name="org.nrg.xnat.initialization" additivity="false" level="INFO">
         <appender-ref ref="configuration"/>
         <appender-ref ref="console"/>
     </logger>
@@ -669,7 +669,7 @@
         <appender-ref ref="spring"/>
         <appender-ref ref="console"/>
     </logger>
-    <logger name="org.nrg.xnat.initialization.tasks" additivity="false" level="WARN">
+    <logger name="org.nrg.xnat.initialization.tasks" additivity="false" level="INFO">
         <appender-ref ref="tasks"/>
         <appender-ref ref="console"/>
     </logger>

@@ -514,4 +514,17 @@ is rarely the last.
   Note the init tasks log to `configuration.log`/`tasks.log` (not `application.log`) and were `WARN` by default —
   raise `org.nrg.xnat.initialization`/`…initialization.tasks` to `INFO` to see the stall. *(bin‑tomcat10 fresh‑DB
   login failure; not a plugin bug — a deployment/broker‑version issue exposed by the client bump)*
+- **A third‑party jar compiled against `javax` EE lands on the jakarta classpath → latent `NoClassDefFoundError`.**
+  The source `javax→jakarta` sweep only fixes *your* code; a dependency jar that was itself built against
+  `javax.persistence` / `javax.servlet` / `javax.xml.bind` / … stays javax, and on Tomcat 10 (only the `jakarta.*`
+  APIs present) it throws `NoClassDefFoundError` **the instant one of its classes links** — invisible to
+  compile‑clean *and* boot‑clean; it only fires when a specific code path loads that class. Real instance:
+  `jackson-datatype-hibernate5` (javax) — `HibernateAnnotationIntrospector` refs `javax.persistence.Transient`;
+  when Jackson serialized a Hibernate `@Entity` JSON column (container command‑save) it 500'd, so no container
+  could launch and the entire DICOM‑modification suite failed. → Use the artifact's **`-jakarta`** variant (often a
+  renamed package/class too: `Hibernate5Module` → `Hibernate5JakartaModule`). To catch the whole class at build
+  time, XNAT core adds `xnat-web:verifyNoOrphanedJavaxEE` (wired into `check`): it fails the build if any runtime
+  jar references a jakarta‑migrated `javax.*` package that **nothing on the classpath provides** (reference‑vs‑
+  provision, so JDK‑owned `javax.transaction.xa`/JCache/JSR‑305/JAXP are excluded; genuinely‑unreachable library
+  features go on a documented allowlist). Plugins that bundle deps can copy the task into their build. *(status doc 1‑21)*
 

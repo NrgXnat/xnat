@@ -471,3 +471,97 @@ publishing {
         }
     }
 }
+
+// ===========================================================================
+// javax-EE guard (jakarta cutover). Fails the build if any jar on the deployed
+// runtime classpath references a javax.* EE package that moved to jakarta.* and
+// that NOTHING on the classpath provides -- a guaranteed NoClassDefFoundError the
+// instant that class links on Tomcat 10. This is the trap that silently broke
+// container command-save (jackson-datatype-hibernate5 -> javax.persistence.Transient);
+// see docs/tomcat10-upgrade-status.md item 1-21. Precise by construction: a javax
+// reference is only failed when UNPROVIDED. References that still resolve (JDK-owned
+// javax.transaction.xa, or a leftover javax API jar that is itself present) are not
+// failed. Genuinely-unreachable library features are ALLOWLISTED with a reason.
+// ===========================================================================
+tasks.register('verifyNoOrphanedJavaxEE') {
+    group = 'verification'
+    description = 'Fail if a runtime jar references a jakarta-migrated javax.* package that nothing provides.'
+    def runtimeCp = configurations.runtimeClasspath
+    inputs.files(runtimeCp)
+    def marker = layout.buildDirectory.file('javax-ee-guard.ok')
+    outputs.file(marker)
+
+    // javax.* EE prefixes (internal-name form) that moved to jakarta.*. Deliberately EXCLUDES
+    // what stays javax: javax/transaction/xa (JDK java.sql), javax/cache (JCache),
+    // javax/annotation/{Nullable,Nonnull,..} (JSR-305), javax/xml/{parsers,transform,xpath,..} (JAXP).
+    def EE = [
+        'javax/persistence/', 'javax/servlet/', 'javax/validation/', 'javax/ws/rs/',
+        'javax/mail/', 'javax/jms/', 'javax/xml/bind/', 'javax/xml/soap/', 'javax/xml/ws/',
+        'javax/activation/', 'javax/el/', 'javax/faces/', 'javax/enterprise/', 'javax/inject/',
+        'javax/interceptor/', 'javax/json/', 'javax/batch/', 'javax/websocket/',
+        'javax/annotation/security/', 'javax/annotation/sql/',
+        'javax/transaction/Transactional', 'javax/transaction/UserTransaction',
+        'javax/transaction/TransactionManager', 'javax/transaction/TransactionSynchronizationRegistry',
+    ]
+
+    // jar-name prefix -> why its (unprovided) javax-EE reference never links at runtime.
+    def ALLOWLIST = [
+        'h2-'                     : 'javax.servlet: embedded H2 web console, never started (Postgres is the DB)',
+        'jython-standalone-'      : 'javax.servlet: PyServlet; Jython runs scripts, not servlets',
+        'groovy-all-'             : 'javax.servlet: groovy.servlet.*, unused',
+        'commons-jcs3-core-'      : 'javax.servlet: JCS admin servlet, not mapped',
+        'commons-configuration-'  : 'javax.servlet: ServletContext config, XNAT uses file/props config',
+        'commons-configuration2-' : 'javax.servlet: ServletContext config, XNAT uses file/props config',
+        'datasource-proxy-'       : 'javax.servlet: servlet query-logging bridge, unused',
+        'reflections-'            : 'javax.servlet: ServletContext scanner helper, XNAT uses URL scanners',
+        'log4j-core-'             : 'javax.{mail,jms,activation}: SMTP/JMS appenders, log4j2 is a dormant backend',
+        'log4j-1.2-api-'          : 'javax.jms: JMSAppender, unused',
+        'cache-api-'              : 'javax.enterprise: JCache CDI integration, no CDI container',
+        'jodd-core-'              : 'javax.activation: jodd mail/mime, XNAT uses jakarta.mail',
+        // transitive javax-JAXB chain via hibernate-types-55 (tracked: status doc 1-22) -- unreached JAXB/JSON paths
+        'jackson-module-jaxb-annotations-' : 'javax.{xml.bind,activation}: JaxbAnnotationModule not registered by XNAT; tracked 1-22',
+        'jaxb-api-2'              : 'javax.{xml.bind,activation}: javax JAXB API pulled by hibernate-types-55, unreached; tracked 1-22',
+        'pixelmed'                : 'javax.{json,xml.bind}: pixelmed JAXB/JSON paths not exercised by XNAT; tracked 1-22',
+        // plugin-facing legacy dep, removal decision pending (tracked: status doc 1-2)
+        'spring-security-oauth2-' : 'javax.{servlet,annotation,xml.bind}: legacy oauth2, plugin-facing, removal pending; tracked 1-23',
+        // jakarta-transformed Hibernate 5.6 line: residual javax refs in unreached legacy classes.
+        // The used ORM + JSON-column paths are verified working (full suite + container CommandEntity save).
+        'hibernate-core-jakarta-' : 'javax.{persistence,transaction,validation}: residual refs in unreached legacy classes; core ORM verified working',
+        'hibernate-types-55-'     : 'javax.persistence: unreached legacy refs; used JsonStringType/JsonBinaryType path verified working; tracked 1-22',
+        'commons-dbcp2-'          : 'javax.transaction: JTA managed/XA datasource classes, unused (XNAT uses BasicDataSource)',
+        'ehcache-2'               : 'javax.{servlet,transaction}: legacy ehcache2 via hibernate-ehcache; monitor servlet + XA unused; tracked 1-22 (double-ehcache)',
+    ]
+
+    doLast {
+        def jars = runtimeCp.files.findAll { it.name.endsWith('.jar') }
+        def provided = [] as Set
+        jars.each { f ->
+            def zf = new java.util.zip.ZipFile(f)
+            try { for (e in zf.entries()) { if (e.name.endsWith('.class')) for (p in EE) if (e.name.startsWith(p)) provided << p } }
+            finally { zf.close() }
+        }
+        def offenders = [:].withDefault { new TreeSet() }
+        jars.each { f ->
+            def zf = new java.util.zip.ZipFile(f)
+            try {
+                for (e in zf.entries()) {
+                    if (!e.name.endsWith('.class')) continue
+                    def txt = new String(zf.getInputStream(e).bytes, 'ISO-8859-1')
+                    for (p in EE) if (!provided.contains(p) && txt.contains(p)) offenders[f.name] << p.replaceAll('/[A-Z].*$', '').replaceAll('/$', '')
+                }
+            } finally { zf.close() }
+        }
+        def bad = offenders.findAll { jar, pkgs -> !ALLOWLIST.keySet().any { jar.startsWith(it) } }
+        offenders.each { jar, pkgs -> if (ALLOWLIST.keySet().any { jar.startsWith(it) }) logger.info("javax-EE guard: allowlisted ${jar} -> ${pkgs.join(', ')}") }
+        if (bad) {
+            throw new GradleException(
+                "javax-EE guard: orphaned javax.* EE references (guaranteed NoClassDefFoundError on Tomcat 10):\n" +
+                bad.collect { jar, pkgs -> "  ${jar} -> ${pkgs.join(', ')}" }.join('\n') +
+                "\n\nFix: switch the offending artifact to its -jakarta variant; or, if the reference is genuinely\n" +
+                "unreachable, add the jar to the ALLOWLIST in xnat-web/build.gradle with a justification.")
+        }
+        marker.get().asFile.text = "ok: ${offenders.size()} jars reference javax-EE, all provided or allowlisted\n"
+        logger.lifecycle("javax-EE guard OK: ${offenders.size()} jars reference javax-EE, all provided or allowlisted.")
+    }
+}
+tasks.named('check') { dependsOn 'verifyNoOrphanedJavaxEE' }

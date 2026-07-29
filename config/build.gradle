@@ -21,6 +21,7 @@ dependencies {
     testImplementation project(':test')
     testImplementation libs.h2database.h2
     testImplementation libs.postgresql.postgresql
+    testImplementation libs.testcontainers.postgresql
     testImplementation libs.slf4j.simple
     testImplementation libs.junit.junit
     testImplementation libs.commons.io
@@ -36,4 +37,18 @@ test {
     // 8g was overprovisioned. See:
     //   ~/bindocs/work/xnat/xnat-monorepo-gradle-build-memory-budget.md
     jvmArgs '-Xmx5g'
+
+    // DefaultConfigService.lockForReplace() uses Postgres-only functions (pg_advisory_xact_lock,
+    // hashtext) that H2 can't provide, so these Hibernate/DB integration tests run against real
+    // Postgres via Testcontainers -- exercising the actual advisory lock and MAX(version)+1
+    // versioning. The framework's property-driven OrmTestConfiguration reads these properties; the
+    // jdbc:tc: URL auto-starts and manages the container (requires Docker). Mirrors xnat-web's
+    // Postgres test datasource.
+    systemProperty 'jdbc.driver.class', 'org.testcontainers.jdbc.ContainerDatabaseDriver'
+    // TC_DAEMON keeps one container alive for the JVM. Without it, SimpleDriverDataSource (not a pool)
+    // opens and closes a connection per statement and the jdbc:tc: driver stops the container on
+    // last-close, so schema-export DDL and the app's queries land in different throwaway databases.
+    systemProperty 'jdbc.url', 'jdbc:tc:postgresql:12:///test?TC_DAEMON=true'
+    systemProperty 'jdbc.username', 'test'
+    systemProperty 'jdbc.password', 'test'
 }

@@ -30,4 +30,23 @@ dependencies {
     testImplementation libs.h2database.h2
     testImplementation libs.hibernate.ehcache
     testImplementation libs.slf4j.simple
+    testImplementation libs.postgresql.postgresql
+    testImplementation libs.testcontainers.postgresql
+}
+
+// SeriesImportFilterTests drives a real DefaultConfigService, and its write path takes a Postgres
+// advisory lock (pg_advisory_xact_lock/hashtext -- XNAT-8779) that H2 cannot provide. So the Spring
+// datasource behind OrmTestConfiguration points at real Postgres via Testcontainers, exactly as
+// :config:test does -- keep the two in sync. Requires Docker.
+//
+// EnumeratedMetadataStoreTest is unaffected: it builds its own HSQLDB-backed store directly instead
+// of going through OrmTestConfiguration.
+test {
+    systemProperty 'jdbc.driver.class', 'org.testcontainers.jdbc.ContainerDatabaseDriver'
+    // TC_DAEMON keeps one container alive for the JVM. Without it, SimpleDriverDataSource (not a pool)
+    // opens and closes a connection per statement and the jdbc:tc: driver stops the container on
+    // last-close, so schema-export DDL and the app's queries land in different throwaway databases.
+    systemProperty 'jdbc.url', 'jdbc:tc:postgresql:12:///test?TC_DAEMON=true'
+    systemProperty 'jdbc.username', 'test'
+    systemProperty 'jdbc.password', 'test'
 }

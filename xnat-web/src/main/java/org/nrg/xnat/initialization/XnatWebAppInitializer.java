@@ -20,6 +20,7 @@ import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
+import org.nrg.xnat.services.logging.impl.DefaultLoggingService;
 import org.nrg.xnat.servlet.ArchiveServlet;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -50,6 +51,11 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     public void onStartup(final ServletContext context) throws ServletException {
+        // Apply console logging (XNAT_LOG_CONSOLE=plain|json) before the Spring context refresh, so startup
+        // and core logging reach stdout even if bootstrap fails. Plugin appenders are handled later by
+        // DefaultLoggingService once their configs are merged. No-op when the variable is unset.
+        DefaultLoggingService.applyConsoleRedirectIfRequested();
+
         context.addListener(new LogbackServletContextListener());
 
         context.setInitParameter("org.restlet.component", "org.nrg.xnat.restlet.XNATComponent");

@@ -309,6 +309,17 @@ dependencies {
     runtimeOnly libs.python.jython.standalone
     runtimeOnly libs.bouncycastle.bcpkix.jdk18on
 
+    // AWS Advanced JDBC Wrapper + SDK for optional passwordless RDS IAM
+    // database authentication. Inert unless datasource.driver is set to
+    // software.amazon.jdbc.Driver (e.g. via the helm chart's datasource.iam
+    // mode); the default password/pgjdbc datasource is unaffected. SDK module
+    // versions resolve from the AWS BOM. Wrapper + AWS SDK v2 run on Java 8+.
+    runtimeOnly platform(libs.awssdk.bom)
+    runtimeOnly libs.aws.jdbc.wrapper
+    runtimeOnly libs.awssdk.rds
+    runtimeOnly libs.awssdk.sts
+    runtimeOnly libs.awssdk.url.connection.client
+
     // --- Test ---
     testImplementation project(':test')
     testImplementation libs.servlet.javax.servlet.api

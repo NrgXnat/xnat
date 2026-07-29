@@ -316,11 +316,38 @@ public class AdminUtils {
 	}
 
 	private static void sendAdminNotificationCopy(final String subject, final String body, final NotificationType event) {
-		final String email = XDAT.getSiteConfigPreferences().getAdminEmail();
-		if (XDAT.getNotificationsPreferences().getCopyAdminOnNotifications() &&
-			!StringUtils.contains(XDAT.getSubscriberEmailsListAsString(event), email)) {
+		final String email = getAdminNotificationCopyRecipient(event);
+		if (email != null) {
 			AdminUtils.sendUserHTMLEmail(subject, body, false, new String[] { email });
 		}
+	}
+
+	/**
+	 * Resolves the email address that should receive a copy of the notification for the indicated event when the
+	 * "copy admin on notifications" setting is enabled: the primary admin user's email address, falling back to
+	 * the site admin email when the primary admin user can't be resolved.
+	 *
+	 * @param event The site-wide event being notified.
+	 * @return The recipient email address, or null if no copy should be sent.
+	 */
+	static String getAdminNotificationCopyRecipient(final NotificationType event) {
+		if (!XDAT.getNotificationsPreferences().getCopyAdminOnNotifications()) {
+			return null;
+		}
+		String primaryAdminEmail = null;
+		try {
+			final UserI adminUser = Users.getAdminUser();
+			if (adminUser != null) {
+				primaryAdminEmail = adminUser.getEmail();
+			}
+		} catch (Exception e) {
+			log.warn("Couldn't resolve the primary admin user to copy on a notification, falling back to the site admin email", e);
+		}
+		final String email = StringUtils.defaultIfBlank(primaryAdminEmail, XDAT.getSiteConfigPreferences().getAdminEmail());
+		if (StringUtils.isBlank(email) || XDAT.getSubscriberEmails(event).stream().anyMatch(subscriber -> StringUtils.equalsIgnoreCase(subscriber, email))) {
+			return null;
+		}
+		return email;
 	}
 
 	/**

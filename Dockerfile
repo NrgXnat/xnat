@@ -1,7 +1,8 @@
 # XNAT runtime image
 # Built by .github/workflows/build-publish.yml. Expects:
-#   ./docker-context/xnat.war       — WAR with logback already rewritten to
-#                                     ConsoleAppender by the workflow.
+#   ./docker-context/xnat.war       — the stock build WAR (unmodified; byte-identical
+#                                     to the JFrog artifact). Console logging is opt-in
+#                                     at runtime via XNAT_LOG_CONSOLE (see XNAT-8782).
 #   ./docker/entrypoint.sh          — runtime helper (timezone handling).
 #   ./docker/make-xnat-config.sh    — generates default xnat-conf.properties.
 
@@ -89,9 +90,9 @@ RUN rm -rf ${CATALINA_HOME}/webapps/* && mkdir -p \
 # multipart limits). Run-time env overrides via the entrypoint.
 RUN /usr/local/bin/make-xnat-config.sh
 
-# Expand the WAR into webapps/ROOT/. The workflow has already
-# rewritten WEB-INF/classes/logback.xml to ConsoleAppender via
-# scripts/edit-log.py, so no further log config patching needed here.
+# Expand the WAR into webapps/ROOT/. The WAR ships stock (no logback surgery):
+# console logging is opt-in at runtime via XNAT_LOG_CONSOLE (XNAT-8782), so no
+# log-config patching happens here or at build time.
 COPY docker-context/xnat.war /tmp/ROOT.war
 # Explode the WAR and, in the SAME layer, chown + group-write (g=u) the exploded
 # webapp to the non-root uid, so the recursive chown doesn't force a second

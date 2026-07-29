@@ -10,6 +10,7 @@
 package org.nrg.xnat.initialization.tasks;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -106,7 +107,7 @@ public class MigrateRetiredPetMrSeparation extends AbstractInitializingTask {
 
     private void migrateProjectConfigurations() {
         final List<Configuration> configurations = _configService.getConfigsByTool(HandlePetMr.SEPARATE_PET_MR);
-        if (configurations == null || configurations.isEmpty()) {
+        if (CollectionUtils.isEmpty(configurations)) {
             return;
         }
         for (final Configuration configuration : configurations) {

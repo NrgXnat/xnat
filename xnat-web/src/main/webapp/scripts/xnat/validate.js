@@ -113,9 +113,10 @@ var XNAT = getObject(XNAT);
         alphaNumDash: /^[a-z0-9_\-]+$/i,       // ONLY letters, numbers, underscore, and dash
         alphaNumDashSpace: /^[a-z0-9 _\-]+$/i, // ONLY letters, numbers, underscore, dash, and space
         nameSafe: /^([a-z0-9 '".,_-]+)$/i,     // safe to use for names - letters, numbers, spaces, apostrophes, quotes, periods, commas, underscores and hyphens
-        // safe to use for usernames - starts with a letter, number, or underscore...
-        // ...and contains only letters, numbers, apostrophes, quotes underscores, hyphens and periods
-        username: /^(\w+[a-z0-9-_.]*)$/i,
+        // matches the server-side username rules (org.nrg.framework.utilities.Patterns.EXPR_USERNAME):
+        // starts with a letter, contains only letters, numbers, apostrophes, underscores, hyphens
+        // and periods, up to 64 characters
+        username: /^([a-z][a-z0-9_.'-]{0,63})$/i,
         idSafe: /^([a-z][a-z0-9_\-]*)$/i,      // safe to use as an ID - alphasafe and must start with a letter
         idStrict: /^([a-z][a-z0-9_]*)$/i,      // 'idSafe' without hyphens
         ip: /^(((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2})\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[0-9]{1,2}))$/i,

@@ -20,6 +20,7 @@ import org.nrg.framework.orm.hibernate.audit.NrgRevisionEntity;
 import org.nrg.prefs.configuration.PreferenceServiceTestsConfiguration;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.services.PreferenceService;
 import org.nrg.prefs.services.ToolService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,13 +46,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PreferenceAuditTests {
     private final ToolService                _toolService;
     private final PreferenceService          _prefService;
+    private final NrgPreferenceService       _nrgPrefService;
     private final SessionFactory             _sessionFactory;
     private final PlatformTransactionManager _transactionManager;
 
     @Autowired
-    public PreferenceAuditTests(final ToolService toolService, final PreferenceService prefService, final SessionFactory sessionFactory, final PlatformTransactionManager transactionManager) {
+    public PreferenceAuditTests(final ToolService toolService, final PreferenceService prefService, final NrgPreferenceService nrgPrefService, final SessionFactory sessionFactory, final PlatformTransactionManager transactionManager) {
         _toolService        = toolService;
         _prefService        = prefService;
+        _nrgPrefService     = nrgPrefService;
         _sessionFactory     = sessionFactory;
         _transactionManager = transactionManager;
     }
@@ -93,9 +96,38 @@ public class PreferenceAuditTests {
     }
 
     @Test
-    public void doesNotAuditNoOpReSaves() throws Exception {
-        // The admin UI submits every field on the page, not just the edited one, so re-saving an identical value must
-        // not record a revision — otherwise one save buries the real change under a revision per preference.
+    public void doesNotAuditNoOpReSavesThroughNrgPreferenceService() throws Exception {
+        // The path the admin UI actually takes: AbstractPreferenceBean.set -> NrgPreferenceService.setPreferenceValue.
+        // That service has no shared transaction, so the preference it reads is DETACHED by the time it writes, and
+        // Session.update() on a detached instance writes — and Envers records — regardless of whether the value
+        // changed. The value-equality guard in DefaultNrgPreferenceService.setPreferenceValue is what suppresses the
+        // no-op revisions here; the admin UI submits every field on the page, so without it one Save would record a
+        // revision per preference on the page.
+        final Tool tool = _toolService.newEntity();
+        tool.setToolId("noopNrgTool");
+        tool.setToolName("noopNrgTool");
+        _toolService.create(tool);
+
+        _nrgPrefService.setPreferenceValue("noopNrgTool", "noopPref", "same value");
+        _nrgPrefService.setPreferenceValue("noopNrgTool", "noopPref", "same value"); // no-op: must not create a revision
+        _nrgPrefService.setPreferenceValue("noopNrgTool", "noopPref", "same value"); // no-op
+
+        final long id = _prefService.getPreference("noopNrgTool", "noopPref").getId();
+
+        // only the initial create is recorded, not the two identical re-saves
+        inTransaction(reader -> assertThat(reader.getRevisions(Preference.class, id)).hasSize(1));
+
+        // a genuine change still records a revision
+        _nrgPrefService.setPreferenceValue("noopNrgTool", "noopPref", "new value");
+        inTransaction(reader -> assertThat(reader.getRevisions(Preference.class, id)).hasSize(2));
+    }
+
+    @Test
+    public void doesNotAuditNoOpReSavesThroughPreferenceService() throws Exception {
+        // The same invariant on the Hibernate service. Here setPreference is @Transactional, so the loaded preference
+        // is still managed when it's re-saved and Hibernate's dirty checking alone would already suppress the no-op
+        // write; the explicit guard in createOrUpdatePreference is belt-and-braces. The load-bearing guard is the
+        // detached-path one covered by doesNotAuditNoOpReSavesThroughNrgPreferenceService.
         final Tool tool = _toolService.newEntity();
         tool.setToolId("noopTool");
         tool.setToolName("noopTool");

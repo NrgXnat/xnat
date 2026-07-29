@@ -173,7 +173,7 @@ public class TestDicomSCPInstanceAuditing {
         });
     }
 
-    private DicomSCPInstanceService     _service;
+    private DicomSCPInstanceService    _service;
     private SessionFactory             _sessionFactory;
     private PlatformTransactionManager _transactionManager;
 }

@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -107,7 +108,7 @@ public class TestUserRoleAuditing {
         inTransaction(reader -> {
             final List<Number> revisions = reader.getRevisions(UserRole.class, role.getId());
             assertEquals(1, revisions.size());
-            assertEquals(null, usernameFor(reader, revisions.get(0)));
+            assertNull(usernameFor(reader, revisions.get(0)));
         });
     }
 

@@ -11,6 +11,7 @@ package org.nrg.xnat.processor.dao;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.hibernate.Criteria;
+import org.hibernate.StaleStateException;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.constants.Scope;
@@ -43,9 +44,16 @@ public class ArchiveProcessorInstanceDAO extends AbstractHibernateDAO<ArchivePro
      * removals, and revisions reconstruct removed whitelist/blacklist entries as though they were still present.
      * Merging applies the incoming state to the managed collections, so Hibernate — and therefore Envers — sees the
      * true delta. Note that {@link #saveOrUpdate} routes existing entities through this method as well.
+     *
+     * <p>The existence check preserves update semantics for missing rows: merge treats a row deleted between the
+     * caller's read and this write as transient state and would quietly re-insert it under a new ID, where
+     * {@code Session.update()} failed at flush. Missing rows fail with {@link StaleStateException} instead.
      */
     @Override
     public void update(final ArchiveProcessorInstance entity) {
+        if (!exists("id", entity.getId())) {
+            throw new StaleStateException("Cannot update ArchiveProcessorInstance " + entity.getId() + ": no row with that ID exists. It may have been deleted concurrently.");
+        }
         getSession().merge(entity);
     }
 

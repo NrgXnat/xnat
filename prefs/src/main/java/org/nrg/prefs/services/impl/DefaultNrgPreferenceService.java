@@ -199,8 +199,11 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService {
         final Preference preference = _preferenceService.getPreference(toolId, preferenceName, scope, entityId);
         if (preference != null) {
             if (StringUtils.equals(preference.getValue(), value)) {
-                // No change: skip the write so Envers doesn't record a no-op revision. The admin UI submits every
-                // field on the page, not just the edited one.
+                // No change: skip the write so Envers doesn't record a no-op revision. This guard is load-bearing:
+                // this service has no shared transaction, so the preference read above is detached by the time
+                // update() runs, and Session.update() on a detached instance writes — and Envers records — regardless
+                // of whether anything changed. The admin UI submits every field on the page, not just the edited one,
+                // so without this a single save would record a revision for every preference on that page.
                 return;
             }
             preference.setValue(value);

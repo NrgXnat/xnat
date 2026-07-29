@@ -27,6 +27,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,7 +66,13 @@ public class TestArchiveProcessorInstanceAuditing {
     }
 
     @After
-    public void clearAuthentication() {
+    public void cleanup() {
+        // This context — and its database — is shared with TestArchiveProcessInstanceService, which asserts exact
+        // table contents, so leave the table as we found it. These are hard deletes: the entity is not @Auditable.
+        for (final ArchiveProcessorInstance instance : _created) {
+            _service.delete(instance);
+        }
+        _created.clear();
         SecurityContextHolder.clearContext();
     }
 
@@ -77,6 +84,7 @@ public class TestArchiveProcessorInstanceAuditing {
                                                                               new HashSet<>(), 10, "location",
                                                                               new HashMap<>(), PROCESSOR_CLASS);
         _service.create(created);
+        _created.add(created);
         final long id = created.getId();
 
         // Mirror ArchiveProcessorInstanceApi.updateSiteProcessor: load, copy the submitted body on, save.
@@ -106,6 +114,43 @@ public class TestArchiveProcessorInstanceAuditing {
         });
     }
 
+    @Test
+    public void auditsEnabledToggleThroughTheApiUpdateFlow() throws Exception {
+        authenticateAs("installing-admin");
+        final ArchiveProcessorInstance created = new ArchiveProcessorInstance("Toggled processor", Scope.Site.code(),
+                                                                              new HashSet<>(Collections.singleton("XNAT:8104")),
+                                                                              new HashSet<>(), 20, "location",
+                                                                              new HashMap<>(), PROCESSOR_CLASS);
+        _service.create(created);
+        _created.add(created);
+        final long id = created.getId();
+
+        // A PUT that only disables the processor. The enabled flag gates which processors run (the DAO's
+        // enabled-site-processor queries filter on it), and ArchiveProcessorInstance.update copies it — without
+        // @AuditOverride the resulting revision would be byte-identical to its predecessor, recording that something
+        // changed but not what.
+        authenticateAs("disabling-admin");
+        final ArchiveProcessorInstance existing  = _service.findSiteProcessorById(id);
+        final ArchiveProcessorInstance submitted = new ArchiveProcessorInstance();
+        submitted.setEnabled(false);
+        submitted.setPriority(20);
+        submitted.setParameters(new HashMap<>());
+        submitted.setScpWhitelist(new HashSet<>(Collections.singleton("XNAT:8104")));
+        assertThat(existing.update(submitted)).isTrue();
+        _service.update(existing);
+
+        inTransaction(reader -> {
+            final List<Number> revisions = reader.getRevisions(ArchiveProcessorInstance.class, id);
+            assertThat(revisions).hasSize(2);
+            assertThat(reader.find(ArchiveProcessorInstance.class, id, revisions.get(0)).isEnabled()).isTrue();
+
+            final ArchiveProcessorInstance disabled = reader.find(ArchiveProcessorInstance.class, id, revisions.get(1));
+            assertThat(disabled.isEnabled()).isFalse();
+            assertThat(disabled.getScpWhitelist()).containsExactly("XNAT:8104"); // unchanged collection survives the merge
+            assertThat(usernameFor(reader, revisions.get(1))).isEqualTo("disabling-admin");
+        });
+    }
+
     private static void authenticateAs(final String username) {
         SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken(username, "credentials"));
     }
@@ -120,6 +165,8 @@ public class TestArchiveProcessorInstanceAuditing {
             return null;
         });
     }
+
+    private final List<ArchiveProcessorInstance> _created = new ArrayList<>();
 
     private ArchiveProcessorInstanceService _service;
     private SessionFactory                  _sessionFactory;

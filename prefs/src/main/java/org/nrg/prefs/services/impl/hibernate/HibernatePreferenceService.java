@@ -140,9 +140,10 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
             getDao().create(preference);
         } else {
             if (StringUtils.equals(preference.getValue(), value)) {
-                // No change: skip the write so Hibernate/Envers doesn't record a no-op revision. The admin UI submits
-                // every field on the page, not just the edited one, so without this a single save would record a
-                // revision for every preference on that page and bury the change the admin actually made.
+                // No change: skip the write. Belt-and-braces here — this method is transactional, so the preference is
+                // still managed and Hibernate's dirty checking would suppress the no-op write anyway. The guard that
+                // suppression actually depends on is the one in DefaultNrgPreferenceService.setPreferenceValue, where
+                // the instance is detached and an update would always write (and Envers would always record).
                 log.debug("Preference {} on tool {} is unchanged ('{}'); skipping update", preferenceName, tool.getToolId(), value);
                 return;
             }

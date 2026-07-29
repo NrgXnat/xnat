@@ -74,6 +74,14 @@ public class XNATApplication extends Application {
         List<Class<? extends Resource>> publicRoutes = addExtensionRoutes(securedRouter);
 
         Router rootRouter = new Router(getContext());
+        // Same Restlet 1.1 defaults as securedRouter above (2.x changed both). rootRouter carries the
+        // XnatSecureGuard catch-all (attached at "") PLUS every public secure=false extension route. Under
+        // 2.x FIRST_MATCH the guard (attached first) wins over the more-specific public routes attached after
+        // it, so every secure=false route (e.g. /services/auth used by the E-Sign password check, and
+        // /services/sendEmailVerification, /services/ipwhitelist, ...) 404s. BEST_MATCH restores "most specific
+        // route wins"; STARTS_WITH keeps the guard's "" a proper prefix catch-all.
+        rootRouter.setDefaultMatchingMode(Template.MODE_STARTS_WITH);
+        rootRouter.setRoutingMode(Router.MODE_BEST_MATCH);
 
         XnatSecureGuard guard = new XnatSecureGuard();
         guard.setNext(securedRouter);

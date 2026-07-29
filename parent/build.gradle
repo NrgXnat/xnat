@@ -318,6 +318,63 @@ publishing {
         maven(MavenPublication) {
             from components.javaPlatform
             artifactId = 'parent'
+            // NOTE: unlike the pre-monorepo NRG Parent POM, this BOM carries no
+            // <properties> block — reading versions via dependencyManagement
+            // importedProperties is retired policy. See
+            // docs/plugin-migration-guide.md ("Remove All importedProperties
+            // Usage") for the migration path.
+        }
+    }
+    // Same target as buildlogic.java-common-conventions; that convention can't
+    // be applied here (it configures `from components.java`, this is a platform).
+    // parent never overrides project.version, so the URL can be set eagerly.
+    repositories {
+        maven {
+            name = 'XNAT_Artifactory'
+            url = project.version.toString().endsWith('-SNAPSHOT')
+                ? 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local'
+                : 'https://nrgxnat.jfrog.io/nrgxnat/libs-release-local'
+            credentials {
+                username = (project.findProperty('artifactoryUser')  ?: System.getenv('ARTIFACTORY_USER'))  ?: ''
+                password = (project.findProperty('artifactoryToken') ?: System.getenv('ARTIFACTORY_TOKEN')) ?: ''
+            }
+        }
+    }
+}
+
+// Release redeploys 409 on libs-release-local (see the equivalent guard in
+// buildlogic.java-common-conventions, which probes the module jar — parent
+// publishes only a POM, so probe that instead). Snapshots always republish.
+tasks.withType(PublishToMavenRepository).configureEach { publishTask ->
+    onlyIf("BOM not already present in Artifactory") {
+        if (project.version.toString().endsWith('-SNAPSHOT')) {
+            return true
+        }
+        def repo = publishTask.repository
+        def pomUrl = "${repo.url.toString().replaceAll('/$', '')}/org/nrg/parent/${project.version}/parent-${project.version}.pom"
+        def conn = new URL(pomUrl).openConnection() as HttpURLConnection
+        conn.requestMethod = 'HEAD'
+        conn.connectTimeout = 10_000
+        conn.readTimeout = 10_000
+        def user = repo.credentials.username
+        def pwd  = repo.credentials.password
+        if (user && pwd) {
+            conn.setRequestProperty('Authorization',
+                    "Basic ${Base64.encoder.encodeToString("${user}:${pwd}".bytes)}")
+        }
+        try {
+            def code = conn.responseCode
+            if (code == 200) {
+                logger.warn("[publish] SKIP parent:{} — already exists at {}", project.version, pomUrl)
+                return false
+            }
+            if (code != 404) {
+                logger.warn("[publish] HEAD {} returned {} — proceeding anyway", pomUrl, code)
+            }
+            return true
+        } catch (IOException e) {
+            logger.warn("[publish] HEAD {} failed ({}) — proceeding anyway", pomUrl, e.message)
+            return true
         }
     }
 }

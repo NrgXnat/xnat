@@ -337,7 +337,11 @@ jackson-dataformat-xml = { group = "com.fasterxml.jackson.dataformat", name = "j
 jackson-dataformat-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }
 jackson-datatype-guava = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-guava", version.ref = "jackson" }
 jackson-datatype-hibernate4 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-hibernate4", version.ref = "jackson" }
-jackson-datatype-hibernate5 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-hibernate5", version.ref = "jackson" }
+# jakarta line: the plain `jackson-datatype-hibernate5` module is compiled against javax.persistence and
+# throws NoClassDefFoundError: javax/persistence/Transient under Tomcat 10 (HibernateAnnotationIntrospector.
+# hasIgnoreMarker) whenever Jackson serializes an @Entity — e.g. saving a container-service CommandEntity's
+# JSON column. The `-jakarta` artifact is the same package/classes compiled against jakarta.persistence.
+jackson-datatype-hibernate5 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-hibernate5-jakarta", version.ref = "jackson" }
 jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jdk8", version.ref = "jackson" }
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
 jackson-module-jaxb-annotations = { group = "com.fasterxml.jackson.module", name = "jackson-module-jakarta-xmlbind-annotations", version.ref = "jackson" }

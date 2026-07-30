@@ -12,6 +12,11 @@ package org.nrg.dicomtools.filters;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @deprecated This enum and its related functionality are deprecated and will be removed in a future release.
+ */
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated
 public enum SeriesImportFilterMode {
     Blacklist("blacklist"),
     Whitelist("whitelist"),

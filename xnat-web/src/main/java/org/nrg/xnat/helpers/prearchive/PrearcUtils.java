@@ -110,13 +110,11 @@ public class PrearcUtils {
         READY(true),
         RECEIVING(true),
         RECEIVING_INTERRUPT(true),
-        SEPARATING,
 
         QUEUED_ARCHIVING,
         QUEUED_BUILDING(true),
         QUEUED_DELETING,
         QUEUED_MOVING,
-        QUEUED_SEPARATING,
 
         _ARCHIVING,
         _BUILDING(true),
@@ -124,8 +122,7 @@ public class PrearcUtils {
         _DELETING,
         _MOVING,
         _RECEIVING(true),
-        _RECEIVING_INTERRUPT(true),
-        _SEPARATING;
+        _RECEIVING_INTERRUPT(true);
 
         public static boolean potentiallyReady(PrearcStatus status) {
             return (status == null || status.equals(READY));

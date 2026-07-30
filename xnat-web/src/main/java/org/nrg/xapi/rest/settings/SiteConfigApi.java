@@ -9,7 +9,6 @@
 
 package org.nrg.xapi.rest.settings;
 
-import com.google.common.collect.ImmutableSet;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -20,9 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.config.services.ConfigService;
 import org.nrg.framework.annotations.XapiRestController;
-import org.nrg.framework.constants.Scope;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.authorization.SiteConfigPreferenceXapiAuthorization;
 import org.nrg.xapi.exceptions.DataFormatException;
@@ -47,14 +44,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -83,14 +75,12 @@ public class SiteConfigApi extends AbstractXapiRestController {
             final XnatAppInfo appInfo,
             final SiteConfigAccess access,
             final NamedParameterJdbcTemplate template,
-            final ConfigService configService,
             final AnonUtils anonUtils) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
         _access = access;
         _template = template;
-        _configService = configService;
         _anonUtils = anonUtils;
     }
 
@@ -140,29 +130,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
         // so the generic loop below doesn't set the preferences a second time.
         setAnonymizationProperties(properties);
 
-        // First try to handle any submitted preferences that should be handled as a group.
-        final List<? extends Set<String>> includedPrefsGroups = findPrefsGroups(properties.keySet());
-        if (!includedPrefsGroups.isEmpty()) {
-            final Set<String> referenced = new HashSet<>();
-            for (final Set<String> groupPreferences : includedPrefsGroups) {
-                referenced.addAll(groupPreferences);
-                final Map<String, String> group = new HashMap<>();
-                for (final String groupPreference : groupPreferences) {
-                    group.put(groupPreference, properties.get(groupPreference).toString());
-                }
-                try {
-                    _preferences.setBatch(group);
-                } catch (InvalidPreferenceName invalidPreferenceName) {
-                    log.error("Got an invalid preference name error when setting the preferences: {}, which is weird because the site configuration is not strict", groupPreferences, invalidPreferenceName);
-                }
-            }
-            // Remove all referenced properties. The assumption is that settings handled in prefs groups need to be
-            // handled in those groups and shouldn't be handled individually.
-            for (final String property : referenced) {
-                properties.remove(property);
-            }
-        }
-
         if (!properties.isEmpty()) {
             for (final String name : properties.keySet()) {
                 try {
@@ -175,7 +142,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
                     }
                     final Object value = properties.get(name);
                     if (value instanceof List<?> list) {
-                        //noinspection unchecked,rawtypes
                         _preferences.setListValue(name, list);
                     } else if (value instanceof Map<?,?> map) {
                         //noinspection unchecked,rawtypes
@@ -187,7 +153,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                     }
                     log.info("Set property {} to value: {}", name, value);
                 } catch (InvalidPreferenceName invalidPreferenceName) {
-                    log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
+                    log.error("Got an invalid preference name error for the preference: {}, which is weird because the site configuration is not strict", name);
                 }
             }
 
@@ -291,31 +257,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
         }
     }
 
-    @ApiOperation(value = "Disable orphaned series import filters for deleted projects.", notes = "Disable orphaned series import filters for deleted projects.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Orphaned series import filters successfully disabled"),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized to modify site configuration properties."),
-            @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value="orphaned-projects/disable", produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
-    public void disableOrphanedSif(@ApiParam(value = "The deleted project IDs (comma-separated).", required = true) @RequestBody final String orphanedProjectIds) throws ConfigServiceException {
-        final UserI user = getSessionUser();
-        final String[] orphanedIds = Arrays.stream(orphanedProjectIds.split(","))
-                .map(String::trim)
-                .filter(StringUtils::isNotBlank)
-                .toArray(String[]::new);
-
-        for (final String projectId : orphanedIds) {
-            _configService.disable(user.getUsername(), "Deleted project", "seriesImportFilter", "config", Scope.Project, projectId);
-        }
-
-        final String currentEnabledProjects = _preferences.getEnableProjectsSeriesImportFilter();
-        final Set<String> enabledSifs = StringUtils.isBlank(currentEnabledProjects)
-                ? new HashSet<>()
-                : new HashSet<>(Arrays.asList(currentEnabledProjects.split(",")));
-        enabledSifs.removeAll(Arrays.asList(orphanedIds));
-        _preferences.setEnableProjectsSeriesImportFilter(String.join(",", enabledSifs));
-    }
-
     @ApiOperation(value = "Returns a map of application build properties.", notes = "This includes the implementation version, Git commit hash, and build number and number.", response = String.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Application build properties successfully retrieved."),
                    @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
@@ -366,18 +307,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return _appInfo.getFormattedUptime();
     }
 
-
-
-    private List<? extends Set<String>> findPrefsGroups(final Set<String> keySet) {
-        final List<Set<String>> includedPrefsGroups = new ArrayList<>();
-        for (final Set<String> group : PREFS_GROUPS) {
-            if (keySet.containsAll(group)) {
-                includedPrefsGroups.add(group);
-            }
-        }
-        return includedPrefsGroups;
-    }
-
     private static boolean getInitializedValue(final Object initialized) {
         if (initialized == null) {
             return false;
@@ -391,13 +320,11 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return BooleanUtils.toBoolean(initialized.toString());
     }
 
-    private static final String                      EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
-    private static final List<? extends Set<String>> PREFS_GROUPS = Collections.singletonList(ImmutableSet.of("enableSitewideSeriesImportFilter", "sitewideSeriesImportFilterMode", "sitewideSeriesImportFilter"));
+    private static final String EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
 
     private final AnonUtils                  _anonUtils;
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;
     private final SiteConfigAccess           _access;
     private final NamedParameterJdbcTemplate _template;
-    private final ConfigService _configService;
 }

@@ -11,7 +11,6 @@ package org.nrg.dcm;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -20,7 +19,6 @@ import org.dcm4che3.data.Tag;
 import org.nrg.AbstractRestructurer;
 import org.nrg.attr.ConversionFailureException;
 import org.nrg.attr.Utils;
-import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.framework.status.LoggerStatusReporter;
 import org.nrg.util.FileURIOpener;
@@ -53,26 +51,16 @@ public final class Restructurer extends AbstractRestructurer {
     private final static Set<DicomAttributeIndex> STUDY_LABEL_KEYS       = Collections.singleton(new FixedDicomAttributeIndex(Tag.StudyID));
     private final static Set<DicomAttributeIndex> SERIES_SELECTION_KEYS  = Stream.of(NamedAttributes.SeriesInstanceUID, NamedAttributes.SeriesDescription, NamedAttributes.TransferSyntaxUID).collect(Collectors.toSet());
     private final static Set<DicomAttributeIndex> ALL_KEYS               = Stream.of(DEFAULT_KEYS, PATIENT_SELECTION_KEYS, STUDY_LABEL_KEYS, SERIES_SELECTION_KEYS).flatMap(Collection::stream).collect(Collectors.toSet());
-    private final static Set<Integer>             ALL_KEYS_TAGS          = ALL_KEYS.stream().map(Restructurer::getAttributeTag).collect(Collectors.toSet());
-
-    private static int getAttributeTag(final DicomAttributeIndex attribute) {
-        return attribute.getPath(null)[0];
-    }
 
     private static final boolean decompressIsSupported = Decompress.isSupported();
 
     private final Collection<File>         incoming;
     private final File                     destination;
-    private final List<SeriesImportFilter> filters;
     private final Project                  project;
     private final Set<File>                studies = new LinkedHashSet<>();
 
     @SuppressWarnings("unused")
     public Restructurer(final Collection<File> incoming, final File destination) throws IOException {
-        this(incoming, destination, null);
-    }
-
-    public Restructurer(final Collection<File> incoming, final File destination, final List<SeriesImportFilter> filters) throws IOException {
         super(log);
 
         //noinspection ResultOfMethodCallIgnored
@@ -83,27 +71,17 @@ public final class Restructurer extends AbstractRestructurer {
 
         this.incoming = ImmutableSet.copyOf(incoming);
         this.destination = destination;
-        this.filters = ObjectUtils.getIfNull(filters, Collections::emptyList);
         this.project = new Project();
         project.setBaseDir(destination);
     }
 
     @SuppressWarnings("unused")
     public Restructurer(final File[] incoming, final File destination) throws IOException {
-        this(Arrays.asList(incoming), destination, null);
+        this(Arrays.asList(incoming), destination);
     }
 
     public Restructurer(final File incoming, final File destination) throws IOException {
-        this(Collections.singleton(incoming), destination, null);
-    }
-
-    public Restructurer(final File[] incoming, final File destination, final List<SeriesImportFilter> filters) throws IOException {
-        this(Arrays.asList(incoming), destination, filters);
-    }
-
-    @SuppressWarnings("unused")
-    public Restructurer(final File incoming, final File destination, final List<SeriesImportFilter> filters) throws IOException {
-        this(Collections.singleton(incoming), destination, filters);
+        this(Collections.singleton(incoming), destination);
     }
 
     @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
@@ -122,17 +100,11 @@ public final class Restructurer extends AbstractRestructurer {
 
         destination.mkdirs();
 
-        final Set<Integer> referencedTags = filters.stream().map(SeriesImportFilter::getFilterTags).flatMap(Collection::stream).collect(Collectors.toSet());
-        final Set<Integer> additionalTags = referencedTags.isEmpty() ? Collections.emptySet() : referencedTags.stream().filter(tag -> !ALL_KEYS_TAGS.contains(tag)).collect(Collectors.toSet());
-        log.debug("Found {} DICOM tags referenced in total from the series import filters, with {} tags not already contained in the default set of keys.", referencedTags.size(), additionalTags.size());
-
-        final Set<DicomAttributeIndex> referencedAttributes = additionalTags.isEmpty() ? ALL_KEYS : Stream.concat(ALL_KEYS.stream(), additionalTags.stream().map(FixedDicomAttributeIndex::new)).collect(Collectors.toSet());
-
         // Find all DICOM files in the incoming set and sort them by session
         // (this is almost equivalent to DICOM study, but see comments for SessionDirectoryRecordFactory)
         final DicomMetadataStore dicomMetadataStore;
         try {
-            dicomMetadataStore = EnumeratedMetadataStore.createHSQLDBBacked(referencedAttributes, FileURIOpener.getInstance());
+            dicomMetadataStore = EnumeratedMetadataStore.createHSQLDBBacked(ALL_KEYS, FileURIOpener.getInstance());
             dicomMetadataStore.add(incoming.stream().map(input -> {
                 if (input == null) {
                     return null;
@@ -210,19 +182,6 @@ public final class Restructurer extends AbstractRestructurer {
 
                     seriesUIDs = seriesUIDm.get(NamedAttributes.SeriesInstanceUID);
 
-
-                    final Set<Map<String, String>> seriesAttributes = dicomMetadataStore.getUniqueCombinationsGivenValues(studySpec, referencedAttributes, failures)
-                                                                                        .stream()
-                                                                                        .map(DicomUtils.MAP_BY_ATTRIBUTE_TO_STRING_FUNCTION)
-                                                                                        .collect(Collectors.toSet());
-
-                    for (final Map<String, String> series : seriesAttributes) {
-                        if (filters.stream().anyMatch(filter -> !filter.shouldIncludeDicomObject(series))) {
-                            final String seriesInstanceUID = series.get("SeriesInstanceUID");
-                            seriesUIDs.remove(seriesInstanceUID);
-                            log.info("The series with instance UID {} matched one or more of the series import filters and is being removed from the restructuring.", seriesInstanceUID);
-                        }
-                    }
 
                     if (null == seriesUIDs) {
                         publishFailure(studyDir, "unable to determine Series Instance UIDs for study " + label);

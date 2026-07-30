@@ -644,32 +644,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
     }
 
     @NrgPreference(defaultValue = "false")
-    public boolean getEnableSitewideSeriesImportFilter() {
-        return getBooleanValue("enableSitewideSeriesImportFilter");
-    }
-
-    public void setEnableSitewideSeriesImportFilter(final boolean enableSitewideSeriesImportFilter) {
-        try {
-            setBooleanValue(enableSitewideSeriesImportFilter, "enableSitewideSeriesImportFilter");
-        } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'enableSitewideSeriesImportFilter': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "")
-    public String getEnableProjectsSeriesImportFilter() {
-        return getValue("enableProjectsSeriesImportFilter");
-    }
-
-    public void setEnableProjectsSeriesImportFilter(final String enableProjectsSeriesImportFilter) {
-        try {
-            set(enableProjectsSeriesImportFilter, "enableProjectsSeriesImportFilter");
-        } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'enableProjectsSeriesImportFilter': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "false")
     public boolean getUiNewUserRequireCaptcha() {
         return getBooleanValue("uiNewUserRequireCaptcha");
     }
@@ -679,32 +653,6 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
             setBooleanValue(uiNewUserRequireCaptcha, "uiNewUserRequireCaptcha");
         } catch (InvalidPreferenceName e) {
             log.error("Invalid preference name 'uiNewUserRequireCaptcha': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference(defaultValue = "blacklist")
-    public String getSitewideSeriesImportFilterMode() {
-        return getValue("sitewideSeriesImportFilterMode");
-    }
-
-    public void setSitewideSeriesImportFilterMode(final String sitewideSeriesImportFilterMode) {
-        try {
-            set(sitewideSeriesImportFilterMode, "sitewideSeriesImportFilterMode");
-        } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'sitewideSeriesImportFilterMode': something is very wrong here.", e);
-        }
-    }
-
-    @NrgPreference
-    public String getSitewideSeriesImportFilter() {
-        return getValue("sitewideSeriesImportFilter");
-    }
-
-    public void setSitewideSeriesImportFilter(final String sitewideSeriesImportFilter) {
-        try {
-            set(sitewideSeriesImportFilter, "sitewideSeriesImportFilter");
-        } catch (InvalidPreferenceName e) {
-            log.error("Invalid preference name 'sitewideSeriesImportFilter': something is very wrong here.", e);
         }
     }
 

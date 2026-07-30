@@ -31,6 +31,11 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+/**
+ * @deprecated This class and its related functionality are deprecated and will be removed in a future release.
+ */
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated
 @Slf4j
 public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
     public RegExBasedSeriesImportFilter(final String json) throws IOException {

@@ -18,6 +18,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.db.PoolDBUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Cleans up data left behind by the removal of PET/MR session separation.
@@ -55,16 +57,19 @@ public class MigrateRetiredPetMrSeparation extends AbstractInitializingTask {
 
     private final SiteConfigPreferences      _preferences;
     private final ConfigService              _configService;
+    private final String                     _primaryAdminUser;
     private final NamedParameterJdbcTemplate _template;
 
     @Autowired
     public MigrateRetiredPetMrSeparation(final SiteConfigPreferences preferences,
                                          final ConfigService configService,
+                                         final XnatUserProvider primaryAdminUserProvider,
                                          final NamedParameterJdbcTemplate template) {
         super();
-        _preferences = preferences;
-        _configService = configService;
-        _template = template;
+        _preferences      = preferences;
+        _configService    = configService;
+        _primaryAdminUser = primaryAdminUserProvider.getLogin();
+        _template         = template;
     }
 
     @Override
@@ -110,20 +115,27 @@ public class MigrateRetiredPetMrSeparation extends AbstractInitializingTask {
         if (CollectionUtils.isEmpty(configurations)) {
             return;
         }
-        for (final Configuration configuration : configurations) {
-            if (configuration.getScope() != Scope.Project || StringUtils.isBlank(configuration.getEntityId())) {
-                continue;
-            }
-            if (!StringUtils.equalsIgnoreCase(StringUtils.deleteWhitespace(configuration.getContents()), HandlePetMr.SEPARATE)) {
-                continue;
-            }
-            final String projectId = configuration.getEntityId();
-            try {
-                _configService.replaceConfig("admin", REASON, HandlePetMr.SEPARATE_PET_MR, HandlePetMr.CONFIG, HandlePetMr.PETMR, Scope.Project, projectId);
-                log.info("The PET/MR setting for project {} was set to \"{}\", which is no longer supported. It has been set to \"{}\" instead.", projectId, HandlePetMr.SEPARATE, HandlePetMr.PETMR);
-            } catch (ConfigServiceException e) {
-                log.error("Unable to update the retired PET/MR separation setting for project {}. It will be handled as \"{}\" at run time regardless.", projectId, HandlePetMr.PETMR, e);
-            }
-        }
+    configurations.stream()
+                  .filter(c -> c.getScope() == Scope.Project &&
+                               StringUtils.isNotBlank(c.getEntityId()))
+                  .collect(Collectors.toMap(Configuration::getEntityId,
+                                            config -> config,
+                                            (existing, replacement) -> existing.getCreated().compareTo(replacement.getCreated()) > 0 ? existing : replacement))
+                  .values()
+                  .stream()
+                  .filter(c -> StringUtils.equalsIgnoreCase(StringUtils.deleteWhitespace(c.getContents()), HandlePetMr.SEPARATE))
+                  .forEach(configuration -> {
+                      final String  projectId = configuration.getEntityId();
+                      final boolean disabled  = StringUtils.equalsIgnoreCase(Configuration.DISABLED_STRING, configuration.getStatus());
+                      try {
+                          _configService.replaceConfig(_primaryAdminUser, REASON, HandlePetMr.SEPARATE_PET_MR, HandlePetMr.CONFIG, HandlePetMr.PETMR, Scope.Project, projectId);
+                          if (disabled) {
+                              _configService.disable(_primaryAdminUser, REASON, HandlePetMr.SEPARATE_PET_MR, HandlePetMr.CONFIG, Scope.Project, projectId);
+                          }
+                          log.info("The PET/MR setting for project {} was set to \"{}\", which is no longer supported. It has been set to \"{}\" instead.", projectId, HandlePetMr.SEPARATE, HandlePetMr.PETMR);
+                      } catch (ConfigServiceException e) {
+                          log.error("Unable to update the retired PET/MR separation setting for project {}. It will be handled as \"{}\" at run time regardless.", projectId, HandlePetMr.PETMR, e);
+                      }
+                  });
     }
 }

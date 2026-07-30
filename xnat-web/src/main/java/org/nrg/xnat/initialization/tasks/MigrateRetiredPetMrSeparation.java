@@ -123,7 +123,7 @@ public class MigrateRetiredPetMrSeparation extends AbstractInitializingTask {
                                             (existing, replacement) -> existing.getCreated().compareTo(replacement.getCreated()) > 0 ? existing : replacement))
                   .values()
                   .stream()
-                  .filter(c -> StringUtils.equalsIgnoreCase(StringUtils.deleteWhitespace(c.getContents()), HandlePetMr.SEPARATE))
+                  .filter(c -> StringUtils.equals(HandlePetMr.CONFIG, c.getPath()) && StringUtils.equalsIgnoreCase(StringUtils.deleteWhitespace(c.getContents()), HandlePetMr.SEPARATE))
                   .forEach(configuration -> {
                       final String  projectId = configuration.getEntityId();
                       final boolean disabled  = StringUtils.equalsIgnoreCase(Configuration.DISABLED_STRING, configuration.getStatus());

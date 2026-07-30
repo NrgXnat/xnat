@@ -61,23 +61,43 @@ Common `importedProperties` keys and their replacements:
 
 ---
 
-## 2. Hardcode Lombok Version
+## 2. Replace the Lombok Plugin with Plain Dependencies
 
-The `io.franzbecker.gradle-lombok` plugin downloads Lombok independently and does not read the BOM.
+The `io.franzbecker.gradle-lombok` plugin downloads Lombok independently and does not read
+the BOM — its `lombok { version / sha256 }` values must be spelled out, so every Lombok
+upgrade means touching every plugin. Drop the plugin and declare Lombok as ordinary
+dependencies instead; the BOM supplies the version (the Spring Dependency Management
+plugin applies managed versions to all configurations, including `annotationProcessor`):
+
+**Remove** the plugin line and the whole `lombok {}` block — in either of the forms it
+may appear in (the `importedProperties` variant resolves to `null` and fails; the
+hardcoded variant works but couples every plugin to the Lombok version):
 
 ```groovy
-// Before — both values are null
-lombok {
-    version = dependencyManagement.importedProperties["lombok.version"] as String
-    sha256 = dependencyManagement.importedProperties["lombok.checksum"] as String
+// Remove:
+plugins {
+    id "io.franzbecker.gradle-lombok" version "5.0.0"   // ← delete
 }
-
-// After
-lombok {
-    version = "1.18.34"
-    sha256 = "1ea5ad6c6afcff902d75072b2aaa6695585aebee9f12127e15c0036ba95d2918"
+lombok {                                                // ← delete the whole block,
+    version = "1.18.34"                                 //   whether hardcoded like this
+    sha256 = "1ea5ad..."                                //   or reading importedProperties
 }
 ```
+
+**Add** four plain dependencies instead — no version, no checksum:
+
+```groovy
+dependencies {
+    compileOnly "org.projectlombok:lombok"
+    annotationProcessor "org.projectlombok:lombok"
+    testCompileOnly "org.projectlombok:lombok"
+    testAnnotationProcessor "org.projectlombok:lombok"
+}
+```
+
+The BOM pins Lombok (currently 1.18.34), so future upgrades are a single version-catalog
+change in the monorepo and plugins follow automatically. This is the same pattern the
+monorepo's own modules use (`buildlogic.java-common-conventions`).
 
 ---
 

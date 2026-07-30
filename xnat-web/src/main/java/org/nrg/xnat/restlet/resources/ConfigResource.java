@@ -17,6 +17,7 @@ import org.nrg.action.ClientException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
+import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.services.SerializerService;
 import org.nrg.xdat.XDAT;
@@ -118,6 +119,16 @@ public class ConfigResource extends SecureResource {
                     log.warn(message);
                     getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, message);
                     throw new ResourceException(Status.CLIENT_ERROR_FORBIDDEN, message);
+                }
+            }
+
+            //noinspection deprecation
+            if (StringUtils.equals(DicomFilterService.SERIES_IMPORT_TOOL, toolName)) {
+                if (acceptNotFound) {
+                    getResponse().setStatus(Status.SUCCESS_NO_CONTENT);
+                } else {
+                    getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Series import tool is no longer supported. Please use the new series import feature.");
+                    throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Series import tool is no longer supported. Please use the new series import feature.");
                 }
             }
 

@@ -127,8 +127,8 @@ public class ConfigResource extends SecureResource {
                 if (acceptNotFound) {
                     getResponse().setStatus(Status.SUCCESS_NO_CONTENT);
                 } else {
-                    getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Series import tool is no longer supported. Please use the new series import feature.");
-                    throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Series import tool is no longer supported. Please use the new series import feature.");
+                    getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Series import tool is no longer supported. Please use the new DicomEdit reject keyword feature.");
+                    throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Series import tool is no longer supported. Please use the new DicomEdit reject keyword feature.");
                 }
             }
 
@@ -209,6 +209,7 @@ public class ConfigResource extends SecureResource {
                             log.debug(message);
                             if (acceptNotFound) {
                                 getResponse().setStatus(Status.SUCCESS_NO_CONTENT);
+                                return Representation.createEmpty();
                             } else {
                                 getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
                                 throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);

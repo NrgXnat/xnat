@@ -378,9 +378,6 @@ public class ArchiveServlet extends HttpServlet {
         }
 
         UserI user = XDAT.getUserDetails();
-        if (user == null) {
-            user = (UserI) req.getSession().getAttribute("user");
-        }
 
         if (path.startsWith("catalogs/")) {
             if (user != null)

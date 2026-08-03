@@ -50,7 +50,7 @@
               <dl>
               
                   <dd class="fileRemove">Remove</dd>
-                  #if($data.getSession().getAttribute("user").canEdit("xnat:projectData/ID",$project))
+                  #if($user.canEdit("xnat:projectData/ID",$project))
                   	<dd class="fileApprove">Approve</dd>
                   #end
                   <dd class="fileContents">File</dd>
@@ -78,10 +78,10 @@
 				#set($format=$row.get(9))
 				#set($content=$row.get(10))
 			
-				#if($data.getSession().getAttribute("user").canEdit("xnat:projectData/ID",$project) || $data.getSession().getAttribute("user").getUsername().equals($theuser))
+				#if($user.canEdit("xnat:projectData/ID",$project) || $user.getUsername().equals($theuser))
 					<dl id="fileItem${foreach.count}" class="fileItem">
 		            		<dd class="fileRemove"><button id="dAscans" onclick="XNAT.app.TriageFileDeleter.requestDelete('$foreach.count','$shortname','$url')">Remove</button></dd>
-		            		#if($data.getSession().getAttribute("user").canEdit("xnat:projectData/ID",$project))
+		            		#if($user.canEdit("xnat:projectData/ID",$project))
 		            			<dd class="fileApprove"><button id="dAscans" onclick="XNAT.app.TriageFileApprover.requestMove('$foreach.count','$shortname','$src','$dest','$overwrite','$event_reason','$!format','$!content')">Approve</button></dd>
 		                    #end
 		                    <dd class="fileContents"><a class="image-download" href="$lastURL" style="text-decoration:underline">$shortname</a></dd>

@@ -395,3 +395,81 @@ other CR screens.
    screens' own `$user` usage (SiteSplash's Reports stored-search list). Any not-yet-
    migrated plugin with the same `#set($user=$data.getSession().getAttribute("user"))`
    line will need the same change.
+
+**1-25 🟢 — Dead session-attribute `getAttribute("user")` sweep completed (closes the nav-$user
+follow-up)** (2026-08-03). The nav-$user item flagged that *any* template reading the user from
+`getSession().getAttribute("user")` (dead on Turbine 7 / Tomcat 10 — Spring Security owns auth) needs the
+same rebind. Repo-wide sweep of `.vm` + `.java` across core + all deployed plugins (excluded 6 backup core
+clones — `old/ xnat/ xnat.save/ r2x/ restlets/ restlets2/ prearc-status-8567` — and `xnat-test-automation`).
+Live occurrences beyond the four plugins already fixed under nav-$user:
+- core `TriageFileList.vm:53,81,84` — `$data.getSession().getAttribute("user").canEdit(...)` **dereferences
+  null → NPE** in the prearchive triage file list. → `$user` (SecureScreen seeds it, `SecureScreen.java:106`).
+- core `ArchiveServlet.java:381-383` — `XDAT.getUserDetails()` was already the primary; the dead session-attr
+  **fallback** could only ever assign null on jakarta → removed the fallback.
+- container-service `AdminContainerService.vm:136` — `.getAttribute("user").checkRole("ContainerManager")`
+  NPEs the Container Service admin screen → `$user.checkRole(...)`.
+- xnat_cr_plugin `xnat_imageSessionData_report.vm:200,205` — `$item.canEdit($data.getSession().getAttribute("user"))`
+  silently returned false → Edit/Delete buttons wrongly hidden for owners → `$item.canEdit($user)`.
+`TriageRestlet.java:141` left as-is (commented-out dead code). All target screens verified SecureScreen-derived
+(`CustomTableScreen`/`AdminScreen`/`SecureReport` → `SecureScreen.loadAdditionalVariables` puts `$user`). Built
++ verified: core compiles, plugin jars package the fixed templates dead-attr-free. Commits: core `111a79b19`,
+container-service `ba7998ed`, xnat_cr_plugin `c0ec79f` (pushed). **Audit result: class now contained across the
+deployed set** (see 1-27 for the sibling Velocity-2 null-`#set` class, a different mechanism).
+
+## PET/PET-MR session report renders `$subject` null under Velocity 2 — OHIF `/VIEWERundefined` (1-26, S1103)
+
+**1-26 🟢** (2026-08-03). **Symptom.** Playwright `t1103.1/t1103.2` (OHIF viewer) fail: launching the viewer
+navigates to a bare **`/VIEWERundefined`** (404). Proximate cause = empty `XNAT.data.context.subjectID`; the
+**PET** session report renders "Subject data unavailable" (null `$subject`) while MR/CT do not. Modality-specific,
+**user-independent** (admin fails on PET too) — confirmed by a server-side A/B on bin-tomcat10 with the same
+subject `XNAT_S00014`: PET `subjectID=''` / "unavailable"=1, MR `subjectID='XNAT_S00014'` / "unavailable"=0.
+
+**Root cause.** `xnat_cr_plugin` PET and PET/MR report templates set the subject from an **undefined `$mr`**:
+`xnat_petSessionData_report.vm:16` / `xnat_petmrSessionData_report.vm:15` — `#set($subject = $mr.getSubjectData())`
+(+ `:26/:25` `$mr.getProject()`). `$mr` is never `#set` in these templates; only `$om` is (SecureReport).
+`git blame` dates the `$mr` line to **2018** and the deployed template == repo, so **no PET-report code change
+landed** — the trigger is the **Velocity 1.7 → 2.4.1 upgrade (Phase 0b)**: Velocity 1.x treated
+`#set($x = <null-RHS>)` as a no-op (undefined `$mr` was harmless), 2.x **assigns null** (`directive.set.null.allowed`
+now defaults true) → `$subject` becomes null → `subject_brief.vm` null-branch → empty `subjectID` →
+`'/VIEWER' + undefined`. Also explains `t1103.1`'s admin loop failing specifically on its PET session. The
+generic/MR report `xnat_imageSessionData_report.vm:13` uses `$om` → unaffected (hence modality-specific).
+
+**Fix.** `$mr` → `$om` in both PET/PET-MR report templates (they already used `$om.getProject()` elsewhere — a
+straight typo). xnat_cr_plugin `7623d9c`. Client defense-in-depth: OHIF `viewer.js` guard throws (routed to the
+existing `.catch` → `XNAT.dialog`) instead of navigating to `'/VIEWER'+undefined` — `ohif-viewer-xnat-plugin`
+`e80f743`. Built (CR jar; ohif `fatJar` re-verified **184** `VIEWER/` entries intact — no query_tracker-style
+bundle loss) and **deployed to bin-tomcat10** (surgical jar swap + `systemctl restart tomcat`; DB/data untouched;
+live jars backed up). **Verified live (admin):** PET `XNAT_E00001` now `subjectID='XNAT_S00014'`, "unavailable"=0;
+MR still works. Acceptance gate (rerun `t1103.1/2`) owned by the xnat-test-automation session. ohif commit is
+deployed but **not pushed** (Bitbucket `xnatx/*` write block — read works, push denied; same block as ldap-auth /
+mfa / batch-launch).
+
+**Prior mis-diagnosis corrected (kept for the trail).** An earlier hand-off root-caused this as a
+*member/permission* server-side subject-resolution bug. A controlled repro disproved that: a member with MEMBER
+access resolves the subject fine (empirical ×2 + a full Java-source trace — the report path uses
+`XDAT.getUserDetails()`, and a *null* user would return the subject **unsecured**, not null). The real split was
+**modality (PET), not user**, surfaced by an admin PET-vs-MR A/B. Lesson: verify the failing axis (here: modality)
+before accepting a hand-off's user/permission framing.
+
+**1-27 🟡 — Velocity-2 null-`#set` bug-class sweep + two environment findings** (2026-08-03).
+- *Class sweep (sibling of 1-26).* Scanned every deployed `.vm` for `#set($x = $VAR.method())` where `$VAR` is
+  undefined in the template (the PET shape that Velocity 2's null-`#set` turned latent→live). 95 candidates,
+  triaged by two discriminators: **guarded?** (`#if($VAR.method())` before the `#set` makes it safe — the `#if`
+  evaluates the method and gates the assignment) and **var origin** (screen-controller-provided vs truly
+  undefined). **Only PET/PET-MR were high-impact real** (unguarded `#set` from a never-set var) → fixed in 1-26.
+  Safe: `Breadcrumb.vm:76`, `xnat_subjectAssessorData_projSubj.vm:22`, `subject_brief.vm:2` (all guarded);
+  `$search`/`$projectSettings`/`$userInfo`/`$queryResults`/… (controller context vars). **Unverified residue:**
+  QC/validation assessor reports use `$mr` *unguarded* for scan snapshots/titles
+  (`xnat_qcManualAssessorData/report.vm:93`, `val_protocolData/report.vm:96`, CR copy `:153`, legacy
+  `xnat_report_mrAssessorData.vm` / `xnat_imageAssessorData_*_summary.vm`) — low impact (QC thumbnails, not the
+  viewer); **not yet render-verified** on the box.
+- *Open lever.* Setting Velocity **`directive.set.null.allowed=false`** in the core engine config would restore
+  1.x no-op-on-null-`#set` behavior codebase-wide (the ~1,038 templates were authored for 1.x). Not a substitute
+  for genuinely-wrong refs like PET's `$mr` (leaving it unset still wouldn't populate a validly-derived
+  `$subject`); flagged for **migration-team decision**, not flipped unilaterally.
+- *Finding — project `DELETE` → 500 is NOT a jakarta/Restlet regression.* It is site config
+  **`security.prevent-data-deletion=true`** on bin-tomcat10: `BaseXnatProjectdata.delete:1004` throws
+  `InvalidPermissionException("User cannot delete project")` for **everyone incl. admin** (override list =
+  `['quarantine']`). This is why the Playwright suites' `afterAll` project cleanup silently fails there and probe
+  projects accumulate. **Resolves the "Open thread — possible second Restlet 200→204 / project `DELETE`→500 on
+  the scout" note under 1-2x**: the `DELETE`→500 is a deletion-guard config, not a Restlet status-mapping issue.

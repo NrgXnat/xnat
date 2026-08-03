@@ -2647,7 +2647,13 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
 
             final List<XnatImageassessordata> assessors = experiment.getAssessors_assessor();
             for (final XnatImageassessordata assessor : assessors) {
-                final String delete = assessor.delete(project, user, removeFiles, c);
+                // Always pass removeFiles=false here: when removeFiles is true, deleteFiles() above
+                // has already removed (and backed up) the entire session directory, assessors
+                // included. Re-running per-assessor file removal would call CatalogData.getOrCreate
+                // on the now-deleted catalog, recreating the ASSESSORS/<assessor>/<resource> tree via
+                // mkdirs() only to strip its leaves -- stranding an empty ASSESSORS/ directory. The
+                // assessor's database row is still deleted regardless of this flag.
+                final String delete = assessor.delete(project, user, false, c);
                 if (StringUtils.isNotBlank(delete)) {
                     return delete;
                 }

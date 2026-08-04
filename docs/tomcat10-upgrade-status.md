@@ -473,3 +473,21 @@ before accepting a hand-off's user/permission framing.
   `['quarantine']`). This is why the Playwright suites' `afterAll` project cleanup silently fails there and probe
   projects accumulate. **Resolves the "Open thread — possible second Restlet 200→204 / project `DELETE`→500 on
   the scout" note under 1-2x**: the `DELETE`→500 is a deletion-guard config, not a Restlet status-mapping issue.
+
+**1-28 🟢 — Velocity-2 undefined-`$mr` class swept across CR + core (closes 1-27's unverified residue) +
+`userHelper` confirmed live** (2026-08-04). A second session's sweep found the undefined-`#set` class (1-26/1-27)
+still live in more templates beyond the 2 PET/PET-MR reports. Fixed **7** templates. **Key nuance:** `$mr` is
+*not* uniformly `→ $om` — it is controller-injected for two screens (`XDATScreen_report_xnat_mrSessionData.java:38`,
+`XDATScreen_report_val_protocolData.java:28`), and where templates `#set` it the value is `$om.getImageSessionData()`
+(**`$om` = the assessor, `$mr` = its parent image session**). So in assessor contexts `$mr→$om` is *wrong* (would link
+the MR crumb / snapshot URL to the assessor). Fixes: `projSubj.vm` (there `$om` IS the subject-assessor) → `$mr→$om`;
+`Breadcrumb.vm` (mrAssessor block), core+CR `xnat_qcManualAssessorData/report.vm` (QC scan snapshots),
+`xnat_report_mrAssessorData.vm`, `xnat_imageAssessorData/{summary,session_brief}.vm` → guarded derive
+`#if(!$mr && $om)#set($mr = $om.getImageSessionData())#end` (no-op if injected; `runtime.strict_mode` is off so a
+missing method on a session-typed `$om` returns null, not a throw). **Not bugs** (verified): `val_protocolData/report.vm`
+(`$mr` injected); `xdat_user/details.vm:59` (`$user` context var, not the dead attr). **`getSession().getAttribute("userHelper")`
+(~15 uses) is LIVE on tomcat10** — unlike the dead `"user"` attr it is actively set on login (`Users.recordUserLogin:756`
+via the auth filters, `XDAT.loginUser:1039`) + `SecureScreen` guest fallback (`:153`) + `/data/JSESSION`; confirmed
+empirically (userHelper pages render with 0 NPEs). Commits: core `b3dfeb265`, xnat_cr_plugin `8975073`; rebuilt +
+**redeployed non-destructively** to bin-tomcat10 (deploy-update.sh, DB/data kept) + verified (fixes present in live
+WAR + CR jar, 19 plugins, 0 load errors). QC-snapshot + breadcrumb re-verification owned by the test session.

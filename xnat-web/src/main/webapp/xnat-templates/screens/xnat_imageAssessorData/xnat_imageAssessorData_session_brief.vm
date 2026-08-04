@@ -1,3 +1,4 @@
+#if(!$mr && $om)#set($mr = $om.getImageSessionData())#end
 									<TR><TH align="left">$displayManager.getSingularDisplayNameForSubject(): </TH><TD>
 					#set($part_id = $!mr.getSubjectData().getId())
 					#set ( $click = "$link.setAction('DisplayItemAction').addPathInfo('search_element','xnat:subjectData').addPathInfo('search_field','xnat:subjectData.ID').addPathInfo('search_value',$!part_id).addPathInfo('popup',$!popup).addPathInfo('project',$project)" )

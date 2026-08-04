@@ -1,3 +1,5 @@
+## $mr = the assessor's parent image session; derive from $om if not injected ($mr undefined -> null on Velocity 2).
+#if(!$mr && $om)#set($mr = $om.getImageSessionData())#end
 				<TABLE align="left">
 					<TR><TH align="left" colspan=2><font face="$ui.sansSerifFonts" size="3"><b>Experiment Info</b></font><BR><BR></TH></TR>
 					<TR><TH align="left" width=200>Date: </TH><TD>$!item.getProperty("date")</TD></TR>

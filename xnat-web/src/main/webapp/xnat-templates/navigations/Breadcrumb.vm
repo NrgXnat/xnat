@@ -62,6 +62,7 @@
                 //HAS OM
                 #if($item.instanceOf("xnat:mrAssessorData"))
                     //mrAssessorData
+                    #if(!$mr)#set($mr = $om.getImageSessionData())#end
                     #if($mr)
 
                     #else

@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class DicomSender {
     private final Logger logger = LoggerFactory.getLogger(DicomSender.class);
@@ -28,6 +31,8 @@ public class DicomSender {
     private final ApplicationEntity remoteAE;
     private final Device device;
     private final Connection remoteConnection;
+    private final ExecutorService executor;
+    private final ScheduledExecutorService scheduledExecutor;
     private Association association; // current Association
 
     public DicomSender(final ApplicationEntity localAE, final ApplicationEntity remoteAE) {
@@ -35,7 +40,16 @@ public class DicomSender {
         this.remoteAE = remoteAE;
 
         this.device = new Device("DicomSender3Device");
+        // The device has to own the local AE's connections before the AE can be added to it: dcm4che3's
+        // Device.addApplicationEntity() rejects an AE that has connections belonging to another (or no) device.
+        localAE.getConnections().forEach(this.device::addConnection);
         this.device.addApplicationEntity(localAE);
+
+        // The device also requires executors: it uses them to run the association's reader and timeout tasks.
+        this.executor = Executors.newCachedThreadPool();
+        this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.device.setExecutor(executor);
+        this.device.setScheduledExecutor(scheduledExecutor);
 
         this.remoteConnection = new Connection();
         this.remoteConnection.setHostname(remoteAE.getConnections().get(0).getHostname());
@@ -88,7 +102,9 @@ public class DicomSender {
         // add Presentation Context
         rq.addPresentationContext(new PresentationContext(1, sopClassUID, UID.ImplicitVRLittleEndian));
 
-        // open Association
+        // open Association. Each object negotiates its own presentation context, so any association left over from a
+        // previous send() has to be released here rather than leaked: close() only ever released the last one.
+        release();
         association = localAE.connect(remoteConnection, rq);
 
         final CStoreRSPHandler rspHandler = new CStoreRSPHandler(association.nextMessageID());
@@ -99,7 +115,17 @@ public class DicomSender {
         association.waitForOutstandingRSP();
     }
 
+    /**
+     * Releases the current association and shuts down the device's executors. This sender can't be used to send any
+     * more objects once it's been closed.
+     */
     public void close() {
+        release();
+        executor.shutdown();
+        scheduledExecutor.shutdown();
+    }
+
+    private void release() {
         if (association != null && association.isReadyForDataTransfer()) {
             try {
                 association.release();

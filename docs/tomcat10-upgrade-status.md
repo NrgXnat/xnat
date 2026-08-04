@@ -491,3 +491,10 @@ via the auth filters, `XDAT.loginUser:1039`) + `SecureScreen` guest fallback (`:
 empirically (userHelper pages render with 0 NPEs). Commits: core `b3dfeb265`, xnat_cr_plugin `8975073`; rebuilt +
 **redeployed non-destructively** to bin-tomcat10 (deploy-update.sh, DB/data kept) + verified (fixes present in live
 WAR + CR jar, 19 plugins, 0 load errors). QC-snapshot + breadcrumb re-verification owned by the test session.
+**Plugin sweep extended to ALL 18 other deployed plugins (2026-08-04, ~150 `.vm` across 16 with templates;
+raphaeljs/ldap-auth/xnat-dicomweb have none): class NOT present.** The only candidates were in
+`pipeline_engine_plugin`, all false positives — `$repository`/`$parametersHash`/`$newpipeline`/`$mr`(SampleBuild)/`$pipeline`
+are Java `context.put`-injected by their screen controllers, and `$expt` in `PipelineEmail_success.vm` is a string-literal
+`#set` (never a null RHS, so outside the Velocity-2 class) passed through the notification framework. No plugin carries
+the dead-attr `getAttribute("user")` pattern either. **Audit result: the `$mr`/undefined-`#set` class is fully contained
+to core + CR (fixed); no other deployed plugin is affected.**

@@ -34,6 +34,7 @@ import org.restlet.data.MediaType;
 import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.data.Status;
+import org.restlet.representation.EmptyRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
 import org.restlet.representation.StringRepresentation;
@@ -209,7 +210,7 @@ public class ConfigResource extends SecureResource {
                             log.debug(message);
                             if (acceptNotFound) {
                                 getResponse().setStatus(Status.SUCCESS_NO_CONTENT);
-                                return Representation.createEmpty();
+                                return new EmptyRepresentation();
                             } else {
                                 getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
                                 throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);

@@ -307,6 +307,11 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   `@Bean AuthenticationManager`. **`ObjectPostProcessor`** moved packages in SS 6.4.
 
 ### Spring 6 (core / MVC)
+- **`WebMvcConfigurerAdapter` removed** (deprecated since Spring 5) → `implements WebMvcConfigurer`. Its
+  methods are now `default`, so existing overrides (`configureMessageConverters`, etc.) still apply
+  unchanged. Sibling of the SS6 `WebSecurityConfigurerAdapter` removal above — a plugin with standalone
+  MVC/security test configs hits **both**, and only at `compileTestJava` (main code is unaffected).
+  *(container-service `*RestApiTestConfig`)*
 - **Parameter names no longer read from bytecode.** Spring 6.1 dropped
   `LocalVariableTableParameterNameDiscoverer`. → `@RequestParam`/aspects that rely on parameter names fail
   to bind. → Compile with **`javac -parameters`**. *(item 1‑1)*

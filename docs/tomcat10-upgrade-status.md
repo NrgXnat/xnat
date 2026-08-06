@@ -498,3 +498,35 @@ are Java `context.put`-injected by their screen controllers, and `$expt` in `Pip
 `#set` (never a null RHS, so outside the Velocity-2 class) passed through the notification framework. No plugin carries
 the dead-attr `getAttribute("user")` pattern either. **Audit result: the `$mr`/undefined-`#set` class is fully contained
 to core + CR (fixed); no other deployed plugin is affected.**
+
+**1-29 🟢 — container-service REST API test suite greened on the jakarta stack: validation gap + two latent
+javax/SLF4J traps** (2026-08-06). Running `container-service` (branch `feature/tomcat10`, rebased onto main)
+`./gradlew test` exposed three stacked, independent failures; all fixed, full suite now **green (296 tests, 0
+failures, 97 integration tests skipped)**. Commit (container-service repo) `79e72201`.
+- *(1) Validation gap — the reported issue.* `hibernate-jcache` (test `HibernateConfig`'s `JCacheRegionFactory`)
+  transitively drags in the **javax** `hibernate-core` alongside `hibernate-core-jakarta`. With both present,
+  the javax jar's `BeanValidationIntegrator` loads `javax.validation.ValidatorFactory` (absent on the jakarta
+  classpath — only `jakarta.validation-api`) → `NoClassDefFoundError` building the test `sessionFactory`. Fix:
+  depend on `hibernate-core-jakarta` explicitly + globally `exclude module: hibernate-core` (consuming module's
+  job, per guide). Same bug class as the differently-named-jakarta-artifact trap.
+- *(2) SLF4J provider ambiguity — pre-existing + nondeterministic.* `activemq-all` (uber-jar) bundles **and**
+  ServiceLoader-registers a log4j2 SLF4J binding (`org.apache.logging.slf4j.SLF4JServiceProvider`) but ships no
+  `log4j-api`. When classpath order made SLF4J 2.x pick it over `slf4j-reload4j`,
+  `SpringJUnit4ClassRunner.<clinit>` died with `NoClassDefFoundError: org/apache/logging/log4j/Logger` and
+  **every** test failed as `initializationError` (this is why an earlier run had "27 passed" — SLF4J had happened
+  to pick reload4j that run). Fix: pin the working provider via `-Dslf4j.provider=org.slf4j.reload4j.Reload4jServiceProvider`
+  on all `Test` tasks. **Latent for runtime too** — any jakarta module whose classpath carries `activemq-all`
+  without `log4j-api` can hit this; worth a note for other plugins that bundle ActiveMQ.
+- *(3) jackson-datatype-hibernate5 javax variant — same class as core `f92009be1`, here on container-service's own
+  classpath.* New nuance beyond core's fix: swapping `ObjectMapperConfig` to `Hibernate5JakartaModule` was **not
+  sufficient** because `com.vladmihalcea:hibernate-types-55`'s `ObjectMapperWrapper` calls
+  `findAndRegisterModules()`, which ServiceLoader-discovers **every** `Module` jar on the classpath — so the
+  still-present javax jar got registered when Hibernate bound a JSONB `@Entity` column, re-throwing
+  `NoClassDefFoundError: javax/persistence/Transient` (the `POST /xapi/docker/pull` command-save 500). Fix:
+  globally exclude javax `jackson-datatype-hibernate5` + declare the `-jakarta` variant at **runtime** scope so
+  auto-discovery finds only jakarta. Guide `plugin-migration-guide.md` §"third-party jar compiled against javax"
+  augmented with this `findAndRegisterModules()`/global-exclude nuance.
+- *Audit.* Swept `container-service` for other `Hibernate5Module` sites: only `ObjectMapperConfig` (test) used the
+  Jackson module; the other four matches are `org.springframework.orm.hibernate5.*` (Spring ORM, unrelated).
+  **Result:** container-service test + runtime serialization paths are now jakarta-clean; the SS6 test-config port
+  (`01d04fa1`) + these three fixes bring the whole module green.

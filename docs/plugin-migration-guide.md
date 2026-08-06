@@ -527,7 +527,14 @@ is rarely the last.
   `jackson-datatype-hibernate5` (javax) — `HibernateAnnotationIntrospector` refs `javax.persistence.Transient`;
   when Jackson serialized a Hibernate `@Entity` JSON column (container command‑save) it 500'd, so no container
   could launch and the entire DICOM‑modification suite failed. → Use the artifact's **`-jakarta`** variant (often a
-  renamed package/class too: `Hibernate5Module` → `Hibernate5JakartaModule`). To catch the whole class at build
+  renamed package/class too: `Hibernate5Module` → `Hibernate5JakartaModule`). **Swapping your own
+  registration is not sufficient:** any transitive library with its own `ObjectMapper` that calls
+  `findAndRegisterModules()` (e.g. `com.vladmihalcea:hibernate-types-55` when binding a JSONB `@Entity` column)
+  ServiceLoader‑discovers **every** `Module` jar on the classpath — so if the javax variant is still *present* it
+  gets registered and 500s regardless. The javax variant must therefore be **globally excluded**
+  (`configurations.all { exclude group: "com.fasterxml.jackson.datatype", module: "jackson-datatype-hibernate5" }`),
+  not merely out‑referenced, and the `-jakarta` variant declared at **runtime** scope so those transitive
+  auto‑discovery paths (not just your test/REST serialization) find it. To catch the whole class at build
   time, XNAT core adds `xnat-web:verifyNoOrphanedJavaxEE` (wired into `check`): it fails the build if any runtime
   jar references a jakarta‑migrated `javax.*` package that **nothing on the classpath provides** (reference‑vs‑
   provision, so JDK‑owned `javax.transaction.xa`/JCache/JSR‑305/JAXP are excluded; genuinely‑unreachable library

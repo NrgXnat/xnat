@@ -72,7 +72,7 @@ public final class ChainedDicomAttributeIndex extends AbstractDicomAttributeInde
      * complicated: attributes that naturally have VM>1 because they represent a vector value (e.g., Pixel Spacing)
      * can't be sensibly combined, so if there are multiple values, that's an extraction failure, and we return no value.
      * Some VRs can't be sensibly combined. For everything else, return all distinct values so the caller can combine.
-     * This is a reimplementation of logic in MergedDicomElement from older, dcm4che2-based versions.
+     * This is a reimplementation of logic in MergedDicomElement from older versions.
      * @param o Attributes on which to evaluate values
      * @return stream of distinct values to be combined
      */

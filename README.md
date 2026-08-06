@@ -29,8 +29,8 @@ xnat/
 ├── framework/                # Core NRG framework: DI, ORM, services, annotations
 ├── transaction/              # Transaction management
 ├── extattr/                  # Extended attributes
-├── dicom-edit4/              # DICOM scripting DSL built on dcm4che 2.x (ANTLR 3)
-├── dicom-edit6/              # DICOM scripting DSL v6 built on dcm4che 5.x (ANTLR 4)
+├── dicom-edit4/              # DICOM scripting DSL built on ANTLR 3
+├── dicom-edit6/              # DICOM scripting DSL v6 built on ANTLR 4
 │
 │   Layer 2–3 — Services
 ├── prefs/                    # Preferences service (→ framework)

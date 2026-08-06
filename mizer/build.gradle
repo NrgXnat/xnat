@@ -8,8 +8,6 @@ dependencies {
     api project(':framework')
     api project(':transaction')
 
-    api libs.dcm4che.core
-    api libs.dcm4che.iod
     api libs.dcm4che5.dcm4che.core
     api libs.dcm4che5.dcm4che.imageio
     implementation libs.spring.orm

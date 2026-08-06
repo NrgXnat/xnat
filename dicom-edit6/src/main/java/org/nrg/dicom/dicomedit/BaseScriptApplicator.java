@@ -204,7 +204,7 @@ public class BaseScriptApplicator implements ScriptApplicatorI {
     }
 
     /**
-     * Apply the script to the provided dcm4che2 dicom object.
+     * Apply the script to the provided DICOM object.
      * <p>
      * This is for backwards compatibility with anonymize package.
      *
@@ -220,7 +220,7 @@ public class BaseScriptApplicator implements ScriptApplicatorI {
     /**
      * Return a map with variables.
      * <p>
-     * For compatibility with anonymize package which hardcodes use of dcm4che2.
+     * For compatibility with anonymize package.
      *
      * @return The variables for the script application.
      */

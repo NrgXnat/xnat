@@ -16,7 +16,7 @@ import org.dcm4che3.data.VR;
  * Interface representing elements within DICOM Ojbects.
  *
  * Essential for dealing with sequence elements. This interface provides a boundary between DicomEdit and underlying
- * DICOM libraries, e.g. dcm4che2.
+ * DICOM libraries, e.g. dcm4che.
  *
  */
 public interface DicomElementI {

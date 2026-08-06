@@ -28,27 +28,26 @@ public class TestPixelAnon {
     @Test
     @Ignore
     public void testPixelAnon() throws MizerException {
-        final DicomObjectI dicom          = DicomObjectFactory.newInstance(DICOM_TEST);
-        final DicomObjectI dcm4che2Object = dicom;
+        final DicomObjectI dicomObject = DicomObjectFactory.newInstance(DICOM_TEST);
 
-        assertEquals("head^DHead", dcm4che2Object.getString(Tag.StudyDescription));
-        assertEquals("Sample Patient", dcm4che2Object.getString(Tag.PatientName));
-        assertEquals("Sample ID", dcm4che2Object.getString(Tag.PatientID));
-        assertEquals("SIEMENS", dcm4che2Object.getString(Tag.Manufacturer));
-        assertEquals("Hospital", dcm4che2Object.getString(Tag.InstitutionName));
+        assertEquals("head^DHead", dicomObject.getString(Tag.StudyDescription));
+        assertEquals("Sample Patient", dicomObject.getString(Tag.PatientName));
+        assertEquals("Sample ID", dicomObject.getString(Tag.PatientID));
+        assertEquals("SIEMENS", dicomObject.getString(Tag.Manufacturer));
+        assertEquals("Hospital", dicomObject.getString(Tag.InstitutionName));
 
         final Map<String, Object> elements = new HashMap<>();
         elements.put("project", "XNAT_01");
         elements.put("subject", "XNAT_01_01");
         elements.put("modalityLabel", "MR");
-        final List<MizerContext> contexts  = Arrays.<MizerContext>asList(new MizerContextWithScript(0L, SCRIPT_SITE, elements), new MizerContextWithScript(0L, SCRIPT_PROJ, elements));
+        final List<MizerContext> contexts  = Arrays.asList(new MizerContextWithScript(0L, SCRIPT_SITE, elements), new MizerContextWithScript(0L, SCRIPT_PROJ, elements));
         final Set<Variable> variables = _service.getReferencedVariables(contexts);
         assertNotNull(variables);
         assertEquals(4, variables.size());
 
-        _service.anonymize(dicom, contexts);
+        _service.anonymize(dicomObject, contexts);
 
-        assertNotNull(dicom);
+        assertNotNull(dicomObject);
     }
 
     private static final String SITE_TAG        = "DicomEdit 6 site anonymization";

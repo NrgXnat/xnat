@@ -99,6 +99,12 @@ public class DicomSender {
         String sopClassUID = dicomObject.getString(org.dcm4che3.data.Tag.SOPClassUID);
         String sopInstanceUID = dicomObject.getString(org.dcm4che3.data.Tag.SOPInstanceUID);
 
+        // The A-ASSOCIATE-RQ PDU can't be encoded without the called AE title. ApplicationEntity.connect() only fills
+        // that in for the overload that takes the remote AE, and this sender connects by Connection instead, so the
+        // titles have to be set here: otherwise encoding the PDU fails with "Called AET not initalized".
+        rq.setCallingAET(localAE.getAETitle());
+        rq.setCalledAET(remoteAE.getAETitle());
+
         // add Presentation Context
         rq.addPresentationContext(new PresentationContext(1, sopClassUID, UID.ImplicitVRLittleEndian));
 
@@ -113,6 +119,26 @@ public class DicomSender {
 
         // Wait
         association.waitForOutstandingRSP();
+
+        // The status the remote AE returned for the object has to be checked here: a C-STORE that the PACS rejects
+        // completes normally as far as the association is concerned, so without this the send silently "succeeds".
+        if (!rspHandler.hasStatus()) {
+            throw new IOException("The remote AE " + remoteAE.getAETitle() + " returned no status storing SOP instance " + sopInstanceUID);
+        }
+        switch (rspHandler.getStatus()) {
+            case FAILURE:
+                throw new IOException(describeStatus(sopInstanceUID, rspHandler));
+            case WARNING:
+                logger.warn(describeStatus(sopInstanceUID, rspHandler));
+                break;
+            default:
+                break;
+        }
+    }
+
+    private String describeStatus(final String sopInstanceUID, final CStoreRSPHandler rspHandler) {
+        return "The remote AE %s returned status %04X (%s) storing SOP instance %s%s".formatted(remoteAE.getAETitle(), rspHandler.getStatusCode(), rspHandler.getStatusMeaning(), sopInstanceUID,
+                                                                                                rspHandler.getErrorComment() == null ? "" : ": " + rspHandler.getErrorComment());
     }
 
     /**

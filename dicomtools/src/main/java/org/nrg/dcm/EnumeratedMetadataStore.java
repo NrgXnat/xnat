@@ -419,23 +419,6 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         add(resource, attributes, null);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.DicomMetadataStore#add(java.io.File, org.nrg.dicom.mizer.objects.DicomObjectI)
-     */
-    public void add(final URI resource, final DicomObjectI o) throws IOException, SQLException {
-        add(resource, o, null);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.nrg.dcm.DicomMetadataStore#add(java.io.File, org.nrg.dicom.mizer.objects.DicomObjectI, java.util.Map)
-     */
-    @Deprecated
-    public void add(final URI resource, final DicomObjectI o, final Map<String, String> addCols) throws IOException, SQLException {
-        add(resource, o.getAttributes(), addCols);
-    }
-
     public void add(final URI resource, final Attributes attributes, final Map<String, String> addCols) throws IOException, SQLException {
         try (final Connection connection = dataSource.getConnection();
              final Statement statement = connection.createStatement()) {

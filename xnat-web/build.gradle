@@ -167,7 +167,7 @@ dependencies {
         exclude group: 'io.projectreactor', module: 'reactor-core'
     }
 
-    // --- DICOM dcm4che 5.x (dual version coexistence) ---
+    // --- DICOM dcm4che 5.x ---
     implementation libs.dcm4che5.dcm4che.core
     implementation libs.dcm4che5.dcm4che.image
     implementation libs.dcm4che5.dcm4che.imageio

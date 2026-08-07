@@ -530,3 +530,29 @@ failures, 97 integration tests skipped)**. Commit (container-service repo) `79e7
   Jackson module; the other four matches are `org.springframework.orm.hibernate5.*` (Spring ORM, unrelated).
   **Result:** container-service test + runtime serialization paths are now jakarta-clean; the SS6 test-config port
   (`01d04fa1`) + these three fixes bring the whole module green.
+
+**1-30 🟢 — Velocity-2 unguarded `String.contains($null)` in a globally-injected custom screen (every-page-load
+NPE on data-less pages)** (2026-08-06). Found on the fresh bin-tomcat10 deploy: `SCREEN: Index` (home page, admin)
+logged `TurbineVelocityService - Class java.lang.String.contains threw Exception` /
+`NullPointerException: … CharSequence.toString() because "s" is null`. **Mechanism.** `HeaderIncludes.vm:270`
+(rendered on *every* page) calls `#addGlobalCustomScreens("header")`, which `#parse`s every plugin custom screen
+under `templates/screens/header/`. The xnat_cr plugin's `header/allowDelete.vm:5` runs
+`$siteConfig.getProperty("security.prevent-data-deletion-override","[]").contains($om.getItem().getStatus())` —
+`allowDelete` is a *data-item* screen (sets `XNAT.app.preventDataDeletion` from the item status), but it's injected
+globally, and on data-less pages (home/admin) there is no `$om`, so the argument is null and `String.contains(null)`
+throws. Non-fatal (`runtime.strict_mode` off → logged, page still renders), but on **every** such page load.
+**Regression?** The template line is from **2019** (CR `CAIR-606`) and `#addGlobalCustomScreens("header")` predates
+tomcat10 (`30a9bae61`), so the fragile idiom is long-standing/latent — this is the Turbine 7 / Velocity 2 migration
+*surfacing* it (same class as the `#addGlobalCustomScreens` macro's own `$user`-rebind fix, which notes "the
+navigation context can lose `$user` on some screen renders"). Whether Velocity 1.7 threw the identical NPE isn't
+verifiable without the pre-migration runtime; the accurate framing is **latent 2019 bug, exposed by the
+migration's nav/custom-screen context change**, not new code. **Fix.** Guard before the call so the empty case is a
+no-op: `#if($om && $om.getItem() && $om.getItem().getStatus() && …contains(…))` (else falls through to
+`preventDataDeletion=true`, unchanged for real data pages). Commit CR `5448a80`. **Audit (bug class = String-receiver
+`.contains($nullable)` / globally-injected custom screens touching `$om`).** Swept core + all 20 deployed plugins:
+the idiom exists at exactly **3 sites**, all identical — CR `allowDelete.vm` (the observed NPE) + core
+`xnat_imageSessionData_scans.vm:122/193` (latent: scans tab has `$om`, only NPEs on a null item status). Guarded all
+three (core commit `a5784069f`). List-receiver `.contains($x)` sites (`$read_projects`/`$exclusions`/`$completed`…)
+are **not** in the class — `List.contains(null)` is legal. No other plugin injects an `$om`-referencing custom screen
+into a global (header/footer/topBar/userBar) location. **Result: class fully swept — 3 sites, all fixed.** Needs
+CR jar + core WAR rebuilt + redeployed for the running instance to pick it up.

@@ -25,7 +25,7 @@ public class CStoreRSPHandler extends DimseRSPStatusHandler {
   }
 
   /* (non-Javadoc)
-   * @see org.dcm4che3.net.DimseRSPHandler#onDimseRSP(org.dcm4che3.net.Association, org.dcm4che3.data.Attributes, org.dcm4che3.data.Attributes)
+   * @see org.nrg.dcm.DimseRSPHandler#onDimseRSP(org.dcm4che3.net.Association, org.dcm4che3.data.Attributes, org.dcm4che3.data.Attributes)
    */
   @Override
   public void onDimseRSP(final Association as, final Attributes cmd, final Attributes data) {

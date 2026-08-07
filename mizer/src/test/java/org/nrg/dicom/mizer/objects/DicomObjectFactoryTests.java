@@ -1,6 +1,6 @@
 package org.nrg.dicom.mizer.objects;
 
-import org.dcm4che2.data.Tag;
+import org.dcm4che3.data.Tag;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.MizerException;

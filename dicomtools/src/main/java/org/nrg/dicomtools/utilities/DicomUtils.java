@@ -46,7 +46,7 @@ public class DicomUtils {
 
     /**
      * Tests that a string contains only characters that might be in a DICOM header tag (XXXX,YYYY) or ID as defined in
-     * the dcm4che2 Tag class. This means only the characters A-Z, a-z, 0-9, '(', ')', and ',' are allowed.
+     * the dcm4che Tag class. This means only the characters A-Z, a-z, 0-9, '(', ')', and ',' are allowed.
      */
     public final static Pattern VALID_DICOM_HEADER_OR_TAG_CHARS = Pattern.compile("^[\\p{Alnum}(),]+$");
 
@@ -67,8 +67,8 @@ public class DicomUtils {
 
     /**
      * This tries to convert a DICOM header ID&mdash;either a DICOM tag or attribute&mdash;into an integer value that
-     * can be used with the dcm4che DicomObject classes various get methods. DICOM tags can be in the format "(xxxx,yyyy)" or
-     * "xxxx,yyyy" (i.e. with or without bounding parentheses) or as a constant defined in the dcm4che2 Tag class. DICOM
+     * can be used with dcm4che's Attributes class's various get methods. DICOM tags can be in the format "(xxxx,yyyy)" or
+     * "xxxx,yyyy" (i.e. with or without bounding parentheses) or as a constant defined in the dcm4che Tag class. DICOM
      * attributes must be in the same form as they are represented as field names in the dcm4che Tag class.
      *
      * @param headerId The header ID in the form of a DICOM tag or attribute.
@@ -418,7 +418,7 @@ public class DicomUtils {
         final String[] values;
         final VR vr = attributes.getVR(tag);
         if (VR.UN.equals(vr)) {
-            // VR UN gets special rendering for backwards compatibility with dcm4che2
+            // VR UN gets special rendering for backwards compatibility
             try {
                 final byte[] byteVals = attributes.getBytes(tag);
                 if (null == byteVals) {

@@ -28,8 +28,8 @@ import java.util.stream.StreamSupport;
 @Slf4j
 public class DicomImageRenderer {
     public ImageReader getImageReader() {
-        // Don't discover the ImageReader because the dcm4che v2 is still present and incompatible if picked.
-        // imageReader  = ImageIO.getImageReadersByFormatName("DICOM").next();
+        // Instantiating directly rather than using SPI provider in case someone
+        // re-introduces dcm4che2 in support of legacy code
         return new DicomImageReader(new DicomImageReaderSpi());
     }
 

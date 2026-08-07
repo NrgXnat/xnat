@@ -269,60 +269,8 @@ public class Decompress {
             return dicomObject;
             
         } catch (Exception e) {
-            logger.error("Unable to decompress DICOM image with transfer syntax: " + tsuid, e);
+            logger.error("Unable to decompress DICOM image with transfer syntax: {}", tsuid, e);
             throw new IOException("Failed to decompress DICOM image", e);
         }
     }
-    
-    // dcm4che2 legacy complex decompression method - preserved for reference
-    /*
-    public static DicomObject decompress_image_legacy(ByteArrayInputStream in, String tsuid) throws IOException {
-        // create a reader and set the input to the input stream just created.
-        final DicomImageReader reader     = (DicomImageReader) new DicomImageReaderSpi().createReaderInstance();
-        boolean                successful = false;
-        try (final ImageInputStream reader_in = ImageIO.createImageInputStream(in);
-             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-             final DicomOutputStream dicomOutputStream = new DicomOutputStream(byteArrayOutputStream);
-             final MemoryCacheImageOutputStream memoryOutputStream = new MemoryCacheImageOutputStream(dicomOutputStream)) {
-            reader.setInput(reader_in, true);
-
-            // hook the output stream into the image writer
-            final DicomImageWriter writer = (DicomImageWriter) new DicomImageWriterSpi().createWriterInstance();
-            writer.setOutput(memoryOutputStream);
-
-            // copy the metadata from the incoming dicom object replacing the transfer
-            // syntax with the desired outgoing transfer syntax
-            final DicomStreamMetaData in_meta   = (DicomStreamMetaData) reader.getStreamMetadata();
-            final DicomObject         ds        = in_meta.getDicomObject();
-            final DicomStreamMetaData writeMeta = new DicomStreamMetaData();
-            final DicomObject         newDs     = new BasicDicomObject();
-            ds.copyTo(newDs);
-            newDs.putString(Tag.TransferSyntaxUID, VR.UI, destinationSyntax.uid());
-            writeMeta.setDicomObject(newDs);
-            writer.prepareWriteSequence(writeMeta);
-
-            // read and interpret the incoming image
-            int frames = ds.getInt(Tag.NumberOfFrames, 1);
-            for (int i = 0; i < frames; i++) {
-                final WritableRaster r   = (WritableRaster) reader.readRaster(i, null);
-                final ColorModel     cm  = ColorModelFactory.createColorModel(ds);
-                final BufferedImage  bi  = new BufferedImage(cm, r, false, null);
-                final IIOImage       iio = new IIOImage(bi, null, null);
-                writer.writeToSequence(iio, null);
-            }
-
-            // close off the image with a Delimitation item.
-            writer.endWriteSequence();
-
-            //return a new dicom object created using the bytes in the output stream
-            return bytes2DicomObject(byteArrayOutputStream.toByteArray());
-        } finally {
-            try {
-                reader.dispose();
-            } catch (Throwable e) {
-                logger.error("Unable to decompress this dicom file ", e);
-            }
-        }
-    }
-    */
 }

@@ -56,7 +56,7 @@ public class ReplaceKnownValueVisitor extends DicomObjectVisitor {
 
     protected boolean replaceThisTag(TagPath tp, DicomElementI dicomElement, DicomObjectI dicomObject, Collection<String> knownValues) {
         if ("UN".equals(dicomElement.getVRAsString())) {    // use UN behavior for non-UN but unknown VRs
-            // Reproducing probably-not-intentional behavior of dcm4che2-based DicomEdit here:
+            // Reproducing probably-not-intentional behavior of some versions of DicomEdit here:
             // terminating NUL is stripped from string representation but used in UN value comparison
             final byte[] elementRep = dicomElement.getBytes();
             return knownValues.stream().anyMatch(s -> Arrays.equals(elementRep, s.getBytes()));

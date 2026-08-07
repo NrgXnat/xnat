@@ -49,7 +49,7 @@ public final class SingleTagValue extends AbstractMizerValue {
     }
 
     /* (non-Javadoc)
-     * @see org.nrg.dcm.edit.Value#on(org.dcm4che2.data.DicomObject)
+     * @see org.nrg.dcm.edit.Value#on(org.nrg.dicom.mizer.objects.DicomObjectI)
      */
     public String on(final DicomObjectI dicomObject)
             throws ScriptEvaluationException {

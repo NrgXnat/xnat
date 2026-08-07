@@ -9,9 +9,9 @@
 
 package org.nrg.dcm;
 
+import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.Association;
-import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,10 +25,12 @@ public class CStoreRSPHandler extends DimseRSPStatusHandler {
   }
 
   /* (non-Javadoc)
-   * @see org.nrg.dcm.DimseRSPMaybeExceptionHandler#onDimseRSP(org.dcm4che2.net.Association, org.dcm4che2.data.DicomObject, org.dcm4che2.data.DicomObject)
+   * @see org.dcm4che3.net.DimseRSPHandler#onDimseRSP(org.dcm4che3.net.Association, org.dcm4che3.data.Attributes, org.dcm4che3.data.Attributes)
    */
-  public void onDimseRSP(final Association as, final DicomObjectI cmd, final DicomObjectI data) {
-    final int status = cmd.getAttributes().getInt(Tag.Status, -1);
+  @Override
+  public void onDimseRSP(final Association as, final Attributes cmd, final Attributes data) {
+    super.onDimseRSP(as, cmd, data);
+    final int status = cmd.getInt(Tag.Status, -1);
     switch (status) {
     case 0:
       setSuccess();

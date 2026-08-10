@@ -11,8 +11,11 @@ package org.nrg.prefs.entities;
 
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
+import org.nrg.framework.orm.hibernate.audit.NrgRevisionEntity;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.framework.scope.EntityResolver;
 
@@ -29,8 +32,13 @@ import javax.persistence.UniqueConstraint;
  * applies depends on the value set for the {@link #getScope() scope} and {@link #getEntityId() entity ID} properties
  * for the preference. These can be resolved to a particular object in the system through the {@link EntityResolver}
  * implementation associated with the preference's {@link Tool} instance.
+ *
+ * <p>Changes to preferences are audited through Hibernate Envers: every insert, update, and delete is recorded in the
+ * preference audit table, with the revision metadata — including the username of the user making the change — in the
+ * {@link NrgRevisionEntity revision table}.
  */
 @Entity
+@Audited
 @Cacheable
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {Preference.PROPERTY_TOOL, Preference.PROPERTY_NAME, Preference.PROPERTY_SCOPE, Preference.PROPERTY_ENTITY_ID}))
 public class Preference extends AbstractHibernateEntity {
@@ -87,6 +95,7 @@ public class Preference extends AbstractHibernateEntity {
      */
     @ManyToOne
     @LazyCollection(LazyCollectionOption.FALSE)
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     public Tool getTool() {
         return _tool;
     }

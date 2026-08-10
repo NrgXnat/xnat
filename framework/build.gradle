@@ -8,6 +8,7 @@ dependencies {
     api libs.spring.web
     api libs.spring.context.support
     api libs.spring.jms
+    api libs.spring.security.spring.security.core
     api libs.spring.security.spring.security.web
     api libs.reactor.bus
     api libs.reactor.core

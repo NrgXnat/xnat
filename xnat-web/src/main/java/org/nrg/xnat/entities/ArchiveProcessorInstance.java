@@ -16,6 +16,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.envers.AuditOverride;
 import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xapi.exceptions.DataFormatException;
@@ -29,11 +30,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by mike on 2/26/18.
+ *
+ * <p>Audited through Hibernate Envers, including the inherited "enabled" property: the enabled-site-processor queries
+ * in {@link org.nrg.xnat.processor.dao.ArchiveProcessorInstanceDAO} all filter on it, so for this entity the flag
+ * gates which processors run — real configuration rather than soft-delete bookkeeping — and Envers does not audit
+ * {@link javax.persistence.MappedSuperclass} properties unless told to. See
+ * {@link org.nrg.framework.orm.hibernate.AbstractHibernateDAO#update} for why updates to this entity must reach the
+ * database through merge.
  */
 @Slf4j
 @Entity
 @Table
 @Audited
+@AuditOverride(forClass = AbstractHibernateEntity.class, name = "enabled")
 @Cacheable
 @AllArgsConstructor
 @NoArgsConstructor

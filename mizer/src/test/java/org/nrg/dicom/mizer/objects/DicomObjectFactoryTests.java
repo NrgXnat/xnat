@@ -1046,6 +1046,21 @@ public class DicomObjectFactoryTests {
         assertFalse(dobj.contains(PRIVATE_CREATOR_ID.tag));
     }
 
+    /**
+     * A block in a private group >= 0x8000 must not be mistaken for an empty one. PrivateBlock holds the group
+     * in a short, so it sign-extends when compared against the unsigned group taken from a tag.
+     */
+    @Test
+    public void deleteEmptyPrivateBlocksHighGroup() {
+        DicomObjectI dobj = DicomObjectFactory.newInstance();
+        dobj.putCreatorIDString(0xF2150000, "HI_PC", "value0");
+        assertTrue(dobj.contains(0xF2150010));
+        assertTrue(dobj.contains(0xF2151000));
+        dobj.deleteEmptyPrivateBlocks();
+        assertTrue(dobj.contains(0xF2150010));
+        assertTrue(dobj.contains(0xF2151000));
+    }
+
     @Test
     public void isEmptyPrivateBlock() {
         DicomObjectI dobj = DicomObjectFactory.newInstance();

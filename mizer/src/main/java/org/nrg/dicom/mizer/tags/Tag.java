@@ -86,14 +86,16 @@ public abstract class Tag implements Comparable<Tag> {
      * Throws NumberFormatException if this tag has wild cards and does not map to a unique integer.
      * Use "isSingular()" first to test this.
      * <p>
-     * 0x80000000 maps to min int ( 2147483647)
-     * 0x7fffffff maps to max int (-2147483648)
+     * The tag is parsed as unsigned, so the full 0x00000000 - 0xFFFFFFFF range round-trips through the returned
+     * int's bit pattern:
+     * 0x7fffffff maps to max int ( 2147483647)
+     * 0x80000000 maps to min int (-2147483648)
      * 0xffffffff maps to -1
      *
      * @return The value of the tag as an integer.
      */
     public int asInt() {
-        return (int) Long.parseLong(getGroup() + getElement(), 16);
+        return Integer.parseUnsignedInt(getGroup() + getElement(), 16);
     }
 
     /**
@@ -103,7 +105,7 @@ public abstract class Tag implements Comparable<Tag> {
      * @throws NumberFormatException if this tag does not resolve to a single group due to wild cards.
      */
     public int getGroupAsInt() {
-        return (int) Long.parseLong(getGroup(), 16);
+        return Integer.parseUnsignedInt(getGroup(), 16);
     }
 
     /**
@@ -113,7 +115,7 @@ public abstract class Tag implements Comparable<Tag> {
      * @throws NumberFormatException if this tag does not resolve to a single element due to wild cards.
      */
     public int getElementAsInt() {
-        return (int) Long.parseLong(getElement(), 16);
+        return Integer.parseUnsignedInt(getElement(), 16);
     }
 
     /**

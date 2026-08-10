@@ -40,7 +40,11 @@ public class PrivateBlock {
      * defines the PrivateBlock with item = {0x52009230,0,2005140f,0}, group = 2005, blockTag = 10, creatorID = "Philips Imaging DD 001"
      */
     private final int[] item;
-    private final short group;
+    /**
+     * A DICOM group is an unsigned 16-bit value, so it is held in an int. A short would render groups >= 0x8000
+     * negative and sign-extend them into every comparison.
+     */
+    private final int group;
     private final short blockTag;
     /**
      * creatorID will have value TagPrivate.UNKNOWN_PVT_CREATOR_ID_LABEL if PrivateBlock is created from tagPath.getPrivateBlock() when tagPath
@@ -54,14 +58,14 @@ public class PrivateBlock {
 
     public PrivateBlock( short group, String creatorID) {
         this.item = new int[0];
-        this.group = group;
+        this.group = group & 0xFFFF;
         this.blockTag = 0;
         this.creatorID = creatorID;
     }
 
     public PrivateBlock( int[] item, int tag, String creatorID) {
         this.item = item;
-        this.group = (short) (tag >>> 16);
+        this.group = tag >>> 16;
         this.blockTag = getBlockTag( tag);
         this.creatorID = creatorID;
     }
@@ -84,7 +88,25 @@ public class PrivateBlock {
         return (group << 16) + blockTag;
     }
 
+    /**
+     * The group of this private block.
+     *
+     * @return the group as a short.
+     * @deprecated a group >= 0x8000 narrows to a negative short, which then sign-extends whenever it is
+     * compared against an unsigned group such as {@link org.nrg.dicom.mizer.tags.Tag#getGroupAsInt()}. Use
+     * {@link #getGroupAsInt()} instead. Retained for binary compatibility.
+     */
+    @Deprecated
     public short getGroup() {
+        return (short) group;
+    }
+
+    /**
+     * The group of this private block as an unsigned value in the range 0x0000 - 0xFFFF.
+     *
+     * @return the group as an int.
+     */
+    public int getGroupAsInt() {
         return group;
     }
 
@@ -134,7 +156,7 @@ public class PrivateBlock {
         PrivateBlock that = (PrivateBlock) o;
 
         if( ! Arrays.equals( getItem(), that.getItem())) return false;
-        if (getGroup() != that.getGroup()) return false;
+        if (getGroupAsInt() != that.getGroupAsInt()) return false;
         if (getBlockTag() != that.getBlockTag()) return false;
         return getCreatorID() != null ? getCreatorID().equals(that.getCreatorID()) : that.getCreatorID() == null;
 
@@ -142,7 +164,7 @@ public class PrivateBlock {
 
     @Override
     public int hashCode() {
-        int result = getGroup() + getBlockTag() + Arrays.hashCode( item);
+        int result = getGroupAsInt() + getBlockTag() + Arrays.hashCode( item);
         result = 31 * result + (getCreatorID() != null ? getCreatorID().hashCode() : 0);
         return result;
     }
@@ -150,7 +172,7 @@ public class PrivateBlock {
     public static void main( String[] args) {
         PrivateBlock pb = new PrivateBlock( 0x0017E110, "XYZ") ;
 
-        System.out.println("Group = " + Tag.padLeft(Integer.toHexString(pb.getGroup()), 4, '0'));
+        System.out.println("Group = " + Tag.padLeft(Integer.toHexString(pb.getGroupAsInt()), 4, '0'));
         System.out.println("BlockTag = " + Integer.toHexString(pb.getBlockTag()));
     }
 }

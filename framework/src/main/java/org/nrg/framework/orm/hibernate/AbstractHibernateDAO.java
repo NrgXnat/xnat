@@ -24,6 +24,7 @@ import org.hibernate.LockOptions;
 import org.hibernate.NonUniqueObjectException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.StaleStateException;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
@@ -68,6 +69,7 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
 
     private final String                _hqlExistsBody;
     private final boolean               _isAuditable;
+    private final boolean               _hasAuditedCollection;
     private final String                _cacheRegion;
     private final boolean _addDistinctRootEntity;
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
@@ -88,6 +90,7 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
         }
         final Class<E> parameterizedType = getParameterizedType();
         _isAuditable   = HibernateUtils.isAuditable(parameterizedType);
+        _hasAuditedCollection = HibernateUtils.hasAuditedCollection(parameterizedType);
         _cacheRegion   = extractCacheRegion(parameterizedType);
         _addDistinctRootEntity = HibernateUtils.hasEagerlyFetchedCollection(parameterizedType);
         _hqlExistsBody = getHqlExistsComponent(HQL_EXISTS_BODY, "type", parameterizedType.getName());
@@ -151,9 +154,30 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
 
     /**
      * {@inheritDoc}
+     *
+     * <p>Entities with {@link HibernateUtils#hasAuditedCollection audited collections} are updated with
+     * {@code Session.merge()} rather than {@code Session.update()}. Such updates typically arrive as detached
+     * instances whose collections were replaced wholesale; reattaching one recreates the collection without its prior
+     * state, so Envers records additions but never removals, and every revision reconstructs removed entries as though
+     * they were still present. Merging applies the incoming state to the managed collection, so Hibernate — and
+     * therefore Envers — sees the true delta.
+     *
+     * <p>The row is loaded before merging, for two reasons. It guards against merge's transient-state handling: given an
+     * ID with no matching row, merge inserts a new row rather than failing, which would resurrect deleted configuration
+     * under a fresh ID where {@code Session.update()} failed at flush. It also pins the managed instance in the
+     * persistence context, so the merge resolves against it and the write is issued as an {@code update ... where id = ?}.
+     * A row deleted concurrently after this load is therefore still caught atomically at flush, exactly as it was under
+     * {@code Session.update()} — the load is not a check-then-act window.
      */
     @Override
     public void update(final E entity) {
+        if (_hasAuditedCollection) {
+            if (getSession().get(getParameterizedType(), entity.getId()) == null) {
+                throw new StaleStateException("Cannot update " + getParameterizedType().getSimpleName() + " " + entity.getId() + ": no row with that ID exists. Refusing to merge, which would insert it as a new row.");
+            }
+            getSession().merge(entity);
+            return;
+        }
         try {
             getSession().update(entity);
         } catch (NonUniqueObjectException e) {

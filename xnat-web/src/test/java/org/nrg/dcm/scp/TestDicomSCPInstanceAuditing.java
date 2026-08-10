@@ -111,7 +111,7 @@ public class TestDicomSCPInstanceAuditing {
         final long             id       = instance.getId();
 
         // A detached instance whose collection was replaced wholesale — the same shape DicomSCPManager hands the
-        // service after JSON deserialization. DicomSCPInstanceDAO.update applies it with Session.merge(); a plain
+        // service after JSON deserialization. AbstractHibernateDAO.update applies it with Session.merge(); a plain
         // Session.update() here records the additions but silently drops the removal from the audit history.
         instance.setWhitelistEnabled(true);
         instance.setWhitelist(new ArrayList<>(Arrays.asList("SCANNER_A", "SCANNER_B")));

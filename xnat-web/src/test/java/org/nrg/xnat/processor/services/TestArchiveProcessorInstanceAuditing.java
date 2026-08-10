@@ -43,7 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code ArchiveProcessorInstanceApi.updateSiteProcessor} loads the processor, copies the JSON body onto it with
  * {@link ArchiveProcessorInstance#update(ArchiveProcessorInstance)} (which replaces changed collections wholesale),
  * and saves through the service — because that detached-replacement shape is exactly what used to lose collection
- * removals from the audit history before {@code ArchiveProcessorInstanceDAO.update} switched to merge.
+ * removals from the audit history before {@code AbstractHibernateDAO.update} began routing entities with audited
+ * collections through merge.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestArchiveProcessorInstanceServiceConfig.class)

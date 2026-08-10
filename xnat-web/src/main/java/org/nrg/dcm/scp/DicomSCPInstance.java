@@ -92,9 +92,10 @@ public class DicomSCPInstance extends AbstractHibernateEntity {
      * derives element-collection history from Hibernate's collection events, which only include removals when the
      * incoming state is applied to the managed collection. Receiver updates arrive from
      * {@link DicomSCPManager#updateDicomSCPInstance} as detached, JSON-deserialized instances that replace this
-     * collection wholesale, so {@link org.nrg.dcm.scp.daos.DicomSCPInstanceDAO#update} applies them with
-     * {@code Session.merge()}; reverting that to {@code Session.update()} would silently drop whitelist removals from
-     * the audit history.
+     * collection wholesale, so {@link org.nrg.framework.orm.hibernate.AbstractHibernateDAO#update} applies them with
+     * {@code Session.merge()} — it routes entities with audited collections that way automatically. Removing
+     * {@link org.hibernate.envers.Audited} from this collection, or reverting that write path to
+     * {@code Session.update()}, would silently drop whitelist removals from the audit history.
      */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name="dicomSCPInstance_whitelist", joinColumns=@JoinColumn(name="scp_id"))

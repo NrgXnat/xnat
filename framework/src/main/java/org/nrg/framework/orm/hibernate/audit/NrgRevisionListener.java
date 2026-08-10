@@ -17,7 +17,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 /**
  * Stamps each Envers revision with the username of the user responsible for it. Audited writes happen synchronously on
  * the thread handling the request, so for user-initiated changes the Spring Security context holds the authenticated
- * user making the change. System-initiated changes (initialization tasks, schedulers) record a null username.
+ * user making the change.
+ *
+ * <p>A null username means there was no security context on the writing thread at all, which is the case for changes
+ * made off a request: initialization tasks, schedulers, and the DICOM receiver's listener threads. It does <i>not</i>
+ * mean "an unauthenticated caller". A write made on a request thread by a caller who never logged in is attributed to
+ * whatever principal anonymous authentication is configured with, which in xnat-web is the guest username, since its
+ * security configuration registers anonymous authentication with the guest user as the principal.
  */
 @Slf4j
 public class NrgRevisionListener implements RevisionListener {

@@ -168,12 +168,19 @@ public abstract class AbstractHibernateDAO<E extends BaseHibernateEntity> extend
      * persistence context, so the merge resolves against it and the write is issued as an {@code update ... where id = ?}.
      * A row deleted concurrently after this load is therefore still caught atomically at flush, exactly as it was under
      * {@code Session.update()} — the load is not a check-then-act window.
+     *
+     * <p>Merging does not reattach the argument, so this path differs from {@code Session.update()} in two ways that
+     * callers need to know about. The instance passed in stays detached: changes made to it after this call are not
+     * flushed with the enclosing transaction, and must be written by calling this method again. And cascades follow
+     * {@code CascadeType.MERGE} rather than {@code SAVE_UPDATE}, so an association cascaded only by the latter is no
+     * longer cascaded. Adding {@link org.hibernate.envers.Audited} to an entity that maps a collection opts its DAO
+     * into both, so check them before doing so.
      */
     @Override
     public void update(final E entity) {
         if (_hasAuditedCollection) {
             if (getSession().get(getParameterizedType(), entity.getId()) == null) {
-                throw new StaleStateException("Cannot update " + getParameterizedType().getSimpleName() + " " + entity.getId() + ": no row with that ID exists. Refusing to merge, which would insert it as a new row.");
+                throw new StaleStateException("Cannot update " + getParameterizedType().getSimpleName() + " " + entity.getId() + ": no row with that ID exists. It may have been deleted concurrently.");
             }
             getSession().merge(entity);
             return;

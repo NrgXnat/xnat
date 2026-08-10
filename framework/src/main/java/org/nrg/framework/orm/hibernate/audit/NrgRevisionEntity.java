@@ -52,8 +52,10 @@ public class NrgRevisionEntity extends DefaultRevisionEntity {
     private String _username;
 
     /**
-     * Gets the username of the user responsible for this revision, or null when the revision was made outside an
-     * authenticated context, such as by an initialization task or a scheduler.
+     * Gets the username of the user responsible for this revision, or null when the revision was made with no security
+     * context on the writing thread, such as by an initialization task or a scheduler. Note that null does not mean
+     * "an unauthenticated caller": a change made on a request thread by a caller who never logged in is attributed to
+     * the anonymous principal, which in xnat-web is the guest username. See {@link NrgRevisionListener}.
      *
      * @return The username responsible for this revision.
      */

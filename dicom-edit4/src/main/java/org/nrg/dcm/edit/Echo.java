@@ -39,7 +39,7 @@ public final class Echo implements Operation {
     public boolean affects(final int affects) { return false; }
 
     /* (non-Javadoc)
-     * @see org.nrg.dcm.edit.Operation#makeAction(org.dcm4che2.data.DicomObject)
+     * @see org.nrg.dcm.edit.Operation#makeAction(org.nrg.dicom.mizer.objects.DicomObjectI)
      */
     public Action makeAction(final DicomObjectI dicomObject) {
         String m;

@@ -9,11 +9,13 @@
 
 package org.nrg.dcm;
 
-import org.dcm4che3.net.Association;
 import org.dcm4che3.net.DimseRSPHandler;
-import org.nrg.dicom.mizer.objects.DicomObjectI;
 
 /**
+ * Records the service status the remote AE returned for a DIMSE request. Subclasses map the status codes for their
+ * particular service by overriding {@link DimseRSPHandler#onDimseRSP} and calling {@link #setSuccess()},
+ * {@link #setWarning(int, String, String)} or {@link #setFailure(int, String, String)}.
+ *
  * @author Kevin A. Archie &lt;karchie@wustl.edu&gt;
  *
  */
@@ -29,11 +31,9 @@ public abstract class DimseRSPStatusHandler extends DimseRSPHandler {
   private String meaning = null;
   private String comment = null;
   
-  public abstract void onDimseRSP(Association as, DicomObjectI cmd, DicomObjectI data);
-
   private void setFields(final ServiceStatus status,
       final int statusCode, final String meaning, final String comment) {
-    if (null == status) throw new IllegalStateException("already set: " + this);
+    if (null != this.status) throw new IllegalStateException("already set: " + this);
     this.status = status;
     this.statusCode = statusCode;
     this.meaning = meaning;
@@ -52,6 +52,16 @@ public abstract class DimseRSPStatusHandler extends DimseRSPHandler {
     setFields(ServiceStatus.FAILURE, code, meaning, comment);
   }
   
+  /**
+   * Indicates whether a status has been recorded for this request yet. This is false when the remote AE never returned
+   * a response, in which case the accessors below all throw {@link IllegalStateException}.
+   *
+   * @return true if the remote AE returned a status.
+   */
+  public final boolean hasStatus() {
+    return null != status;
+  }
+
   private final void assertStatus() {
     if (null == status) throw new IllegalStateException("status not set");
   }

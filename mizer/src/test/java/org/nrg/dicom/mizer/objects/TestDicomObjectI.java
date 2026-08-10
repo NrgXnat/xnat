@@ -14,7 +14,7 @@ import static org.nrg.dicom.mizer.TestUtils.put;
 import static org.nrg.dicom.mizer.TestUtils.*;
 
 /**
- * It is not possible to specify the private block when adding a private tag with dcm4che2. It will always use
+ * It is sometimes not possible to specify the private block when adding a private tag. It will always use
  * the first available. This limits the variety of Dicom objects that can be created programmatically.
  */
 public class TestDicomObjectI {

@@ -32,6 +32,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated This class and its related functionality are deprecated and will be removed in a future release.
+ */
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated
 @Slf4j
 public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
 

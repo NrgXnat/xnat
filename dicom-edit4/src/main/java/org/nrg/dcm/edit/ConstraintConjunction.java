@@ -42,7 +42,7 @@ public class ConstraintConjunction implements ConstraintMatch {
     }
 
     /* (non-Javadoc)
-     * @see org.nrg.dcm.edit.ConstraintMatch#matches(org.dcm4che2.data.DicomObject)
+     * @see org.nrg.dcm.edit.ConstraintMatch#matches(org.nrg.dicom.mizer.objects.DicomObjectI)
      */
     public boolean matches(final DicomObjectI dicomObject) throws ScriptEvaluationException {
         for (final ConstraintMatch predicate : predicates) {

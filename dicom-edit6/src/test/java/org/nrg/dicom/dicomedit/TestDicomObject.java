@@ -23,7 +23,7 @@ import java.io.File;
 import static org.junit.Assert.*;
 
 /**
- * Run tests on dcm4che2 implementation of DicomObjectI interface.
+ * Run tests on implementation of DicomObjectI interface.
  **
  */
 public class TestDicomObject {

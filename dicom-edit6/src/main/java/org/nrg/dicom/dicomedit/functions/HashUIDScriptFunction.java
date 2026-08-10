@@ -21,7 +21,7 @@ import java.util.List;
  * Creates a one-way hash UID by first creating a Version 5 UUID (SHA-1 hash) from the provided string,
  * then converting that UUID to a UID.
  * Portions of this code are derived from dcm4che, an MPL 1.1-licensed open source project
- * hosted at http://sourceforge.net/projects/dcm4che.
+ * hosted at https://github.com/dcm4che/dcm4che.
  *
  * @author David Maffitt david.maffitt@wustl.edu { modifications for migration to DE5, antlr4. }
  * @author Kevin A. Archie karchie@wustl.edu

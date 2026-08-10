@@ -11,10 +11,6 @@ package org.nrg.xnat.helpers.prearchive.handlers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.framework.services.NrgEventServiceI;
-import org.nrg.xdat.bean.XnatImagesessiondataBean;
-import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
-import org.nrg.xdat.bean.reader.XDATXMLReader;
-import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
@@ -23,7 +19,6 @@ import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.services.archive.DicomInboxImportRequestService;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 
-import java.io.File;
 
 import static org.nrg.xnat.archive.Operation.*;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.*;
@@ -47,12 +42,7 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
     public void execute() throws Exception {
         boolean buildSuccessful = rebuild();
         if (buildSuccessful) {
-            final boolean isSeparatePetMr = needToHandleSeparablePetMrSession();
-            if (isSeparatePetMr) {
-                PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(getUser(), Separate, getSessionData(), getSessionDir(), getParameters()));
-            } else {
-                postBuild();
-            }
+            postBuild();
         }
         if (autoArchive) {
             PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(getUser().getUsername(), Archive, getSessionData(), getSessionDir(), getParameters()));
@@ -122,31 +112,4 @@ public class PrearchiveRebuildHandler extends AbstractPrearchiveOperationHandler
         }
     }
 
-    public boolean needToHandleSeparablePetMrSession() throws Exception {
-        final String folderName = getSessionData().getFolderName();
-        final String timestamp = getSessionData().getTimestamp();
-        final String project = getSessionData().getProject();
-        final boolean separatePetMr = PrearcUtils.isUnassigned(getSessionData()) ? HandlePetMr.shouldSeparatePetMr() : HandlePetMr.shouldSeparatePetMr(project);
-        if (!separatePetMr) {
-            return false;
-        }
-
-        log.debug("Found create separate PET and MR sessions setting for project {}, now working to separate that.", project);
-        final File sessionXml = new File(getSessionDir() + ".xml");
-        if (!sessionXml.exists()) {
-            log.warn("Tried to rebuild a session from the path {}, but that session XML doesn't exist.", sessionXml.getAbsolutePath());
-            return false;
-        }
-
-        log.debug("Found the session XML in the file {}, processing.", sessionXml.getAbsolutePath());
-        final XnatImagesessiondataBean bean = (XnatImagesessiondataBean) new XDATXMLReader().parse(sessionXml);
-        if (!(bean instanceof XnatPetmrsessiondataBean)) {
-            log.debug("Found a session XML for a {} session in the file {}. Not PET/MR so not separating.", bean.getFullSchemaElementName(), sessionXml.getAbsolutePath());
-            return false;
-        }
-
-        log.debug("Found a PET/MR session XML in the file {} with the separate PET/MR flag set to true for the site or project, creating a new request to separate the session.", sessionXml.getAbsolutePath());
-        PrearcUtils.resetStatus(getUser(), project, timestamp, folderName, true);
-        return true;
-    }
 }

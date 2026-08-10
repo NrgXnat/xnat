@@ -174,7 +174,6 @@ public class TestUtilTags {
 
     // URL or URI UR
     // URNCodeValue VM 1
-    // This is in dcm4che2 but not as UR?
     public static TestTag UR_VM1 = new TestTag(0x00080120, "https://org.snafu", "https://org.replaced");
 
     // Unsigned Short US

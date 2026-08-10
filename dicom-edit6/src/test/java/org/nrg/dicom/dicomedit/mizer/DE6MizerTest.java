@@ -31,13 +31,13 @@ import static org.junit.Assert.assertNotNull;
 public class DE6MizerTest {
     @Test
     public void testMultiscriptResolution() throws MizerException {
-        final DicomObjectI dcm4che2Object = DicomObjectFactory.newInstance(DICOM_TEST);
+        final DicomObjectI dicomObject = DicomObjectFactory.newInstance(DICOM_TEST);
 
-        assertEquals("head^DHead", dcm4che2Object.getString(Tag.StudyDescription));
-        assertEquals("Sample Patient", dcm4che2Object.getString(Tag.PatientName));
-        assertEquals("Sample ID", dcm4che2Object.getString(Tag.PatientID));
-        assertEquals("SIEMENS", dcm4che2Object.getString(Tag.Manufacturer));
-        assertEquals("Hospital", dcm4che2Object.getString(Tag.InstitutionName));
+        assertEquals("head^DHead", dicomObject.getString(Tag.StudyDescription));
+        assertEquals("Sample Patient", dicomObject.getString(Tag.PatientName));
+        assertEquals("Sample ID", dicomObject.getString(Tag.PatientID));
+        assertEquals("SIEMENS", dicomObject.getString(Tag.Manufacturer));
+        assertEquals("Hospital", dicomObject.getString(Tag.InstitutionName));
 
         final Map<String, Object> elements = new HashMap<>();
         elements.put("project", "XNAT_01");
@@ -48,9 +48,9 @@ public class DE6MizerTest {
         assertNotNull(variables);
         assertEquals(4, variables.size());
 
-        _service.anonymize(dcm4che2Object, contexts);
+        _service.anonymize(dicomObject, contexts);
 
-        assertNotNull(dcm4che2Object);
+        assertNotNull(dicomObject);
     }
 
     @Test

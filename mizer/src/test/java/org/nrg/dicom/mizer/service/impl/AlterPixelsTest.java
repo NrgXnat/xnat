@@ -39,14 +39,14 @@ public class AlterPixelsTest {
         try {
             final File testFile = File.createTempFile("mizer.", ".dcm");
             Files.copy(DICOM_TEST.toPath(), testFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            final DicomObjectI dcm4che2Object = DicomObjectFactory.newInstance(testFile);
+            final DicomObjectI dicomObject = DicomObjectFactory.newInstance(testFile);
 
-            assertEquals("head^DHead", dcm4che2Object.getString(Tag.StudyDescription));
-            assertEquals("Sample Patient", dcm4che2Object.getString(Tag.PatientName));
-            assertEquals("Sample ID", dcm4che2Object.getString(Tag.PatientID));
-            assertEquals("SIEMENS", dcm4che2Object.getString(Tag.Manufacturer));
-            assertEquals("Hospital", dcm4che2Object.getString(Tag.InstitutionName));
-            assertTrue(dcm4che2Object.contains(Tag.PixelData));
+            assertEquals("head^DHead", dicomObject.getString(Tag.StudyDescription));
+            assertEquals("Sample Patient", dicomObject.getString(Tag.PatientName));
+            assertEquals("Sample ID", dicomObject.getString(Tag.PatientID));
+            assertEquals("SIEMENS", dicomObject.getString(Tag.Manufacturer));
+            assertEquals("Hospital", dicomObject.getString(Tag.InstitutionName));
+            assertTrue(dicomObject.contains(Tag.PixelData));
 
             final Map<String, Object> elements = new HashMap<>();
             elements.put("project", "XNAT_01");

@@ -263,7 +263,7 @@ public class TestBlankValuesFunction {
     /**
      * Adapted from REST test TestAnonymizationCollectBlankValues#testBlankValuesImplicitAscii.
      * There is non-obvious behavior around blankValues and binary VRs; reproduce what was
-     * done in dcm4che2-based DicomEdit 6, saving for later the discussion of whether this
+     * done in earlier versions of DicomEdit 6, saving for later the discussion of whether this
      * is the behavior we want.
      */
     @Test

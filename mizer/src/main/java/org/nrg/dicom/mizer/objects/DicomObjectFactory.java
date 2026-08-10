@@ -1,7 +1,6 @@
 package org.nrg.dicom.mizer.objects;
 
 import org.apache.commons.lang3.StringUtils;
-import org.dcm4che2.data.DicomObject;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.ElementDictionary;
 import org.dcm4che3.data.Sequence;
@@ -98,53 +97,14 @@ public class DicomObjectFactory {
     public static DicomObjectI newInstance(final InputStream inputStream, int stopTag) throws MizerException {
         return new MizerDicomObject(inputStream, stopTag);
     }
-    /**
-     * Create DicomObjectI from the provided dcm4che2 dicom object and match file.
-     * <p>
-     * This causes the dcm4ch4 lib to leak, but hey, backwards compatability.
-     * This is for backwards compatibility with anonymize package.
-     * <p>
-     * This implementation ignores matchFile. This is likely a vestige from DE4's use by another codebase (maybe DicomBrowser?)
-     * that hasn't carried over into DE6.
-     *
-     * @param matchFile   TODO:  What is this? Ignored for now. Where might this be used?
-     * @param dicomObject The DICOM object to be processed.
-     */
-    public static DicomObjectI newInstance(final File matchFile, final DicomObject dicomObject) {
-        try {
-            return new MizerDicomObject(dicomObject);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
-     * Create DicomObjectI from the provided dcm4che2 dicom object.
-     * <p>
-     * This causes the dcm4ch4 lib to leak, but hey, backwards compatability.
-     * This is for backwards compatibility with anonymize package.
-     *
-     * @param dicomObject The DICOM object to be processed.
-     */
-    public static DicomObjectI newInstance(final DicomObject dicomObject) {
-        try {
-            return new MizerDicomObject(dicomObject);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Implementation of {@link DicomObjectI} as inner class backed by the third-party lib dcm4che2.
+     * Implementation of {@link DicomObjectI} as inner class.
      */
     public static class MizerDicomObject implements DicomObjectI {
 
         private Attributes dataset;
         private final DeleteDicomObjectVisitor deleteVisitor = new DeleteDicomObjectVisitor();
-
-        public MizerDicomObject(DicomObject dicomObject) throws Exception {
-            this(Dcm4cheConvert.toDcm4che3Attributes(dicomObject));
-        }
 
         /**
          * Create an empty object.
@@ -421,75 +381,40 @@ public class DicomObjectFactory {
         }
 
         private VR vr(String vrString) {
-            switch (vrString) {
-                case "UN_SIEMENS":
-                    return VR.UN;
-                case "AS":
-                    return VR.AS;
-                case "AT":
-                    return VR.AT;
-                case "CS":
-                    return VR.CS;
-                case "DA":
-                    return VR.DA;
-                case "DS":
-                    return VR.DS;
-                case "DT":
-                    return VR.DT;
-                case "FD":
-                    return VR.FD;
-                case "FL":
-                    return VR.FL;
-                case "IS":
-                    return VR.IS;
-                case "LO":
-                    return VR.LO;
-                case "LT":
-                    return VR.LT;
-                case "OB":
-                    return VR.OB;
-                case "OD":
-                    return VR.OD;
-                case "OL":
-                    return VR.OL;
-                case "OV":
-                    return VR.OV;
-                case "SV":
-                    return VR.SV;
-                case "UV":
-                    return VR.UV;
-                case "UC":
-                    return VR.UC;
-                case "OF":
-                    return VR.OF;
-                case "OW":
-                    return VR.OW;
-                case "PN":
-                    return VR.PN;
-                case "SH":
-                    return VR.SH;
-                case "SL":
-                    return VR.SL;
-                case "SQ":
-                    return VR.SQ;
-                case "SS":
-                    return VR.SS;
-                case "ST":
-                    return VR.ST;
-                case "TM":
-                    return VR.TM;
-                case "UI":
-                    return VR.UI;
-                case "UL":
-                    return VR.UL;
-                case "UN":
-                    return VR.UN;
-                case "US":
-                    return VR.US;
-                case "UT":
-                    return VR.UT;
-            }
-            return VR.UN;
+            return switch (vrString) {
+                case "AS" -> VR.AS;
+                case "AT" -> VR.AT;
+                case "CS" -> VR.CS;
+                case "DA" -> VR.DA;
+                case "DS" -> VR.DS;
+                case "DT" -> VR.DT;
+                case "FD" -> VR.FD;
+                case "FL" -> VR.FL;
+                case "IS" -> VR.IS;
+                case "LO" -> VR.LO;
+                case "LT" -> VR.LT;
+                case "OB" -> VR.OB;
+                case "OD" -> VR.OD;
+                case "OL" -> VR.OL;
+                case "OV" -> VR.OV;
+                case "SV" -> VR.SV;
+                case "UV" -> VR.UV;
+                case "UC" -> VR.UC;
+                case "OF" -> VR.OF;
+                case "OW" -> VR.OW;
+                case "PN" -> VR.PN;
+                case "SH" -> VR.SH;
+                case "SL" -> VR.SL;
+                case "SQ" -> VR.SQ;
+                case "SS" -> VR.SS;
+                case "ST" -> VR.ST;
+                case "TM" -> VR.TM;
+                case "UI" -> VR.UI;
+                case "UL" -> VR.UL;
+                case "US" -> VR.US;
+                case "UT" -> VR.UT;
+                default -> VR.UN;
+            };
         }
 
         private boolean isVR_UnAndPresentAndEmpty(int[] tags) {
@@ -510,18 +435,13 @@ public class DicomObjectFactory {
             try {
                 int length = Integer.parseInt(ageString.substring(0, 3));
                 String units = ageString.substring(3, 4);
-                switch (units) {
-                    case "Y":
-                        return Optional.of(Period.ofYears(length));
-                    case "M":
-                        return Optional.of(Period.ofMonths(length));
-                    case "W":
-                        return Optional.of(Period.ofWeeks(length));
-                    case "D":
-                        return Optional.of(Period.ofDays(length));
-                    default:
-                        throw new IllegalArgumentException(String.format("Unknown age format in tag %d: '%s'", tag, ageString));
-                }
+                return switch (units) {
+                    case "Y" -> Optional.of(Period.ofYears(length));
+                    case "M" -> Optional.of(Period.ofMonths(length));
+                    case "W" -> Optional.of(Period.ofWeeks(length));
+                    case "D" -> Optional.of(Period.ofDays(length));
+                    default -> throw new IllegalArgumentException(String.format("Unknown age format in tag %d: '%s'", tag, ageString));
+                };
             } catch (Exception e) {
                 throw new IllegalArgumentException(String.format("Error parsing age in tag %d: '%s'", tag, ageString));
             }
@@ -627,18 +547,6 @@ public class DicomObjectFactory {
         public void deleteEmptyPrivateBlocks() {
             DicomObjectVisitor visitor = new OrphanPvtCreatorIDExterminator();
             visitor.visit(this);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public DicomObject getDcm4che2Object() {
-            try {
-                return Dcm4cheConvert.toDcm4che2DicomObject(dataset);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
         }
 
         /**
@@ -1002,8 +910,7 @@ public class DicomObjectFactory {
         }
 
         /**
-         * putString to int tag for all VRs.
-         * dcm4che2 does not have a putString for all VRs. Revert to putBytes where needed.
+         * putString to int tag for all VRs. dcm4che does not have a putString for all VRs. Revert to putBytes where needed.
          *
          * @param tag the tag to be written to
          * @param vr  the VR encoding to use
@@ -1014,11 +921,10 @@ public class DicomObjectFactory {
         }
 
         /**
-         * putString to int[] tags for all VRs.
-         * dcm4che2 does not have a putString for all VRs. Revert to putBytes where needed.
+         * putString to int[] tags for all VRs. dcm4che does not have a putString for all VRs. Revert to putBytes where needed.
          *
          * @param tags the attribute's tag array
-         * @param vr   the dcm4che2 VR
+         * @param vr   the VR
          * @param s    the attribute's value.
          */
         private void putString(int[] tags, VR vr, String s) {
@@ -1068,7 +974,6 @@ public class DicomObjectFactory {
                 case "UN":
                     // These VRs do not have a dcmche putString implementation since encoding their values in a string is
                     // fraught. Try something basic here.
-                    // OD, OL, OV, SV, UC, UV are unknown by dcm4che2, but knowing by dcm4che5
                     putBytes(tags, vr, s.getBytes(StandardCharsets.UTF_8));
                     break;
                 case "SQ":

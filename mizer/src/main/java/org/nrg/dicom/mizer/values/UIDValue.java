@@ -51,9 +51,6 @@ public class UIDValue extends MizerValueShim {
         return UUID_ROOT + '.' + new BigInteger(b17);
     }
 
-    /* (non-Javadoc)
-     * @see org.dcm4che2.util.UIDUtils#fill(byte[], int, long)
-     */
     private static void fill(byte[] bb, int off, long val) {
         for (int i = off, shift = 56; shift >= 0; i++, shift -= 8) {
             bb[i] = (byte) (val >>> shift);

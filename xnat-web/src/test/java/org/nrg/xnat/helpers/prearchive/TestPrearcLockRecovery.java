@@ -29,7 +29,6 @@ import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.QUEUED_AR
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.QUEUED_BUILDING;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.QUEUED_DELETING;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.QUEUED_MOVING;
-import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.QUEUED_SEPARATING;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.READY;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.RECEIVING;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus._ARCHIVING;
@@ -39,7 +38,6 @@ import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus._DELETING
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus._MOVING;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus._RECEIVING;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus._RECEIVING_INTERRUPT;
-import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus._SEPARATING;
 
 /**
  * Tests the recovery strategy for prearchive sessions stranded in a locked ("_"-prefixed) status. See XNAT-8767.
@@ -47,7 +45,7 @@ import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus._SEPARATI
 public class TestPrearcLockRecovery {
 
     /** Every locked status other than {@link PrearcStatus#_BUILDING}. */
-    private static final Set<PrearcStatus> NON_REBUILDABLE_LOCKS = EnumSet.of(_ARCHIVING, _SEPARATING, _MOVING, _DELETING, _CONFLICT, _RECEIVING, _RECEIVING_INTERRUPT);
+    private static final Set<PrearcStatus> NON_REBUILDABLE_LOCKS = EnumSet.of(_ARCHIVING, _MOVING, _DELETING, _CONFLICT, _RECEIVING, _RECEIVING_INTERRUPT);
 
     /** The reason XNAT-8767 exists: a crash strands the session in _BUILDING and nothing can clear it. */
     @Test
@@ -93,7 +91,7 @@ public class TestPrearcLockRecovery {
      */
     @Test
     public void alreadyQueuedSessionsAreANoOpForEveryone() {
-        for (final PrearcStatus status : Arrays.asList(QUEUED_BUILDING, QUEUED_ARCHIVING, QUEUED_MOVING, QUEUED_DELETING, QUEUED_SEPARATING)) {
+        for (final PrearcStatus status : Arrays.asList(QUEUED_BUILDING, QUEUED_ARCHIVING, QUEUED_MOVING, QUEUED_DELETING)) {
             assertThat(PrearcLockRecovery.decide(status, true)).describedAs("admin, status %s", status).isEqualTo(ALREADY_QUEUED);
             assertThat(PrearcLockRecovery.decide(status, false)).describedAs("non-admin, status %s", status).isEqualTo(ALREADY_QUEUED);
         }

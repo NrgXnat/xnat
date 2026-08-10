@@ -96,7 +96,7 @@ public class Assignment extends AbstractOperation {
 
     /*
      * (non-Javadoc)
-     * @see org.nrg.dcm.edit.Operation#makeAction(org.dcm4che2.data.DicomObject)
+     * @see org.nrg.dcm.edit.Operation#makeAction(org.nrg.dicom.mizer.objects.DicomObjectI)
      */
     public Action makeAction(final DicomObjectI dicomObject) throws ScriptEvaluationException {
         final String value = this.value.on(dicomObject);

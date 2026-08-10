@@ -23,6 +23,7 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.util.TagUtils;
+import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
@@ -40,6 +41,7 @@ import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
@@ -67,11 +69,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.Collections;
@@ -375,6 +379,33 @@ public class GradualDicomImporter extends ImporterHandlerA {
                             "further anonymization.", session.getProject(), session.getSubject(), session.getName());
                 }
 
+                // Apply a one-off inline anonymization script supplied with the import request (the "Anon-Script"
+                // parameter). This runs after, and in addition to, the site-wide script.
+                final String inlineAnonScript = (String) TurbineUtils.unescapeParam(_parameters.get(ANON_SCRIPT_PARAM));
+                if (StringUtils.isNotBlank(inlineAnonScript)) {
+                    try {
+                        final AnonymizationResult inlineResult = _mizer.anonymize(outputFile, session.getProject(),
+                                session.getSubject(), session.getFolderName(), false, false,
+                                new ByteArrayInputStream(inlineAnonScript.getBytes(StandardCharsets.UTF_8)));
+                        if (inlineResult instanceof AnonymizationResultReject) {
+                            FileUtils.deleteQuietly(outputFile);
+                            return returnEmptyList();
+                        } else if (inlineResult instanceof AnonymizationResultError) {
+                            // A valid script that errors on this data (e.g. an absent tag) returns an error
+                            // result: a 400, cleaned up like the site-wide path. A parse failure instead throws
+                            // MizerException, which the catch below maps to a 500 (mizer can't tell it from a real fault).
+                            final ClientException error = new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
+                                    "The supplied inline anonymization script could not be applied: " +
+                                            String.join("\n", inlineResult.getMessages()));
+                            handleAnonymizationError(isNew, session, outputFile, error, error);
+                        }
+                    } catch (ClientException e) {
+                        throw e;
+                    } catch (Throwable e) {
+                        handleAnonymizationError(isNew, session, outputFile, e);
+                    }
+                }
+
             } finally {
                 //release the file lock
                 lock.release();
@@ -406,7 +437,25 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     private void handleAnonymizationError(AtomicBoolean isNew, SessionData session,File outputFile, Throwable e) throws ServerException {
-        log.debug("Dicom anonymization failed: {}", outputFile, e);
+        // Site-wide and other system-level anonymization failures surface as a 500 caused by the underlying error.
+        handleAnonymizationError(isNew, session, outputFile, e, new ServerException(Status.SERVER_ERROR_INTERNAL, e));
+    }
+
+    /**
+     * Cleans up the artifacts of a failed ingest &mdash; the newly-created prearchive/direct-archive session if this
+     * import created it, otherwise just the written file &mdash; then throws {@code toThrow}. Shared by the
+     * site-wide/system error path (which throws a 500 {@link ServerException}) and the inline Anon-Script error path
+     * (which throws a 400 {@link ClientException}). If the cleanup itself fails, a {@link ServerException} for that
+     * failure is thrown instead of {@code toThrow}.
+     *
+     * @param isNew      Whether this import created the session row, in which case the row is deleted
+     * @param session    The session being ingested
+     * @param outputFile The file written by this import
+     * @param cause      The underlying failure, used only for logging (may be the same object as {@code toThrow})
+     * @param toThrow    The exception to throw once cleanup completes
+     */
+    private <E extends ActionException> void handleAnonymizationError(AtomicBoolean isNew, SessionData session, File outputFile, Throwable cause, E toThrow) throws E, ServerException {
+        log.debug("Dicom anonymization failed: {}", outputFile, cause);
         try {
             // if we created a row in the database table for this session
             // delete it.
@@ -416,10 +465,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 outputFile.delete();
             }
         } catch (Throwable t) {
-            log.debug("Unable to delete relevant file: " + outputFile, e);
+            log.debug("Unable to delete relevant file: " + outputFile, cause);
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, t);
         }
-        throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
+        throw toThrow;
     }
 
     private void deleteSessionFromDb(SessionData session) throws Exception {
@@ -738,6 +787,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     public static final String CUSTOM_PROC_PARAM = "Custom-Processing";
     public static final String DIRECT_ARCHIVE_PARAM = "Direct-Archive";
     public static final String DIRECT_ARCHIVE_OVERWRITE_PARAM = "Direct-Archive-Overwrite";
+    public static final String ANON_SCRIPT_PARAM = "Anon-Script";
 
     public final static String NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ = "AfterDicomRead";
     public final static String NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED = "AfterProjectSet";

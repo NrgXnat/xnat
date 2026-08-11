@@ -44,6 +44,7 @@ commons-text = "1.10.0"
 container-service = "3.0.0"
 datasets = "1.0.0"
 datasource-proxy = "1.6"
+dcm4che = "2.0.29"
 dcm4che5 = "5.33.1"
 dicom-edit6 = "6.9.0"
 dom4j = "2.1.4"
@@ -230,6 +231,14 @@ commons-math = { group = "org.apache.commons", name = "commons-math", version.re
 commons-net = { group = "commons-net", name = "commons-net", version.ref = "commons-net" }
 commons-pool2 = { group = "org.apache.commons", name = "commons-pool2", version.ref = "commons-pool2" }
 commons-text = { group = "org.apache.commons", name = "commons-text", version.ref = "commons-text" }
+dcm4che-core = { group = "dcm4che", name = "dcm4che-core", version.ref = "dcm4che" }
+dcm4che-image = { group = "dcm4che", name = "dcm4che-image", version.ref = "dcm4che" }
+dcm4che-imageio = { group = "dcm4che", name = "dcm4che-imageio", version.ref = "dcm4che" }
+dcm4che-imageio-rle = { group = "dcm4che", name = "dcm4che-imageio-rle", version.ref = "dcm4che" }
+dcm4che-iod = { group = "dcm4che", name = "dcm4che-iod", version.ref = "dcm4che" }
+dcm4che-net = { group = "dcm4che", name = "dcm4che-net", version.ref = "dcm4che" }
+dcm4che-tool-dcmecho = { group = "dcm4che.tool", name = "dcm4che-tool-dcmecho", version.ref = "dcm4che" }
+dcm4che-tool-dcmqr = { group = "dcm4che.tool", name = "dcm4che-tool-dcmqr", version.ref = "dcm4che" }
 dcm4che5-dcm4che-core = { group = "org.dcm4che", name = "dcm4che-core", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-dict = { group = "org.dcm4che", name = "dcm4che-dict", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-dict-arc = { group = "org.dcm4che", name = "dcm4che-dict-arc", version.ref = "dcm4che5" }

@@ -119,3 +119,11 @@ Release tags `1.9.3.4` and `1.10.0` are reachable from `main`; tag `1.9.3.5` is 
 - [Contributing](./CONTRIBUTING.md) — build architecture, development workflow, branch strategy
 - [FAQ](./docs/faq.md) — dependency management, build troubleshooting, common tasks
 - [Plugin Migration Guide](./docs/plugin-migration-guide.md) — how to adapt external XNAT plugins to build against this monorepo
+
+## Miscellaneous
+
+### dcm4che 2
+
+XNAT 1.10._x_ includes a number of dcm4che 2.0.29 libraries in its dependencies. However all references to dcm4che 2.0.29 and its APIs have been removed since
+1.10.0 in favor of the latest 5._x_ version of dcm4che. The older version is provided solely for compatibility with plugins and other code that has not yet been
+migrated to the newer version and will be removed in XNAT 1.11.

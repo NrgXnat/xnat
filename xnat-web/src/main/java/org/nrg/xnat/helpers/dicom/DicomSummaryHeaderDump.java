@@ -108,7 +108,9 @@ public final class DicomSummaryHeaderDump {
         if (fields.isEmpty()) {
             stopTag = Tag.PixelData;
         } else {
-            stopTag = 1 + Collections.max(fields.keySet());
+            // DICOM tags are unsigned, so a tag in a group >= 0x8000 is negative as an int and would win a
+            // signed max as the smallest value. dcm4che compares stop tags unsigned, so only this needs fixing.
+            stopTag = 1 + fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
         }
         return DicomObjectFactory.newInstance(file, stopTag);
     }

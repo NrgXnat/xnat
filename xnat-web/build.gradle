@@ -167,6 +167,13 @@ dependencies {
         exclude group: 'io.projectreactor', module: 'reactor-core'
     }
 
+    // --- DICOM dcm4che 2.x ---
+    implementation libs.dcm4che.core
+    implementation libs.dcm4che.image
+    implementation libs.dcm4che.imageio
+    implementation libs.dcm4che.imageio.rle
+    implementation libs.dcm4che.iod
+    implementation libs.dcm4che.net
     // --- DICOM dcm4che 5.x ---
     implementation libs.dcm4che5.dcm4che.core
     implementation libs.dcm4che5.dcm4che.image

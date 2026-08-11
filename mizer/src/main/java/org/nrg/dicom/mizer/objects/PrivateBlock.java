@@ -175,7 +175,7 @@ public class PrivateBlock {
 
     @Override
     public int hashCode() {
-        int result = getGroupAsInt() + getBlockTag() + Arrays.hashCode( item);
+        int result = getGroupAsInt() + getBlockTag() + Arrays.hashCode(item);
         result = 31 * result + (getCreatorID() != null ? getCreatorID().hashCode() : 0);
         return result;
     }

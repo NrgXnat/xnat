@@ -69,7 +69,7 @@ public class PrivateBlockTest {
         PrivateBlock pb1 = tp1.getPrivateBlock().orElse(null);
         assertTrue(Arrays.equals(new int[0], pb1.getItem() ));
         assertEquals( 0x12, pb1.getBlockTag());
-        assertEquals( 0x0009, pb1.getGroupAsInt());
+        assertEquals(0x0009, pb1.getGroupAsInt());
         assertEquals( p1.initialValue, pb1.getCreatorID());
 
         TagPath tp2 = new TagPath();
@@ -77,7 +77,7 @@ public class PrivateBlockTest {
         PrivateBlock pb2 = tp2.getPrivateBlock().orElse(null);
         assertTrue(Arrays.equals( new int[]{0x00091200,0}, pb2.getItem() ));
         assertEquals( 0x20, pb2.getBlockTag());
-        assertEquals( 0x0023, pb2.getGroupAsInt());
+        assertEquals(0x0023, pb2.getGroupAsInt());
         assertEquals( s1.initialValue, pb2.getCreatorID());
 
         TagPath tp3 = new TagPath();
@@ -87,7 +87,7 @@ public class PrivateBlockTest {
         PrivateBlock pb3 = tp3.getPrivateBlock().orElse(null);
         assertTrue(Arrays.equals(new int[]{0x00091200,0,0x00232015,0}, pb3.getItem() ));
         assertEquals( 0x11, pb3.getBlockTag());
-        assertEquals( 0x0025, pb3.getGroupAsInt());
+        assertEquals(0x0025, pb3.getGroupAsInt());
         assertEquals( s1_s1.initialValue, pb3.getCreatorID());
     }
 }

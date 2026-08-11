@@ -56,6 +56,17 @@ public class PrivateBlock {
         this(new int[0], tag, creatorID);
     }
 
+    /**
+     * Creates a block in the given group with an unassigned block tag.
+     *
+     * @param group     the group of this private block.
+     * @param creatorID the private creator ID.
+     * @deprecated the width of the first argument is the only thing separating this from
+     * {@link #PrivateBlock(int, String)}, which takes a whole tag rather than a group, so dropping the cast at a
+     * call site silently constructs a different block. Use {@code new PrivateBlock(group << 16, creatorID)}, which
+     * is equivalent. Retained for binary compatibility.
+     */
+    @Deprecated
     public PrivateBlock( short group, String creatorID) {
         this.item = new int[0];
         this.group = group & 0xFFFF;

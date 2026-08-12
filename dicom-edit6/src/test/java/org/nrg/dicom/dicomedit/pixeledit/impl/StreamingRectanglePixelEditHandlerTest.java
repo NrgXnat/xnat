@@ -3,7 +3,6 @@ package org.nrg.dicom.dicomedit.pixeledit.impl;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.DicomInputStream;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -70,17 +69,8 @@ public class StreamingRectanglePixelEditHandlerTest {
     }
 
     // ------------------------------------------------------------------------- lossless encapsulated
-    //
-    // These three fail as "No Reader for format: jpeg2000-cv / rle / jpeg-cv registered": dcm4che 5
-    // resolves codecs through its own ImageReaderFactory, whose default configuration names the
-    // OpenCV-backed plugins, and dicom-edit6 has none of them on the classpath. The codecs XNAT
-    // actually ships -- jai_imageio for JPEG 2000, pixelmed for JPEG lossless, dcm4che2's RLE
-    // plugin -- are registered under different names and only in xnat-web, and only the J2K writer
-    // is wired into dcm4che at all, by NativeDicomPreCompressor.tryRegisterJaiJ2kWriter().
-    // Un-ignore once codec registration is sorted out; the handler code under test is complete.
 
     @Test
-    @Ignore("Blocked on dcm4che codec registration; see comment above")
     public void preservesLosslessCompressionAndRedacts() throws Exception {
         // JPEG 2000 lossless: decode, redact, re-encode. Transfer syntax must survive, because
         // decompressing a lossless object inflates it for no gain.
@@ -90,17 +80,20 @@ public class StreamingRectanglePixelEditHandlerTest {
     }
 
     @Test
-    @Ignore("Blocked on dcm4che codec registration; see comment above")
     public void redactsEveryFrameOfMultiFrameRle() throws Exception {
+        // RLE Lossless is lossless, but its transfer syntax cannot be preserved: dcm4che ships an
+        // RLE reader and no RLE writer (dcm4che-imageio-rle contains only an ImageReaderSpi, and
+        // ImageWriterFactory.properties has no entry for 1.2.840.10008.1.2.5), and the OpenCV
+        // codecs do not cover RLE either. With nothing able to re-encode it, the redacted object is
+        // stored uncompressed. Every frame must still be redacted, which is what this pins down.
         redactAndVerify("dicom/multi-frame/us-rle-8bit.dcm",
                         new Rectangle2D.Float(50, 50, 100, 100), new Color(7, 7, 7),
-                        UID.RLELossless);
+                        UID.ExplicitVRLittleEndian);
     }
 
     // ----------------------------------------------------------------------------- lossy encapsulated
 
     @Test
-    @Ignore("Blocked on dcm4che codec registration; see comment above")
     public void writesLossySourceUncompressedWithHistory() throws Exception {
         // Re-encoding lossy input would cost a second generation of loss over the whole image, so
         // the redacted object is stored uncompressed and the history is recorded instead.

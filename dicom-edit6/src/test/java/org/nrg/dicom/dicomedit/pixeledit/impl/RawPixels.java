@@ -4,15 +4,15 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
-import org.dcm4che3.imageio.codec.Decompressor;
+import org.dcm4che3.imageio.codec.Transcoder;
 import org.dcm4che3.io.DicomInputStream;
 
-import javax.imageio.stream.ImageInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 
 /**
  * The stored pixel values of a DICOM file, decompressed if need be, for comparing what a redaction
@@ -67,25 +67,35 @@ final class RawPixels {
         } else if (value instanceof byte[]) {
             pixels = (byte[]) value;
         } else {
-            pixels = decompress(dataset, transferSyntax);
+            pixels = decompress(file);
         }
         return new RawPixels(dataset, transferSyntax, pixels);
     }
 
-    private static byte[] decompress(Attributes dataset, String transferSyntax) throws IOException {
-        final Decompressor decompressor = new Decompressor(dataset, transferSyntax);
+    /**
+     * Decodes compressed pixel data by transcoding to Explicit VR Little Endian.
+     * <p>
+     * Transcoder is the only dcm4che entry point the OpenCV-backed codecs work through; the
+     * frame-level Decompressor API fails against them with "StreamSegment ... is null".
+     */
+    private static byte[] decompress(File source) throws IOException {
+        final File decoded = File.createTempFile("rawpixels", ".dcm");
         try {
-            decompressor.decompress();
-            final ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ImageInputStream source = decompressor.createImageInputStream()) {
-                final int frames = Math.max(1, dataset.getInt(Tag.NumberOfFrames, 1));
-                for (int index = 0; index < frames; index++) {
-                    decompressor.writeFrameTo(source, index, out);
-                }
+            try (Transcoder transcoder = new Transcoder(source)) {
+                transcoder.setIncludeFileMetaInformation(true);
+                transcoder.setDestinationTransferSyntax(UID.ExplicitVRLittleEndian);
+                transcoder.transcode((t, ds) -> new FileOutputStream(decoded));
             }
-            return out.toByteArray();
+            final Attributes dataset;
+            try (DicomInputStream in = new DicomInputStream(decoded)) {
+                in.setIncludeBulkData(DicomInputStream.IncludeBulkData.URI);
+                in.readFileMetaInformation();
+                dataset = in.readDataset();
+            }
+            final BulkData bulk = (BulkData) dataset.getValue(Tag.PixelData);
+            return readFully(bulk.openStream(), (int) bulk.longLength());
         } finally {
-            decompressor.dispose();
+            Files.deleteIfExists(decoded.toPath());
         }
     }
 

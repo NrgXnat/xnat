@@ -113,10 +113,27 @@ done
 Both should report 200. `libs-release` is the virtual repository the build reads from and it already
 includes `libs-release-local`, so no repository declaration changes are needed.
 
+## Coverage
+
+OpenCV supplies the JPEG family only:
+
+| Transfer syntax | Decode | Encode |
+| --- | --- | --- |
+| JPEG Baseline / Extended / Lossless / Progressive | OpenCV | OpenCV |
+| JPEG-LS | OpenCV | OpenCV |
+| JPEG 2000, lossless and lossy | OpenCV | OpenCV |
+| RLE Lossless | `dcm4che-imageio-rle` | **nothing** |
+
+`dcm4che-imageio-rle` contains only an `ImageReaderSpi`, and `ImageWriterFactory.properties` has no
+entry for `1.2.840.10008.1.2.5`. Nothing in the stack can produce RLE. A pixel redaction on an RLE
+object therefore decodes and redacts correctly but is stored uncompressed, since preserving the
+transfer syntax would require an encoder that does not exist.
+
 ## Using it from the build
 
 Version catalogs cannot express classifiers, so the glue goes in `libs.versions.toml` and the natives
-are declared inline.
+are declared inline. `dicom-edit6` already does this for its tests — see its `build.gradle` for a
+working example of the platform-classifier selection and the staging task described below.
 
 ```toml
 # gradle/libs.versions.toml

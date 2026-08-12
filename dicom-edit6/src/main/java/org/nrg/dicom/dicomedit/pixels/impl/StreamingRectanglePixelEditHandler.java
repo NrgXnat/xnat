@@ -95,6 +95,20 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
      */
     private void redactNative(final Attributes ds, final DicomObjectI dobj,
                               final PixelGeometry geometry, final FrameRedactor redactor) throws IOException {
+        final File scratch = stageRedactedPixels(ds, geometry, redactor);
+        repointPixelData(ds, dobj, scratch, scratch.length(), ds.getVR(Tag.PixelData), geometry.bigEndian);
+    }
+
+    /**
+     * Writes every frame of uncompressed pixel data through the redactor into a new scratch file and
+     * returns it, leaving <b>ds</b> alone.
+     * <p>
+     * This is the single implementation of the edit itself. The encapsulated path decodes to
+     * uncompressed frames and then comes through here too, so a rectangle lands in the same place
+     * whatever the object arrived as.
+     */
+    static File stageRedactedPixels(final Attributes ds, final PixelGeometry geometry,
+                                    final FrameRedactor redactor) throws IOException {
         final Object value       = ds.getValue(Tag.PixelData);
         final long   valueLength = nativeValueLength(value);
         final File   scratch     = createScratchFile();
@@ -121,7 +135,7 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
             Files.deleteIfExists(scratch.toPath());
             throw new IOException("Redacted " + copied + " of " + valueLength + " pixel data bytes");
         }
-        repointPixelData(ds, dobj, scratch, copied, ds.getVR(Tag.PixelData), geometry.bigEndian);
+        return scratch;
     }
 
     /** Replaces PixelData with a reference to <b>scratch</b> and ties that file to the object. */

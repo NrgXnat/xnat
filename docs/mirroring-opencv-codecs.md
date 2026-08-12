@@ -65,10 +65,6 @@ Artifacts already present are reported and skipped, and `libs-release-local` rej
 Upstream publishes no Windows binary, despite Weasis's POM declaring `windows-x86-64` and
 `windows-x86` dependencies. A Windows workstation cannot obtain this native from here.
 
-
-`libs-release-local` returns 409 on redeploy rather than overwriting, so the script is safe to re-run;
-it reports what was already there instead of failing.
-
 For the record, SHA-256 of the artifacts that matter most, verified against the upstream `.sha1`:
 
 ```
@@ -162,8 +158,8 @@ With the native loadable, these format names resolve; without it they are absent
 ImageIO.getImageReadersByFormatName("jpeg2000-cv")   // -> NativeImageReader
 ```
 
-The encapsulated cases in `StreamingRectanglePixelEditHandlerTest` are ignored pending exactly this;
-un-ignore them once the mirror and the native staging are in place.
-
-Note that OpenCV does **not** cover RLE Lossless — that reader is pure Java in
-`org.dcm4che:dcm4che-imageio-rle`, which `xnat-web` declares separately.
+End to end, `:dicom-edit6:test` exercises the codecs: `StreamingRectanglePixelEditHandlerTest`
+round-trips a JPEG 2000 Lossless object through decode, redaction and re-encode with its transfer
+syntax intact, and stores a lossy JPEG object uncompressed with its compression history recorded.
+Those cases fail with `No Reader for format: jpeg2000-cv registered` if the native is not loadable,
+which makes them a serviceable check that the staging works.

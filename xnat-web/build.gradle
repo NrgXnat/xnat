@@ -168,16 +168,26 @@ dependencies {
     }
 
     // --- DICOM dcm4che 2.x ---
+    // Retained only so plugins not yet migrated off the 2.x API keep working; removed in 1.11.
+    // dcm4che-imageio-rle is deliberately absent: it is not an API plugins compile against, it is
+    // an ImageIO codec registering for the same "rle" format name as the 5.x reader below, and
+    // leaving both in place means two claimants for one format. See the note there.
     implementation libs.dcm4che.core
     implementation libs.dcm4che.image
     implementation libs.dcm4che.imageio
-    implementation libs.dcm4che.imageio.rle
     implementation libs.dcm4che.iod
     implementation libs.dcm4che.net
     // --- DICOM dcm4che 5.x ---
     implementation libs.dcm4che5.dcm4che.core
     implementation libs.dcm4che5.dcm4che.image
     implementation libs.dcm4che5.dcm4che.imageio
+    // The sole RLE Lossless codec, so the choice of decoder is fixed rather than incidental.
+    // ImageReaderFactory looks readers up by format name and then scans that iterator for the
+    // class its properties name -- org.dcm4che3.imageio.plugins.rle.RLEImageReader for RLE. When
+    // that class is not registered it logs "No preferred Reader ... - use ..." and takes whichever
+    // reader the iterator last yielded, which is service registry order. Shipping only dcm4che 2's
+    // plugin leaves RLE permanently in that branch, resolved by a jar 1.11 deletes.
+    implementation libs.dcm4che5.dcm4che.imageio.rle
     implementation libs.dcm4che5.dcm4che.net
     implementation libs.imagej.ij
 

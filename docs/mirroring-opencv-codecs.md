@@ -40,54 +40,31 @@ Requires `ARTIFACTORY_USER` and `ARTIFACTORY_TOKEN` with deploy rights on `libs-
 script verifies every download against the checksum published beside it before uploading anything,
 and sends both checksums with the `PUT` so Artifactory rejects a corrupted transfer.
 
-```bash
-#!/usr/bin/env bash
-# Mirror the Weasis OpenCV codecs into nrgxnat/libs-release-local.
-set -euo pipefail
+`scripts/mirror-opencv-codecs.sh` does this. It runs as a dry run by default, downloading every
+artifact and verifying it against the checksum published upstream without uploading anything:
 
-SRC="https://raw.githubusercontent.com/nroduit/mvn-repo/master"
-DST="https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
-: "${ARTIFACTORY_USER:?set ARTIFACTORY_USER}"
-: "${ARTIFACTORY_TOKEN:?set ARTIFACTORY_TOKEN}"
-
-WEASIS="org/weasis/core/weasis-core-img/4.9.0.1"
-OPENCV="org/weasis/thirdparty/org/opencv/libopencv_java/4.9.0-dcm"
-
-# Drop platforms you do not build or develop on; linux-x86-64 is what ships.
-ARTIFACTS=(
-  "$WEASIS/weasis-core-img-4.9.0.1.pom"
-  "$WEASIS/weasis-core-img-4.9.0.1.jar"
-  "$OPENCV/libopencv_java-4.9.0-dcm.pom"
-  "$OPENCV/libopencv_java-4.9.0-dcm-linux-x86-64.so"
-  "$OPENCV/libopencv_java-4.9.0-dcm-linux-aarch64.so"
-  "$OPENCV/libopencv_java-4.9.0-dcm-macosx-aarch64.dylib"
-  "$OPENCV/libopencv_java-4.9.0-dcm-macosx-x86-64.dylib"
-  "$OPENCV/libopencv_java-4.9.0-dcm-windows-x86-64.dll"
-)
-
-work="$(mktemp -d)"
-trap 'rm -rf "$work"' EXIT
-
-for path in "${ARTIFACTS[@]}"; do
-  file="$work/$(basename "$path")"
-  curl -fsSL --retry 3 -o "$file" "$SRC/$path"
-
-  # Verify against the checksum published beside the artifact upstream.
-  want="$(curl -fsSL "$SRC/$path.sha1" | tr -d '[:space:]')"
-  got="$(shasum -a 1 "$file" | cut -d' ' -f1)"
-  [ "$want" = "$got" ] || { echo "SHA-1 mismatch for $path: want $want got $got" >&2; exit 1; }
-  sha256="$(shasum -a 256 "$file" | cut -d' ' -f1)"
-
-  code="$(curl -sS -o /dev/null -w '%{http_code}' -u "$ARTIFACTORY_USER:$ARTIFACTORY_TOKEN" \
-       -H "X-Checksum-Sha1: $got" -H "X-Checksum-Sha256: $sha256" \
-       -X PUT -T "$file" "$DST/$path")"
-  case "$code" in
-    201|200) echo "deployed  $path  sha256=$sha256" ;;
-    409)     echo "exists    $path  (libs-release-local rejects redeploys)" ;;
-    *)       echo "FAILED    $path  HTTP $code" >&2; exit 1 ;;
-  esac
-done
 ```
+$ scripts/mirror-opencv-codecs.sh
+DRY RUN -- downloading and verifying only. Pass --publish to upload.
+
+  weasis-core-img-4.9.0.1.pom                    ok        3441 bytes  sha256=884566e5...
+  libopencv_java-4.9.0-dcm-linux-x86-64.so       ok    18841808 bytes  sha256=41d81dfe...
+  ...
+All artifacts verified. Re-run with --publish to upload.
+```
+
+Publishing needs deploy rights on `libs-release-local`:
+
+```bash
+ARTIFACTORY_USER=... ARTIFACTORY_TOKEN=... scripts/mirror-opencv-codecs.sh --publish
+```
+
+Artifacts already present are reported and skipped, and `libs-release-local` rejects redeploys with
+409 rather than overwriting, so the script is safe to re-run after a partial failure.
+
+Upstream publishes no Windows binary, despite Weasis's POM declaring `windows-x86-64` and
+`windows-x86` dependencies. A Windows workstation cannot obtain this native from here.
+
 
 `libs-release-local` returns 409 on redeploy rather than overwriting, so the script is safe to re-run;
 it reports what was already there instead of failing.

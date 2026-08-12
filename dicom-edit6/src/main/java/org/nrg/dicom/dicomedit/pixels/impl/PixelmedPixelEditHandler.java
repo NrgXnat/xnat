@@ -23,7 +23,15 @@ import java.util.Vector;
  * Uses pixelmed's ImageEditUtilities.blackout() which always uses zero as the fill color.
  * Logs warning if dicom object does not contain pixel data.
  *
+ * @deprecated Superseded by {@link StreamingRectanglePixelEditHandler}, which is the handler
+ * registered for {@code alterPixels}. This one round-trips the whole object through pixelmed's
+ * in-memory representation four times, so it cannot process an object whose pixel data exceeds
+ * 2 GB and needs a heap several times the object size for anything smaller. It also rewrites every
+ * object as Explicit VR Little Endian and ignores the fill value the script asks for. Retained only
+ * so that a deployment can register it explicitly through
+ * {@link org.nrg.dicom.dicomedit.pixels.PixelEditorManager#load}.
  */
+@Deprecated
 public class PixelmedPixelEditHandler extends SimpleRectanglePixelEditHandler {
     private static final Logger logger = LoggerFactory.getLogger( PixelmedPixelEditHandler.class);
 

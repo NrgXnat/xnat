@@ -80,6 +80,25 @@ public class DicomObjectFactory {
         return new MizerDicomObject(file, includeBulkData);
     }
 
+    /**
+     * Create DicomObjectI representing the DICOM object in file, controlling how bulk data
+     * (pixel data and friends) is handled.
+     * <p>
+     * Use {@link DicomInputStream.IncludeBulkData#URI URI} to keep bulk data on disk: values are
+     * represented as {@link org.dcm4che3.data.BulkData} references into <b>file</b> rather than
+     * being read onto the heap. This is the only mode that can load an object whose PixelData
+     * value exceeds 2 GB, because {@code DicomInputStream.readValue()} reads into a {@code byte[]}
+     * and throws "tag value too large" past {@link Integer#MAX_VALUE}.
+     *
+     * @param file            containing DICOM object.
+     * @param includeBulkData how to handle bulk data elements.
+     * @return {@link MizerDicomObject}.
+     * @throws MizerException on error.
+     */
+    public static DicomObjectI newInstance(final File file, final DicomInputStream.IncludeBulkData includeBulkData) throws MizerException {
+        return new MizerDicomObject(file, includeBulkData);
+    }
+
     public static DicomObjectI newInstance(final File file, int stopTag) throws MizerException {
         return new MizerDicomObject(file, stopTag);
     }
@@ -105,6 +124,14 @@ public class DicomObjectFactory {
 
         private Attributes dataset;
         private final DeleteDicomObjectVisitor deleteVisitor = new DeleteDicomObjectVisitor();
+
+        /**
+         * Files holding bulk data that this object's {@link org.dcm4che3.data.BulkData} values point
+         * at, and that nothing else owns: dcm4che's spool files for gzipped sources, and the edited
+         * pixel data written by pixel edit handlers. They must outlive every {@link #write} and be
+         * deleted afterwards, which {@link #releaseScratchFiles()} does.
+         */
+        private final List<File> scratchFiles = new ArrayList<>();
 
         /**
          * Create an empty object.
@@ -134,6 +161,39 @@ public class DicomObjectFactory {
 
         public MizerDicomObject(File file) throws MizerException {
             this(file, true);
+        }
+
+        /**
+         * Create from the DICOM object in file, controlling bulk data handling.
+         * <p>
+         * With {@link DicomInputStream.IncludeBulkData#URI URI}, the stream's URI is set to
+         * <b>file</b> so that bulk data values become references into it, read on demand and never
+         * copied. That is not possible for a gzipped source, where stream offsets bear no relation
+         * to file offsets; dcm4che detects the {@code InflaterInputStream} and spools bulk data to
+         * its own temporary files instead, which we register for cleanup.
+         *
+         * @param file            DICOM object file.
+         * @param includeBulkData how to handle bulk data elements.
+         * @throws MizerException on error.
+         */
+        public MizerDicomObject(File file, DicomInputStream.IncludeBulkData includeBulkData) throws MizerException {
+            final boolean gzipped = file.getName().endsWith("gz");
+            try (final InputStream fin = getInputStream(file);
+                 final DicomInputStream dis = new DicomInputStream(fin)) {
+                dis.setIncludeBulkData(includeBulkData);
+                if (!gzipped) {
+                    dis.setURI(file.toURI().toString());
+                }
+                final Attributes fmi = dis.readFileMetaInformation();
+                dataset = dis.readDataset();
+                if (fmi != null) {
+                    dataset.addAll(fmi);
+                }
+                // Non-empty only for the gzipped case, where dcm4che had to spool.
+                scratchFiles.addAll(dis.getBulkDataFiles());
+            } catch (IOException e) {
+                throw new MizerException(e);
+            }
         }
 
         public MizerDicomObject(File file, int stopTag) throws MizerException {
@@ -1257,6 +1317,27 @@ public class DicomObjectFactory {
         @Override
         public Attributes getAttributes() {
             return dataset;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void registerScratchFile(final File file) {
+            scratchFiles.add(file);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void releaseScratchFiles() {
+            for (final File file : scratchFiles) {
+                if (file.exists() && !file.delete()) {
+                    logger.warn("Unable to delete bulk data scratch file {}", file);
+                }
+            }
+            scratchFiles.clear();
         }
 
         @Override

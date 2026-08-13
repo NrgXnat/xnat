@@ -130,7 +130,16 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final String name = _fileWriter.getName();
         final XnatProjectdata project;
         final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
-        final int lastTag = Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription) + 1;
+        // DICOM tags are unsigned, but the identifier's tag set is naturally ordered, so a tag above
+        // 0x7FFFFFFF sorts first rather than last and last() would miss it. Both the maximum and the
+        // comparison against SeriesDescription therefore have to be unsigned, or the read below stops
+        // short of the tag and the identifier finds nothing.
+        final int maxIdentifierTag = dicomObjectIdentifier.getTags().stream()
+                                                          .max(Integer::compareUnsigned)
+                                                          .orElse(Tag.SeriesDescription);
+        final int lastTag = (Integer.compareUnsigned(maxIdentifierTag, Tag.SeriesDescription) > 0
+                             ? maxIdentifierTag
+                             : Tag.SeriesDescription) + 1;
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
              final DicomInputStream dis = new ResumableDicomInputStream(bis)) {
             Attributes fmi = dis.readFileMetaInformation();

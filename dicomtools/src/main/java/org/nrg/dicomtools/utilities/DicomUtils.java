@@ -86,7 +86,7 @@ public class DicomUtils {
             }
             final String tag = matcher.group("prefix") + matcher.group("suffix");
             try {
-                return Integer.parseInt(tag, 16);
+                return Integer.parseUnsignedInt(tag, 16);
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Invalid DICOM tag: the specified header doesn't parse to an integer. Submitted tag: " + headerId);
             }

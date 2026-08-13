@@ -2,6 +2,7 @@ package org.nrg.xnat.services.archive;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
@@ -26,8 +27,11 @@ import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -261,6 +265,36 @@ public class TestCatalogService {
         assertThat(resourceData.getUri(), is((URIManager.DataURIA) mockResUriObj));
         assertThat(resourceData.getXnatUri(), is((URIManager.ArchiveItemURI) mockResUriObj));
         assertThat(resourceData.getCatalogResource(), is(nullValue()));
+    }
+
+    /**
+     * Validation runs before any archive work on the upload path, so a document that fails validation never reaches
+     * the storage logic. SerializerService covers the parser configuration itself; this asserts that uploaded XML
+     * actually goes through it.
+     */
+    @Test
+    public void testInsertXmlObjectRejectsDoctype() throws Exception {
+        final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                           "<!DOCTYPE xnat:Project [\n" +
+                           "  <!ENTITY ext SYSTEM \"file:///nrg/does/not/exist.txt\">\n" +
+                           "]>\n" +
+                           "<xnat:Project xmlns:xnat=\"http://nrg.wustl.edu/xnat\" ID=\"p1\">&ext;</xnat:Project>\n";
+
+        exceptionRule.expect(SAXParseException.class);
+        exceptionRule.expectMessage("DOCTYPE is disallowed");
+        catalogService.insertXmlObject(mockUser, IOUtils.toInputStream(xml, Charset.defaultCharset()), false, Collections.emptyMap());
+    }
+
+    @Test
+    public void testInsertXmlObjectDoesNotFetchRemoteSchema() throws Exception {
+        final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                           "<remote xmlns=\"urn:xnat:test:remote\"\n" +
+                           "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                           "        xsi:schemaLocation=\"urn:xnat:test:remote http://127.0.0.1:1/remote.xsd\"/>\n";
+
+        exceptionRule.expect(SAXException.class);
+        exceptionRule.expectMessage("accessExternalSchema");
+        catalogService.insertXmlObject(mockUser, IOUtils.toInputStream(xml, Charset.defaultCharset()), false, Collections.emptyMap());
     }
 
 }

@@ -17,6 +17,8 @@ import org.apache.commons.text.StringSubstitutor;
 import org.assertj.core.util.Files;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
+import org.nrg.framework.services.impl.ValidationHandler;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -240,6 +242,97 @@ public class TestSerializerService {
             final DefaultHandler handler          = _serializer.validate(new InputSource(billionLaughsXml.getInputStream()), null);
             assertThat(handler).isNotNull();
         });
+    }
+
+    // The validate*() methods use their own parser factory, separate from the one backing parse*(), so the
+    // DOCTYPE handling has to be asserted against this surface independently.
+
+    @Test
+    public void testValidateSchemaRejectsDoctype() throws IOException {
+        assertDoctypeRejected(() -> _serializer.validateSchema(getResolvedXmlWithInjectionAsResource().getURL().toString(), null));
+    }
+
+    @Test
+    public void testValidateResourceRejectsDoctype() throws IOException {
+        assertDoctypeRejected(() -> _serializer.validateResource(getResolvedXmlWithInjectionAsResource(), null));
+    }
+
+    @Test
+    public void testValidateReaderRejectsDoctype() throws IOException {
+        assertDoctypeRejected(() -> _serializer.validateReader(new StringReader(getResolvedXmlWithInjection()), null));
+    }
+
+    @Test
+    public void testValidateInputStreamRejectsDoctype() throws IOException {
+        assertDoctypeRejected(() -> _serializer.validateInputStream(getResolvedXmlWithInjectionAsInputStream(), null));
+    }
+
+    @Test
+    public void testValidateStringRejectsDoctype() throws IOException {
+        assertDoctypeRejected(() -> _serializer.validateString(getResolvedXmlWithInjection(), null));
+    }
+
+    @Test
+    public void testValidateRejectsDoctype() throws IOException {
+        assertDoctypeRejected(() -> _serializer.validate(new InputSource(getResolvedXmlWithInjectionAsInputStream()), null));
+    }
+
+    /**
+     * The declared entity resolves to a file that exists, so a parser that dereferences it still completes. Pointing
+     * it at something that <i>doesn't</i> exist distinguishes "entity ignored" from "entity resolved": a parser that
+     * reaches out fails with an {@link IOException} instead.
+     */
+    @Test
+    public void testValidateDoesNotFetchDeclaredEntity() throws IOException {
+        final String xml = StringSubstitutor.replace(BasicXnatResourceLocator.asString("classpath:org/nrg/framework/services/xxe_with_injection_point.xml"),
+                                                     ImmutableMap.<String, Object>of("injectedPath", "file:///nrg/framework/does/not/exist.txt"));
+        assertDoctypeRejected(() -> _serializer.validateString(xml, null));
+    }
+
+    /**
+     * A document needs no DOCTYPE for the parser to fetch a schema: an {@code xsi:schemaLocation} hint for an
+     * unregistered namespace is resolved on its own. Rejecting DOCTYPEs alone leaves that route open, so the protocol
+     * restriction has to hold independently.
+     */
+    @Test
+    public void testValidateDoesNotFetchRemoteSchema() {
+        final String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                           "<remote xmlns=\"urn:nrg:framework:test:remote\"\n" +
+                           "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                           "        xsi:schemaLocation=\"urn:nrg:framework:test:remote http://127.0.0.1:1/remote.xsd\"/>\n";
+
+        final SAXException exception = assertThrows(SAXException.class, () -> _serializer.validateString(xml, null));
+        assertThat(exception.getMessage()).contains("accessExternalSchema");
+    }
+
+    /**
+     * Guards the other half of the hardening: schema locations are handed to the parser as plain filesystem paths, so
+     * enabling secure processing without restoring {@code file} access to {@code accessExternalSchema} silently breaks
+     * every validation XNAT performs.
+     */
+    @Test
+    public void testSchemaValidationStillResolvesLocalSchemas() throws Exception {
+        final String schemaLocations = "http://nrg.wustl.edu/test/validation " +
+                                       BasicXnatResourceLocator.getResource("classpath:org/nrg/framework/services/schema_validation.xsd").getFile().getPath();
+
+        final ValidationHandler valid = _serializer.validateString(getMeasurement("42"), schemaLocations);
+        assertThat(valid.getErrors()).isEmpty();
+
+        final ValidationHandler invalid = _serializer.validateString(getMeasurement("not-a-number"), schemaLocations);
+        assertThat(invalid.getErrors()).isNotEmpty();
+        assertThat(invalid.getErrors().get(0).getMessage()).contains("not-a-number");
+    }
+
+    private static String getMeasurement(final String count) {
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+               "<val:measurement xmlns:val=\"http://nrg.wustl.edu/test/validation\">\n" +
+               "  <val:count>" + count + "</val:count>\n" +
+               "</val:measurement>\n";
+    }
+
+    private static void assertDoctypeRejected(final Executable executable) {
+        final SAXParseException exception = assertThrows(SAXParseException.class, executable);
+        assertThat(exception.getMessage()).contains("DOCTYPE is disallowed");
     }
 
     private String getResolvedXmlWithInjection() throws IOException {

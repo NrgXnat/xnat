@@ -54,7 +54,6 @@ public class BaseMizerServiceTest extends BaseMizerTest {
     }
 
     @Test
-    @Ignore
     public void mizersAreInDescendingMaxVersionOrder() {
 
     }
@@ -136,7 +135,6 @@ public class BaseMizerServiceTest extends BaseMizerTest {
         }
     }
 
-    @Ignore
     @Test
     public void mizerServiceDE6UpdatesDicomObjectDeidentificationMethodCodeSequence() {
         try {
@@ -183,7 +181,6 @@ public class BaseMizerServiceTest extends BaseMizerTest {
         }
     }
 
-    @Ignore
     @Test
     public void mizerServiceDE4UpdatesDicomObjectDeidentificationMethodCodeSequence() {
         try {
@@ -223,6 +220,12 @@ public class BaseMizerServiceTest extends BaseMizerTest {
     }
 
     @Test
+    // Ignored because it fails, and has since it was written: a multi-script anonymization
+    // whose second script errors leaves the first script's edits on disk instead of rolling
+    // back, so the file is left partially de-identified. Reproduced unchanged against
+    // origin/develop, so this is a standing defect in the rollback path rather than
+    // fallout from any one change. The other three tests here were ignored alongside it and
+    // pass, so they now run.
     @Ignore
     public void rollbackOn2ndStepErrorTest() {
         File anonTestFile = new File("/tmp/anonTestFile");

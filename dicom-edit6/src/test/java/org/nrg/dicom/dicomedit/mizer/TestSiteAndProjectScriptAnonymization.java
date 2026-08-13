@@ -24,10 +24,17 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestMizerConfig.class)
-public class TestPixelAnon {
+/**
+ * Anonymization through the mizer service with a site script and a project script applied together.
+ * <p>
+ * Named TestPixelAnon until it was un-ignored, which is misleading: neither script touches pixel
+ * data, they assign header elements. Pixel redaction is covered by
+ * {@code StreamingRectanglePixelEditHandlerTest} and {@code TestAlterPixelsFunction}.
+ */
+public class TestSiteAndProjectScriptAnonymization {
     @Test
-    @Ignore
-    public void testPixelAnon() throws MizerException {
+
+    public void appliesSiteAndProjectScripts() throws MizerException {
         final DicomObjectI dicomObject = DicomObjectFactory.newInstance(DICOM_TEST);
 
         assertEquals("head^DHead", dicomObject.getString(Tag.StudyDescription));

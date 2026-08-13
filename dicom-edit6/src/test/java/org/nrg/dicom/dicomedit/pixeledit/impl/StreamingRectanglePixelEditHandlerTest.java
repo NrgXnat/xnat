@@ -6,15 +6,18 @@ import org.dcm4che3.io.DicomInputStream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.nrg.dicom.dicomedit.BaseScriptApplicator;
 import org.nrg.dicom.dicomedit.pixels.impl.StreamingRectanglePixelEditHandler;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 
 import java.awt.Color;
 import java.awt.geom.Rectangle2D;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -108,6 +111,40 @@ public class StreamingRectanglePixelEditHandlerTest {
                    result.dataset.getString(Tag.LossyImageCompressionMethod) != null);
         assertRedacted(RawPixels.of(resource("dicom/multi-frame/xa-jpeg1.dcm")), result,
                        new Rectangle2D.Float(20, 20, 60, 60), new Color(0, 0, 0), false);
+    }
+
+    // --------------------------------------------------------------------------- through a script
+
+    /**
+     * The same redaction driven by an alterPixels script rather than by calling the handler, on
+     * compressed input.
+     * <p>
+     * Worth its own case because the direct tests above skip everything between the script and the
+     * handler -- parsing, PixelEditorManager's choice of handler, the anonymization result -- and
+     * because the compressed path is where a silent no-op would be hardest to notice: an object
+     * whose pixels were never redacted still comes back with its transfer syntax intact, so nothing
+     * short of reading the pixels catches it.
+     */
+    @Test
+    public void redactsCompressedInputThroughAnAlterPixelsScript() throws Exception {
+        final String source = "dicom/DE44/horos_jpg2k.dcm";
+        final String script = "alterPixels[\"rectangle\", \"l=120, t=140, r=200, b=190\", \"solid\", \"v=77\"]\n";
+
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(resource(source),
+                                                                 DicomInputStream.IncludeBulkData.URI);
+        final DicomObjectI edited = BaseScriptApplicator.getInstance(
+                new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8))).apply(dobj).getDicomObject();
+
+        final File output = temporaryFolder.newFile();
+        try (OutputStream out = new FileOutputStream(output)) {
+            edited.write(out);
+        }
+        edited.releaseScratchFiles();
+
+        final RawPixels before = RawPixels.of(resource(source));
+        final RawPixels after  = RawPixels.of(output);
+        assertEquals("transfer syntax should be preserved", UID.JPEG2000Lossless, after.transferSyntax);
+        assertRedacted(before, after, new Rectangle2D.Float(120, 140, 80, 50), new Color(77, 77, 77), true);
     }
 
     // ------------------------------------------------------------------------------------ edge cases

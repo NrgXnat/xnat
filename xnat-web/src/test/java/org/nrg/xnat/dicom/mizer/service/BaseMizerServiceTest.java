@@ -53,7 +53,17 @@ public class BaseMizerServiceTest extends BaseMizerTest {
         assertEquals(2, mizers.size());
     }
 
+    // Still ignored, and not because it fails: the body is empty, so running it asserts nothing.
+    // Writing it needs a decision first. BaseMizerService's javadoc says handlers are "presented in
+    // descending max version order", so that findMizer returns the highest-versioned implementation
+    // able to handle a script. The code sorts ascending -- VersionString.compareTo orders low to
+    // high and AbstractMizer.compareTo delegates to it -- and the mizers really do come back
+    // DE4Mizer (4.0) then DE6Mizer (6.7). Asserting descending would fail; asserting ascending
+    // would pin behaviour that contradicts the documented intent. Harmless today, since each mizer
+    // rejects the other's scripts through understands(), but the doc and the code should agree
+    // before this becomes a test.
     @Test
+    @Ignore
     public void mizersAreInDescendingMaxVersionOrder() {
 
     }

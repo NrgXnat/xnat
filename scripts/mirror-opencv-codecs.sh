@@ -80,7 +80,11 @@ for path in "${ARTIFACTS[@]}"; do
 
   # Already mirrored? Nothing to do, and a PUT would only earn a 409. A 404 here is the normal
   # case before the first run, so this must not be noisy about it.
-  if [ "$(curl -s -o /dev/null -w '%{http_code}' "$READ/$path")" = "200" ]; then
+  #
+  # -I -L rather than a bare GET: Artifactory answers a binary download with a 302 to storage, so
+  # without following redirects every already-mirrored jar and native reads as absent, while the
+  # small POMs served inline read as present.
+  if [ "$(curl -sI -L -o /dev/null -w '%{http_code}' "$READ/$path")" = "200" ]; then
     printf '  %-46s present already\n' "$name"
     continue
   fi

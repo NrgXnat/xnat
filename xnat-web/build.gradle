@@ -181,6 +181,12 @@ dependencies {
     implementation libs.dcm4che5.dcm4che.core
     implementation libs.dcm4che5.dcm4che.image
     implementation libs.dcm4che5.dcm4che.imageio
+    // Codecs for the JPEG family. dcm4che 5's ImageReaderFactory names the OpenCV-backed plugins
+    // for every one of those transfer syntaxes, so without this nothing that decodes compressed
+    // pixel data works -- snapshots and thumbnails included, not just pixel redaction. This is the
+    // Java glue; the native it loads is installed by the Dockerfile, since it is platform-specific
+    // and not a classpath entry. See docs/mirroring-opencv-codecs.md.
+    implementation libs.dcm4che5.dcm4che.imageio.opencv
     // The sole RLE Lossless codec, so the choice of decoder is fixed rather than incidental.
     // ImageReaderFactory looks readers up by format name and then scans that iterator for the
     // class its properties name -- org.dcm4che3.imageio.plugins.rle.RLEImageReader for RLE. When

@@ -16,18 +16,27 @@ The native binaries are declared `<scope>provided</scope>` in Weasis's POM, so t
 resolved transitively** — the 238 KB `weasis-core-img` jar contains no binaries at all. They have to
 be declared explicitly, per platform, which means whichever repository serves them must hold them.
 
-## What is already available, and what is not
+## What is in Artifactory
 
-Probed against `https://nrgxnat.jfrog.io/nrgxnat/libs-release`:
+All of it, as of the mirror run recorded below. `dcm4che-imageio-opencv` and the Weasis BOM were
+already there — they arrive transitively through dcm4che's parent POM. `weasis-core-img` and the
+per-platform natives were not, and are what `scripts/mirror-opencv-codecs.sh` deployed.
 
-| Artifact | Status |
+| Artifact | |
 | --- | --- |
-| `org.dcm4che:dcm4che-imageio-opencv:5.33.1` | present |
-| `org.weasis.core:weasis-core-img-bom:4.9.0.1` | present |
-| `org.weasis.core:weasis-core-img:4.9.0.1` | **missing** |
-| `org.weasis.thirdparty.org.opencv:libopencv_java:4.9.0-dcm` (all classifiers) | **missing** |
+| `org.dcm4che:dcm4che-imageio-opencv:5.33.1` | was already present |
+| `org.weasis.core:weasis-core-img-bom:4.9.0.1` | was already present |
+| `org.weasis.core:weasis-core-img:4.9.0.1` | mirrored |
+| `org.weasis.thirdparty.org.opencv:libopencv_java:4.9.0-dcm` | mirrored, five classifiers |
 
-So only the bottom two rows need mirroring. Upstream is
+The versions are not free choices. `dcm4che-imageio-opencv` must match the dcm4che version, and the
+Weasis library and its native must match what that dcm4che release pins: XNAT is on dcm4che 5.33.1,
+`dcm4che-parent-5.33.1.pom` pins `weasis-core-img` 4.9.0.1, and that pins `libopencv_java`
+4.9.0-dcm. Newer exist upstream — dcm4che 5.35.0 pins Weasis 5.0.0 — but the three move together or
+not at all; a mismatched native fails at load or, worse, subtly. Bumping dcm4che means re-running the
+mirror script with the new coordinates.
+
+Upstream is
 `https://raw.githubusercontent.com/nroduit/mvn-repo/master`, which is already a declared repository in
 `buildSrc/src/main/groovy/buildlogic.java-common-conventions.gradle`. Mirroring pins these to an
 immutable coordinate we control rather than a branch-served path, which matters most for the native
@@ -76,15 +85,20 @@ For the record, SHA-256 of the artifacts that matter most, verified against the 
 
 ## Verifying the mirror
 
+Re-run the script with no arguments. Everything should report `present already`.
+
+Checking by hand needs one subtlety: Artifactory answers a **binary** download with a 302 redirect to
+storage, so `curl` without `-L` reports a mirrored jar or native as absent while the small POMs,
+served inline, look fine. Follow redirects:
+
 ```bash
-for p in org/weasis/core/weasis-core-img/4.9.0.1/weasis-core-img-4.9.0.1.jar \
-         org/weasis/thirdparty/org/opencv/libopencv_java/4.9.0-dcm/libopencv_java-4.9.0-dcm-linux-x86-64.so; do
-  echo "$(curl -s -o /dev/null -w '%{http_code}' "https://nrgxnat.jfrog.io/nrgxnat/libs-release/$p")  $p"
-done
+curl -sI -L -o /dev/null -w '%{http_code}\n' \
+  https://nrgxnat.jfrog.io/nrgxnat/libs-release/org/weasis/thirdparty/org/opencv/libopencv_java/4.9.0-dcm/libopencv_java-4.9.0-dcm-linux-x86-64.so
 ```
 
-Both should report 200. `libs-release` is the virtual repository the build reads from and it already
-includes `libs-release-local`, so no repository declaration changes are needed.
+`libs-release` is the virtual repository the build reads from and it already includes
+`libs-release-local`, so no repository declaration changes are needed. It also serves anonymously,
+which is why the image build needs no credentials.
 
 ## Coverage
 
@@ -116,32 +130,36 @@ dcm4che5-dcm4che-imageio-opencv = { group = "org.dcm4che", name = "dcm4che-image
 ```
 
 ```groovy
-// xnat-web/build.gradle
+// xnat-web/build.gradle -- the Java glue, on the runtime classpath and so inside the WAR
 implementation libs.dcm4che5.dcm4che.imageio.opencv
-
-// The native is not a classpath entry -- it is staged into the image build context. A separate
-// configuration keeps it off the runtime classpath while still resolving through Artifactory.
-configurations { opencvNative }
-dependencies {
-    opencvNative "org.weasis.thirdparty.org.opencv:libopencv_java:${libs.versions.weasis.opencv.get()}:linux-x86-64@so"
-}
-tasks.register('stageOpenCvNative', Copy) {
-    from configurations.opencvNative
-    into layout.buildDirectory.dir('docker-context')
-    rename '.*', 'libopencv_java.so'
-}
 ```
 
-The image then places it where the JVM already looks. On Linux `/usr/java/packages/lib` is on the
-default `java.library.path`, so no `-Djava.library.path` and no Helm chart change is required:
+The native is not a classpath entry and cannot travel in the WAR, so the image fetches it. It is not
+copied from the build context either: that context is assembled by the reusable CI workflow
+(`NrgXnat/xnat-ci-workflows`) and carries only `xnat.war`. `libs-release` serves anonymously, so the
+image build needs no Artifactory credentials.
+
+`/usr/java/packages/lib` is already on the JVM's default `java.library.path` on Linux, so nothing
+needs `-Djava.library.path` and **no Helm chart change is required**.
 
 ```dockerfile
-# Dockerfile
-COPY docker-context/libopencv_java.so /usr/java/packages/lib/
+# Dockerfile -- pinned by checksum, per architecture, failing the build if either is wrong
+ARG TARGETARCH=amd64
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+        amd64) classifier=linux-x86-64;  sha256=41d81dfe... ;; \
+        arm64) classifier=linux-aarch64; sha256=5dd0d8fd... ;; \
+        *) echo "No OpenCV native published for TARGETARCH=${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /usr/java/packages/lib/libopencv_java.so "${OPENCV_BASE}/...-${classifier}.so"; \
+    echo "${sha256}  /usr/java/packages/lib/libopencv_java.so" | sha256sum -c -
 ```
 
-Tests that decode compressed pixel data need the native too. Resolve the classifier matching the
-build host and point the test JVM at it:
+Pass `--build-arg INSTALL_OPENCV=false` for 1.9.x images, which are on dcm4che 2 and would otherwise
+carry ~19 MB they never load.
+
+Tests that decode compressed pixel data need the native too, resolved for whichever machine runs the
+build rather than for the image:
 
 ```groovy
 // dicom-edit6/build.gradle

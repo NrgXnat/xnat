@@ -88,7 +88,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # See docs/mirroring-opencv-codecs.md.
 # -----------------------------------------------------------------------------
 ARG INSTALL_OPENCV=true
-ARG TARGETARCH=amd64
+# No default: BuildKit populates TARGETARCH with the architecture actually being built for, and a
+# default here would mask it -- an arm64 build would silently install the amd64 native. Empty (a
+# pre-BuildKit builder) falls through to the error case, which is the right answer.
+ARG TARGETARCH
 ARG OPENCV_VERSION=4.9.0-dcm
 ARG OPENCV_BASE=https://nrgxnat.jfrog.io/nrgxnat/libs-release/org/weasis/thirdparty/org/opencv/libopencv_java/${OPENCV_VERSION}
 RUN set -eu; \

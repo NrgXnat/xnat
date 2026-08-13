@@ -12,7 +12,6 @@ package org.nrg.xnat.helpers.dicom;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.text.StringEscapeUtils;
 import org.dcm4che3.data.ElementDictionary;
-import org.dcm4che3.data.Tag;
 import org.dcm4che3.util.TagUtils;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomElementI;
@@ -68,14 +67,15 @@ public final class DicomHeaderDump {
      * @throws FileNotFoundException When the specified file isn't found.
      */
     DicomObjectI getHeader(File file) throws MizerException {
-        final int stopTag;
         if (fields.isEmpty()) {
-            stopTag = Tag.PixelData;
-        } else {
-            // DICOM tags are unsigned, so a tag in a group >= 0x8000 is negative as an int and would win a
-            // signed max as the smallest value. dcm4che compares stop tags unsigned, so only this needs fixing.
-            stopTag = 1 + fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
+            // Read the whole object rather than stopping at PixelData. The reader already excludes bulk
+            // data, so the stop tag was never what skipped the pixels -- it just truncated every element
+            // after them, which is why tags like (9753,1050) went missing from the dump.
+            return DicomObjectFactory.newInstance(file, false);
         }
+        // DICOM tags are unsigned, so a tag in a group >= 0x8000 is negative as an int and would win a
+        // signed max as the smallest value. dcm4che compares stop tags unsigned, so only this needs fixing.
+        final int stopTag = 1 + fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
         return DicomObjectFactory.newInstance(file, stopTag);
     }
     

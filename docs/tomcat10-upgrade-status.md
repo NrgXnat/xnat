@@ -586,3 +586,25 @@ annotations only. **Result: green — `clean xnatPluginJar`, 55 tests / 0 failur
 `(RunData,Context)`-dead-override is a bug class to check in **every** remaining plugin with Turbine screens/actions
 (guide J2 already prescribes the conversion; this is the first instance where the dead-override consequence was
 named explicitly).
+
+**1-32 🟢 — xsync plugin migrated to the jakarta stack (two Spring 6 RestTemplate/HTTP API bug classes)**
+(2026-08-13). Migrated `NrgXnat/xsync` onto vXnat 1.11.0-SNAPSHOT per `plugin-migration-guide.md` J1/J2, branch
+`feature/tomcat10` (pushed, commit on that branch). **No Turbine modules** in this plugin (0 screens/actions,
+0 `RunData`) — the migration surface was REST-heavy (21 xapi files) + JPA entities. J1: standard renames
+(`turbine`/`velocity`/`hibernate-core-jakarta`/`jakarta.servlet`/`jakarta.mail`), springfox→`swagger-annotations:1.5.20`,
+toolchain 21 + `-parameters`, `mavenLocal` scoped; dropped unused `commons-fileupload` (v1 unmanaged by the 1.11.0
+BOM). J2 source: 35 javax→jakarta (persistence/servlet/transaction) + the one jsr250 `javax.annotation.PostConstruct`
+→ `jakarta.annotation.PostConstruct` (kept jsr305 `Nonnull`/`Nullable`); Restlet `MediaType` unchanged.
+**Two Spring 6 API bug classes surfaced (both now in guide catalog):** *(A) `HttpMethod` is a final class, not an
+enum* — `HttpMethod.resolve(String)` removed + can't `switch (method) { case GET: }` (bare `cannot find symbol` on
+`resolve` and each `case` label). Fixed `XsyncOperationsController`: `resolve`→`valueOf`, switch→`if/else` on
+`HttpMethod.GET.equals(method)` (unknown method still falls to `UnsupportedOperationException`, as `resolve()`→null
+did). *(B) `getStatusCode()` returns `HttpStatusCode`, not `HttpStatus`* (guide already had this) — 5 sites needing a
+real `HttpStatus` (`List<HttpStatus>.contains`, `.series()`, `XsyncHttpAuthenticationException(HttpStatus,…)`) →
+`HttpStatus.valueOf(resp.getStatusCode().value())`. **Audit (both classes).** Swept xsync: 0 remaining
+`HttpMethod.resolve`/`switch`‑on‑method; every other `.getStatusCode()` use is safe (`.value()` compares, `.equals`,
+`ResponseEntity.status`/`HttpClientErrorException` `HttpStatusCode` overloads, and the cached‑`HttpStatus`‑singleton
+`!=` at `RemoteRESTServiceImpl:326`). javax source residue = jsr305 only. **Result: green — `clean fatJar`, main
+compile clean, `xsync-plugin-all-1.8.2-SNAPSHOT.jar` produced** (plugin has no unit tests). One deferred deprecation:
+`ResponseErrorHandler.handleError(ClientHttpResponse)` is deprecated‑for‑removal in Spring 6 but still functional —
+the 3‑arg overload is a behavior change, left for later.

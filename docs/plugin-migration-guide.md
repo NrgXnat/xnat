@@ -356,7 +356,16 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   `HttpStatusCode`, but `getReasonPhrase()`/`series()`/the enum constants stay on `HttpStatus`. → keep the
   variable as `HttpStatusCode` where you only need `value()`; where you need `getReasonPhrase()` or the enum,
   resolve it back with `HttpStatus.resolve(code.value())` (may be null for non‑standard codes, so guard it) —
-  don't cast, a `ResponseEntity` can now hold a custom code. *(ohif-viewer-xnat-plugin)*
+  don't cast, a `ResponseEntity` can now hold a custom code. *(ohif-viewer-xnat-plugin)* Note `xsync` used the
+  reverse (`HttpStatus.valueOf(resp.getStatusCode().value())`) where a `List<HttpStatus>.contains` / `.series()` /
+  an exception ctor needed a real `HttpStatus` — same idea, pick the direction the downstream call demands.
+- **`HttpMethod` is a final class now, not an `enum`.** Spring 6 turned `org.springframework.http.HttpMethod`
+  into a final class, which breaks two idioms with a bare `cannot find symbol`: (a) `HttpMethod.resolve(String)`
+  was **removed** → use `HttpMethod.valueOf(String)` (returns a non‑constant `HttpMethod` for an unknown method
+  instead of `resolve()`'s `null`); (b) you can no longer `switch (method) { case GET: … }` — the `case` labels
+  fail because they're no longer enum constants. → replace the switch with an `if/else` chain on
+  `HttpMethod.GET.equals(method)` etc. (an unsupported method then falls through to the `else`, matching the old
+  `default`). *(xsync, item 1‑32)*
 
 ### Restlet 2.6
 - **Default success status 200 → 204** for handlers that finish with a bodyless/empty‑entity OK. → clients

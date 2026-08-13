@@ -556,3 +556,33 @@ three (core commit `a5784069f`). List-receiver `.contains($x)` sites (`$read_pro
 are **not** in the class — `List.contains(null)` is legal. No other plugin injects an `$om`-referencing custom screen
 into a global (header/footer/topBar/userBar) location. **Result: class fully swept — 3 sites, all fixed.** Needs
 CR jar + core WAR rebuilt + redeployed for the running instance to pick it up.
+
+**1-31 🟢 — dicom-query-retrieve plugin migrated to the jakarta stack (Turbine 7 override-signature bug class +
+two fulcrum-parser 4.0.0 API relocations)** (2026-08-13). Migrated `NrgXnat/dicom-query-retrieve` onto vXnat
+1.11.0-SNAPSHOT per `plugin-migration-guide.md` J1/J2, branch `feature/tomcat10` (pushed, commit `bba26ce`).
+**Bug class = Turbine 7 module override-signature mismatch.** The plugin's 8 screens (`extends DqrSecureScreen`)
+overrode `doBuildTemplate(RunData, Context)` and its 4 actions (`extends DqrSecureAction`) overrode
+`doPerform(RunData, Context)`. In Turbine 7 the framework dispatch is the **two-arg `(PipelineData, Context)`**
+method (`VelocityScreen.doBuildTemplate` / `VelocityAction.doPerform`); `RunData extends PipelineData`, so
+`SecureScreen.doBuildTemplate(PipelineData)` at `SecureScreen.java:222` calls `doBuildTemplate(data, context)`
+(a RunData, widened to PipelineData) → binds to the `(PipelineData, Context)` overload. The plugin's
+`(RunData, Context)` methods are a **more-specific, non-overriding overload → silently never called** (dead code:
+screens render nothing custom, actions never run). Confirmed against working jakarta references
+`xnat-web DownloadImages`/`ReportIssue`. **Fix.** Converted all 12 entry points to
+`(PipelineData pipelineData, Context context)` + `final RunData data = pipelineData.getRunData();` bridge; helper
+methods (`getPassedPacs`, `storeProjectAndQueryablePacs`, `buildPacsStudyImportRequest`, the `DqrSecureAction`
+session helpers) and `super.doBuildTemplate(data, context)` calls **stay on RunData** (RunData is-a PipelineData).
+`DqrSecureAction` itself overrides no framework method (helpers only) → unchanged. **Two fulcrum-parser 4.0.0
+relocations** (surfaced once turbine pulled `transitive=false` and fulcrum-parser/pool were added compileOnly):
+(a) `ParameterParser` moved `org.apache.turbine.util.parser` → `org.apache.fulcrum.parser`; (b) multipart upload
+model changed — `getFileItem(String)`→commons `FileItem` is **gone**, replaced by `getPart(String)`→
+`jakarta.servlet.http.Part` (ported `ImportFromSpreadsheet` to copy `getInputStream()` via `Files.copy`, avoiding
+`Part.write()`'s MultipartConfig-relative path). Also: `hibernate-core`/`-envers` → `-jakarta` variants (javax
+coords unmanaged by the 1.11.0 BOM); springfox-swagger2 → `swagger-annotations:1.5.20` + dropped 3 springfox
+`@ApiIgnore` (doc-only, springfox-dead on Spring 6); 55 javax→jakarta EE refs (kept jsr305 `@Nonnull`/`@Nullable`
++ `jakarta.json`). **Audit (Turbine override bug class).** Swept the whole plugin: 0 remaining framework-override
+methods on `(RunData, Context)`; no `isAuthorized`/`doBuild*` overrides exist; javax source residue = jsr305
+annotations only. **Result: green — `clean xnatPluginJar`, 55 tests / 0 failures, `-xpl.jar` produced.** The
+`(RunData,Context)`-dead-override is a bug class to check in **every** remaining plugin with Turbine screens/actions
+(guide J2 already prescribes the conversion; this is the first instance where the dead-override consequence was
+named explicitly).

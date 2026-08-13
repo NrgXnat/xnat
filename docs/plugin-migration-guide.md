@@ -270,9 +270,19 @@ protected void doBuildTemplate(PipelineData pipelineData, Context context) throw
 }
 ```
 Import `org.apache.turbine.pipeline.PipelineData`. Leave XNAT's own `RunData` helper methods alone —
-only the framework overrides change. Other Turbine renames you may hit: `TurbineVelocity.getContext(data)`
+only the framework overrides change. **Why it bites silently:** `RunData extends PipelineData`, so a leftover
+`doBuildTemplate(RunData, Context)` still *compiles* (it's a more‑specific overload), but the framework only ever
+calls the `(PipelineData, Context)` method — your `(RunData, Context)` override is **dead code, never invoked**
+(the screen renders nothing custom / the action never runs), with no compile error to warn you. Grep every plugin
+Turbine module for `doBuildTemplate(.*RunData`/`doPerform(.*RunData` after migrating. *(dicom-query-retrieve, item 1‑31)*
+Other Turbine renames you may hit: `TurbineVelocity.getContext(data)`
 → `TurbineUtils.getVelocityContext(data)`; `ActionLoader.getInstance().getInstance(x)` → `.getAssembler(x)`;
-`org.apache.turbine.util.parser.ParameterParser` → `org.apache.fulcrum.parser.ParameterParser`.
+`org.apache.turbine.util.parser.ParameterParser` → `org.apache.fulcrum.parser.ParameterParser`. **Multipart
+uploads changed model in fulcrum‑parser 4.0.0:** `ParameterParser.getFileItem(String)` → commons‑fileupload
+`FileItem` is **gone** — use `getPart(String)` → `jakarta.servlet.http.Part`. Port `FileItem.write(File)` to
+copying `part.getInputStream()` with `Files.copy(in, temp.toPath(), REPLACE_EXISTING)` rather than `Part.write()`
+(whose target path is resolved relative to the servlet `MultipartConfig` location, not an absolute temp path);
+`part.delete()` throws `IOException` (the old `FileItem.delete()` didn't) — wrap it. *(dicom-query-retrieve, item 1‑31)*
 
 **`javax.*` → `jakarta.*`** for the EE APIs the plugin uses directly: `javax.servlet` → `jakarta.servlet`,
 `javax.mail` → `jakarta.mail`, `javax.jms`, `javax.persistence` → `jakarta.persistence`, `javax.validation`

@@ -28,8 +28,8 @@ SRC="https://raw.githubusercontent.com/nroduit/mvn-repo/master"
 DST="https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
 READ="https://nrgxnat.jfrog.io/nrgxnat/libs-release"
 
-WEASIS="org/weasis/core/weasis-core-img/4.9.0.1"
-OPENCV="org/weasis/thirdparty/org/opencv/libopencv_java/4.9.0-dcm"
+WEASIS="org/weasis/core/weasis-core-img/5.0.0"
+OPENCV="org/weasis/thirdparty/org/opencv/libopencv_java/5.0.0-dcm"
 
 # weasis-core-img-bom is deliberately absent: it already resolves from Artifactory.
 #
@@ -40,13 +40,13 @@ OPENCV="org/weasis/thirdparty/org/opencv/libopencv_java/4.9.0-dcm"
 # Upstream also carries "-dyn" variants of each Linux native, dynamically linked and smaller. The
 # POM names the statically linked ones, so those are what resolve; do not substitute them.
 ARTIFACTS=(
-  "$WEASIS/weasis-core-img-4.9.0.1.pom"
-  "$WEASIS/weasis-core-img-4.9.0.1.jar"
-  "$OPENCV/libopencv_java-4.9.0-dcm.pom"
-  "$OPENCV/libopencv_java-4.9.0-dcm-linux-x86-64.so"      # what ships in the image
-  "$OPENCV/libopencv_java-4.9.0-dcm-linux-aarch64.so"     # arm64 nodes and CI
-  "$OPENCV/libopencv_java-4.9.0-dcm-macosx-aarch64.dylib" # Apple silicon development
-  "$OPENCV/libopencv_java-4.9.0-dcm-macosx-x86-64.dylib"  # Intel Mac development
+  "$WEASIS/weasis-core-img-5.0.0.pom"
+  "$WEASIS/weasis-core-img-5.0.0.jar"
+  "$OPENCV/libopencv_java-5.0.0-dcm.pom"
+  "$OPENCV/libopencv_java-5.0.0-dcm-linux-x86-64.so"      # what ships in the image
+  "$OPENCV/libopencv_java-5.0.0-dcm-linux-aarch64.so"     # arm64 nodes and CI
+  "$OPENCV/libopencv_java-5.0.0-dcm-macosx-aarch64.dylib" # Apple silicon development
+  "$OPENCV/libopencv_java-5.0.0-dcm-macosx-x86-64.dylib"  # Intel Mac development
 )
 
 publish=false

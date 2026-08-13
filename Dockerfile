@@ -92,15 +92,15 @@ ARG INSTALL_OPENCV=true
 # default here would mask it -- an arm64 build would silently install the amd64 native. Empty (a
 # pre-BuildKit builder) falls through to the error case, which is the right answer.
 ARG TARGETARCH
-ARG OPENCV_VERSION=4.9.0-dcm
+ARG OPENCV_VERSION=5.0.0-dcm
 ARG OPENCV_BASE=https://nrgxnat.jfrog.io/nrgxnat/libs-release/org/weasis/thirdparty/org/opencv/libopencv_java/${OPENCV_VERSION}
 RUN set -eu; \
     if [ "${INSTALL_OPENCV}" != "true" ]; then \
         echo "INSTALL_OPENCV=${INSTALL_OPENCV}, skipping the OpenCV native"; \
     else \
         case "${TARGETARCH}" in \
-            amd64) classifier=linux-x86-64;  sha256=41d81dfe284b448f38a1420f711c30b53f3a42035067059fcc9449d1b2cadca3 ;; \
-            arm64) classifier=linux-aarch64; sha256=5dd0d8fd94d97504cad8d6eeef26c23cc1bbb975732467bce793f6b5959077b3 ;; \
+            amd64) classifier=linux-x86-64;  sha256=3552c806744192c734f6cf492bf95a139cbfd6f800ff662688d18b6a199f92f1 ;; \
+            arm64) classifier=linux-aarch64; sha256=b07190e6ef6e233c2b7dc7f945c5b470be44450a49f9915aeaaa86f8799ef6a0 ;; \
             *) echo "No OpenCV native published for TARGETARCH=${TARGETARCH}" >&2; exit 1 ;; \
         esac; \
         mkdir -p /usr/java/packages/lib; \

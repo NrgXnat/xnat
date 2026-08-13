@@ -45,10 +45,10 @@ container-service = "3.0.0"
 datasets = "1.0.0"
 datasource-proxy = "1.6"
 dcm4che = "2.0.29"
-dcm4che5 = "5.33.1"
+dcm4che5 = "5.35.0"
 # Native OpenCV build behind dcm4che-imageio-opencv. Declared provided-scope by Weasis, so it is
 # never resolved transitively and has to be asked for by classifier. See docs/mirroring-opencv-codecs.md.
-weasis-opencv = "4.9.0-dcm"
+weasis-opencv = "5.0.0-dcm"
 dicom-edit6 = "6.9.1"
 dom4j = "2.1.4"
 dqr = "1.0.0"

@@ -24,16 +24,25 @@ per-platform natives were not, and are what `scripts/mirror-opencv-codecs.sh` de
 
 | Artifact | |
 | --- | --- |
-| `org.dcm4che:dcm4che-imageio-opencv:5.33.1` | was already present |
-| `org.weasis.core:weasis-core-img-bom:4.9.0.1` | was already present |
-| `org.weasis.core:weasis-core-img:4.9.0.1` | mirrored |
-| `org.weasis.thirdparty.org.opencv:libopencv_java:4.9.0-dcm` | mirrored, five classifiers |
+| `org.dcm4che:dcm4che-imageio-opencv:5.35.0` | was already present |
+| `org.weasis.core:weasis-core-img-bom:5.0.0` | was already present |
+| `org.weasis.core:weasis-core-img:5.0.0` | mirrored |
+| `org.weasis.thirdparty.org.opencv:libopencv_java:5.0.0-dcm` | mirrored, five classifiers |
 
 The versions are not free choices. `dcm4che-imageio-opencv` must match the dcm4che version, and the
-Weasis library and its native must match what that dcm4che release pins: XNAT is on dcm4che 5.33.1,
-`dcm4che-parent-5.33.1.pom` pins `weasis-core-img` 4.9.0.1, and that pins `libopencv_java`
-4.9.0-dcm. Newer exist upstream — dcm4che 5.35.0 pins Weasis 5.0.0 — but the three move together or
-not at all; a mismatched native fails at load or, worse, subtly. Bumping dcm4che means re-running the
+Weasis library and its native must match what that dcm4che release pins: XNAT is on dcm4che 5.35.0,
+`dcm4che-parent-5.35.0.pom` pins `weasis-core-img` 5.0.0, and that pins `libopencv_java`
+5.0.0-dcm. The three move together or not at all; a mismatched native fails at load or, worse,
+subtly.
+
+5.35.0 specifically, not 5.33.1: everything before it reflects into `java.desktop` internals to
+resolve a stream segment, which JDK 17+ denies. dcm4che logs the denial and returns null, and the
+caller dereferences it -- so snapshot generation fails with "Cannot invoke
+StreamSegment.getImageDescriptor() because seg is null" for every compressed study (XNAT-6581,
+XNAT-6743, and dcm4che issue 1403). The documented workaround, `--add-opens
+java.desktop/javax.imageio.stream=ALL-UNNAMED`, is worse than the bug: reflection then succeeds and
+the native segfaults, taking the JVM with it. 5.35.0 rewrote the method to ask the stream for its
+file directly, and needs no flag. Bumping dcm4che means re-running the
 mirror script with the new coordinates.
 
 Upstream is
@@ -56,8 +65,8 @@ artifact and verifying it against the checksum published upstream without upload
 $ scripts/mirror-opencv-codecs.sh
 DRY RUN -- downloading and verifying only. Pass --publish to upload.
 
-  weasis-core-img-4.9.0.1.pom                    ok        3441 bytes  sha256=884566e5...
-  libopencv_java-4.9.0-dcm-linux-x86-64.so       ok    18841808 bytes  sha256=41d81dfe...
+  weasis-core-img-5.0.0.pom                      ok        3007 bytes  sha256=4dbcf650...
+  libopencv_java-5.0.0-dcm-linux-x86-64.so       ok    34664360 bytes  sha256=3552c806...
   ...
 All artifacts verified. Re-run with --publish to upload.
 ```
@@ -77,10 +86,10 @@ Upstream publishes no Windows binary, despite Weasis's POM declaring `windows-x8
 For the record, SHA-256 of the artifacts that matter most, verified against the upstream `.sha1`:
 
 ```
-50ef4d80ab6d95e83f7bad82b99f9792520566eb77ca6bdd0bbc3ec3cbbb84e7  weasis-core-img-4.9.0.1.jar
-41d81dfe284b448f38a1420f711c30b53f3a42035067059fcc9449d1b2cadca3  libopencv_java-4.9.0-dcm-linux-x86-64.so
-5dd0d8fd94d97504cad8d6eeef26c23cc1bbb975732467bce793f6b5959077b3  libopencv_java-4.9.0-dcm-linux-aarch64.so
-0201f684e7e85881624fe2d91ca3d8fc36ae16b53143c876bef7754c6de8457a  libopencv_java-4.9.0-dcm-macosx-aarch64.dylib
+3552c806744192c734f6cf492bf95a139cbfd6f800ff662688d18b6a199f92f1  libopencv_java-5.0.0-dcm-linux-x86-64.so
+b07190e6ef6e233c2b7dc7f945c5b470be44450a49f9915aeaaa86f8799ef6a0  libopencv_java-5.0.0-dcm-linux-aarch64.so
+f447743478afd7b8bf1fb66d5df22a46f50b0b811d490638aec83992cbfe423e  libopencv_java-5.0.0-dcm-macosx-aarch64.dylib
+902e3993685d3909d1952944943bd56a62d6010f6d1fcc3c6a98dc178fbe930e  libopencv_java-5.0.0-dcm-macosx-x86-64.dylib
 ```
 
 ## Verifying the mirror
@@ -93,7 +102,7 @@ served inline, look fine. Follow redirects:
 
 ```bash
 curl -sI -L -o /dev/null -w '%{http_code}\n' \
-  https://nrgxnat.jfrog.io/nrgxnat/libs-release/org/weasis/thirdparty/org/opencv/libopencv_java/4.9.0-dcm/libopencv_java-4.9.0-dcm-linux-x86-64.so
+  https://nrgxnat.jfrog.io/nrgxnat/libs-release/org/weasis/thirdparty/org/opencv/libopencv_java/5.0.0-dcm/libopencv_java-5.0.0-dcm-linux-x86-64.so
 ```
 
 `libs-release` is the virtual repository the build reads from and it already includes
@@ -124,7 +133,7 @@ working example of the platform-classifier selection and the staging task descri
 
 ```toml
 # gradle/libs.versions.toml
-weasis-opencv = "4.9.0-dcm"
+weasis-opencv = "5.0.0-dcm"
 
 dcm4che5-dcm4che-imageio-opencv = { group = "org.dcm4che", name = "dcm4che-imageio-opencv", version.ref = "dcm4che5" }
 ```
@@ -147,8 +156,8 @@ needs `-Djava.library.path` and **no Helm chart change is required**.
 ARG TARGETARCH=amd64
 RUN set -eu; \
     case "${TARGETARCH}" in \
-        amd64) classifier=linux-x86-64;  sha256=41d81dfe... ;; \
-        arm64) classifier=linux-aarch64; sha256=5dd0d8fd... ;; \
+        amd64) classifier=linux-x86-64;  sha256=3552c806... ;; \
+        arm64) classifier=linux-aarch64; sha256=b07190e6... ;; \
         *) echo "No OpenCV native published for TARGETARCH=${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
     curl -fsSL -o /usr/java/packages/lib/libopencv_java.so "${OPENCV_BASE}/...-${classifier}.so"; \

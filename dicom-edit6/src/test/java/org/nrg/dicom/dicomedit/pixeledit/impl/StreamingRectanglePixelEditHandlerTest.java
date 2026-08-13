@@ -63,11 +63,23 @@ public class StreamingRectanglePixelEditHandlerTest {
     }
 
     @Test
-    public void redactsPlanarBigEndianColour() throws Exception {
-        // RGB, PlanarConfiguration 1, Explicit VR Big Endian: each sample lives in its own plane
-        // and multi-byte values are the other way round. Both are easy to get wrong.
+    public void redactsPlanarColour() throws Exception {
+        // RGB with PlanarConfiguration 1: each sample lives in its own plane rather than beside its
+        // neighbours, so a rectangle is one byte run per plane. This fixture is Explicit VR Big
+        // Endian too, but at 8 bits per sample byte order cannot show up -- see
+        // redactsBigEndianSixteenBit for that.
         redactAndVerify("dicom/single-frame/US-evbe-rgb-8bits.dcm",
                         new Rectangle2D.Float(200, 200, 100, 100), new Color(10, 20, 30),
+                        UID.ExplicitVRBigEndian);
+    }
+
+    @Test
+    public void redactsBigEndianSixteenBit() throws Exception {
+        // Explicit VR Big Endian at 16 bits, so the fill value has to be written most significant
+        // byte first. Every other fixture is either little endian or 8 bits per sample, where the
+        // byte order branch cannot be wrong.
+        redactAndVerify("dicom/single-frame/CT-evbe-mono2-16bits.dcm",
+                        new Rectangle2D.Float(150, 150, 120, 120), new Color(200, 200, 200),
                         UID.ExplicitVRBigEndian);
     }
 
@@ -100,8 +112,10 @@ public class StreamingRectanglePixelEditHandlerTest {
     public void writesLossySourceUncompressedWithHistory() throws Exception {
         // Re-encoding lossy input would cost a second generation of loss over the whole image, so
         // the redacted object is stored uncompressed and the history is recorded instead.
+        // A non-zero fill on purpose: this object's corner is solid black, so a fill of zero would
+        // have been indistinguishable from no redaction at all.
         final File output = redact("dicom/multi-frame/xa-jpeg1.dcm",
-                                   new Rectangle2D.Float(20, 20, 60, 60), new Color(0, 0, 0));
+                                   new Rectangle2D.Float(20, 20, 60, 60), new Color(180, 180, 180));
         final RawPixels result = RawPixels.of(output);
         assertEquals("lossy input should be stored uncompressed",
                      UID.ExplicitVRLittleEndian, result.transferSyntax);
@@ -110,7 +124,7 @@ public class StreamingRectanglePixelEditHandlerTest {
         assertTrue("a lossy compression method should be recorded",
                    result.dataset.getString(Tag.LossyImageCompressionMethod) != null);
         assertRedacted(RawPixels.of(resource("dicom/multi-frame/xa-jpeg1.dcm")), result,
-                       new Rectangle2D.Float(20, 20, 60, 60), new Color(0, 0, 0), false);
+                       new Rectangle2D.Float(20, 20, 60, 60), new Color(180, 180, 180), false);
     }
 
     // --------------------------------------------------------------------------- through a script
@@ -214,6 +228,7 @@ public class StreamingRectanglePixelEditHandlerTest {
                 : new int[]{fill.getRed()};
 
         int redacted = 0;
+        int differedBefore = 0;
         for (int frame = 0; frame < after.frames; frame++) {
             for (int y = 0; y < after.rows; y++) {
                 for (int x = 0; x < after.columns; x++) {
@@ -232,11 +247,20 @@ public class StreamingRectanglePixelEditHandlerTest {
                     }
                     if (inside) {
                         redacted++;
+                        for (int sample = 0; sample < after.samplesPerPixel; sample++) {
+                            if (before.sample(frame, x, y, sample) != expectedFill[sample]) {
+                                differedBefore++;
+                            }
+                        }
                     }
                 }
             }
         }
         assertTrue("the test should have redacted something", redacted > 0);
+        // Without this, a rectangle over a region that already held the fill value would satisfy
+        // every assertion above whether or not any redaction happened.
+        assertTrue("the source already held the fill value throughout the region, so this case "
+                   + "would pass without any redaction taking place", differedBefore > 0);
     }
 
     private File redact(String resource, Rectangle2D rect, Color fill) throws Exception {

@@ -13,7 +13,11 @@
 #
 # Publishing additionally uploads, and needs deploy rights on libs-release-local:
 #
-#     ARTIFACTORY_USER=... ARTIFACTORY_TOKEN=... scripts/mirror-opencv-codecs.sh --publish
+#     ARTIFACTORY_USER=you scripts/mirror-opencv-codecs.sh --publish
+#
+# The token is prompted for, silently, if it is not already in the environment. Prefer that to
+# passing it inline: an argument on a command line is visible to `ps` while the script runs, and is
+# kept in shell history afterwards.
 #
 # libs-release-local rejects redeploys with 409 rather than overwriting, so re-running is safe: an
 # artifact already present is reported and skipped.
@@ -50,7 +54,18 @@ publish=false
 
 if $publish; then
   : "${ARTIFACTORY_USER:?--publish needs ARTIFACTORY_USER}"
-  : "${ARTIFACTORY_TOKEN:?--publish needs ARTIFACTORY_TOKEN}"
+  if [ -z "${ARTIFACTORY_TOKEN:-}" ]; then
+    if [ -t 0 ]; then
+      read -rs -p "Artifactory token for $ARTIFACTORY_USER: " ARTIFACTORY_TOKEN
+      echo
+    else
+      echo "No ARTIFACTORY_TOKEN, and no terminal to prompt on." >&2
+      echo "Run this from an interactive shell, or export the token first." >&2
+      exit 1
+    fi
+  fi
+  # curl reads it from the environment rather than from argv, keeping it out of the process table.
+  export ARTIFACTORY_TOKEN
 else
   echo "DRY RUN -- downloading and verifying only. Pass --publish to upload."
 fi
@@ -90,9 +105,12 @@ for path in "${ARTIFACTS[@]}"; do
     continue
   fi
 
-  code="$(curl -sS -o /dev/null -w '%{http_code}' -u "$ARTIFACTORY_USER:$ARTIFACTORY_TOKEN" \
-        -H "X-Checksum-Sha1: $got" -H "X-Checksum-Sha256: $sha256" \
-        -X PUT -T "$file" "$DST/$path")"
+  # Credentials go in on stdin as a curl config rather than as -u, which would put the token in
+  # argv where `ps` can read it. printf is a shell builtin, so it is not a process either.
+  code="$(printf 'user = "%s:%s"\n' "$ARTIFACTORY_USER" "$ARTIFACTORY_TOKEN" \
+        | curl -sS -o /dev/null -w '%{http_code}' --config - \
+               -H "X-Checksum-Sha1: $got" -H "X-Checksum-Sha256: $sha256" \
+               -X PUT -T "$file" "$DST/$path")"
   case "$code" in
     200|201) printf '  %-46s deployed  sha256=%s\n' "$name" "$sha256" ;;
     409)     printf '  %-46s present already\n' "$name" ;;

@@ -4,7 +4,12 @@ import org.junit.Test;
 import org.nrg.xft.XFTTable;
 
 import java.nio.file.Paths;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class DicomHeaderDumpTest {
@@ -26,5 +31,23 @@ public class DicomHeaderDumpTest {
 
         assertTrue("the block before the pixel data should render", dump.contains("(0019,1050)"));
         assertTrue("the block after the pixel data should render too", dump.contains("(F215,1050)"));
+    }
+
+    /**
+     * Requesting a tag in a group >= 0x8000 by field must resolve to that tag, and must not disturb
+     * the other requested fields.
+     *
+     * TagUtils.forName resolves plain hex itself and reports failure by returning 0xFFFFFFFF rather
+     * than throwing, so the hex fallback in getFields never ran for such a tag. The key became
+     * 0xFFFFFFFF; the stop tag derived from it then wrapped to 0 and halted the read at the first
+     * element, so the response came back empty rather than merely missing the private tag.
+     */
+    @Test
+    public void parsesHighGroupTagRequestedByField() {
+        final Map<Integer, Set<String>> fields = DicomDump.getFields(new String[]{"00080060", "F2151050"});
+
+        assertTrue("the ordinary tag should still resolve", fields.containsKey(0x00080060));
+        assertTrue("the high-group tag should resolve to itself", fields.containsKey(0xF2151050));
+        assertFalse("no key should be the unresolved sentinel", fields.containsKey(0xFFFFFFFF));
     }
 }

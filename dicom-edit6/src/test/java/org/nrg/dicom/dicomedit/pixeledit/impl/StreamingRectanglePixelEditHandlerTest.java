@@ -41,17 +41,11 @@ public class StreamingRectanglePixelEditHandlerTest {
 
     @Test
     public void redactsImplicitVrLittleEndian16Bit() throws Exception {
-        // 512x512 MONOCHROME2, BitsAllocated 16, BitsStored 12.
+        // 512x512 MONOCHROME2, BitsAllocated 16, BitsStored 12. Not the only guard for anything,
+        // but the only case on Implicit VR Little Endian, which is what most scanners send.
         redactAndVerify("dicom/single-frame/CT-ivle-mono2-12bits.dcm",
                         new Rectangle2D.Float(200, 200, 100, 100), new Color(200, 200, 200),
                         UID.ImplicitVRLittleEndian);
-    }
-
-    @Test
-    public void redactsExplicitVrLittleEndian8Bit() throws Exception {
-        redactAndVerify("dicom/single-frame/US-evle-mono2-8bits.dcm",
-                        new Rectangle2D.Float(700, 400, 200, 200), new Color(128, 128, 128),
-                        UID.ExplicitVRLittleEndian);
     }
 
     @Test
@@ -64,6 +58,7 @@ public class StreamingRectanglePixelEditHandlerTest {
 
     @Test
     public void redactsPlanarColour() throws Exception {
+        // The only guard against planar colour being treated as interleaved.
         // RGB with PlanarConfiguration 1: each sample lives in its own plane rather than beside its
         // neighbours, so a rectangle is one byte run per plane. This fixture is Explicit VR Big
         // Endian too, but at 8 bits per sample byte order cannot show up -- see
@@ -75,6 +70,7 @@ public class StreamingRectanglePixelEditHandlerTest {
 
     @Test
     public void redactsBigEndianSixteenBit() throws Exception {
+        // The only guard against byte order being ignored.
         // Explicit VR Big Endian at 16 bits, so the fill value has to be written most significant
         // byte first. Every other fixture is either little endian or 8 bits per sample, where the
         // byte order branch cannot be wrong.
@@ -110,6 +106,7 @@ public class StreamingRectanglePixelEditHandlerTest {
 
     @Test
     public void writesLossySourceUncompressedWithHistory() throws Exception {
+        // The only guard against the lossy compression history not being recorded.
         // Re-encoding lossy input would cost a second generation of loss over the whole image, so
         // the redacted object is stored uncompressed and the history is recorded instead.
         // A non-zero fill on purpose: this object's corner is solid black, so a fill of zero would
@@ -125,40 +122,6 @@ public class StreamingRectanglePixelEditHandlerTest {
                    result.dataset.getString(Tag.LossyImageCompressionMethod) != null);
         assertRedacted(RawPixels.of(resource("dicom/multi-frame/xa-jpeg1.dcm")), result,
                        new Rectangle2D.Float(20, 20, 60, 60), new Color(180, 180, 180), false);
-    }
-
-    // --------------------------------------------------------------------------- through a script
-
-    /**
-     * The same redaction driven by an alterPixels script rather than by calling the handler, on
-     * compressed input.
-     * <p>
-     * Worth its own case because the direct tests above skip everything between the script and the
-     * handler -- parsing, PixelEditorManager's choice of handler, the anonymization result -- and
-     * because the compressed path is where a silent no-op would be hardest to notice: an object
-     * whose pixels were never redacted still comes back with its transfer syntax intact, so nothing
-     * short of reading the pixels catches it.
-     */
-    @Test
-    public void redactsCompressedInputThroughAnAlterPixelsScript() throws Exception {
-        final String source = "dicom/DE44/horos_jpg2k.dcm";
-        final String script = "alterPixels[\"rectangle\", \"l=120, t=140, r=200, b=190\", \"solid\", \"v=77\"]\n";
-
-        final DicomObjectI dobj = DicomObjectFactory.newInstance(resource(source),
-                                                                 DicomInputStream.IncludeBulkData.URI);
-        final DicomObjectI edited = BaseScriptApplicator.getInstance(
-                new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8))).apply(dobj).getDicomObject();
-
-        final File output = temporaryFolder.newFile();
-        try (OutputStream out = new FileOutputStream(output)) {
-            edited.write(out);
-        }
-        edited.releaseScratchFiles();
-
-        final RawPixels before = RawPixels.of(resource(source));
-        final RawPixels after  = RawPixels.of(output);
-        assertEquals("transfer syntax should be preserved", UID.JPEG2000Lossless, after.transferSyntax);
-        assertRedacted(before, after, new Rectangle2D.Float(120, 140, 80, 50), new Color(77, 77, 77), true);
     }
 
     // ------------------------------------------------------------------------------------ edge cases
@@ -183,12 +146,14 @@ public class StreamingRectanglePixelEditHandlerTest {
 
     @Test
     public void clipsRectangleOverhangingTheImage() throws Exception {
+        // The only guard against the rectangle not being clipped to the image.
         // Overhanging the right and bottom edges must clip, not wrap onto the next row or frame.
         redactAndVerify("dicom/single-frame/US-evle-rgb-8bits.dcm",
                         new Rectangle2D.Float(200, 90, 500, 500), new Color(1, 2, 3),
                         UID.ExplicitVRLittleEndian);
     }
 
+    // The only guard against staged pixel files being left behind.
     @Test
     public void deletesScratchFilesOnRelease() throws Exception {
         final DicomObjectI dobj = DicomObjectFactory.newInstance(

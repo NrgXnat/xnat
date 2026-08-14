@@ -44,6 +44,8 @@ public final class DicomHeaderDump {
 
     private final Logger logger = LoggerFactory.getLogger(DicomHeaderDump.class);
     private final String file; // path to the DICOM file
+    /** TagUtils.forName returns this when it cannot resolve a name, and max + 1 wraps to 0 on it. */
+    private static final int TAG_NOT_RESOLVED = 0xFFFFFFFF;
     private final Map<Integer,Set<String>> fields;
 
     /**
@@ -75,7 +77,10 @@ public final class DicomHeaderDump {
         }
         // DICOM tags are unsigned, so a tag in a group >= 0x8000 is negative as an int and would win a
         // signed max as the smallest value. dcm4che compares stop tags unsigned, so only this needs fixing.
-        final int stopTag = 1 + fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
+        final int maxTag = fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
+        // maxTag + 1 wraps to 0 at 0xFFFFFFFF, and a stop tag of 0 halts the read at the first element.
+        // dcm4che already reads to the end when given -1, which is the right answer for that case.
+        final int stopTag = TAG_NOT_RESOLVED == maxTag ? -1 : maxTag + 1;
         return DicomObjectFactory.newInstance(file, stopTag);
     }
     

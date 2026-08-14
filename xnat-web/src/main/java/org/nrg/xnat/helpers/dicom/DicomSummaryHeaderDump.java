@@ -61,6 +61,8 @@ public final class DicomSummaryHeaderDump {
     private final Iterable<File> files; // path to the DICOM file
     
     /** The fields. */
+    /** TagUtils.forName returns this when it cannot resolve a name, and max + 1 wraps to 0 on it. */
+    private static final int TAG_NOT_RESOLVED = 0xFFFFFFFF;
     private final Map<Integer,Set<String>> fields;
 
     
@@ -111,7 +113,10 @@ public final class DicomSummaryHeaderDump {
         }
         // DICOM tags are unsigned, so a tag in a group >= 0x8000 is negative as an int and would win a
         // signed max as the smallest value. dcm4che compares stop tags unsigned, so only this needs fixing.
-        final int stopTag = 1 + fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
+        final int maxTag = fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
+        // maxTag + 1 wraps to 0 at 0xFFFFFFFF, and a stop tag of 0 halts the read at the first element.
+        // dcm4che already reads to the end when given -1, which is the right answer for that case.
+        final int stopTag = TAG_NOT_RESOLVED == maxTag ? -1 : maxTag + 1;
         return DicomObjectFactory.newInstance(file, stopTag);
     }
 
@@ -261,8 +266,9 @@ public final class DicomSummaryHeaderDump {
      * @param element the dicomElement
      */
     public void write(XFTTable t,DicomObjectI header,DicomElementI element){
-        // dcm4che3 - header is already DicomObjectI, no need to wrap
-        DicomElementI dei = header.getElement(element.tag());
+        // Do not look the element back up in header: write() recurses into sequence items with the
+        // top-level header, so getElement returns null for anything nested and isShadowHeader then
+        // dereferences it. At the top level the lookup only ever returned element anyway.
     	if (fields.isEmpty() || fields.containsKey(element.tag())) {
             if (element.hasItems()) {
                 for (int i = 0; i < element.countItems(); i++) {
@@ -273,8 +279,8 @@ public final class DicomSummaryHeaderDump {
                         write( t, header, e1);
                     }
                 }
-            } else if (SiemensShadowHeader.isShadowHeader(header, dei)) {
-                SiemensShadowHeader.addRows(t, header, dei, fields.get(element.tag()));
+            } else if (SiemensShadowHeader.isShadowHeader(header, element)) {
+                SiemensShadowHeader.addRows(t, header, element, fields.get(element.tag()));
             } else {
                 t.insertRow(makeRow(element, null));
             }

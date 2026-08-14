@@ -105,7 +105,7 @@ public class OrphanPvtCreatorIDExterminator extends DicomObjectVisitor {
         }
 
         public boolean isSameGroup( Tag tag) {
-            return _pb.getGroup() == tag.getGroupAsInt();
+            return _pb.getGroupAsInt() == tag.getGroupAsInt();
         }
         public boolean isSameCreatorID( Tag tag, DicomObjectI dicomObject) {
             return _pb.getCreatorID().equals( dicomObject.getPrivateCreator( tag.asInt()));

@@ -29,7 +29,7 @@ public class TagPathParseTreeVisitor extends TagPathBaseVisitor<Integer> {
     public Integer visitTag(TagPathParser.TagContext ctx) {
 //        super.visitTag(ctx);
         String hexString = ctx.group().HEXWORD().toString() + ctx.element().HEXWORD().toString();
-        return Integer.parseInt( hexString, 16);
+        return Integer.parseUnsignedInt(hexString, 16);
     }
 
     @Override

@@ -81,7 +81,7 @@ public class ExtractorFromRuleProvider implements ExtractorProvider {
     public DicomPatternRuleMetaData parseDicomRule(final String expression) {
         final Matcher matcher = CUSTOM_RULE_PATTERN.matcher( expression);
         if (matcher.matches()) {
-            final int    tag      = Integer.decode("0x" + matcher.group(1) + matcher.group(2));
+            final int    tag      = Integer.parseUnsignedInt(matcher.group(1) + matcher.group(2), 16);
             final String regexp   = matcher.group(3);
             final String groupIdx = matcher.group(4);
             final int    group    = null == groupIdx ? 1 : Integer.parseInt(groupIdx);

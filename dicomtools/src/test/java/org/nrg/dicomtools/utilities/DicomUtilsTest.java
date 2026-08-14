@@ -111,6 +111,17 @@ public class DicomUtilsTest extends TestFiles {
     }
 
     /**
+     * A tag in a group >= 0x8000 exceeds Integer.MAX_VALUE when its group+element composite is parsed as a
+     * signed hex int.
+     */
+    @Test
+    public void testParseDicomHeaderIdHighGroup() {
+        assertEquals(0x00080060, DicomUtils.parseDicomHeaderId("(0008,0060)"));
+        assertEquals(0xF2151050, DicomUtils.parseDicomHeaderId("(F215,1050)"));
+        assertEquals(0xF2151050, DicomUtils.parseDicomHeaderId("F215,1050"));
+    }
+
+    /**
      * Test method for {@link DicomUtils#getString(DicomObjectI, int)}.
      */
     @Test

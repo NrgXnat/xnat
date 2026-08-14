@@ -18,6 +18,23 @@ public class TagPrivateCreatorTest extends TestCase {
         assertEquals("foo", tag.getPvtCreatorID());
     }
 
+    /**
+     * TagPrivateCreator inherits asInt() from TagPrivate, so the private creator declaration of a block in a
+     * group >= 0x8000 has to resolve too.
+     */
+    @Test
+    public void testHighPrivateGroup() {
+
+        TagPrivateCreator tag = new TagPrivateCreator(0xF2150010, "foo");
+
+        assertEquals(0xF215, tag.getGroupAsInt());
+        assertEquals(0x0010, tag.getElementAsInt());
+        assertEquals(0xF2150010, tag.asInt());
+        assertEquals(0x10, tag.getPrivateBlock());
+        assertEquals(0xF2150010, tag.getPvtCreatorIDTag());
+        assertEquals("foo", tag.getPvtCreatorID());
+    }
+
     @Test
     public void testInPrivateBlock() {
         TagPrivateCreator tagBlock = new TagPrivateCreator(0x00190020, "foo");

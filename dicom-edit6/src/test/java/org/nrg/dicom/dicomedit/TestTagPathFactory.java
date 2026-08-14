@@ -62,6 +62,18 @@ public class TestTagPathFactory {
         assertEquals( Integer.parseInt("0C32002F", 16), ia[0]);
     }
 
+    /**
+     * The group+element composite of a private tag in a group >= 0x8000 exceeds Integer.MAX_VALUE, so it
+     * cannot be parsed as a signed int.
+     */
+    @Test
+    public void testTagPathHighGroupPrivate() throws MizerException {
+
+        final int[] ia = TagPathFactory.createTagPathInstance("(F215,1050)");
+        assertEquals(1, ia.length);
+        assertEquals(0xF2151050, ia[0]);
+    }
+
     @Test
     public void testTagPathSimplePrivate() throws MizerException {
 

@@ -53,7 +53,7 @@ public class DicomMappingServiceImpl implements DicomMappingService {
         List<DicomMappingEntity> entities = dicomMappingEntityService.find(project, schemaElement);
         MutableAttrDefs attrDefs = new MutableAttrDefs();
         for (DicomMappingEntity entity : entities) {
-            int dicomTag = Integer.decode(entity.getDicomTag());
+            int dicomTag = parseDicomTag(entity.getDicomTag());
             String fieldName = entity.getFieldName();
             EvaluableAttrDef<DicomAttributeIndex, ?, ?> attr;
             switch (entity.getFieldType()) {
@@ -161,7 +161,7 @@ public class DicomMappingServiceImpl implements DicomMappingService {
         String dicomTag = entity.getDicomTag();
         try {
             // validate that dicomTag is valid hex integer
-            Integer tagInt = Integer.decode(dicomTag);
+            parseDicomTag(dicomTag);
             // Skip the below - just try to extract whatever is provided and throw exception downstream if invalid
             // validate that tag is known by dcm4che
             //String tagName = ElementDictionary.getDictionary().nameOf(tagInt);
@@ -216,5 +216,23 @@ public class DicomMappingServiceImpl implements DicomMappingService {
     @Override
     public void delete(long id) {
         dicomMappingEntityService.delete(id);
+    }
+
+    /**
+     * Parses a stored DICOM tag. The tag is decoded as a long so that a group &gt;= 0x8000 is not rejected as a
+     * signed 32-bit overflow, then bounded so that an over-long tag is rejected rather than silently truncated.
+     *
+     * @param dicomTag The stored tag, in any form accepted by {@link Long#decode(String)}.
+     *
+     * @return The tag as an int.
+     *
+     * @throws NumberFormatException if the tag is not a number in the range 0x00000000 - 0xFFFFFFFF.
+     */
+    private static int parseDicomTag(final String dicomTag) {
+        final long value = Long.decode(dicomTag);
+        if (value < 0 || value > 0xFFFFFFFFL) {
+            throw new NumberFormatException("dicomTag " + dicomTag + " is out of range for a DICOM tag");
+        }
+        return (int) value;
     }
 }

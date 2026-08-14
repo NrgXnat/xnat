@@ -64,7 +64,7 @@ Two convention plugins are applied by all modules:
 
 | Plugin | Applied by | What it adds |
 |--------|-----------|-------------|
-| `buildlogic.java-common-conventions` | every module | Java 21 toolchain, repository list (JFrog → Maven Central), JaCoCo, `maven-publish`, test config, JAR manifest |
+| `buildlogic.java-common-conventions` | every module | Java 21 toolchain, repository list (JFrog → Maven Central), JaCoCo, `maven-publish`, test config, JAR manifest with git build info (commit SHA, branch, dirty state) |
 | `buildlogic.java-library-conventions` | library modules | `java-common-conventions` + `java-library` (exports API to consumers) |
 
 > **Repository order matters.** JFrog repositories are listed before `mavenCentral()` because

@@ -608,3 +608,38 @@ real `HttpStatus` (`List<HttpStatus>.contains`, `.series()`, `XsyncHttpAuthentic
 compile clean, `xsync-plugin-all-1.8.2-SNAPSHOT.jar` produced** (plugin has no unit tests). One deferred deprecation:
 `ResponseErrorHandler.handleError(ClientHttpResponse)` is deprecated‑for‑removal in Spring 6 but still functional —
 the 3‑arg overload is a behavior change, left for later.
+
+**1-33 🟢 — rebased `feature/jakarta-cutover` onto `develop` (8 commits); develop's new Envers audit code needed
+jakarta, and the javax‑EE guard turns out to be unrunnable on a JDK 22+ daemon** (2026-08-17). Rebased 143 branch
+commits onto `origin/develop` (`a2559a027`); backup at `backup/jakarta-cutover-587532744`. **One textual conflict:**
+`logback.xml` — develop's XNAT‑8753 (`ea0f556b9`) *deleted* the `org.dcm4che` (dcm4che**2**) logger, which Phase‑0b
+had added a `console` appender‑ref to. Resolved by accepting develop's deletion; verified against the pre‑rebase tree
+that only the dcm4che2 logger ever carried `console` (the surviving `org.dcm4che3`/`.net` loggers never did), so
+console coverage is unchanged. Net tree diff vs pre‑rebase = develop's 85 files / 1753+ / 451− (the extra deletion is
+exactly that one `console` line) — i.e. the rebase introduced nothing of its own.
+**Bug class (recurring): develop code is written against the pre‑cutover stack, so it merges cleanly but doesn't
+compile here.** Prior instance: `Representation.createEmpty()` (`b509db3ca`). This time XNAT‑8784's audit feature
+(`f1a0f2332`): the **new** `NrgRevisionEntity` imported `javax.persistence.*` (hard compile break — sibling
+`framework/orm/hibernate` classes are 100% jakarta), plus 3 stale javadoc `{@link javax.persistence.MappedSuperclass}`
+refs in `UserRole`/`DicomSCPInstance`/`ArchiveProcessorInstance` (comment‑only; those files already import jakarta).
+Fixed in `bd48073f6`. **Audit.** Swept every line develop *added* across all 85 changed files (diff hunks, not whole
+files — a whole‑file grep gives false hits on our own jakarta‑audit comments and catalog aliases) for `javax.*`,
+Restlet 1.1 (`Representation.createEmpty`/`com.noelios`), springfox, `WebMvcConfigurerAdapter`, `antMatchers`,
+`HttpMethod.resolve`: **the only hits were the 5 imports + 3 javadoc links fixed**. Repo‑wide `javax.persistence` is
+now zero. develop's new Velocity template (`xnat_imageAssessorData/actions.vm`) reviewed separately against the
+Velocity‑2 classes — no undefined‑`#set`, no `String.contains($null)`; `$content.getURI` is used by 181 other
+templates here and `tool.request.content=…ContentTool` is registered; `#elementActionsBoxNoEnd` matches the sibling
+`actions.vm` convention. develop's re‑added **dcm4che2 2.0.29** jars introduce no javax‑EE offense (guard: "20 jars
+reference javax‑EE, all provided or allowlisted") — **no new allowlist entry needed**.
+**Durable environment finding — `verifyNoOrphanedJavaxEE` cannot run on a JDK 22+ Gradle daemon.** The guard failed
+with `java.util.zip.ZipException: Invalid CEN header (invalid zip64 extra data field size)`. **Not** a rebase
+regression and **not** the new dcm4che2 jars (all 6 read fine): the offender is **`aspectjweaver-1.8.10`**, pinned by
+our *own* catalog (`libs.versions.toml:11`) and long present — develop touched no aspectj. Measured directly: JDK
+21.0.11 `ZipFile` opens that jar (987 entries), JDK 25.0.2 throws. The rebase merely *surfaced* it — adding dcm4che2
+changed `runtimeClasspath`, invalidating the task's cached `javax-ee-guard.ok` marker so it actually re‑ran, on a
+JDK 25 daemon, for the first time. **The JDK‑21 *toolchain* does not fix this**: the guard's `new ZipFile(f)` executes
+in the *daemon* JVM, which a toolchain does not govern (same distinction the guide already draws for old Gradle
+wrappers). → run the guard (and any task action that reads jars) with the **daemon** on JDK 21, e.g.
+`JAVA_HOME=…/temurin-21.jdk/Contents/Home ./gradlew …` or `org.gradle.java.home` in `gradle.properties`.
+**Result: green — `compileJava` + `compileTestJava` + `verifyNoOrphanedJavaxEE` all pass under a JDK 21 daemon.**
+(Branch not pushed; a force‑push is required since the rebase rewrote 143 commits.)

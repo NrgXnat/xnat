@@ -436,6 +436,14 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   that then cascades into dozens of bogus `cannot find symbol` errors across the module. → pin a **JDK 21
   toolchain** (see J1); it fixes both. A plugin with no explicit toolchain silently runs on the Gradle
   launcher JDK. *(container-service)*
+  **The same CEN failure also hits any Gradle *task action* that opens jars itself** — the monorepo's
+  `verifyNoOrphanedJavaxEE` guard calls `new java.util.zip.ZipFile(jar)` over `runtimeClasspath` and dies with a bare
+  `java.util.zip.ZipException: Invalid CEN header …` (no file named) on the same `aspectjweaver-1.8.10`. Here a JDK‑21
+  **toolchain does not help**: task actions execute in the **daemon** JVM, which the toolchain does not govern (same
+  distinction as the old‑wrapper case below). → set the *daemon* JDK — `JAVA_HOME=…/temurin-21…/Home ./gradlew …` or
+  `org.gradle.java.home` in `gradle.properties`. Measured: JDK 21.0.11 reads that jar (987 entries), JDK 25.0.2
+  throws. Such a task can also sit green for months and only fail when something unrelated changes the classpath and
+  invalidates its up‑to‑date marker. *(item 1‑33)*
 - **`mavenLocal()` shadows partial third‑party artifacts.** `ehcache:3.10.8` uses a **`-jakarta` classifier**
   jar; if `~/.m2` has the base metadata but not that classifier, an unscoped high‑priority `mavenLocal()` locks
   resolution to `~/.m2` and fails (`Could not find ehcache-3.10.8-jakarta.jar`). → scope `mavenLocal` to

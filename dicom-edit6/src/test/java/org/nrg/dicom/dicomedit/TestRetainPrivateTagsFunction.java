@@ -86,6 +86,79 @@ public class TestRetainPrivateTagsFunction {
     }
 
     /**
+     * Retain a block in a private group >= 0x8000, where the gggg+eeee composite exceeds Integer.MAX_VALUE.
+     *
+     * <pre>
+     * (0009,0010) LO #2 [p1] Private Creator Data Element    delete
+     * (0009,1000) LO #4 [p1_0] ?                             delete
+     * (F215,0010) LO #4 [hi1] Private Creator Data Element   retain
+     * (F215,1050) LO #6 [hi1_0] ?                            retain
+     * (F215,1051) LO #6 [hi1_1] ?                            retain
+     * </pre>
+     *
+     * @throws MizerException unexpected exception
+     */
+    @Test
+    public void testHighPrivateGroup() throws MizerException {
+        TestTag p1 = new TestTag(0x00090010, "p1");
+        TestTag p1_0 = new TestTag(0x00091000, "p1_0");
+        TestTag hi1 = new TestTag(0xF2150010, "hi1");
+        TestTag hi1_0 = new TestTag(0xF2151050, "hi1_0");
+        TestTag hi1_1 = new TestTag(0xF2151051, "hi1_1");
+
+        DicomObjectI dobj = DicomObjectFactory.newInstance();
+
+        dobj.putString(p1.tag, p1.initialValue);
+        dobj.putString(p1_0.tag, p1_0.initialValue);
+        dobj.putString(hi1.tag, hi1.initialValue);
+        dobj.putString(hi1_0.tag, hi1_0.initialValue);
+        dobj.putString(hi1_1.tag, hi1_1.initialValue);
+
+        String script = "retainPrivateTags[ (F215,{hi1}XX)]";
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        dobj = sa.apply(dobj).getDicomObject();
+
+        assertFalse(dobj.contains(p1.tag));
+        assertFalse(dobj.contains(p1_0.tag));
+        assertTrue(dobj.contains(hi1.tag));
+        assertTrue(dobj.contains(hi1_0.tag));
+        assertTrue(dobj.contains(hi1_1.tag));
+    }
+
+    /**
+     * A private creator declaration in a group >= 0x8000 with no data elements of its own must not break the
+     * sweep. This is the state a creator-aware delete of the block's data elements leaves behind.
+     *
+     * <pre>
+     * (F215,0010) LO #4 [hi1] Private Creator Data Element   delete
+     * (0029,0011) LO #4 [sm1] Private Creator Data Element   retain
+     * (0029,1111) LO #6 [sm1_0] ?                            retain
+     * </pre>
+     *
+     * @throws MizerException unexpected exception
+     */
+    @Test
+    public void testHighPrivateGroupOrphanedCreatorId() throws MizerException {
+        TestTag hi1 = new TestTag(0xF2150010, "hi1");
+        TestTag sm1 = new TestTag(0x00290011, "sm1");
+        TestTag sm1_0 = new TestTag(0x00291111, "sm1_0");
+
+        DicomObjectI dobj = DicomObjectFactory.newInstance();
+
+        dobj.putString(hi1.tag, hi1.initialValue);
+        dobj.putString(sm1.tag, sm1.initialValue);
+        dobj.putString(sm1_0.tag, sm1_0.initialValue);
+
+        String script = "retainPrivateTags[ (0029,{sm1}XX)]";
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        dobj = sa.apply(dobj).getDicomObject();
+
+        assertFalse(dobj.contains(hi1.tag));
+        assertTrue(dobj.contains(sm1.tag));
+        assertTrue(dobj.contains(sm1_0.tag));
+    }
+
+    /**
      * 1. retain-tagPath arguments can be specified as a tagPath.
      * 2. retain all tags in a specific private block in root DICOM object.
      *

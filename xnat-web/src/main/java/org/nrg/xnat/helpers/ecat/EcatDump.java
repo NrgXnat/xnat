@@ -552,7 +552,7 @@ public final class EcatDump extends SecureResource {
                 tag = TagUtils.forName(tag_s);
             } catch (IllegalArgumentException e) {
                 try {
-                    tag = Integer.parseInt(tag_s, 16);
+                    tag = Integer.parseUnsignedInt(tag_s, 16);
                 } catch (NumberFormatException e1) {
                     throw new IllegalArgumentException("not a valid ecat attribute tag: " + tag_s, e1);
                 }

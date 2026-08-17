@@ -18,6 +18,20 @@ public class PrivateBlockTest {
         assertNotEquals( pb1.hashCode(), pb2.hashCode());
     }
 
+    /**
+     * PrivateBlock holds the group in a short, so a group >= 0x8000 sign-extends when it is compared against
+     * the unsigned group taken from a tag.
+     */
+    @Test
+    public void testHighGroupPvtCreatorForTag() {
+        PrivateBlock pb = new PrivateBlock(new int[]{0x00091200, 0}, 0xF2150010, "foo");
+
+        assertEquals(0xF215, pb.getGroupAsInt());
+        assertEquals(0x10, pb.getBlockTag());
+        assertTrue(pb.isPvtCreatorForTag(new int[]{0x00091200, 0, 0xF2151050}));
+        assertFalse(pb.isPvtCreatorForTag(new int[]{0x00091200, 0, 0x12151050}));
+    }
+
     @Test
     public void testBlocks() {
         // private creator ID
@@ -55,7 +69,7 @@ public class PrivateBlockTest {
         PrivateBlock pb1 = tp1.getPrivateBlock().orElse(null);
         assertTrue(Arrays.equals(new int[0], pb1.getItem() ));
         assertEquals( 0x12, pb1.getBlockTag());
-        assertEquals( 0x0009, pb1.getGroup());
+        assertEquals(0x0009, pb1.getGroupAsInt());
         assertEquals( p1.initialValue, pb1.getCreatorID());
 
         TagPath tp2 = new TagPath();
@@ -63,7 +77,7 @@ public class PrivateBlockTest {
         PrivateBlock pb2 = tp2.getPrivateBlock().orElse(null);
         assertTrue(Arrays.equals( new int[]{0x00091200,0}, pb2.getItem() ));
         assertEquals( 0x20, pb2.getBlockTag());
-        assertEquals( 0x0023, pb2.getGroup());
+        assertEquals(0x0023, pb2.getGroupAsInt());
         assertEquals( s1.initialValue, pb2.getCreatorID());
 
         TagPath tp3 = new TagPath();
@@ -73,7 +87,7 @@ public class PrivateBlockTest {
         PrivateBlock pb3 = tp3.getPrivateBlock().orElse(null);
         assertTrue(Arrays.equals(new int[]{0x00091200,0,0x00232015,0}, pb3.getItem() ));
         assertEquals( 0x11, pb3.getBlockTag());
-        assertEquals( 0x0025, pb3.getGroup());
+        assertEquals(0x0025, pb3.getGroupAsInt());
         assertEquals( s1_s1.initialValue, pb3.getCreatorID());
     }
 }

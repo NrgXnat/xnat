@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>Audited through Hibernate Envers, including the inherited "enabled" property: the enabled-site-processor queries
  * in {@link org.nrg.xnat.processor.dao.ArchiveProcessorInstanceDAO} all filter on it, so for this entity the flag
  * gates which processors run — real configuration rather than soft-delete bookkeeping — and Envers does not audit
- * {@link javax.persistence.MappedSuperclass} properties unless told to. See
+ * {@link jakarta.persistence.MappedSuperclass} properties unless told to. See
  * {@link org.nrg.framework.orm.hibernate.AbstractHibernateDAO#update} for why updates to this entity must reach the
  * database through merge.
  */

@@ -725,7 +725,32 @@ It now mirrors that failure onto the XNAT SLF4J pipeline at ERROR, naming the cl
 ("the client will receive a misleading 404"), that it is **not** a routing problem, and the remedy (throw
 `ResourceException` with a real status). **The 404 status is deliberately unchanged** — flipping it to 500
 is an externally-observable status change that the develop-calibrated REST suite asserts on, so it needs to
-be paired with test updates rather than bundled here (see the standing rule from 2026-07-23). Sites that
-would be masked today: core `UserFavoriteResource`, `PullSessionDataFromHeaders`, `DefaultAnonUtils`,
-`TriageFileService`, plus `query_tracker/QueryTrackerDashBoardRestlet` — all now at least *loud*.
+be paired with test updates rather than bundled here (see the standing rule from 2026-07-23). **Masked-site count CORRECTED (2026-08-19, same session):** the first pass here claimed 5 masked
+sites. Re-checked properly, it is **one**. The awk heuristic used to find "a bare throw inside a
+constructor" matched any `throw new Exception` appearing after a constructor signature, so it produced
+four false positives: `PullSessionDataFromHeaders`, `DefaultAnonUtils` and `TriageFileService` are **not
+Restlet resources at all** (nothing extends `SecureResource`/`ServerResource`, no route), and
+`query_tracker/QueryTrackerDashBoardRestlet`'s throw is in `handlePost()`, not its constructor — a
+handler throw is not masked by the finder. The only genuinely masked, HTTP-reachable site is
+**`UserFavoriteResource`** (`/users/favorites/{DATA_TYPE}/{PROJECT_ID}`), which rejected an apostrophe in
+either path parameter with a bare `Exception` → 404.
 **Result: class corrected and bounded; 0 further broken sites found; the masking that hid it is closed.**
+
+**1-36 🟢 — the "suite asserts on statuses" constraint measured, and the one masked status corrected**
+(2026-08-19). The standing rule from 2026-07-23 — *don't change externally-observable error statuses during
+migration work, because the develop-calibrated suite asserts on them* — was being applied from memory rather
+than measurement, so it was checked. **The general claim is true:** `xnat_rest_tests` carries **547** status
+assertions across 70 files (**67** on 404) and `xnat-test-automation` **64** across 27 files (**13** on 404).
+**But applied to the finder's masked 404 it was overstated**, because that surface is one route, not a
+class-wide risk: `queries/dashboard` appears in **zero** test files; `users/favorites` appears in exactly one
+(`TestDynamicSearchProjects`) and asserts **200**, not 404; and `UserFavoriteResource` only throws when a path
+parameter contains an apostrophe — a guard no test exercises. **Conclusion: flipping that specific 404 carries
+no measurable test risk.** Acted on narrowly: `UserFavoriteResource` now throws
+`ResourceException(CLIENT_ERROR_BAD_REQUEST)` instead of a bare `Exception`, so an apostrophe in the data type
+or project id returns **400** with a reason rather than a misleading **404**. The finder's general
+`null → 404` fallback is deliberately **left alone for 1.11** — not for test-safety (measured nil) but because
+it is observable to real clients and 1.11 is already a large breaking release; changing it belongs in 1.12
+alongside the other deferred cleanups. **Method note:** two of this session's own claims (the "4 masked core
+sites", and the earlier "reads the raw entity" class in 1-24/1-34) were produced by pattern-matching and were
+wrong; both were caught only by going back and measuring. Prefer a live A/B or a targeted re-read over a grep
+heuristic before recording a class or a count in this document.

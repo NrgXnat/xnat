@@ -20,6 +20,7 @@ import org.restlet.Response;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
+import org.restlet.resource.ResourceException;
 
 import java.sql.SQLException;
 import java.util.Hashtable;
@@ -39,12 +40,18 @@ public class UserFavoriteResource extends SecureResource {
 			pID= (String)getParameter(request,"PROJECT_ID");
 
 			
+			// ResourceException, not a bare Exception: XnatServerResourceFinder propagates a
+			// ResourceException with its status but turns anything else into a bare 404, so these
+			// input rejections used to report "not found" instead of "bad request". See status doc
+			// items 1-24 / 1-35. No test asserts a status on this path (it only triggers on an
+			// apostrophe in the path parameters), so this corrects the status without breaking the
+			// develop-calibrated suite.
 			if(dataType.contains("'")){
-				throw new Exception("Unexpected ' in data type name.");
+				throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "Unexpected ' in data type name.");
 			}
-			
+
 			if(pID.contains("'")){
-				throw new Exception("Unexpected ' in project id.");
+				throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "Unexpected ' in project id.");
 			}
 	}
 

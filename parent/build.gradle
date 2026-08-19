@@ -63,6 +63,8 @@ dependencies {
         api libs.spring.security.spring.security.web
         api libs.spring.security.spring.security.test
         api libs.spring.security.spring.security.jwt
+        // DEPRECATED — javax-era, scheduled for removal in 1.12 (status doc 1-23); kept for 1.11 so
+        // external OAuth/OpenID auth plugins still resolve through the Jakarta cutover.
         api libs.spring.security.oauth2.spring.security.oauth2
         api libs.spring.ldap.spring.ldap.core
 

@@ -163,6 +163,8 @@ dependencies {
 
     // --- Spring Security ---
     api libs.spring.security.spring.security.ldap
+    // DEPRECATED — javax-era, scheduled for removal in 1.12 (status doc 1-23). Kept `api` for 1.11 so
+    // external OAuth/OpenID auth plugins still compile; nothing in core or the current plugin set uses it.
     api libs.spring.security.oauth2.spring.security.oauth2
     api libs.spring.security.spring.security.jwt
     implementation libs.spring.security.spring.security.acl

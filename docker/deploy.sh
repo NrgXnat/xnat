@@ -26,19 +26,19 @@ PLUGINS=(
     container-service/build/libs/container-service-*-fat.jar
     xnat_cr_plugin/build/libs/xnat_cr_plugin-*-xpl.jar
     ohif-viewer-xnat-plugin/build/libs/ohif-viewer-*-fat.jar
-    xnat-jupyterhub-plugin/build/libs/xnat-jupyterhub-plugin-1.3.5-SNAPSHOT.jar
-    query_tracker_plugin/build/libs/query_tracker_plugin-1.0.1-SNAPSHOT-xpl.jar
-    visit_template_plugin/build/libs/visit_template_plugin-1.1.0-SNAPSHOT-xpl.jar
-    dicom_edit_plugin/build/libs/dicom_edit_plugin-1.1.0-SNAPSHOT-xpl.jar
-    docker_swarm_plugin/build/libs/docker_swarm_plugin-1.1.0-SNAPSHOT-xpl.jar
-    esign_plugin/build/libs/esign_plugin-1.0.0-SNAPSHOT-xpl.jar
-    pII_review_plugin/build/libs/pII_review_plugin-1.2.0-SNAPSHOT-xpl.jar
-    dashboards_plugin/build/libs/dashboards_plugin-1.2.0-SNAPSHOT-xpl.jar
-    copy_project_settings_plugin/build/libs/copy_project_settings_plugin-1.2.0-SNAPSHOT-xpl.jar
-    resources_tab_plugin/build/libs/resources_tab_plugin-1.2.0-SNAPSHOT-xpl.jar
-    raphaeljs_plugin/build/libs/raphaeljs_plugin-1.1.0-SNAPSHOT-xpl.jar
+    xnat-jupyterhub-plugin/build/libs/xnat-jupyterhub-plugin-*-SNAPSHOT.jar
+    query_tracker_plugin/build/libs/query_tracker_plugin-*-xpl.jar
+    visit_template_plugin/build/libs/visit_template_plugin-*-xpl.jar
+    dicom_edit_plugin/build/libs/dicom_edit_plugin-*-xpl.jar
+    docker_swarm_plugin/build/libs/docker_swarm_plugin-*-xpl.jar
+    esign_plugin/build/libs/esign_plugin-*-xpl.jar
+    pII_review_plugin/build/libs/pII_review_plugin-*-xpl.jar
+    dashboards_plugin/build/libs/dashboards_plugin-*-xpl.jar
+    copy_project_settings_plugin/build/libs/copy_project_settings_plugin-*-xpl.jar
+    resources_tab_plugin/build/libs/resources_tab_plugin-*-xpl.jar
+    raphaeljs_plugin/build/libs/raphaeljs_plugin-*-xpl.jar
     ldap-auth-plugin/build/libs/ldap-auth-plugin-*-xpl.jar
-    xnat-dicomweb-plugin/build/libs/xnat-dicomweb-plugin-1.4.0-SNAPSHOT-xpl.jar
+    xnat-dicomweb-plugin/build/libs/xnat-dicomweb-plugin-*-xpl.jar
     mfa_plugin/build/libs/mfa-plugin-*-xpl.jar
     xnatx-batch-launch-plugin/build/libs/batch-launch-*-xpl.jar
     pipeline_engine_plugin/build/libs/pipeline_engine_ui-*-xpl.jar

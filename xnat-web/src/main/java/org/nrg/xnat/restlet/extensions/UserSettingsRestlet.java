@@ -98,11 +98,10 @@ public class UserSettingsRestlet extends SecureResource {
             _action = UserAction.action((String) getRequest().getAttributes().get(PARAM_ACTION));
 
             final Method method = request.getMethod();
-            try {
-                _payload = request.getEntity().getText();
-            } catch (IOException exception) {
-                throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "Error when retrieving form body", exception);
-            }
+            // Via SecureResource#getRequestBodyText(): a form-encoded PUT arrives with an empty Restlet
+            // entity under 2.6 (Servlet 6.0 3.1 — containers parse form bodies into the parameter map
+            // for POST only), which silently emptied this payload. Same defect as item 1-24.
+            _payload = getRequestBodyText();
 
             validateParameters(method);
         }

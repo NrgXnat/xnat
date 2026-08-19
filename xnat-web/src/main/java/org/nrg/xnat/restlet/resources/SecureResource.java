@@ -122,6 +122,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -505,6 +507,71 @@ public abstract class SecureResource extends ServerResource {
         }
 
         return _body;
+    }
+
+    /**
+     * Reads the request body as raw text, for resources that parse the body themselves rather than
+     * through {@link #getBodyAsForm()}.
+     *
+     * <p><b>Why this exists (Restlet 2.6 + Servlet 6):</b> for {@code application/x-www-form-urlencoded}
+     * content the Restlet servlet connector builds its entity from the servlet parameter map. Per
+     * Servlet 6.0 §3.1 the container only populates that map for <b>POST</b>, so on a form-encoded
+     * <b>PUT</b> the Restlet entity comes back empty and {@code Request.isEntityAvailable()} is false —
+     * even though the client sent a body. Under Restlet 1.1 the raw body was always exposed, so
+     * resources written against 1.1 silently lose their payload on PUT. See status doc item 1-24.
+     *
+     * <p>Sources are tried in order: the Restlet entity; the raw servlet reader (intact on PUT, since
+     * the container never parsed it); finally the servlet parameter map re-encoded as
+     * {@code k=v&k=v} (the POST case, where the container consumed the stream).
+     *
+     * @return the request body as text, or an empty string when the request carries no body.
+     */
+    protected String getRequestBodyText() {
+        final Request request = getRequest();
+        if (request == null) {
+            return "";
+        }
+
+        // 1. The Restlet entity — correct for every non-form content type, and for POST forms.
+        try {
+            if (request.isEntityAvailable() && request.getEntity() != null) {
+                final String text = request.getEntity().getText();
+                if (StringUtils.isNotEmpty(text)) {
+                    return text;
+                }
+            }
+        } catch (IOException e) {
+            logger.debug("Could not read the Restlet entity, falling back to the servlet request", e);
+        }
+
+        final HttpServletRequest servletRequest = new RequestUtil().getHttpServletRequest(request);
+        if (servletRequest == null) {
+            return "";
+        }
+
+        // 2. The raw servlet body — the form-encoded PUT case: unparsed by the container, unread by Restlet.
+        try (final Reader reader = servletRequest.getReader()) {
+            final String raw = new java.io.BufferedReader(reader).lines().collect(Collectors.joining("\n"));
+            if (StringUtils.isNotEmpty(raw)) {
+                return raw;
+            }
+        } catch (IllegalStateException | IOException e) {
+            logger.debug("Servlet body stream unavailable, falling back to the parameter map", e);
+        }
+
+        // 3. The parameter map — the container already drained a POST form body into it.
+        final Map<String, String[]> parameters = servletRequest.getParameterMap();
+        if (parameters == null || parameters.isEmpty()) {
+            return "";
+        }
+        return parameters.entrySet().stream()
+                         .flatMap(entry -> Arrays.stream(entry.getValue())
+                                                 .map(value -> encodeParameter(entry.getKey()) + "=" + encodeParameter(value)))
+                         .collect(Collectors.joining("&"));
+    }
+
+    private static String encodeParameter(final String value) {
+        return value == null ? "" : URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     /**

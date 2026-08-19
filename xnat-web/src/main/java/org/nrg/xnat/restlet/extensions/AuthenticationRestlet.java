@@ -24,6 +24,7 @@ import org.restlet.*;
 import org.restlet.routing.*;
 import org.restlet.representation.*;
 import org.restlet.resource.Resource;
+import org.restlet.resource.ResourceException;
 import org.restlet.representation.Variant;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -41,12 +42,21 @@ public class AuthenticationRestlet extends SecureResource {
         super(context, request, response);
         getVariants().add(new Variant(MediaType.ALL));
         if (request.getMethod().equals(Method.GET)) {
-            throw new Exception("You must POST or PUT authentication credentials in the request body.");
+            throw new ResourceException(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED,
+                                        "You must POST or PUT authentication credentials in the request body.");
         }
-        if (!request.isEntityAvailable()) {
-            throw new Exception("You must provide authentication credentials in the request body.");
+        // Read through SecureResource#getRequestBodyText() rather than the Restlet entity directly:
+        // under Restlet 2.6 a form-encoded PUT arrives with an EMPTY entity (the container only parses
+        // form bodies into the parameter map for POST, per Servlet 6.0 3.1), which is how the E-Sign
+        // password check — a form-encoded PUT — lost its credentials. See status doc item 1-24.
+        final String body = getRequestBodyText();
+        if (StringUtils.isBlank(body)) {
+            // Must be a ResourceException: XnatServerResourceFinder rewrites any other constructor
+            // exception to 404, which is what disguised this as a routing bug for weeks.
+            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST,
+                                        "You must provide authentication credentials in the request body.");
         }
-        extractCredentials(request.getEntity().getText());
+        extractCredentials(body);
     }
 
     @Override

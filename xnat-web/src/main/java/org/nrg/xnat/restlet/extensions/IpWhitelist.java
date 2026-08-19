@@ -40,11 +40,13 @@ public class IpWhitelist extends SecureResource {
         super(context, request, response);
         if (!Roles.isSiteAdmin(getUser())) {
             getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
-        } else if (request.getMethod() == Method.PUT && !request.isEntityAvailable()) {
-            getResponse().setStatus(Status.CLIENT_ERROR_PRECONDITION_FAILED, "You must provide a configuration for whitelisted IP addresses.");
         } else {
-        this.getVariants().add(new Variant(MediaType.ALL));
-    }
+            // The empty-body check moved into handlePut(): under Restlet 2.6 isEntityAvailable() is
+            // false for a form-encoded PUT even when the client sent a body (Servlet 6.0 3.1 — the
+            // container only parses form bodies into the parameter map for POST), so testing it here
+            // rejected valid requests with 412. Same defect as item 1-24 (/services/auth).
+            this.getVariants().add(new Variant(MediaType.ALL));
+        }
     }
 
     @Override
@@ -68,7 +70,11 @@ public class IpWhitelist extends SecureResource {
     @Override
     public void handlePut() {
         try {
-            String whitelist = getRequest().getEntity().getText();
+            String whitelist = getRequestBodyText();
+            if (whitelist == null || whitelist.trim().isEmpty()) {
+                getResponse().setStatus(Status.CLIENT_ERROR_PRECONDITION_FAILED, "You must provide a configuration for whitelisted IP addresses.");
+                return;
+            }
             List<String> addresses = new ArrayList<>(Arrays.asList(whitelist.split("[\\s,]+")));
             for (String localhost : XDAT.getLocalhostIPs()) {
                 if (!addresses.contains(localhost)) {
@@ -76,9 +82,6 @@ public class IpWhitelist extends SecureResource {
                 }
             }
             XDAT.getConfigService().replaceConfig(getUser().getLogin(), "", XDAT.IP_WHITELIST_TOOL, XDAT.IP_WHITELIST_PATH, Joiner.on("\n").join(addresses));
-        } catch (IOException e) {
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "Error occurred trying to handle the incoming data");
-            _log.error("Error occurred trying to handle the incoming data", e);
         } catch (ConfigServiceException e) {
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "Error occurred writing to the configuration service");
             _log.error("Error occurred writing to the configuration service", e);

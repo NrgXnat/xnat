@@ -1,7 +1,11 @@
 #!/bin/bash
 
-TARGET="david@dave-alldev"
+# Deploy target. Override for another box, e.g.:
+#   TARGET=david@dave-xl ./docker/deploy.sh
+TARGET="${TARGET:-david@dave-alldev}"
 BASE="/Users/drm/projects/xnatworks"
+
+echo "Staging to $TARGET"
 
 # Continue past individual failures (a missing/unbuilt jar or a transfer error
 # shouldn't abort the rest), but warn on each and report a summary at the end.

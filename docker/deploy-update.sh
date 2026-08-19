@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# deploy-update.sh — NON-DESTRUCTIVE on-box install for dave-alldev.
+# deploy-update.sh — NON-DESTRUCTIVE on-box install. Runs ON the target box (dave-alldev, dave-xl, …).
 #
 # Swaps the WAR + plugins from the staging area (~david, populated by the local
 # docker/deploy.sh) and restarts XNAT. Unlike deploy.sh / deploy-fresh.sh it does
@@ -11,7 +11,7 @@
 # the previous artifacts and re-run. To protect DB/data, snapshot before running
 # (pg_dump xnat + EBS snapshot).
 #
-# Usage (on dave-alldev, as david):  ./deploy-update.sh
+# Usage (on the target box, as david):  ./deploy-update.sh
 #
 set -euo pipefail
 

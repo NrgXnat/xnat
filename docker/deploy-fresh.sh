@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# deploy-fresh.sh — FRESH (DESTRUCTIVE) redeploy for dave-alldev.
+# deploy-fresh.sh — FRESH (DESTRUCTIVE) redeploy. Runs ON the target box (dave-alldev, dave-xl, …);
+# the banner prints the actual hostname so you can see which box you are about to wipe.
 #
 # Clean-slate deploy: WIPES the database AND all data (/opt/data archive,
 # prearchive, cache, build), then reinstalls the WAR + plugins from staging
@@ -27,7 +28,12 @@ PLUGIN_COUNT=$(ls "$STAGE_PLUGINS"/*.jar 2>/dev/null | wc -l | tr -d ' ')
 
 WEBAPPS=/home/xnat/tomcat10/webapps
 LIVE_PLUGINS=/home/xnat/plugins
-DATA_DIRS="/opt/data/archive /opt/data/prearchive /opt/data/cache /opt/data/build"
+# NOTE: /opt/data/pipeline is a SEPARATE mount (ext4) on these boxes. `find -mindepth 1
+# -delete` wipes its CONTENTS, not the mountpoint, so the mount survives — but the pipeline
+# catalog/engine files under it are destroyed and are NOT reinstalled by this script. Pipeline
+# tests that reference e.g. /opt/data/pipeline/catalog/validation_tools/Validate.xml will fail
+# until that tree is repopulated. Added at explicit request 2026-08-18.
+DATA_DIRS="/opt/data/archive /opt/data/prearchive /opt/data/cache /opt/data/build /opt/data/pipeline"
 BACKUP_DIR=/home/david/backups
 MIN_PLUGINS=20   # required-22 set (20 required + dicom-query-retrieve + xsync) minus a small margin
 DBNAME=xnat
@@ -47,7 +53,7 @@ done
 STAMP=$(date +%Y%m%d-%H%M%S)
 
 echo "=========================================================================="
-echo " FRESH (DESTRUCTIVE) DEPLOY — dave-alldev"
+echo " FRESH (DESTRUCTIVE) DEPLOY — $(hostname -s)  [$(hostname -I 2>/dev/null | awk '{print $1}')]"
 echo "   WILL DROP the '$DBNAME' database"
 echo "   WILL WIPE $DATA_DIRS"
 echo "   WILL REPLACE webapp + plugins from staging:"

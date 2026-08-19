@@ -5,6 +5,8 @@ import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.resource.Finder;
 import org.restlet.resource.ServerResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.logging.Level;
 
@@ -43,11 +45,41 @@ public class XnatServerResourceFinder extends Finder {
             if (e.getCause() instanceof org.restlet.resource.ResourceException) {
                 throw (org.restlet.resource.ResourceException) e.getCause();
             }
-            getLogger().log(Level.WARNING, "Unable to instantiate resource " + targetClass.getName(), e.getCause());
+            logMaskedFailure(targetClass, e.getCause());
             return null;
         } catch (Exception e) {
-            getLogger().log(Level.WARNING, "Unable to instantiate resource " + targetClass.getName(), e);
+            logMaskedFailure(targetClass, e);
             return null;
         }
     }
+
+    /**
+     * Logs a resource-construction failure that {@link #find} is about to turn into a bare <b>404</b>.
+     *
+     * <p>Returning {@code null} from {@code find()} makes Restlet answer 404, so a resource that rejects a
+     * request from its constructor reports "not found" instead of the real reason — which reads as a routing
+     * or registration bug and sends investigation in the wrong direction. See status doc items 1-24 / 1-34,
+     * where this masked a lost request body for weeks.
+     *
+     * <p>The inherited {@link #getLogger()} is a {@code java.util.logging} logger, so on Tomcat its output
+     * lands in {@code localhost.<date>.log} — not {@code catalina.out} and not XNAT's own logs, so nobody
+     * greps it. This mirrors the message onto the XNAT SLF4J pipeline where people actually look, and states
+     * the consequence and the remedy explicitly.
+     *
+     * <p><b>Resource authors:</b> throw {@link org.restlet.resource.ResourceException} with a real status
+     * (400/403/405/…) from a constructor — it is propagated untouched. Anything else becomes this 404.
+     *
+     * <p>The 404 itself is deliberately left as-is: changing an externally-observable error status is a
+     * behavioral change the develop-calibrated REST suite asserts on, so it must be paired with test updates
+     * rather than bundled into migration work.
+     */
+    private void logMaskedFailure(final Class<? extends ServerResource> targetClass, final Throwable cause) {
+        getLogger().log(Level.WARNING, "Unable to instantiate resource " + targetClass.getName(), cause);
+        log.error("Could not construct Restlet resource {} — the client will receive a misleading 404 "
+                  + "(Restlet renders a null Finder result as \"not found\"). This is NOT a routing problem: the "
+                  + "route matched and the resource was selected. Throw a ResourceException with a real status "
+                  + "from the constructor to surface the actual reason instead.", targetClass.getName(), cause);
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(XnatServerResourceFinder.class);
 }

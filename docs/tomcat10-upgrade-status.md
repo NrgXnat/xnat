@@ -689,3 +689,43 @@ credentials are parsed and reach the auth provider on the previously-broken path
 constructor failure to 404 is itself a diagnosability trap — 4 other resources throw bare exceptions from
 constructors (`UserFavoriteResource`, `XNATTemplate`, `TriageApprovalRestlet`, `DicomEdit`) and would be
 masked the same way; consider mapping unexpected constructor failures to 500 with the cause surfaced.
+
+**1-35 🟢 — re-sweep after the 1-19→1-24 miss; bug class CORRECTED (the gate, not the read) + finder
+made self-diagnosing** (2026-08-19). Prompted by asking why 1-19's sweep missed 1-24. Cause of that miss:
+1-19 scoped its sweep to *callers of the helper it patched* (`getBodyAsForm`/`getBodyVariable`, "all funnel
+through the one patched method") and defined the class by its **symptom** (double-read) rather than the
+mechanism; 1-24's sites bypass those helpers entirely (0 hits) and exhibit the *other* symptom, so they were
+structurally invisible. 1-19 also only ever had a POST reproducer, and the two symptoms are method-split.
+
+**Re-sweep, widened on two axes 1-24's own sweep still missed** — all request-input read paths (not just
+`getText()`), and **the plugins**, where `@XnatRestlet` extensions live and which had never been swept.
+Core: 6 files. Plugins: `pipeline_engine_plugin/ProjtExptPipelineResource` (POST, XML) and
+`query_tracker_plugin/QueryTrackerDashBoardRestlet` (declares `allowPut`, JSON); a third hit
+(`query_tracker/TestExperimentRestlet`) is a **false positive** — it reads a *response* entity client-side.
+
+**CORRECTION to 1-24/1-34's class definition.** "Resource parses the raw request entity itself" is **too
+broad and not the discriminator.** Measured A/B on a live stack: `PUT` of identical XML bytes to
+`/data/search/saved/{ID}` returns **422 for BOTH `text/xml` and `x-www-form-urlencoded`** — i.e. a resource
+that reads `getEntity().getReader()` **directly** gets the body fine on a form-encoded PUT. Combined with
+1-24's pre-fix evidence (its constructor threw, which requires `isEntityAvailable() == false`), the accurate
+model is: **on a form-encoded PUT `Request.isEntityAvailable()` reports false while the underlying servlet
+stream still holds the body.** So the real bug class is **"gates on `isEntityAvailable()`"**, not "reads the
+entity". Re-classified under the corrected model: *broken* — `AuthenticationRestlet` (fixed), `IpWhitelist`
+(fixed); *in-class but low exposure* — `ItemValuesRepresentation` (gates, but reads a bare comma-list whose
+clients don't send form encoding, and degrades to default columns rather than erroring);
+*not in class* — `ProjectSearchResource`, `SavedSearchResource` (direct readers, **measured** fine),
+`FeatureDefinitionRestlet` (gates on POST only, where the map is populated), and both plugin sites (direct
+readers of XML/JSON). `UserSettingsRestlet`'s change stands as **defensive, not a proven fix** — it read the
+entity directly and was most likely never broken.
+
+**Finder made self-diagnosing (commit below).** The thing that actually cost the weeks was invisibility:
+`XnatServerResourceFinder` renders a null result as a bare 404 and logged the true cause through
+`java.util.logging`, landing it in Tomcat's `localhost.<date>.log` rather than `catalina.out` or XNAT's logs.
+It now mirrors that failure onto the XNAT SLF4J pipeline at ERROR, naming the class, the consequence
+("the client will receive a misleading 404"), that it is **not** a routing problem, and the remedy (throw
+`ResourceException` with a real status). **The 404 status is deliberately unchanged** — flipping it to 500
+is an externally-observable status change that the develop-calibrated REST suite asserts on, so it needs to
+be paired with test updates rather than bundled here (see the standing rule from 2026-07-23). Sites that
+would be masked today: core `UserFavoriteResource`, `PullSessionDataFromHeaders`, `DefaultAnonUtils`,
+`TriageFileService`, plus `query_tracker/QueryTrackerDashBoardRestlet` — all now at least *loud*.
+**Result: class corrected and bounded; 0 further broken sites found; the masking that hid it is closed.**

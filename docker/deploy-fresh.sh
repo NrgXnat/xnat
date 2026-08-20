@@ -81,10 +81,27 @@ sudo sh -c "
     echo '== wipe webapp + logs + data (contents only; dirs/ownership preserved) =='
     find $WEBAPPS -mindepth 1 -delete
     find /home/xnat/tomcat10/logs -mindepth 1 -delete 2>/dev/null || true
-    # /opt/data is an NFS root_squash mount, so root (squashed to nobody) cannot delete xnat's files —
-    # and test runs leave read-only result dirs (e.g. xnat_rest_run). Wipe as the xnat owner, chmod'ing
-    # first so read-only dirs become deletable. Webapps/logs above are local FS, so root is fine there.
-    for d in $DATA_DIRS; do [ -d \"\$d\" ] && su xnat -s /bin/sh -c \"cd /tmp; chmod -R u+rwX \$d 2>/dev/null; find \$d -mindepth 1 -delete\"; done
+    # Wiping the data dirs has to cope with BOTH box layouts, which need opposite privileges:
+    #   * /opt/data on an NFS root_squash mount (dave-alldev): root is squashed to nobody and cannot
+    #     delete xnat's files, so the delete must run as xnat. Test runs also leave read-only result
+    #     dirs (e.g. xnat_rest_run), hence the chmod first.
+    #   * /opt/data on a local filesystem (dave-xl): containers (e.g. container-service DICOM
+    #     extraction) leave ROOT-owned files under /opt/data/build. xnat cannot delete those; root can.
+    # Doing only one of the two aborts the deploy mid-wipe on the other box — which is exactly how this
+    # script left dave-xl down on 2026-08-19. So: try as root, then as xnat, neither fatal on its own,
+    # and only fail if something actually survives both passes.
+    for d in $DATA_DIRS; do
+        [ -d \"\$d\" ] || continue
+        chmod -R u+rwX \"\$d\" 2>/dev/null || true
+        find \"\$d\" -mindepth 1 -delete 2>/dev/null || true
+        su xnat -s /bin/sh -c \"cd /tmp; chmod -R u+rwX '\$d' 2>/dev/null; find '\$d' -mindepth 1 -delete\" 2>/dev/null || true
+        remaining=\$(find \"\$d\" -mindepth 1 2>/dev/null | wc -l)
+        if [ \"\$remaining\" -gt 0 ]; then
+            echo \"ERROR: \$remaining item(s) under \$d survived both the root and xnat wipe passes:\" >&2
+            find \"\$d\" -mindepth 1 -printf '%u:%g %m %p\\n' 2>/dev/null | head -5 >&2
+            exit 1
+        fi
+    done
     find /home/xnat/logs -mindepth 1 -delete 2>/dev/null || true
 
     echo '== recreate database =='

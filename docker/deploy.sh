@@ -12,6 +12,15 @@ echo "Staging to $TARGET"
 fails=0
 warn() { printf '  !! WARN: %s\n' "$*" >&2; }
 
+# Clear the remote staging area first. scp only overwrites same-named files, so a jar left from a
+# previous run whose plugin has since changed VERSION would linger and be installed alongside the new
+# one — two copies of the same plugin in ${xnat.home}/plugins. (Hit for real when xnat-dicomweb-plugin
+# went 1.4.0-SNAPSHOT -> 1.3.1-SNAPSHOT.) The WAR is *.war and always overwritten by name, but old
+# versioned WARs would linger for the same reason, so clear those too. deploy-fresh/-update both
+# refuse to install from a short staging area (MIN_PLUGINS), so an interrupted stage cannot silently
+# deploy a partial set.
+ssh "$TARGET" 'rm -f ~/*.war ~/plugins/*.jar' || warn "could not clear the staging area on $TARGET"
+
 # XNAT web application (WAR) -> staging home
 if ! scp $BASE/rtv/xnat/xnat-web/build/libs/*.war $TARGET:; then
     warn "WAR upload failed (xnat-web/build/libs/*.war)"

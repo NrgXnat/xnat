@@ -28,12 +28,13 @@ PLUGIN_COUNT=$(ls "$STAGE_PLUGINS"/*.jar 2>/dev/null | wc -l | tr -d ' ')
 
 WEBAPPS=/home/xnat/tomcat10/webapps
 LIVE_PLUGINS=/home/xnat/plugins
-# NOTE: /opt/data/pipeline is a SEPARATE mount (ext4) on these boxes. `find -mindepth 1
-# -delete` wipes its CONTENTS, not the mountpoint, so the mount survives — but the pipeline
-# catalog/engine files under it are destroyed and are NOT reinstalled by this script. Pipeline
-# tests that reference e.g. /opt/data/pipeline/catalog/validation_tools/Validate.xml will fail
-# until that tree is repopulated. Added at explicit request 2026-08-18.
-DATA_DIRS="/opt/data/archive /opt/data/prearchive /opt/data/cache /opt/data/build /opt/data/pipeline"
+# NOTE: /opt/data/pipeline is deliberately NOT in this list. It is a separate ext4 mount holding
+# the pipeline ENGINE INSTALL (~62MB: catalog, bin, lib, ant-tools, nrg-tools, pipeline.config),
+# not run-generated data. `find -mindepth 1 -delete` would wipe its contents, and nothing in this
+# script — or in XNAT's startup — puts them back, so pipeline tests that reference e.g.
+# /opt/data/pipeline/catalog/validation_tools/Validate.xml would fail on every fresh deploy until
+# the tree was restored by hand. It was briefly added on 2026-08-18 and backed out on 2026-08-19.
+DATA_DIRS="/opt/data/archive /opt/data/prearchive /opt/data/cache /opt/data/build"
 BACKUP_DIR=/home/david/backups
 MIN_PLUGINS=20   # required-22 set (20 required + dicom-query-retrieve + xsync) minus a small margin
 DBNAME=xnat

@@ -1,0 +1,49 @@
+name: REST Test Targeting (PoC)
+
+# PoC for mapping changed source paths to the TestNG groups in
+# NrgXnat/xnat-rest-tests that cover them (see .github/paths-filter.yml for
+# the mapping). This does NOT run the REST tests yet — the invocation step
+# only echoes the groups it would have passed to `mvn -Dgroups=...`, since
+# there's no per-PR XNAT test environment to run them against yet.
+#
+# ci-test-targeting is a scratch branch for iterating on this PoC without
+# needing an open PR against main/develop for every push.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - ci-test-targeting
+
+jobs:
+  detect-groups:
+    runs-on: ubuntu-latest
+    outputs:
+      groups: ${{ steps.build.outputs.groups }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: .github/paths-filter.yml
+
+      - id: build
+        run: |
+          mapped=$(echo '${{ steps.filter.outputs.changes }}' | jq -r 'join(",")')
+          # smoke always runs as a fast baseline; permissions rides along with
+          # everything since it's tagged far more broadly than just the
+          # security-package changes it's mapped to here.
+          groups="smoke,permissions${mapped:+,$mapped}"
+          echo "groups=$groups" >> "$GITHUB_OUTPUT"
+
+  rest-tests:
+    needs: detect-groups
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo selected REST test groups
+        run: |
+          echo "Would run: mvn -B clean test -Dxnat.config=ci.properties -Dgroups=\"${{ needs.detect-groups.outputs.groups }}\""

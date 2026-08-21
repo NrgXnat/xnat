@@ -1,0 +1,109 @@
+anonymization:
+  - 'dicom-edit4/src/main/**'
+  - 'dicom-edit6/src/main/**'
+  - 'xnat-web/src/main/java/org/nrg/xnat/helpers/editscript/**'
+  - 'xnat-web/src/main/java/org/nrg/xnat/helpers/merge/Anonymizer*.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/helpers/merge/AnonUtils.java'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/dicom/AnonymizeApi.java'
+
+dicom-scp: &dicom_scp
+  - 'xnat-web/src/main/java/org/nrg/dcm/scp/**'
+  - 'xnat-web/src/main/java/org/nrg/dcm/id/RoutedStudyDicomProjectIdentifier.java'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/dicom/DicomSCPApi.java'
+dicom-routing: *dicom_scp
+
+importer: &importer
+  - 'xnat-web/src/main/java/org/nrg/xnat/helpers/prearchive/**'
+  - 'xnat-web/src/main/java/org/nrg/xnat/archive/GradualDicomImporter.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/archive/PrearcSessionValidator.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/archive/FinishImageUpload.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/restlet/actions/importer/**'
+prearchive: *importer
+metadata-extraction: *importer
+
+direct-archive:
+  - 'xnat-web/src/main/java/org/nrg/xnat/archive/tasks/TriggerDirectArchiveRequests.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/archive/xapi/DirectArchiveSessionPaginatedRequest.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/archive/services/DirectArchiveSessionService*.java'
+
+archive:
+  - 'xnat-web/src/main/java/org/nrg/xnat/archive/PrearcSessionArchiver.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/restlet/services/Archiver.java'
+
+event-service: &event_service
+  - 'xnat-web/src/main/java/org/nrg/xnat/eventservice/**'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/event/EventHandlerApi.java'
+scheduled-events: *event_service
+
+search:
+  - 'xdat/src/main/java/org/nrg/xft/search/**'
+  - 'xdat/src/main/java/org/nrg/xdat/security/XDATSearchHelperService*.java'
+  - 'xdat/src/main/java/org/nrg/xdat/bean/XdatStoredSearchBean.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/restlet/resources/search/**'
+
+custom_forms:
+  - 'xnat-web/src/main/java/org/nrg/xnat/customforms/**'
+
+custom-variables:
+  - 'xnat-web/src/main/java/org/nrg/xnat/services/customfields/**'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/customfields/**'
+
+schemas: &schemas
+  - 'xdat/src/main/java/org/nrg/xft/schema/**'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/data/DBBackedSchemaApi.java'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/data/DataTypesApi.java'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/data/XFTElementApi.java'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/schemas/SchemaApi.java'
+data-types: *schemas
+db-schemas: *schemas
+xft-elements: *schemas
+
+permissions: &permissions
+  - 'xdat/src/main/java/org/nrg/xdat/security/**'
+  - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseXnatExperimentdataShare.java'
+  - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseXnatImagescandataShare.java'
+sharing: *permissions
+
+config-service: &config_service
+  - 'config/src/main/java/org/nrg/config/**'
+  - 'prefs/src/main/java/org/nrg/prefs/**'
+  - 'xdat/src/main/java/org/nrg/xdat/preferences/SiteConfigPreferences.java'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/settings/SiteConfigApi.java'
+preferences: *config_service
+open-xnat: *config_service
+
+alias-tokens: &alias_tokens
+  - 'xdat/src/main/java/org/nrg/xdat/entities/AliasToken.java'
+  - 'xdat/src/main/java/org/nrg/xdat/daos/AliasTokenDAO.java'
+  - 'xdat/src/main/java/org/nrg/xdat/services/AliasTokenService*.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/security/alias/**'
+authentication: *alias_tokens
+
+users:
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/users/UsersApi.java'
+investigators:
+  - 'xnat-web/src/main/java/org/nrg/xnat/services/investigators/**'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/data/InvestigatorsApi.java'
+
+workflows:
+  - 'xdat/src/main/java/org/nrg/xft/event/persist/**'
+  - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseWrkWorkflowdata.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/utils/WorkflowUtils.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/restlet/extensions/WorkflowsRestlet.java'
+
+resources: &resources
+  - 'xnat-web/src/main/java/org/nrg/xnat/restlet/resources/files/**'
+  - 'xnat-web/src/main/java/org/nrg/xnat/services/archive/ResourceSurveyService*.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/services/archive/impl/hibernate/ResourceMitigationHelper.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/services/messaging/archive/**'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/data/ResourceSurveyApi.java'
+file-mitigation: *resources
+
+scans:
+  - 'xnat-web/src/main/java/org/nrg/xnat/restlet/resources/ScanResource.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/restlet/resources/ScanList.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/restlet/resources/prearchive/PrearcScanResource.java'
+
+merge:
+  - 'xnat-web/src/main/java/org/nrg/xnat/helpers/merge/MergeSessions*.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/helpers/merge/MergePrearc*.java'

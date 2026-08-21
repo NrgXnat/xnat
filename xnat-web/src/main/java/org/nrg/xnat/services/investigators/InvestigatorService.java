@@ -82,7 +82,7 @@ public interface InvestigatorService {
      * @param investigator   The investigator object with the properties to be set.
      * @param user           The user requesting the changes to the investigator.
      *
-     * @return The updated investigator object if modified, null otherwise.
+     * @return The updated investigator object if modified, null otherwise!
      *
      * @throws NotFoundException       When an investigator with the indicated ID can't be found.
      * @throws InitializationException When the updated investigator failed to save without throwing an exception.

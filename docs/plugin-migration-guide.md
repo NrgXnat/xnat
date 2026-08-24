@@ -1,8 +1,39 @@
-# Plugin Migration Guide
+# Porting an XNAT plugin to 1.11 (Jakarta / Tomcat 10)
 
-This guide covers the changes required in external XNAT plugin projects to build against the monorepo-published artifacts (1.10.0+).
+**Who this is for:** anyone maintaining an XNAT plugin that needs to keep working on **XNAT 1.11**.
 
-> Verified against: `dicom-query-retrieve` and `container-service`.
+There are two independent jumps, and you may need both:
+
+- **Part 1** — building against the **monorepo** artifacts (1.10.0+) instead of the old multi-repo POMs.
+- **Part 2** — building against the **Jakarta / Tomcat 10** line (1.11.0+).
+
+If your plugin already builds against 1.10.x, skip to Part 2.
+
+## The one thing you cannot skip
+
+**A javax-compiled plugin does not "mostly work" on 1.11 — it takes the whole site down.** If your jar
+implements Spring's `WebApplicationInitializer` (most plugins with a REST API do, indirectly), XNAT throws
+`AbstractMethodError` during context startup, the entire web application fails to start, and **every URL
+returns 404 with nothing useful in the logs** — no database error, no mention of your plugin. Diagnosing
+that from the symptom alone is close to impossible unless you already suspect it.
+
+So: every plugin on a 1.11 site must be rebuilt for Jakarta. There is no mixed mode.
+
+## What 1.11 requires at runtime
+
+| | |
+|---|---|
+| Tomcat | **10.1** |
+| Java | **21** |
+| ActiveMQ broker | **6.x** — a 5.x broker fails to boot the Jakarta client *silently* (the app hangs rather than logging a clear error) |
+| Plugins | **all rebuilt for Jakarta** (see above) |
+
+## How much work is this?
+
+Across roughly twenty production plugins the pattern held: a plugin with **no** Restlet resources, Turbine
+screens/actions or Hibernate entities is usually a **build-file-only** change — an hour. A plugin that
+touches any of those needs source changes too, typically a day, most of it mechanical. The
+**Breaking-API matrix** in Part 2 tells you which bucket you are in before you start.
 
 ---
 
@@ -25,6 +56,11 @@ Run these four commands in sequence to find all issues before fixing anything:
 ```
 
 ---
+
+# Part 1 — Building against the monorepo (1.10.0+)
+
+The satellite repositories were merged into one monorepo, which publishes a Gradle `java-platform` BOM
+instead of the old Maven parent POM. These seven changes get an existing plugin building again.
 
 ## 1. Remove All `importedProperties` Usage
 
@@ -193,12 +229,74 @@ This can be left in place or removed — it will not break the build.
 Everything above gets a plugin building against the **javax** monorepo (1.10.x). This part covers the
 next jump: building against the **Jakarta / Tomcat 10** line (1.11.0‑SNAPSHOT+), where the core
 frameworks moved up — **Restlet 1.1 → 2.6, Turbine 2.3.3 → 7.0, Velocity 1.7 → 2.4.1, Spring 5 → 6,
-Spring Security 5 → 6, Hibernate 5 → 6, `javax.*` → `jakarta.*`, Java 17+/21**. A plugin that touches
+Spring Security 5 → 6, Hibernate 5.6 javax → 5.6 `-jakarta` artifacts, `javax.*` → `jakarta.*`, Java 21**. A plugin that touches
 any of the legacy frameworks (Restlet `/REST` resources, Turbine `/app` screens/actions, Velocity
 templates, Hibernate entities) needs source changes, not just a version bump.
 
-> Worked example: `xnatx/audit_trail_plugin` on branch `feature/tomcat10` — a small plugin with two
-> Restlet resources + four Turbine screens; its diff is the canonical reference for the steps below.
+### A worked example, end to end
+
+`dicom-query-retrieve` is a useful reference because it hit almost every category at once: **34 files,
++147 / −99** — one `build.gradle`, 33 Java files, of which 12 are Turbine modules. The order below is the
+one that works; each step surfaces the next set of errors, and doing them out of order just produces noise.
+
+1. **Build file first (§J1).** Set `vXnat` to the 1.11 line, scope `mavenLocal` to `org.nrg.*`, pin the
+   Java 21 toolchain with `fork = true`, and rename the changed coordinates. Then run
+   `./gradlew dependencies --configuration compileClasspath` and fix **resolution** errors only — an
+   unresolvable dependency generates misleading "cannot find symbol" noise later.
+   *What surfaced here:* `hibernate-core` → `hibernate-core-jakarta`. The javax coordinate has no managed
+   version in the 1.11 BOM, so it fails with an empty version rather than a helpful message.
+2. **Mechanical namespace sweep (§J2).** Migrate **by package, never by prefix**: `javax.persistence`,
+   `javax.servlet`, `javax.validation`, `javax.mail`, `javax.jms`, `javax.xml.bind`, and jsr250
+   `javax.annotation.PostConstruct`. Leave JSR-305 `Nonnull`/`Nullable` and JDK `javax.*` alone.
+   *Here:* 55 references across the entity, messaging and REST layers.
+3. **Framework overrides.** Convert Turbine screens and actions to `(PipelineData, Context)` with the
+   `getRunData()` bridge. *Here:* 12 modules — 8 screens, 4 actions. Their own helper methods stayed on
+   `RunData` deliberately; only the framework entry points change.
+4. **Compile, and expect two or three genuinely novel breaks.** These are the ones no guide fully
+   anticipates. *Here:* `ParameterParser` had moved to `org.apache.fulcrum.parser`, and the file-upload API
+   had changed shape entirely — `getFileItem(…)` returning a commons-fileupload `FileItem` became
+   `getPart(…)` returning a `jakarta.servlet.http.Part`, which meant rewriting the upload handler to copy
+   `getInputStream()` instead of calling `FileItem.write(File)`.
+5. **Then test-compile, then test-runtime.** `compileOnly` dependencies are absent from both, and each
+   pass finds a different class of missing dependency.
+
+About a day in total, and roughly 80% of the diff was step 2.
+
+## Breaking-API matrix
+
+Grep your plugin for the left column. Each hit is work; a row with no hits doesn't apply to you. This is
+the fastest way to size the job before starting.
+
+| If your plugin uses… | It breaks because | Change it to | See |
+|---|---|---|---|
+| `javax.servlet.*`, `javax.persistence.*`, `javax.validation.*`, `javax.mail.*`, `javax.jms.*`, `javax.xml.bind.*`, jsr250 `javax.annotation.PostConstruct` | Jakarta EE renamed the packages | the `jakarta.*` equivalents | §J2 |
+| `javax.annotation.Nonnull` / `Nullable`, `javax.cache.*`, `javax.xml.parsers.*`, `javax.xml.XMLConstants`, `javax.sql.*`, `javax.naming.*` | **nothing — these never moved** (JSR-305, JCache, JAXP, JDK) | **leave them alone** | §J2 |
+| Turbine `doBuildTemplate(RunData, …)`, `doPerform(RunData, …)`, `isAuthorized(RunData)` | Turbine 7 dispatches on `PipelineData` | `(PipelineData, Context)` + `RunData data = pipelineData.getRunData();` | §J2 — **fails silently** |
+| `eventSubmit_doXxx` handlers | resolved by exact signature | the same `(PipelineData, Context)` change | catalog: Turbine 7 / Velocity 2 |
+| `org.apache.turbine.util.parser.ParameterParser` | moved to Fulcrum | `org.apache.fulcrum.parser.ParameterParser` + two `compileOnly` deps | §J1 |
+| `ParameterParser.getFileItem(…)` (uploads) | commons-fileupload `FileItem` is gone | `getPart(…)` → `jakarta.servlet.http.Part` | catalog: Turbine 7 / Velocity 2 |
+| `org.restlet.resource.Representation` / `…resource.Variant`, `com.noelios.*` | Restlet 2.x moved or removed the types | `org.restlet.representation.*`; `com.noelios` is gone | §J2 |
+| Restlet WebDAV statuses (207/422/423/424/507) | removed in 2.6 | define them locally | catalog: Restlet 2.6 |
+| `Representation.createEmpty()` | a 1.1 static factory | `new EmptyRepresentation()` | catalog: Restlet 2.6 |
+| `HttpMethod.resolve(String)`, or `switch` on `HttpMethod` | Spring 6 made it a final class, not an enum | `HttpMethod.valueOf(…)` + `if/else` on `HttpMethod.GET.equals(m)` | catalog: Spring 6 |
+| a `HttpStatus` from `getStatusCode()` | Spring 6 returns `HttpStatusCode` | keep `HttpStatusCode`, or `HttpStatus.valueOf(code.value())` | catalog: Spring 6 |
+| `WebMvcConfigurerAdapter` / `WebSecurityConfigurerAdapter` | removed in Spring 6 / Security 6 | the interface, or component style | catalog: Spring 6, Spring Security 6 |
+| `io.springfox:springfox-*` | dead on Spring 6 | drop it; add `io.swagger:swagger-annotations:1.5.20` so legacy `@Api`/`@ApiOperation` still compile | catalog: Build gotchas |
+| `org.hibernate:hibernate-core` / `hibernate-envers` | the Jakarta build is a *differently named* artifact | `hibernate-core-jakarta` / `hibernate-envers-jakarta` | catalog: Hibernate |
+| `turbine:turbine`, `org.apache.velocity:velocity` | coordinates changed | `org.apache.turbine:turbine`, `…:velocity-engine-core` | §J1 |
+| JSP/tag files with `uri="http://java.sun.com/jsp/jstl/…"` | JSTL changed namespace | `uri="jakarta.tags.…"` | §J2 |
+| a Java 8/11 toolchain | core is on 21 | pin a Java 21 toolchain, `fork = true` | §J1 |
+
+**Two rows deserve extra attention:**
+
+- **The `RunData` → `PipelineData` row fails silently.** `RunData` *extends* `PipelineData`, so a method
+  you forget to convert still compiles — it is simply an overload Turbine never calls. Your screen renders
+  nothing, or your action never runs, and nothing is logged. After migrating, grep for
+  `doBuildTemplate(.*RunData` and `doPerform(.*RunData`, and confirm every remaining hit is a helper of
+  your own rather than a framework override.
+- **The "leave them alone" row.** A blanket `javax` → `jakarta` search-and-replace **will** break your
+  build by rewriting JSR-305 annotations and JDK classes that never moved. Migrate package by package,
+  never by prefix.
 
 ## J1. Build script
 
@@ -274,7 +372,7 @@ only the framework overrides change. **Why it bites silently:** `RunData extends
 `doBuildTemplate(RunData, Context)` still *compiles* (it's a more‑specific overload), but the framework only ever
 calls the `(PipelineData, Context)` method — your `(RunData, Context)` override is **dead code, never invoked**
 (the screen renders nothing custom / the action never runs), with no compile error to warn you. Grep every plugin
-Turbine module for `doBuildTemplate(.*RunData`/`doPerform(.*RunData` after migrating. *(dicom-query-retrieve, item 1‑31)*
+Turbine module for `doBuildTemplate(.*RunData`/`doPerform(.*RunData` after migrating. *(dicom-query-retrieve)*
 Other Turbine renames you may hit: `TurbineVelocity.getContext(data)`
 → `TurbineUtils.getVelocityContext(data)`; `ActionLoader.getInstance().getInstance(x)` → `.getAssembler(x)`;
 `org.apache.turbine.util.parser.ParameterParser` → `org.apache.fulcrum.parser.ParameterParser`. **Multipart
@@ -282,7 +380,7 @@ uploads changed model in fulcrum‑parser 4.0.0:** `ParameterParser.getFileItem(
 `FileItem` is **gone** — use `getPart(String)` → `jakarta.servlet.http.Part`. Port `FileItem.write(File)` to
 copying `part.getInputStream()` with `Files.copy(in, temp.toPath(), REPLACE_EXISTING)` rather than `Part.write()`
 (whose target path is resolved relative to the servlet `MultipartConfig` location, not an absolute temp path);
-`part.delete()` throws `IOException` (the old `FileItem.delete()` didn't) — wrap it. *(dicom-query-retrieve, item 1‑31)*
+`part.delete()` throws `IOException` (the old `FileItem.delete()` didn't) — wrap it. *(dicom-query-retrieve)*
 
 **`javax.*` → `jakarta.*`** for the EE APIs the plugin uses directly: `javax.servlet` → `jakarta.servlet`,
 `javax.mail` → `jakarta.mail`, `javax.jms`, `javax.persistence` → `jakarta.persistence`, `javax.validation`
@@ -304,15 +402,15 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   login (`SecurityContextHolder.getContext().setAuthentication(...)`, e.g. email verification / password
   reset / SSO callback) authenticates for that request only and is **lost on the next request** — the user
   silently reverts to guest. → Persist it explicitly: save to the session under
-  `HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY`, or use `SecurityContextRepository.saveContext(ctx, req, res)`. *(item 1‑20 / `XDAT.loginUser`)*
+  `HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY`, or use `SecurityContextRepository.saveContext(ctx, req, res)`. *(surfaces via `XDAT.loginUser`)*
 - **`authorizeRequests` vs `authorizeHttpRequests`.** `authorizeHttpRequests` builds an
   `AuthorizationFilter` that a `FilterSecurityInterceptor` metadata post‑processor never sees. → If your
   plugin's security rules are applied by post‑processing the filter chain, they vanish → redirect loop. →
-  Keep `authorizeRequests` until the SS7/`AuthorizationManager` port. *(item 1‑2)*
+  Keep `authorizeRequests` until the SS7/`AuthorizationManager` port.
 - **Default dispatcher types gained FORWARD + INCLUDE.** → Filters that early‑return on
   `response.isCommitted()` (e.g. `ChannelProcessingFilter`) now silently drop mid‑page `include`s once the
   response commits → blank SPA/JSP fragments. → Restore the SS 5.7 dispatcher set in your
-  `SecurityWebApplicationInitializer`. *(item 1‑15)*
+  `SecurityWebApplicationInitializer`.
 - **`WebSecurityConfigurerAdapter` removed** → component‑style `@Bean SecurityFilterChain` + explicit
   `@Bean AuthenticationManager`. **`ObjectPostProcessor`** moved packages in SS 6.4.
 
@@ -324,7 +422,7 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   *(container-service `*RestApiTestConfig`)*
 - **Parameter names no longer read from bytecode.** Spring 6.1 dropped
   `LocalVariableTableParameterNameDiscoverer`. → `@RequestParam`/aspects that rely on parameter names fail
-  to bind. → Compile with **`javac -parameters`**. *(item 1‑1)*
+  to bind. → Compile with **`javac -parameters`**.
   - **Plugins with a standalone build must opt in themselves.** XNAT core sets this in its build
     convention (`buildSrc/.../buildlogic.java-common-conventions.gradle`), but a plugin repo has its own
     Gradle build and does *not* inherit it. Symptom: the plugin compiles fine and loads, but a controller
@@ -335,7 +433,7 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
     → add `tasks.withType(JavaCompile).configureEach { options.compilerArgs << '-parameters' }`. Verify with
     `javap -v <Controller>.class | grep -c MethodParameters` (0 = missing the flag). *(container-service)*
 - **Trailing‑slash URL matching disabled.** → JS that PUTs to `/xapi/foo/{id}/` gets 404; saves silently
-  no‑op. → `configurer.setUseTrailingSlashMatch(true)` (deprecated; revisit at Spring 7). *(item 1‑15)*
+  no‑op. → `configurer.setUseTrailingSlashMatch(true)` (deprecated; revisit at Spring 7).
 - **By‑name bean resolution + `-parameters`.** Spring 6's by‑name shortcut can suddenly match a same‑named
   stray/stub bean once parameter names are exposed. → surprise autowire of the wrong bean. *(test‑suite fix)*
 - **`byte[]` responses.** If you *replace* the MVC message‑converter list you drop the default
@@ -365,7 +463,7 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   instead of `resolve()`'s `null`); (b) you can no longer `switch (method) { case GET: … }` — the `case` labels
   fail because they're no longer enum constants. → replace the switch with an `if/else` chain on
   `HttpMethod.GET.equals(method)` etc. (an unsupported method then falls through to the `else`, matching the old
-  `default`). *(xsync, item 1‑32)*
+  `default`). *(xsync)*
 
 ### Restlet 2.6
 - **Default success status 200 → 204** for handlers that finish with a bodyless/empty‑entity OK. → clients
@@ -374,7 +472,7 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
 - **`x‑www‑form‑urlencoded` body + query merge.** The 2.6 servlet connector rebuilds the request entity
   from the container's merged `getParameterMap()` (query ∪ body, Servlet 6 §3.1). → code that reads params
   from *both* the body form and the query double‑counts them. → read the merged namespace once, or subtract
-  the query (`bodyOnlyForm`). *(item 1‑19)*
+  the query (`bodyOnlyForm`).
 - **A `x‑www‑form‑urlencoded` *raw* body is lost entirely.** If a client POSTs a non‑form payload (raw XML,
   JSON, …) but leaves the default `application/x-www-form-urlencoded` content type, the container drains the
   stream into `getParameterMap()` and Restlet rebuilds the entity from that map. A raw body has no
@@ -383,7 +481,7 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   (→ e.g. SAX "Content is not allowed in prolog"). Restlet 1.1 handed back the raw body; 2.6 does not. → **fix
   at the client: send the correct `Content-Type`** (`text/xml`, `application/json`) so Restlet keeps the raw
   entity. Applies to any JS/HTTP caller (YUI `asyncRequest`, `fetch`, XHR) posting a body to a `/REST`|`/data`
-  resource that reads `entity.getText()`. *(item 1‑21, commit `4bb23dca7`)*
+  resource that reads `entity.getText()`.
 - **Response headers must be `Series<Header>`, not `Form`.** The attribute is `org.restlet.http.headers`; a
   `Form` there throws a CCE *after* the body commits (→ opaque 500), and STANDARD_HEADERS
   (`Cache-Control`, `Content-Disposition`) set on a raw Series are silently dropped. → use the typed API
@@ -391,9 +489,8 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
 - **Router defaults changed** to `EQUALS` + `FIRST_MATCH`. → trailing‑path URIs (file‑by‑name, catalog
   subpaths) 404, and writes misroute to the first prefix route. → restore `MODE_STARTS_WITH` matching +
   `MODE_BEST_MATCH` routing in `createInboundRoot()`. *(item 0a‑16)*
-- **Empty‑valued params** now surface as `""` where 1.1 gave `null`. → normalize empty → null for parity.
-  *(`101f83f42`)* — **`ext.fileupload` dropped** after 2.5.2 → `commons-fileupload2` `jakarta-servlet6`
-  (`JakartaServletFileUpload` parsing the `HttpServletRequest` directly). *(item 1‑11)*
+- **Empty‑valued params** now surface as `""` where 1.1 gave `null`. → normalize empty → null for parity. **`ext.fileupload` dropped** after 2.5.2 → `commons-fileupload2` `jakarta-servlet6`
+  (`JakartaServletFileUpload` parsing the `HttpServletRequest` directly).
 - **WebDAV `Status` constants removed** (207/422/423/424/507). A `SecureResource`/`ServerResource` subclass
   that referenced e.g. `Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY` no longer compiles
   (`cannot find symbol … location: class Status`). → use core's `org.nrg.xnat.restlet.util.XnatWebDavStatus`
@@ -401,14 +498,14 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   compile classpath via `org.nrg.xnat:web`) — matching how xnat-web's own `SecureResource` sets 422. The
   standard 4xx/5xx constants (`CLIENT_ERROR_GONE`, `SERVER_ERROR_INTERNAL`, …) are still on `Status`; only the
   WebDAV extensions moved. Verify replacements against the actual 2.6 `Status` bytecode before guessing a
-  rename — several 1.1 constants were dropped, not renamed. *(item 1‑6; xnat_cr_plugin)*
+  rename — several 1.1 constants were dropped, not renamed. *(seen in a CR plugin)*
 
 ### Turbine 7 / Velocity 2
 - **`eventSubmit_doXxx` uses exact‑type dispatch.** Turbine 7 resolves the handler via
   `getClass().getMethod("doXxx", {PipelineData, Context})` — an **exact** match. → a handler left on the old
   `(RunData, Context)` signature isn't found; the event silently falls through to the empty base
   `doPerform` → **HTTP 200 but no‑op** (a form that appears to submit and does nothing). → migrate every
-  `eventSubmit`‑dispatched `doXxx` to `(PipelineData, Context)`. *(item 1‑18)*
+  `eventSubmit`‑dispatched `doXxx` to `(PipelineData, Context)`.
 - **Velocity 2 `#if` empty‑check.** 2.x defaults `directive.if.empty_check=true`: empty string, empty
   collection, and numeric zero are **falsy**; 1.7 treated any non‑null, non‑false object as truthy. →
   `#if($emptyString)` / `#if($zero)` blocks silently stop rendering. → core sets
@@ -419,11 +516,11 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   changed (`getResourceStream` → `getResourceReader`, `ExtProperties`).
 - **Fulcrum not transitive** (see J1) — `ParameterParser`/`Recyclable` `NoClassDefFound` at compile.
 
-### Hibernate 6
+### Hibernate (the `-jakarta` artifacts)
 - **`hibernate-validator` groupId changed** (`org.hibernate` → `org.hibernate.validator`). The *old*
   coordinate resolves to an **empty relocation jar** at 8.x → Hibernate's AUTO bean‑validation is **silently
   disabled** (no error, validations just stop running). → use the new groupId. *(test‑suite fix)*
-- **Legacy `Criteria` API removed** → port to JPA `CriteriaBuilder`. *(`fe5a52f85`)* — **`hibernate-core-jakarta`**
+- **Legacy `Criteria` API removed** → port to JPA `CriteriaBuilder`. Also note **`hibernate-core-jakarta`**
   is a *differently‑named* artifact from javax `hibernate-core`; `hibernate-ehcache`/`hibernate-jcache` still
   pull the javax one, so both can land on the classpath (the exclusion is the consuming module's job, not the
   BOM's).
@@ -443,17 +540,17 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   distinction as the old‑wrapper case below). → set the *daemon* JDK — `JAVA_HOME=…/temurin-21…/Home ./gradlew …` or
   `org.gradle.java.home` in `gradle.properties`. Measured: JDK 21.0.11 reads that jar (987 entries), JDK 25.0.2
   throws. Such a task can also sit green for months and only fail when something unrelated changes the classpath and
-  invalidates its up‑to‑date marker. *(item 1‑33)*
+  invalidates its up‑to‑date marker.
 - **`mavenLocal()` shadows partial third‑party artifacts.** `ehcache:3.10.8` uses a **`-jakarta` classifier**
   jar; if `~/.m2` has the base metadata but not that classifier, an unscoped high‑priority `mavenLocal()` locks
   resolution to `~/.m2` and fails (`Could not find ehcache-3.10.8-jakarta.jar`). → scope `mavenLocal` to
-  `org.nrg.*` (J1). *(item 662607097 / this session)*
+  `org.nrg.*` (J1).
 - **springdoc floor.** springdoc **2.8.17** drags in `spring-boot-starter-logging` → `log4j-to-slf4j`, which
   collides with Turbine 7's `log4j-core` (Turbine casts to a log4j2 `LoggerContext` at init) → YAAFI boot
-  fails. → hold springdoc at **2.8.6** on the Turbine 7 graph. *(`a3d4ad449`)*
+  fails. → hold springdoc at **2.8.6** on the Turbine 7 graph.
 - **glassfish JSTL 3 `c:import var=`** capture is defective — the wrapper's `flush()` spills the capture into
   the page and empties the var whenever the included servlet flushes. → replace `<c:import var=…>` with an
-  XNAT‑owned import tag (or `<xnat:import>`). *(item 1‑15)*
+  XNAT‑owned import tag (or `<xnat:import>`).
 - **springfox is dead on Spring 6** → springdoc‑openapi (non‑Boot WARs need to `@Import` the config classes
   manually). For a *plugin* you usually don't touch the swagger annotations at all: drop the
   `io.springfox:springfox-swagger2` / `springfox-swagger-ui` deps, add `io.swagger:swagger-annotations:1.5.20`
@@ -461,7 +558,7 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   mappings (it ignores the 1.x annotations). *(container-service)* **javamelody** needs its 2.x (jakarta)
   line — a javax listener fails Tomcat 10 boot.
 - **java‑platform BOM constraints can't carry `exclude`** — it's a no‑op that only surfaces (as a hard error)
-  when publishing Gradle module metadata (`generateMetadataFileForMavenPublication`). *(this session, `parent`)*
+  when publishing Gradle module metadata (`generateMetadataFileForMavenPublication`).
 - **`mavenLocal` shadowing, the other lever.** Where scoping `mavenLocal` to `org.nrg.*` isn't convenient (an
   existing repos block), the targeted fix for the ehcache‑jakarta case is a per‑repo content filter:
   `mavenLocal { content { excludeGroup "org.ehcache" } }` — pushes just that group to Central/jfrog where the
@@ -565,5 +662,5 @@ is rarely the last.
   time, XNAT core adds `xnat-web:verifyNoOrphanedJavaxEE` (wired into `check`): it fails the build if any runtime
   jar references a jakarta‑migrated `javax.*` package that **nothing on the classpath provides** (reference‑vs‑
   provision, so JDK‑owned `javax.transaction.xa`/JCache/JSR‑305/JAXP are excluded; genuinely‑unreachable library
-  features go on a documented allowlist). Plugins that bundle deps can copy the task into their build. *(status doc 1‑21)*
+  features go on a documented allowlist). Plugins that bundle deps can copy the task into their build.
 

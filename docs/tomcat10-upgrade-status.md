@@ -754,3 +754,27 @@ alongside the other deferred cleanups. **Method note:** two of this session's ow
 sites", and the earlier "reads the raw entity" class in 1-24/1-34) were produced by pattern-matching and were
 wrong; both were caught only by going back and measuring. Prefer a live A/B or a targeted re-read over a grep
 heuristic before recording a class or a count in this document.
+
+**1-37 ⚪ — [open, needs a team decision] mixed line endings and no `.gitattributes`** (2026-08-24).
+Surfaced while producing the reviewer's guide (D1), when a reported "4,430 changed lines" in
+`SecureResource.java` turned out to exceed the file's own length (2,386). Two compounding causes: the
+count summed added **and** deleted lines, so every modified line counted twice; and the file was **CRLF on
+`develop` and LF here**, so a raw diff marks *every* line as modified. Corrected figure for that file:
+**+386 / −52**.
+**Scale of the distortion.** Whole branch, raw vs `-w`: **+23,160/−13,461** vs **+12,112/−2,413** — roughly
+**11,000 insertions and 11,000 deletions are line-ending churn**. It also mis-bucketed the review surface:
+the "substantial, needs human judgment" count is **124**, not the 198 a raw diff suggests — **74 files look
+substantial purely because of the ending change**.
+**The actual state (measured, not assumed).** The repo has **no `.gitattributes`** and **mixed** endings.
+On HEAD: **342 tracked text files are CRLF** — 188 `.java`, 150 `.vm`, 4 `.properties` — out of ~4,852.
+`origin/develop` carries 268 CRLF `.java` files; this branch 188. **The 83-file difference is incidental**,
+not a normalization: the migration's tooling rewrote as LF every file it happened to touch. Nobody decided
+this, which is why it is drift rather than policy.
+**Why it matters beyond this PR.** Every future branch that touches one of the remaining 342 files will
+produce the same inflated diff and the same misleading review estimate.
+**Decision needed (deliberately NOT taken here).** Adopt `* text=auto eol=lf` in a `.gitattributes` and
+normalize, or leave the drift and rely on `-w`. Normalizing touches 342 files in a whitespace-only commit;
+doing that *inside* the cutover PR would make an already-large review worse, so if it is adopted it should
+be a separate commit either before or after the cutover merges — with the renormalization run as its own
+`git add --renormalize .` so reviewers can skip it wholesale. D1 tells reviewers to use `-w` and asks them
+not to request a line-ending fix in the cutover PR, pointing here.

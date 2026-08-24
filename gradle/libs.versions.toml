@@ -49,7 +49,7 @@ dcm4che5 = "5.35.0"
 # Native OpenCV build behind dcm4che-imageio-opencv. Declared provided-scope by Weasis, so it is
 # never resolved transitively and has to be asked for by classifier. See docs/mirroring-opencv-codecs.md.
 weasis-opencv = "5.0.0-dcm"
-dicom-edit6 = "6.9.1"
+dicom-edit6 = "7.0.0-SNAPSHOT"
 dom4j = "2.1.4"
 dqr = "1.0.0"
 easymock = "1.2_Java1.3"

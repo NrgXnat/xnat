@@ -7,6 +7,7 @@ import com.google.common.io.ByteStreams;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -26,6 +27,7 @@ import java.util.List;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -48,6 +50,11 @@ public class ResumableDicomInputStreamTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+
+    @After
+    public void clearScratchDirectory() {
+        System.clearProperty(ResumableDicomInputStream.SCRATCH_DIR_PROPERTY);
+    }
 
     @Test
     public void keepsPixelDataOffTheHeapWhenTheWindowReachesIt() throws Exception {
@@ -111,6 +118,60 @@ public class ResumableDicomInputStreamTest {
 
         for (final File file : spooled) {
             assertFalse("spool file should be gone after cleanup: " + file, file.exists());
+        }
+    }
+
+    /**
+     * java.io.tmpdir may be smaller than an image, and need not carry the archive's access controls, so where
+     * the pixel data is staged has to be something a site can decide.
+     */
+    @Test
+    public void spoolsIntoTheConfiguredDirectory() throws Exception {
+        final File scratch = folder.newFolder("scratch");
+        System.setProperty(ResumableDicomInputStream.SCRATCH_DIR_PROPERTY, scratch.getAbsolutePath());
+
+        final List<File> spooled = new ArrayList<>();
+        read(HIGH_GROUP_WINDOW, spooled);
+
+        assertEquals("the read should have spooled once", 1, spooled.size());
+        assertEquals("the spool file should be in the configured directory",
+                     scratch.getCanonicalFile(), spooled.get(0).getParentFile().getCanonicalFile());
+
+        ResumableDicomInputStream.deleteBulkDataFiles(spooled);
+    }
+
+    /** A site setting this before the directory exists should not have to create it by hand. */
+    @Test
+    public void createsTheConfiguredDirectoryWhenItIsMissing() throws Exception {
+        final File scratch = new File(folder.getRoot(), "not-yet");
+        assertFalse("precondition: the directory should not exist", scratch.exists());
+        System.setProperty(ResumableDicomInputStream.SCRATCH_DIR_PROPERTY, scratch.getAbsolutePath());
+
+        final List<File> spooled = new ArrayList<>();
+        read(HIGH_GROUP_WINDOW, spooled);
+
+        assertTrue("the directory should have been created", scratch.isDirectory());
+        assertEquals(scratch.getCanonicalFile(), spooled.get(0).getParentFile().getCanonicalFile());
+
+        ResumableDicomInputStream.deleteBulkDataFiles(spooled);
+    }
+
+    /**
+     * Falling back to java.io.tmpdir would defeat the reason for configuring a directory, which may be that
+     * the pixel data must not go there.
+     */
+    @Test
+    public void failsRatherThanFallingBackWhenTheDirectoryCannotBeCreated() throws Exception {
+        final File blocker = folder.newFile("a-file-not-a-directory");
+        System.setProperty(ResumableDicomInputStream.SCRATCH_DIR_PROPERTY,
+                           new File(blocker, "scratch").getAbsolutePath());
+
+        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(FIXTURE))) {
+            ResumableDicomInputStream.openWithBulkDataOffHeap(bis);
+            fail("expected an IOException naming the directory it could not create");
+        } catch (IOException expected) {
+            assertTrue("the message should name the directory, but was: " + expected.getMessage(),
+                       expected.getMessage().contains("scratch"));
         }
     }
 

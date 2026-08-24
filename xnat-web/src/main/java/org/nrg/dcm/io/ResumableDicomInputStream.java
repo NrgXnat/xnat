@@ -19,6 +19,13 @@ public final class ResumableDicomInputStream extends DicomInputStream {
     // 12 should be enough, but more might be needed someday to not interfere with readSequence.
     final int markSize = 12;
 
+    /**
+     * Where bulk data read by {@link #openWithBulkDataOffHeap} is spooled. Sized for the pixel data, so not
+     * always suited to java.io.tmpdir, which may be smaller than an image and need not carry the archive's
+     * access controls. Unset leaves dcm4che at its default, which is java.io.tmpdir.
+     */
+    public static final String SCRATCH_DIR_PROPERTY = "dicom.import.scratch.dir";
+
     public ResumableDicomInputStream(BufferedInputStream in) throws IOException {
         super(in);
     }
@@ -49,17 +56,46 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * sit low enough to fall inside an ordinary read window, so an ordinary read would start spooling files it
      * does not today. The pixel data is the only value large enough to be worth keeping off the heap.
      *
+     * Where they land is {@link #SCRATCH_DIR_PROPERTY configurable}.
+     *
      * @param in the object's bytes.
      *
      * @return a resumable stream that references bulk data rather than loading it.
      *
-     * @throws IOException if the stream cannot be opened.
+     * @throws IOException if the stream cannot be opened, or the configured scratch directory does not exist
+     *                     and cannot be created.
      */
     public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in) throws IOException {
         final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);
         dis.setIncludeBulkData(IncludeBulkData.URI);
         dis.setBulkDataDescriptor(BulkDataDescriptor.PIXELDATA);
+        final File scratchDirectory = getScratchDirectory();
+        if (null != scratchDirectory) {
+            dis.setBulkDataDirectory(scratchDirectory);
+        }
         return dis;
+    }
+
+    /**
+     * The configured spool directory, created if it does not exist.
+     *
+     * @return the directory, or null to leave dcm4che at its default.
+     *
+     * @throws IOException if the configured directory does not exist and cannot be created. Failing rather
+     *                     than falling back is deliberate: silently spooling to java.io.tmpdir would defeat
+     *                     the reason for configuring it, which may be that the pixel data must not go there.
+     */
+    private static File getScratchDirectory() throws IOException {
+        final String configured = System.getProperty(SCRATCH_DIR_PROPERTY);
+        if (null == configured) {
+            return null;
+        }
+        final File directory = new File(configured);
+        if (!directory.isDirectory() && !directory.mkdirs()) {
+            throw new IOException("DICOM import scratch directory " + directory
+                                  + " does not exist and cannot be created");
+        }
+        return directory;
     }
 
     /**

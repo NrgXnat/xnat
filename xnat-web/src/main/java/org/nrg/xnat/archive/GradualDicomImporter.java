@@ -137,9 +137,11 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final int maxIdentifierTag = dicomObjectIdentifier.getTags().stream()
                                                           .max(Integer::compareUnsigned)
                                                           .orElse(Tag.SeriesDescription);
-        final int lastTag = (Integer.compareUnsigned(maxIdentifierTag, Tag.SeriesDescription) > 0
-                             ? maxIdentifierTag
-                             : Tag.SeriesDescription) + 1;
+        // The last tag the identifier needs, not a stop tag: dcm4che's stop tag is exclusive, so the read
+        // below adds the one. Adding it here as well reserved a slot past the tag we actually want.
+        final int lastTag = Integer.compareUnsigned(maxIdentifierTag, Tag.SeriesDescription) > 0
+                            ? maxIdentifierTag
+                            : Tag.SeriesDescription;
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
              final DicomInputStream dis = new ResumableDicomInputStream(bis)) {
             Attributes fmi = dis.readFileMetaInformation();

@@ -19,7 +19,12 @@ importer: &importer
   - 'xnat-web/src/main/java/org/nrg/xnat/archive/FinishImageUpload.java'
   - 'xnat-web/src/main/java/org/nrg/xnat/restlet/actions/importer/**'
 prearchive: *importer
-metadata-extraction: *importer
+
+metadata-extraction:
+  - 'extattr/src/main/**'
+  - 'dicom-xnat-sop/src/main/**'
+  - 'dicom-xnat-util/src/main/**'
+  - 'xnat-web/src/main/java/org/nrg/dcm/xnat/**'
 
 direct-archive:
   - 'xnat-web/src/main/java/org/nrg/xnat/archive/tasks/TriggerDirectArchiveRequests.java'
@@ -27,7 +32,7 @@ direct-archive:
   - 'xnat-web/src/main/java/org/nrg/xnat/archive/services/DirectArchiveSessionService*.java'
 
 archive:
-  - 'xnat-web/src/main/java/org/nrg/xnat/archive/PrearcSessionArchiver.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/archive/**'
   - 'xnat-web/src/main/java/org/nrg/xnat/restlet/services/Archiver.java'
 
 event-service: &event_service
@@ -43,10 +48,20 @@ search:
 
 custom_forms:
   - 'xnat-web/src/main/java/org/nrg/xnat/customforms/**'
-
-custom-variables:
   - 'xnat-web/src/main/java/org/nrg/xnat/services/customfields/**'
   - 'xnat-web/src/main/java/org/nrg/xapi/rest/customfields/**'
+
+custom-variables:
+  # legacy per-datatype fields (xnat:fieldDefinitionGroup), predates Custom Forms.
+  # xnat.xsd is the single schema file for every XNAT data type, so this is a
+  # broad, low-selectivity trigger -- it's the finest granularity available
+  # since fieldDefinitionGroup isn't split into its own file.
+  - 'xnat-web/src/main/resources/schemas/xnat/xnat.xsd'
+  - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseXnatFielddefinitiongroup*.java'
+  - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseXnatSubjectdata.java'
+  - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseXnatExperimentdata.java'
+  - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseXnatProjectdata.java'
+  - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseXnatDatatypeprotocol.java'
 
 schemas: &schemas
   - 'xdat/src/main/java/org/nrg/xft/schema/**'
@@ -54,6 +69,8 @@ schemas: &schemas
   - 'xnat-web/src/main/java/org/nrg/xapi/rest/data/DataTypesApi.java'
   - 'xnat-web/src/main/java/org/nrg/xapi/rest/data/XFTElementApi.java'
   - 'xnat-web/src/main/java/org/nrg/xapi/rest/schemas/SchemaApi.java'
+  - 'xnat-web/src/main/java/org/nrg/xdat/model/**'
+  - 'xnat-web/src/main/resources/schemas/**'
 data-types: *schemas
 db-schemas: *schemas
 xft-elements: *schemas
@@ -62,6 +79,22 @@ permissions: &permissions
   - 'xdat/src/main/java/org/nrg/xdat/security/**'
   - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseXnatExperimentdataShare.java'
   - 'xnat-web/src/main/java/org/nrg/xdat/om/base/BaseXnatImagescandataShare.java'
+  # xapi-level authorization: annotation, enforcing aspect, and every AccessLevel impl
+  - 'xdat/src/main/java/org/nrg/xapi/authorization/**'
+  - 'xdat/src/main/java/org/nrg/xapi/rest/aspects/XapiRequestMappingAspect.java'
+  - 'xdat/src/main/java/org/nrg/xapi/rest/AuthDelegate.java'
+  - 'xdat/src/main/java/org/nrg/xapi/rest/XapiRequestMapping.java'
+  - 'xnat-web/src/main/java/org/nrg/xapi/authorization/**'
+  # groups/roles/permissions caching -- read-access checks route through this
+  - 'xdat/src/main/java/org/nrg/xdat/services/cache/GroupsAndPermissionsCache.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/services/cache/DefaultGroupsAndPermissionsCache.java'
+  # site-wide/role-based data access surface (ALL_DATA_ADMIN/ALL_DATA_ACCESS)
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/users/DataAccessApi.java'
+  - 'xnat-web/src/main/java/org/nrg/xapi/rest/users/RoleBasedDataAccessApi.java'
+  # request-access-to-project workflow, prearchive-specific access checks
+  - 'xnat-web/src/main/java/org/nrg/xnat/turbine/modules/actions/RequestAccess.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/helpers/prearchive/PrearcUtils.java'
+  - 'xnat-web/src/main/java/org/nrg/xnat/ajax/Prearchive.java'
 sharing: *permissions
 
 config-service: &config_service

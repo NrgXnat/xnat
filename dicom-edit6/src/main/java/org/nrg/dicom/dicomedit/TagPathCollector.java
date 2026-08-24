@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Collect the tags in an object, including sequence elements. Neat.
+ * Collect the tags in an object, including sequence elements.
  */
 public class TagPathCollector extends DicomObjectTagVisitor {
     private List<TagPath> tagPaths;

@@ -22,6 +22,9 @@
 ## Testing
 <!-- Please don't delete this section. At a minimum, show proof that this change was deployed and executed successfully: a green build is not sufficient. Cover the automated tests you added and the manual verification you performed, and reference the areas of impact above. Show the evidence — commands and their output, screenshots, before/after values, log lines, the data you threw at it. A model writing a test is not the same as you confirming the behavior. Where automated coverage doesn't exist for what you changed, describe the scenarios you exercised by hand. And if there's something a reviewer would expect you to have tested and you didn't, say so: a named gap is more useful than a blank section. -->
 
+### REST integration tests
+<!-- End-to-end coverage lives in [NrgXnat/xnat-rest-tests](https://github.com/NrgXnat/xnat-rest-tests), which exercises a running server over the REST API. If this change is observable through the API, link the companion PR there. If the suite already covers it, say which test. If it needs coverage you haven't written, say so and link the ticket. -->
+
 ### How a reviewer can verify this
 <!-- The shortest path for someone else to see it work: (1) setup required — branch, build, data; (2) actions to perform; (3) what they should observe. -->
 

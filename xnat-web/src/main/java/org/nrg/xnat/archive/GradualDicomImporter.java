@@ -77,6 +77,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -142,12 +143,16 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final int lastTag = Integer.compareUnsigned(maxIdentifierTag, Tag.SeriesDescription) > 0
                             ? maxIdentifierTag
                             : Tag.SeriesDescription;
+        // Populated only when the window above reaches the pixel data, so empty for an ordinary import.
+        // See ResumableDicomInputStream.openWithBulkDataOffHeap for why they exist and who owns them.
+        final List<File> bulkDataFiles = new ArrayList<>();
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
-             final DicomInputStream dis = new ResumableDicomInputStream(bis)) {
+             final DicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis)) {
             Attributes fmi = dis.readFileMetaInformation();
             final String transferSyntaxUID = null == _transferSyntax ? dis.getTransferSyntax() : _transferSyntax;
             Attributes dataset = new Attributes();
             dis.readAttributes(dataset, -1, lastTag + 1);
+            bulkDataFiles.addAll(dis.getBulkDataFiles());
             dis.reset();
 
             // CStore (DIMSE) has no FMI preamble, so fmi is null; generate complete FMI for file output.
@@ -435,6 +440,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
             throw e;
         } catch (Throwable t) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);
+        } finally {
+            // Only safe here: the dataset holds references into these files, and write() reads them.
+            ResumableDicomInputStream.deleteBulkDataFiles(bulkDataFiles);
         }
     }
 

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
 import org.dcm4che3.data.Attributes;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.DicomInputStream;
 
@@ -257,23 +258,10 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
     static Integer countFrames(final List<String> files) {
         int total = 0;
         for (final String path : files) {
-            try (final DicomInputStream input = new DicomInputStream(new File(path))) {
-                input.setIncludeBulkData(DicomInputStream.IncludeBulkData.NO);
-                // Through Columns rather than NumberOfFrames: Rows (0028,0010) and Columns
-                // (0028,0011) come after it, and without them there is no way to tell an image
-                // from an object that has no pixels at all.
-                final Attributes attributes = input.readDataset(Tag.Columns + 1);
-                // Dimensions rather than contains(Tag.PixelData): under IncludeBulkData.NO the
-                // reader skips the value without adding the element, so that check reads false for
-                // every object, image or not. Structured reports and real world value maps have
-                // neither dimensions nor pixels, and counting them as a frame apiece yields a
-                // slice count for a scan that cannot be rendered at all -- the renderer then fails
-                // on "Missing Pixel Data".
-                if (attributes.getInt(Tag.Rows, 0) <= 0 || attributes.getInt(Tag.Columns, 0) <= 0) {
-                    continue;
-                }
-                total += Math.max(1, attributes.getInt(Tag.NumberOfFrames, 1));
-            } catch (IOException e) {
+            try {
+                // Defined on the calculator because it also uses it to locate the frames counted here.
+                total += SliceCoordinateCalculator.framesIn(new File(path));
+            } catch (MizerException e) {
                 log.warn("Unable to read a frame count from {}", path, e);
                 return null;
             }

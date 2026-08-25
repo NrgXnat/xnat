@@ -9,6 +9,10 @@ There are two independent jumps, and you may need both:
 
 If your plugin already builds against 1.10.x, skip to Part 2.
 
+> **Driving this with an AI coding agent?** `docs/ai/jakarta-plugin-port-handoff.md` is the procedure to
+> hand it alongside this guide — phase order, the verification loop, and the discipline rules that
+> distinguish a correct port from a plausible-looking one.
+
 ## The one thing you cannot skip
 
 **A javax-compiled plugin does not "mostly work" on 1.11 — it takes the whole site down.** If your jar

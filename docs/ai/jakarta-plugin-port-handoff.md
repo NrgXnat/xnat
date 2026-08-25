@@ -26,7 +26,8 @@ A port is done when **all** of these hold. Anything less, say so plainly rather 
 
 1. `./gradlew clean <pluginJarTask>` is green, tests included.
 2. The plugin jar loads into a **running 1.11 instance** and the instance boots clean — see
-   *compile-clean is not boot-clean* below. Compilation alone is **not** done.
+   *compile-clean is not boot-clean* below. Compilation alone is **not** done. You stand that instance
+   up yourself; see *Where the instance comes from* in Phase 4.
 3. Any bug you fixed has had its **class** swept, with the audit scope and result stated.
 4. New behavior-change findings are added to the guide's catalog.
 5. You have reported what you did *not* do, and why.
@@ -129,6 +130,37 @@ earlier ones are clean:
 ```
 
 Then **deploy to a real 1.11 instance and read the startup log.** This is not optional; see below.
+
+### Where the instance comes from — you create it
+
+Do not wait to be given a server, and do not treat this step as the human's job. The XNAT clone the human
+already made for `publishToMavenLocal` ships the stack: Tomcat 10.1 / JDK 21 + PostgreSQL + ActiveMQ.
+
+```bash
+cd <xnat-clone>
+./docker/stage-war.sh
+echo 'file  <abs-path-to-your-plugin>/build/libs/<jar>' >> docker/plugins.manifest
+./docker/stage-plugins.sh
+docker compose up --build          # then: docker compose logs -f xnat
+```
+
+Rules that matter for an agent specifically:
+
+- **Use `docker/plugins.manifest`, never `cp` into `docker/plugins/`.** `stage-plugins.sh` clears that
+  directory first, so a copied jar vanishes and you will conclude the plugin "didn't load" when it was
+  never staged. Prefer the `file` entry form: `source` refuses to build a repo with uncommitted changes,
+  which is exactly the state your working tree is in mid-port.
+- **Restart after re-staging.** XNAT scans the plugin directory once at boot. Re-running the staging
+  script does not reload anything — `docker compose restart xnat` does.
+- **First boot runs schema creation and takes minutes.** A non-responding port during that window is not
+  a failure. Read the log rather than polling the port, and do not start "fixing" anything until the log
+  stops moving.
+- **Diagnose from the container log, not the exit status.** The webapp can fail to start while the
+  container stays up. Read the *innermost* `Caused by:`.
+
+**If you have no Docker access,** say so explicitly and stop short of claiming a verified port: report the
+build as green, the boot as **unverified**, and hand back this exact command sequence for the human to
+run. An unverified port reported as done is the specific failure this whole section exists to prevent.
 
 ---
 

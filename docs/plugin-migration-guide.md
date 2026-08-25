@@ -105,6 +105,39 @@ works on 1.11.
 
 That clone is also where this guide and the agent handoff live, so keep it around.
 
+### The same clone is your test instance
+
+You need a running 1.11 instance to finish a port — a plugin that compiles can still fail at load, and
+that failure is invisible until you boot it (see *Compile‑clean is not boot‑clean*). You do **not** need a
+server from anyone: the clone you just made ships a Docker stack that boots the cutover WAR on Tomcat
+10.1 / JDK 21, with PostgreSQL and ActiveMQ alongside.
+
+```bash
+./docker/stage-war.sh                      # builds :xnat-web:war into the docker context
+echo 'file  /path/to/your-plugin/build/libs/your-plugin-1.0.0-SNAPSHOT-xpl.jar' \
+  >> docker/plugins.manifest               # or: source  ../../your-plugin  feature/tomcat10
+./docker/stage-plugins.sh                  # stages every manifest entry into docker/plugins/
+docker compose up --build                  # first boot runs schema creation; give it a few minutes
+```
+
+Then read the log — `docker compose logs -f xnat` — and confirm your plugin is named as loaded.
+
+Four things about this that bite people:
+
+- **Register the plugin in `docker/plugins.manifest`; don't hand-copy a jar into `docker/plugins/`.**
+  `stage-plugins.sh` clears `docker/plugins/*.jar` before staging, so a hand-copied jar disappears the
+  next time anyone runs it.
+- **`file` is the better entry form while you are iterating.** The `source` form rebuilds from a repo
+  checkout and *refuses to run if that repo has uncommitted changes* — which is the normal state of a
+  port in progress.
+- **XNAT scans the plugin directory once, at boot.** After re-staging, `docker compose restart xnat`;
+  re-running `stage-plugins.sh` alone changes nothing in the running container.
+- **A javax plugin on this stack fails in a way that does not name your plugin.** Every URL 404s and the
+  webapp is dead. That is the symptom of a successful reproduction, not of a broken stack.
+
+For a genuinely clean slate — a fresh database and empty archive — `docker compose down -v` before
+bringing it up again.
+
 ---
 
 ## Quick Diagnosis

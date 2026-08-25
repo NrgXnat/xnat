@@ -14,7 +14,7 @@
 <!-- Which edge cases did you consider? DICOM type 2 elements are required to be present but may be empty; private tags, multiframe objects, and non-conforming data from real scanners all show up in the wild. On bad data, does this fail loudly or quietly? -->
 
 ### Upgrade and compatibility
-<!-- Changes to the data model, schema, REST API, or dependencies? Does anything break for an existing site on upgrade, or for a plugin compiled against the old signatures? If there is a schema migration, how long does it run on a large archive, and does the site need to be down for it? -->
+<!-- Are changes compatible with prior versions, or: Are there changes to the data model, schema, REST API, or dependencies? Does anything break for an existing site on upgrade, or for a plugin compiled against the old signatures? If there is a schema migration, how long does it run on a large archive, and does the site need to be down for it? -->
 
 ### Performance and scale
 <!-- At what scale do we expect this to run — study size, session count, concurrent uploads? How have you verified that it holds up? -->

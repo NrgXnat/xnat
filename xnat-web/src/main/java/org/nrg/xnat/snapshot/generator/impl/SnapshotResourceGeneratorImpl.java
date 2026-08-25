@@ -259,14 +259,28 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
         for (final String path : files) {
             try (final DicomInputStream input = new DicomInputStream(new File(path))) {
                 input.setIncludeBulkData(DicomInputStream.IncludeBulkData.NO);
-                final Attributes attributes = input.readDataset(Tag.NumberOfFrames + 1);
+                // Through Columns rather than NumberOfFrames: Rows (0028,0010) and Columns
+                // (0028,0011) come after it, and without them there is no way to tell an image
+                // from an object that has no pixels at all.
+                final Attributes attributes = input.readDataset(Tag.Columns + 1);
+                // Dimensions rather than contains(Tag.PixelData): under IncludeBulkData.NO the
+                // reader skips the value without adding the element, so that check reads false for
+                // every object, image or not. Structured reports and real world value maps have
+                // neither dimensions nor pixels, and counting them as a frame apiece yields a
+                // slice count for a scan that cannot be rendered at all -- the renderer then fails
+                // on "Missing Pixel Data".
+                if (attributes.getInt(Tag.Rows, 0) <= 0 || attributes.getInt(Tag.Columns, 0) <= 0) {
+                    continue;
+                }
                 total += Math.max(1, attributes.getInt(Tag.NumberOfFrames, 1));
             } catch (IOException e) {
                 log.warn("Unable to read a frame count from {}", path, e);
                 return null;
             }
         }
-        return total;
+        // No renderable object in the scan. Refusing here leaves the caller on the same path it
+        // took before this fallback existed, rather than handing it a count it cannot use.
+        return total > 0 ? total : null;
     }
 
     private static String getKey(final String sessionId, final String scanId) {

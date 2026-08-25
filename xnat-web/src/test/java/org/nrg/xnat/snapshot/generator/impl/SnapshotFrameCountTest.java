@@ -62,6 +62,35 @@ public class SnapshotFrameCountTest {
     }
 
     /**
+     * Structured reports and real world value maps have no pixels. Counting them as a frame apiece
+     * produces a slice count for a scan that cannot be rendered, and the renderer then fails with
+     * "Missing Pixel Data" -- which is what this scan did in the field.
+     */
+    @Test
+    public void ignoresObjectsThatCarryNoImage() throws Exception {
+        final File image  = writeObject("with-image.dcm", null);
+        final File report = writeObjectWithoutImage("structured-report.dcm");
+
+        assertEquals("an object with no Rows/Columns contributes no frames",
+                     Integer.valueOf(1),
+                     SnapshotResourceGeneratorImpl.countFrames(
+                             Arrays.asList(image.getAbsolutePath(), report.getAbsolutePath())));
+    }
+
+    /**
+     * A scan of nothing but reports cannot be rendered at all, so the caller has to be refused
+     * rather than handed a count. That leaves it on the path it took before the fallback existed.
+     */
+    @Test
+    public void returnsNullWhenNothingInTheScanIsAnImage() throws Exception {
+        final File first  = writeObjectWithoutImage("report-a.dcm");
+        final File second = writeObjectWithoutImage("report-b.dcm");
+
+        assertNull(SnapshotResourceGeneratorImpl.countFrames(
+                Arrays.asList(first.getAbsolutePath(), second.getAbsolutePath())));
+    }
+
+    /**
      * Nothing trustworthy to render from, so the caller has to hear about it rather than be handed a
      * count that silently omits whatever could not be read.
      */
@@ -72,6 +101,19 @@ public class SnapshotFrameCountTest {
 
         assertNull(SnapshotResourceGeneratorImpl.countFrames(
                 Arrays.asList(readable.getAbsolutePath(), missing.getAbsolutePath())));
+    }
+
+    /** An object with no image at all -- no Rows, Columns or pixel data, as a report has. */
+    private File writeObjectWithoutImage(final String name) throws Exception {
+        final Attributes dataset = new Attributes();
+        dataset.setString(Tag.SOPClassUID, VR.UI, UID.ComprehensiveSRStorage);
+        dataset.setString(Tag.SOPInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498." + name.hashCode());
+        dataset.setString(Tag.Modality, VR.CS, "SR");
+        final File file = temporaryFolder.newFile(name);
+        try (final DicomOutputStream out = new DicomOutputStream(file)) {
+            out.writeDataset(dataset.createFileMetaInformation(UID.ExplicitVRLittleEndian), dataset);
+        }
+        return file;
     }
 
     /** A minimal object, optionally declaring Number of Frames. Pixel data is beside the point here. */

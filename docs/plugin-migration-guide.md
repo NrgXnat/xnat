@@ -1,5 +1,22 @@
 # Porting an XNAT plugin to 1.11 (Jakarta / Tomcat 10)
 
+<!-- ── Document set ────────────────────────────────────────────────────────────────────────────────
+     Three documents, three jobs. They are NOT maintained in parity — depth is meant to diverge:
+
+       * The published porting page (web artifact) — for a human doing or commissioning the port.
+         Orientation, choosing a track, step-by-step. Deliberately higher-level than this file.
+       * THIS FILE — the reference. Every behavior change and gotcha, in detail. Read by whoever hits
+         a specific error, human or agent. Denser and less welcoming by design.
+       * docs/ai/jakarta-plugin-port-handoff.md — the procedure and discipline handed to an AI agent.
+
+     What MUST stay consistent across all three: version numbers, file paths, and the Breaking-API
+     matrix below. Depth may differ; facts may not — a contradiction costs someone a day.
+
+     THIS FILE IS CANONICAL FOR THE BREAKING-API MATRIX. The web page renders a filterable copy of it.
+     Edit the matrix here first, then update that copy. It has to live here regardless: an agent can
+     read this file and cannot read the web page.
+──────────────────────────────────────────────────────────────────────────────────────────────────── -->
+
 **Who this is for:** anyone maintaining an XNAT plugin that needs to keep working on **XNAT 1.11**.
 
 There are two independent jumps, and you may need both:
@@ -9,9 +26,9 @@ There are two independent jumps, and you may need both:
 
 If your plugin already builds against 1.10.x, skip to Part 2.
 
-> **Driving this with an AI coding agent?** `docs/ai/jakarta-plugin-port-handoff.md` is the procedure to
-> hand it alongside this guide — phase order, the verification loop, and the discipline rules that
-> distinguish a correct port from a plausible-looking one.
+> **Driving this with an AI coding agent?** Hand it both files: `docs/ai/jakarta-plugin-port-handoff.md`
+> (the procedure — phase order, the verification loop, and the discipline rules that distinguish a correct
+> port from a plausible-looking one) and `docs/plugin-migration-guide.md` (this file — the reference).
 
 ## The one thing you cannot skip
 
@@ -267,6 +284,10 @@ one that works; each step surfaces the next set of errors, and doing them out of
 About a day in total, and roughly 80% of the diff was step 2.
 
 ## Breaking-API matrix
+
+> **Canonical copy.** The published porting page renders a filterable version of this table. If you change
+> a row, change it here first and then update that copy — a contradiction between the two sends someone
+> down the wrong path for a day.
 
 Grep your plugin for the left column. Each hit is work; a row with no hits doesn't apply to you. This is
 the fastest way to size the job before starting.

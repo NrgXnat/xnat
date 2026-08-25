@@ -8,6 +8,13 @@ reference. Neither replaces the other.
 and the Behavior-Change Catalog. Most of what you are about to hit is already written down there. Then
 follow the phases below in order.
 
+> **Where things live.** Three documents, three jobs, deliberately *not* kept in parity — depth differs,
+> facts must not. This file is the **procedure and discipline**. `docs/plugin-migration-guide.md` is the
+> **reference**, and is canonical for the Breaking-API matrix and every behavior change. A published web
+> page covers the same ground at a higher level for humans; you cannot read it, and you do not need to —
+> anything it says is drawn from the guide. If you find the guide and this file contradicting each other,
+> the guide wins on facts and you should say so in your report.
+
 This procedure came out of porting roughly twenty production plugins. The phase order and the discipline
 rules are the parts that were learned expensively; the mechanics are the easy half.
 

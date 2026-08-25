@@ -1,10 +1,12 @@
 package org.nrg.dcm.io;
 
+import com.google.common.io.ByteStreams;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Tag;
-import com.google.common.io.ByteStreams;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
+import org.dcm4che3.io.BulkDataDescriptor;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
 import org.junit.After;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -173,6 +176,64 @@ public class ResumableDicomInputStreamTest {
             assertTrue("the message should name the directory, but was: " + expected.getMessage(),
                        expected.getMessage().contains("scratch"));
         }
+    }
+
+    /**
+     * Pixel data has three forms and any of them can be large enough to matter -- double float pixel data
+     * sooner than the rest, at eight bytes per sample.
+     */
+    @Test
+    public void referencesEveryFormOfPixelData() {
+        assertTrue("(7FE0,0010)", isBulkData(Tag.PixelData));
+        assertTrue("(7FE0,0008) float", isBulkData(Tag.FloatPixelData));
+        assertTrue("(7FE0,0009) double float", isBulkData(Tag.DoubleFloatPixelData));
+    }
+
+    /**
+     * Palette lookup tables and overlay data sit below (0032,4000), so they fall inside even an ordinary read
+     * window. Referencing them would make every ordinary import spool files it does not today.
+     */
+    @Test
+    public void referencesNothingButPixelData() {
+        assertFalse("palette colour lookup table", isBulkData(0x00281201));
+        assertFalse("overlay data", isBulkData(Tag.OverlayData));
+        assertFalse("waveform data", isBulkData(Tag.WaveformData));
+    }
+
+    /**
+     * Documents why this class carries its own descriptor rather than using dcm4che's. If this ever fails,
+     * dcm4che has widened PIXELDATA and PIXEL_DATA_OF_ANY_FORM can go.
+     */
+    @Test
+    public void dcm4cheOwnPixelDataDescriptorIsNotEnough() {
+        assertTrue("PIXELDATA covers the ordinary form", pixelDataDescriptorMatches(Tag.PixelData));
+        assertFalse("but not float, which is why we do not use it",
+                    pixelDataDescriptorMatches(Tag.FloatPixelData));
+        assertFalse("nor double float", pixelDataDescriptorMatches(Tag.DoubleFloatPixelData));
+    }
+
+    /** The constant being right is no use unless the stream is actually configured with it. */
+    @Test
+    public void openWithBulkDataOffHeapUsesTheWiderDescriptor() throws Exception {
+        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(FIXTURE));
+             final ResumableDicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis)) {
+            final BulkDataDescriptor descriptor = dis.getBulkDataDescriptor();
+            assertTrue("the stream should reference ordinary pixel data",
+                       descriptor.isBulkData(Collections.emptyList(), null, Tag.PixelData, VR.OW, 1000));
+            assertTrue("and float pixel data, which dcm4che's own descriptor misses",
+                       descriptor.isBulkData(Collections.emptyList(), null, Tag.FloatPixelData, VR.OF, 1000));
+            assertFalse("but not a palette lookup table",
+                        descriptor.isBulkData(Collections.emptyList(), null, 0x00281201, VR.OW, 1000));
+        }
+    }
+
+    private static boolean isBulkData(final int tag) {
+        return ResumableDicomInputStream.PIXEL_DATA_OF_ANY_FORM.isBulkData(
+                Collections.emptyList(), null, tag, VR.OW, 1000);
+    }
+
+    private static boolean pixelDataDescriptorMatches(final int tag) {
+        return BulkDataDescriptor.PIXELDATA.isBulkData(Collections.emptyList(), null, tag, VR.OW, 1000);
     }
 
     /** Reads the fixture through the importer's own stream configuration, up to stopTag. */

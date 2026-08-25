@@ -1,6 +1,9 @@
 package org.nrg.dcm.io;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dcm4che3.data.ItemPointer;
+import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.io.BulkDataDescriptor;
 import org.dcm4che3.io.DicomInputStream;
 
@@ -25,6 +28,26 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * access controls. Unset leaves dcm4che at its default, which is java.io.tmpdir.
      */
     public static final String SCRATCH_DIR_PROPERTY = "dicom.import.scratch.dir";
+
+    /**
+     * Matches pixel data in any of its three forms, and nothing else.
+     * <p>
+     * dcm4che's own {@link BulkDataDescriptor#PIXELDATA} matches only (7FE0,0010), so float (7FE0,0008) and
+     * double float (7FE0,0009) pixel data would still be read onto the heap and would still hit the 2 GiB
+     * ceiling -- sooner, in the double float case, at eight bytes per sample. {@link BulkDataDescriptor#DEFAULT}
+     * covers all three but also covers palette colour lookup tables and overlay data, which sit below
+     * (0032,4000) and so fall inside even an ordinary read window; matching those would make every ordinary
+     * import spool files it does not today.
+     * <p>
+     * Item pointers are not consulted, which matches {@code PIXELDATA}: pixel data nested in a sequence, an
+     * icon image for instance, is referenced like any other.
+     */
+    static final BulkDataDescriptor PIXEL_DATA_OF_ANY_FORM = ResumableDicomInputStream::isPixelData;
+
+    private static boolean isPixelData(final List<ItemPointer> itemPointers, final String privateCreator,
+                                       final int tag, final VR vr, final int length) {
+        return Tag.PixelData == tag || Tag.FloatPixelData == tag || Tag.DoubleFloatPixelData == tag;
+    }
 
     public ResumableDicomInputStream(BufferedInputStream in) throws IOException {
         super(in);
@@ -51,10 +74,7 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * not remove them: the caller must pass {@link #getBulkDataFiles()} to {@link #deleteBulkDataFiles} once
      * everything holding a reference is done with it.
      * <p>
-     * The descriptor is restricted to the pixel data deliberately. Under the default descriptor every standard
-     * bulk data element becomes a reference, and some of those -- palette colour lookup tables, overlay data --
-     * sit low enough to fall inside an ordinary read window, so an ordinary read would start spooling files it
-     * does not today. The pixel data is the only value large enough to be worth keeping off the heap.
+     * The descriptor is restricted to the pixel data deliberately; see {@link #PIXEL_DATA_OF_ANY_FORM}.
      *
      * Where they land is {@link #SCRATCH_DIR_PROPERTY configurable}.
      *
@@ -68,7 +88,7 @@ public final class ResumableDicomInputStream extends DicomInputStream {
     public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in) throws IOException {
         final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);
         dis.setIncludeBulkData(IncludeBulkData.URI);
-        dis.setBulkDataDescriptor(BulkDataDescriptor.PIXELDATA);
+        dis.setBulkDataDescriptor(PIXEL_DATA_OF_ANY_FORM);
         final File scratchDirectory = getScratchDirectory();
         if (null != scratchDirectory) {
             dis.setBulkDataDirectory(scratchDirectory);

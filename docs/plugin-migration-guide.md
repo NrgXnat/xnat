@@ -58,6 +58,35 @@ touches any of those needs source changes too, typically a day, most of it mecha
 
 ---
 
+## Before you start: getting 1.11 on your machine
+
+**1.11 is not released, and `1.11.0-SNAPSHOT` is not published to the XNAT Artifactory** — the snapshot
+repository currently carries nothing newer than `1.10.1-SNAPSHOT`. Your plugin therefore cannot resolve
+1.11 from any remote repository. You have to build core yourself and publish it to your own local Maven
+repository first:
+
+```bash
+git clone https://github.com/NrgXnat/xnat.git
+cd xnat
+git checkout feature/jakarta-cutover     # until 1.11 is merged and released
+./gradlew publishToMavenLocal            # installs 1.11.0-SNAPSHOT into ~/.m2
+```
+
+| | |
+|---|---|
+| Build against | `vXnat = "1.11.0-SNAPSHOT"` |
+| Resolves from | `~/.m2` — your local publish. Keep `mavenLocal` scoped to `org.nrg.*` (see J1) |
+| Once 1.11 releases | `1.11.0` from the release repository, and this step goes away |
+
+**Why this matters more than it looks:** skipping it produces a dependency-resolution failure that names
+*your plugin's* dependency rather than the missing artifact. The tempting fix — dropping `vXnat` back to a
+version that does resolve — silently puts you back on the javax line, where everything builds and nothing
+works on 1.11.
+
+That clone is also where this guide and the agent handoff live, so keep it around.
+
+---
+
 ## Quick Diagnosis
 
 Run these four commands in sequence to find all issues before fixing anything:

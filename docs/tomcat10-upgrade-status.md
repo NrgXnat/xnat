@@ -778,3 +778,28 @@ doing that *inside* the cutover PR would make an already-large review worse, so 
 be a separate commit either before or after the cutover merges — with the renormalization run as its own
 `git add --renormalize .` so reviewers can skip it wholesale. D1 tells reviewers to use `-w` and asks them
 not to request a line-ending fix in the cutover PR, pointing here.
+
+**1-38 ⚪ — [open, needs a decision] no 1.11 snapshot is published, so every plugin author must build core
+themselves** (2026-08-25). Surfaced while writing the plugin-porting docs, from the question "what version
+does a plugin actually build against?" **Measured:** `nrgxnat.jfrog.io/nrgxnat/libs-snapshot`'s
+`org/nrg/parent/maven-metadata.xml` lists nothing newer than **`1.10.1-SNAPSHOT`**. There is **no published
+`1.11.0-SNAPSHOT`** — it exists in this machine's `~/.m2` only because it was published locally
+(2026-07-24). Migrated plugins all declare `vXnat = "1.11.0-SNAPSHOT"` and resolve it through
+`mavenLocal { includeGroupByRegex "org\.nrg.*" }`, which works precisely *because* core was published
+locally first.
+**Consequence.** Any external plugin author porting to 1.11 must clone the monorepo, check out the cutover
+branch and run `./gradlew publishToMavenLocal` before their own build resolves. That is a real adoption
+barrier, and the failure mode is nastier than a missing artifact: resolution fails naming *the plugin's*
+dependency, and the obvious "fix" — dropping `vXnat` to a version that does resolve — silently returns the
+plugin to the javax line, where it builds cleanly and then fails the whole webapp context at load (the
+`AbstractMethodError` trap).
+**Decision needed.** Either (a) publish `1.11.0-SNAPSHOT` to the Artifactory snapshot repo so plugin authors
+can build against 1.11 without cloning core — which is really a question about **1-13**, since CI is what
+would publish it, and CI has not been flipped to the Jakarta stack; or (b) accept the local-publish
+prerequisite for the pre-release window and drop it when 1.11.0 ships to `libs-release`. **(a) is the better
+answer if plugin authors are expected to port before the release**, which is the plan — asking every one of
+them to build core is a large tax and an easy place to go wrong.
+**Documented in the meantime:** the prerequisite (clone → checkout → `publishToMavenLocal`) is now the first
+step in `docs/plugin-migration-guide.md` and on the published porting page, and the agent prompt tells the
+agent to **stop and report** rather than downgrade `vXnat` if resolution fails. Those instructions should be
+simplified once (a) lands.

@@ -72,6 +72,26 @@ git checkout feature/jakarta-cutover     # until 1.11 is merged and released
 ./gradlew publishToMavenLocal            # installs 1.11.0-SNAPSHOT into ~/.m2
 ```
 
+One root invocation is enough: `publishToMavenLocal` runs in all 21 modules, and the satellite projects
+were merged into this repository, so there is nothing else to build first.
+
+**Confirm it worked before moving on** — this takes two seconds and saves an hour of debugging a
+resolution error that names the wrong thing:
+
+```bash
+ls ~/.m2/repository/org/nrg/parent/1.11.0-SNAPSHOT                    # the BOM
+ls ~/.m2/repository/org/nrg/xnat/build/xnat-data-builder              # the Gradle plugin
+ls ~/.m2/repository/org/nrg/xnat/web/1.11.0-SNAPSHOT                  # xnat-web
+```
+
+All three must exist. The middle one matters most and is the easiest to overlook: plugins apply
+`xnat-data-builder` in their `plugins {}` block, so if it is missing the build fails *before* any
+dependency resolution happens, with an error about the plugin rather than about XNAT.
+
+> **Two things that look wrong but aren't.** `xnat-data-builder` publishes under a Gradle plugin-marker
+> coordinate (`org/nrg/xnat/build/…`) rather than the usual artifact path, and `dicom-edit6` carries its own
+> version line (`6.9.0`), not `1.11.0-SNAPSHOT`. Neither is a failed publish.
+
 | | |
 |---|---|
 | Build against | `vXnat = "1.11.0-SNAPSHOT"` |

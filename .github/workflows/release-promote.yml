@@ -35,7 +35,9 @@ on:
         description: 'After promote, dispatch build/publish on target_main (and target_develop if synced)'
         type: boolean
         required: false
-        default: true
+        # Default off: pushes made with the App token are expected to trigger
+        # build-publish on their own. Enable only if a run shows they do not.
+        default: false
 
 permissions:
   contents: write   # push RC/main/develop + create tag
@@ -46,12 +48,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Generate token from GitHub App
+        id: app_token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.XNAT_RELEASE_APP_ID }}
+          private-key: ${{ secrets.XNAT_RELEASE_APP_PRIVATE_KEY }}
+
       - name: Checkout ${{ inputs.rc_branch }}
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.rc_branch }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app_token.outputs.token }}
 
       - name: Read RC state and derive release versions
         id: vars
@@ -113,8 +122,8 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name  "xnat-release[bot]"
+          git config user.email "321183387+xnat-release[bot]@users.noreply.github.com"
 
       - name: Finalize RC branch (strip -RC-SNAPSHOT)
         env:

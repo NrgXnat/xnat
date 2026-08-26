@@ -78,6 +78,20 @@ public final class FixedDicomAttributeIndex extends AbstractDicomAttributeIndex 
     /**
      * ${@inheritDoc}
      */
+    @Override
+    public int getMaxTag() {
+        int max = 0;
+        for (final int tag : path) {
+            if (Integer.compareUnsigned(tag, max) > 0) {
+                max = tag;
+            }
+        }
+        return max;
+    }
+
+    /**
+     * ${@inheritDoc}
+     */
     private Optional<Attributes> containingDataset(final Attributes root) {
         return itemPointer.length > 0 ? Optional.ofNullable(root.getNestedDataset(itemPointer)) : Optional.of(root);
     }

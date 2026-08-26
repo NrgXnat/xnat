@@ -115,6 +115,20 @@ public final class ChainedDicomAttributeIndex extends AbstractDicomAttributeInde
      * {@inheritDoc}
      */
     @Override
+    public int getMaxTag() {
+        int max = 0;
+        for (final Integer[] path : paths) {
+            for (final Integer tag : path) {
+                // A null index means "every item of the sequence" rather than a tag.
+                if (null != tag && Integer.compareUnsigned(tag, max) > 0) {
+                    max = tag;
+                }
+            }
+        }
+        return max;
+    }
+
+    @Override
     public Integer[] getPath(final Attributes context) {
         return paths.stream()
                 .filter(path -> !getNestedContexts(context, path).isEmpty())

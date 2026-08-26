@@ -34,6 +34,23 @@ public interface DicomAttributeIndex {
     Integer[] getPath(Attributes context);
 
     /**
+     * Returns an upper bound, compared unsigned, on the tags this index may read.
+     * <p>
+     * {@link #getPath(Attributes)} needs the object to resolve, which is no use to a reader deciding how far to
+     * read in the first place, so this reports the highest tag the index could ask for without seeing anything.
+     * A conservative over-estimate is fine; an under-estimate means the reader stops short and the attribute
+     * comes back empty.
+     * <p>
+     * The default is 0, which contributes nothing. An implementation that can reference a tag sorting after the
+     * pixel data must override it, or the store will not read far enough to find the value.
+     *
+     * @return the highest tag this index may read, as an unsigned value.
+     */
+    default int getMaxTag() {
+        return 0;
+    }
+
+    /**
      * Returns the value of the target attributes in the provided dataset.
      * @param attributes DICOM dataset
      * @return value of the provided attribute: joined by \\ if multiple values, null if undefined

@@ -41,7 +41,31 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
     public static <T> DataSetAttrs create(final T resource,
                                           final Collection<DicomAttributeIndex> tags,
                                           Opener<T> opener) throws IOException {
-        return new DataSetAttrs(DicomUtils.read(opener.open(resource), Tag.PixelData - 1), tags);
+        return new DataSetAttrs(DicomUtils.read(opener.open(resource), stopTagFor(tags)), tags);
+    }
+
+    /**
+     * How far to read for these indices: the last tag any of them may ask for, never less than the tag before the
+     * pixel data.
+     * <p>
+     * The read used to stop at the pixel data unconditionally, so an index pointing at anything sorting after it --
+     * a private group &gt;= 0x8000, for instance -- found nothing, and the attribute came back empty with no error.
+     * The floor keeps the window exactly as it was for every index that stops short of the pixel data, which is
+     * all of the standard ones, so only an index that reaches past it reads any further than before.
+     *
+     * @param tags the indices the store will query.
+     *
+     * @return the last tag to read, compared unsigned.
+     */
+    static int stopTagFor(final Collection<DicomAttributeIndex> tags) {
+        int stopTag = Tag.PixelData - 1;
+        for (final DicomAttributeIndex index : tags) {
+            final int maxTag = index.getMaxTag();
+            if (Integer.compareUnsigned(maxTag, stopTag) > 0) {
+                stopTag = maxTag;
+            }
+        }
+        return stopTag;
     }
 
     /*

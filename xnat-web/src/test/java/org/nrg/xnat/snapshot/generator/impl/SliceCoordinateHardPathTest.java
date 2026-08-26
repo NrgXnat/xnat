@@ -17,13 +17,9 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * The branch of {@link SliceCoordinateCalculator} taken when a scan mixes multi-frame and
- * single-frame objects, so neither "one frame per file" nor "one file" holds.
- * <p>
- * The existing tests pass placeholder names like {@code "foo"}, which only reach the two arithmetic
- * branches, so this path went untested and accumulated four faults: a frame count read through
- * {@code Integer.getInteger}, which resolves a system property rather than parsing a number; a walk
- * that incremented before comparing, making slice 0 unmatchable; an unguarded read past the end of
- * the requested slice list; and objects with no image counted as a frame apiece.
+ * single-frame objects, so neither "one frame per file" nor "one file" holds. It reads the frame
+ * count out of each object and walks it, which needs real files -- {@code SliceCoordinateCalculator}
+ * tests reach the two arithmetic branches with placeholder names and never come here.
  */
 public class SliceCoordinateHardPathTest {
 
@@ -39,7 +35,7 @@ public class SliceCoordinateHardPathTest {
 
         final List<SliceCoordinate> coordinates = calculator.getSliceCoordinates(5, 5, files);
 
-        assertEquals("slice 0 has to be reachable; incrementing before the compare lost it",
+        assertEquals("every slice placed, including slice 0",
                      Arrays.asList(new SliceCoordinate(0, 0), new SliceCoordinate(0, 1), new SliceCoordinate(0, 2),
                                    new SliceCoordinate(1, 0), new SliceCoordinate(2, 0)),
                      coordinates);
@@ -52,7 +48,7 @@ public class SliceCoordinateHardPathTest {
 
         final List<SliceCoordinate> coordinates = calculator.getSliceCoordinates(2, 2, files);
 
-        assertEquals("the report sits at index 1 and has no pixels to render",
+        assertEquals("the report at index 1 is not a slice",
                      Arrays.asList(new SliceCoordinate(0, 0), new SliceCoordinate(2, 0)), coordinates);
     }
 

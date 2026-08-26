@@ -20,10 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
-import org.dcm4che3.data.Attributes;
 import org.nrg.dicom.mizer.exceptions.MizerException;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.io.DicomInputStream;
 
 import java.io.File;
 import java.io.IOException;
@@ -246,28 +243,25 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
     }
 
     /**
-     * Total frames across the given objects, counted as {@code CatalogBuilder} counts them: one per
-     * object unless it declares otherwise in Number of Frames.
+     * Total montage slices across the given objects, counted as {@code CatalogBuilder} counts them.
      * <p>
-     * Reads headers only, stopping at Number of Frames, and runs once per scan because the result is
-     * cached with the rest of the scan's attributes.
+     * Reads headers only and runs once per scan, since the result is cached with the rest of the
+     * scan's attributes.
      *
-     * @return the frame count, or null if any object could not be read, in which case the caller has
-     *         nothing trustworthy to render from.
+     * @return the slice count, or null if the scan holds nothing renderable or an object could not
+     *         be read -- either way there is nothing to render from.
      */
     static Integer countFrames(final List<String> files) {
         int total = 0;
         for (final String path : files) {
             try {
-                // Defined on the calculator because it also uses it to locate the frames counted here.
-                total += SliceCoordinateCalculator.framesIn(new File(path));
+                total += FrameCounter.framesIn(new File(path));
             } catch (MizerException e) {
                 log.warn("Unable to read a frame count from {}", path, e);
                 return null;
             }
         }
-        // No renderable object in the scan. Refusing here leaves the caller on the same path it
-        // took before this fallback existed, rather than handing it a count it cannot use.
+        // Nothing renderable, so refuse rather than hand back a count the montage cannot use.
         return total > 0 ? total : null;
     }
 

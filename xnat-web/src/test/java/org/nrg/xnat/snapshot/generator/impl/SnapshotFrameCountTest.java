@@ -21,8 +21,8 @@ import static org.junit.Assert.assertNull;
  * <p>
  * Only the primary catalog carries dimensions_z: {@code CatalogBuilder} sets it inside the branch
  * that builds the primary catalog, so a scan whose objects landed in the secondary catalog gets one
- * without it and used to be refused with "This is above my pay grade". The count has to match what
- * the builder would have recorded -- one frame per object unless the object says otherwise.
+ * without it. The count has to match what the builder would have recorded -- one frame per object
+ * unless the object says otherwise, and nothing at all for an object with no image.
  */
 public class SnapshotFrameCountTest {
 
@@ -64,7 +64,7 @@ public class SnapshotFrameCountTest {
     /**
      * Structured reports and real world value maps have no pixels. Counting them as a frame apiece
      * produces a slice count for a scan that cannot be rendered, and the renderer then fails with
-     * "Missing Pixel Data" -- which is what this scan did in the field.
+     * "Missing Pixel Data".
      */
     @Test
     public void ignoresObjectsThatCarryNoImage() throws Exception {
@@ -79,7 +79,7 @@ public class SnapshotFrameCountTest {
 
     /**
      * A scan of nothing but reports cannot be rendered at all, so the caller has to be refused
-     * rather than handed a count. That leaves it on the path it took before the fallback existed.
+     * rather than handed a count it cannot use.
      */
     @Test
     public void returnsNullWhenNothingInTheScanIsAnImage() throws Exception {

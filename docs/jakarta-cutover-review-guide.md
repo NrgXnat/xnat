@@ -56,10 +56,28 @@ and `xnat-web/build.gradle` does exactly that.
 It is atomic by design: no intermediate commit compiles against a half-migrated stack, so this cannot
 be split into independently mergeable PRs.
 
-**Scale:** 154 commits, ~780 files. Insertions/deletions: **+12,112 / −2,413** ignoring whitespace
+**Scale:** 163 commits, ~780 files. Insertions/deletions: **+12,112 / −2,413** ignoring whitespace
 (+23,160 / −13,461 raw — see the note at the top).
-**52 of the 154 commits are `docs:`** (tracker updates). If your client lets you exclude `docs/`, the
-code history is ~100 commits.
+**61 of the 163 commits are `docs:`** (tracker updates). If your client lets you exclude `docs/`, the
+code history is ~102 commits.
+
+> **Why the history wasn't squashed** — a deliberate decision, not an oversight, so please don't open the
+> review by asking for one.
+>
+> This migration's regressions are almost entirely **runtime-only**: the ones recorded in the tracker were
+> found by Playwright and REST runs, not by the compiler. If something escapes review and surfaces after
+> merge, `git bisect` over these commits is the tool that finds it, and a single 779-file commit would
+> throw that away. The tracker also cites **22 commit SHAs** as evidence for individual findings, and
+> squashing would orphan every one of them.
+>
+> Collapsing just the `docs:` commits was considered and rejected too. They aren't one kind of thing — some
+> narrate an adjacent code change, but others are verification milestones spanning many commits, or
+> standalone reference documents. Only about ten have anywhere to go, **32 of them touch the same tracker
+> file**, and at least one commit titled `docs:` also carries real build changes. The tidying isn't worth
+> the reordering.
+>
+> **Read the change through this guide rather than through the log.** That is what it is for. Full
+> reasoning is in `docs/tomcat10-upgrade-status.md`, item **1-39**.
 
 ---
 

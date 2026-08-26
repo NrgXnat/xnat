@@ -803,3 +803,45 @@ them to build core is a large tax and an easy place to go wrong.
 step in `docs/plugin-migration-guide.md` and on the published porting page, and the agent prompt tells the
 agent to **stop and report** rather than downgrade `vXnat` if resolution fails. Those instructions should be
 simplified once (a) lands.
+
+**1-39 🟢 — [decided: do NOT squash `feature/jakarta-cutover`] whether to squash before opening the core
+PR** (2026-08-26). Recorded here because it had been analysed twice from scratch, in conversation only, and
+was reached for a third time — the analysis was never on paper, so it kept being re-derived. Both earlier
+analyses were made against stale commit counts (99, then 146); the figures below are re-measured against the
+branch as it stands after the develop rebase.
+
+**Current shape.** **163** commits ahead of `develop`: **61** `docs:` and **102** substantive.
+
+**Decision: leave the history alone.** Three reasons, in order of weight:
+1. **Bisectability is the safety net for this specific migration.** Its regressions are overwhelmingly
+   *runtime-only* — 1-15, 1-18, 1-21 and 1-24 were all found by Playwright/REST runs, not by the compiler.
+   Anything that surfaces post-merge will be found with `git bisect`, and a single 779-file commit destroys
+   that. This is the argument that would still hold even if the others didn't.
+2. **A squash orphans this document.** The tracker cites **22 distinct commit SHAs** as evidence across its
+   items; all sampled ones currently resolve. Squashing invalidates that provenance, and this file is the
+   institutional memory of the migration.
+3. **Stacked/themed PRs are not an alternative.** The cutover is atomic by design — no intermediate slice
+   compiles — so there is no way to split it that a reviewer could build.
+
+**Also rejected: the "collapse all 61 `docs:` commits into one" shortcut.** It was proposed in an earlier
+plan and does not survive measurement. The docs commits are three different kinds of thing — ~10 narrate one
+*adjacent* code change (foldable), ~9 are verification milestones spanning many commits with no single code
+home (`0b-40 REST 24/24`, `1-12 reflection audit`, `1-15 Playwright 15/15`), and ~9 are standalone artifacts
+(endpoint reference, dual-logging decision record, Tomcat-11 plan). Only the first kind has anywhere to go,
+so the reviewer still sees roughly 18 doc commits either way. Against that small gain: **32 of the 62 docs
+commits touch this tracker and 23 touch nothing else**, so collapsing them reorders edits to one shared file
+and invites conflicts. And the blanket form is unsafe — **`b0d5a28f5` is titled `docs:` but also carries
+`gradle/libs.versions.toml`, `parent/build.gradle` and `xnat-web/build.gradle`**, which a "squash all docs
+commits" would silently bury inside a documentation commit.
+
+**Optional, if noise reduction is wanted later:** fold *only* the ~10 adjacent narrate-one-change pairs, each
+`fixup`'d into the commit directly below it. All pairs are adjacent, so the reorder — and the conflict risk —
+is minimal. This is a nice-to-have, not a prerequisite for the PR.
+
+**What replaces squashing:** make the PR reviewable *by guide* rather than by history —
+`docs/jakarta-cutover-review-guide.md` and its published page are D1's whole purpose, and the PR description
+should point at them plus this tracker as the map.
+
+**Plugins are a separate question** and were not re-measured here: most plugin branches are already a single
+commit, and for the few with real history (container-service's test-greening commits, for instance) that
+history is the interesting part. Squash a plugin branch only where it is genuinely iteration noise.

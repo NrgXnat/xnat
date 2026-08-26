@@ -44,8 +44,6 @@ public final class DicomHeaderDump {
 
     private final Logger logger = LoggerFactory.getLogger(DicomHeaderDump.class);
     private final String file; // path to the DICOM file
-    /** TagUtils.forName returns this when it cannot resolve a name, and max + 1 wraps to 0 on it. */
-    private static final int TAG_NOT_RESOLVED = 0xFFFFFFFF;
     private final Map<Integer,Set<String>> fields;
 
     /**
@@ -70,17 +68,14 @@ public final class DicomHeaderDump {
      */
     DicomObjectI getHeader(File file) throws MizerException {
         if (fields.isEmpty()) {
-            // Read the whole object rather than stopping at PixelData. The reader already excludes bulk
-            // data, so the stop tag was never what skipped the pixels -- it just truncated every element
-            // after them, which is why tags like (9753,1050) went missing from the dump.
+            // Read it all. The reader already excludes bulk data, so the old PixelData stop tag never
+            // skipped the pixels -- it truncated everything sorting after them.
             return DicomObjectFactory.newInstance(file, false);
         }
-        // DICOM tags are unsigned, so a tag in a group >= 0x8000 is negative as an int and would win a
-        // signed max as the smallest value. dcm4che compares stop tags unsigned, so only this needs fixing.
+        // Tags are unsigned: a signed max would rank a group >= 0x8000 as the smallest value.
         final int maxTag = fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
-        // maxTag + 1 wraps to 0 at 0xFFFFFFFF, and a stop tag of 0 halts the read at the first element.
-        // dcm4che already reads to the end when given -1, which is the right answer for that case.
-        final int stopTag = TAG_NOT_RESOLVED == maxTag ? -1 : maxTag + 1;
+        // Guards the public constructor, which takes any map: +1 would wrap to 0 and stop the read dead.
+        final int stopTag = AttributeTags.NOT_RESOLVED == maxTag ? -1 : maxTag + 1;
         return DicomObjectFactory.newInstance(file, stopTag);
     }
     

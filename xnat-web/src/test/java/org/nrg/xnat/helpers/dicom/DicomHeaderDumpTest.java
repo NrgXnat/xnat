@@ -11,6 +11,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * The fixture carries a private block on each side of the pixel data and a sequence, so a regression
@@ -37,8 +38,8 @@ public class DicomHeaderDumpTest {
     }
 
     /**
-     * TagUtils.forName resolves keywords and plain hex, and reports failure by returning 0xFFFFFFFF
-     * rather than throwing, so the hex fallback in getFields never ran for a tag it could not resolve.
+     * TagUtils.forName reports failure by returning its sentinel rather than throwing, so the hex fallback
+     * in getFields never ran for a tag it could not resolve.
      */
     @Test
     public void parsesHighGroupTagRequestedByField() {
@@ -46,7 +47,21 @@ public class DicomHeaderDumpTest {
 
         assertTrue("the ordinary tag should still resolve", fields.containsKey(0x00080060));
         assertTrue("the high-group tag should resolve to itself", fields.containsKey(0xF2151050));
-        assertFalse("no key should be the unresolved sentinel", fields.containsKey(0xFFFFFFFF));
+        assertFalse("no key should be the unresolved sentinel", fields.containsKey(AttributeTags.NOT_RESOLVED));
+    }
+
+    /** (FFFF,FFFF) is the sentinel and is not a legal tag either, so it must not be accepted as one. */
+    @Test
+    public void rejectsTextThatResolvesToNoTag() {
+        for (final String field : new String[]{"NotATag", "FFFFFFFF", "zzzz"}) {
+            try {
+                DicomDump.getFields(new String[]{field});
+                fail("expected a rejection of " + field);
+            } catch (IllegalArgumentException expected) {
+                assertTrue("the message should name the input, but was: " + expected.getMessage(),
+                           expected.getMessage().contains(field));
+            }
+        }
     }
 
     /**

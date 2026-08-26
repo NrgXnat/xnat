@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.dcm4che3.util.TagUtils;
+import org.nrg.xnat.helpers.dicom.AttributeTags;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.model.CatCatalogI;
@@ -66,8 +67,6 @@ public final class EcatDump extends SecureResource {
     // "src" attribute the contains the uri to the desired resources
     private static final String SRC_ATTR = "src";
     private static final String FIELD_PARAM = "field";
-    /** TagUtils.forName returns this when it cannot resolve the name or hex it was given. */
-    private static final int TAG_NOT_RESOLVED = 0xFFFFFFFF;
     // image type supported.
     private static final String imageType = "ECAT";
     private static final int MAXFILENUMBER=10000;
@@ -549,17 +548,9 @@ public final class EcatDump extends SecureResource {
                 subs.add(parts[i]);
             }
 
-            // TagUtils.forName resolves keywords and plain hex, and reports failure by returning
-            // 0xFFFFFFFF rather than throwing -- so the hex fallback below only runs when it has to.
-            // Without the sentinel check a tag it cannot resolve, such as one in a group >= 0x8000,
-            // silently becomes 0xFFFFFFFF and then wrecks the stop tag derived from these keys.
-            int tag = TagUtils.forName(tag_s);
-            if (TAG_NOT_RESOLVED == tag) {
-                try {
-                    tag = Integer.parseUnsignedInt(tag_s, 16);
-                } catch (NumberFormatException e1) {
-                    throw new IllegalArgumentException("not a valid ecat attribute tag: " + tag_s, e1);
-                }
+            final int tag = AttributeTags.forName(tag_s);
+            if (AttributeTags.NOT_RESOLVED == tag) {
+                throw new IllegalArgumentException("not a valid ecat attribute tag: " + tag_s);
             }
             fieldsb.put(tag, subs);
         }

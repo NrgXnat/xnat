@@ -184,6 +184,45 @@ test {
 }
 ```
 
+## Deploying the WAR without the image
+
+Sites that drop `xnat.war` into their own Tomcat get the Java glue, because it travels in the WAR,
+but not the native, because the Dockerfile is what installs that. Install it by hand or compressed
+pixel data cannot be decoded at all:
+
+```bash
+curl -fsSLo /usr/java/packages/lib/libopencv_java.so \
+  https://nrgxnat.jfrog.io/nrgxnat/libs-release/org/weasis/thirdparty/org/opencv/libopencv_java/5.0.0-dcm/libopencv_java-5.0.0-dcm-linux-x86-64.so
+# verify against the SHA-256 recorded above, then restart Tomcat
+```
+
+`/usr/java/packages/lib` is on the JVM's default `java.library.path` on Linux. Somewhere else works
+too, as long as `CATALINA_OPTS` carries `-Djava.library.path=/that/directory`.
+
+Without it, anything that has to decode compressed pixel data fails: snapshots and thumbnails of
+compressed studies, and `alterPixels` over a compressed object, which fails the import rather than
+letting an unredacted object through. Uncompressed and RLE Lossless objects need no native and are
+unaffected, which is most archives.
+
+**This is not a new class of requirement, but it does move.** Before this change, compressed
+snapshots were served by dcm4che 2's DICOM reader, and its codec table names JAI's native-backed
+readers:
+
+```
+1.2.840.10008.1.2.4.90=jpeg2000,com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageReaderCodecLib
+1.2.840.10008.1.2.4.57=jpeg,com.sun.media.imageioimpl.plugins.jpeg.CLibJPEGImageReader
+```
+
+Those need `libclib_jiio` and its `clibwrapper_jiio.jar`, neither of which XNAT has ever shipped, so
+a JPEG 2000 snapshot failed with `No Image Reader of class ...J2KImageReaderCodecLib available for
+format:jpeg2000` -- which is XNAT-6581 and XNAT-6743. The requirement changes from a native nobody
+could satisfy to one the image installs.
+
+The exception is **JPEG Baseline**, which dcm4che 2 served through the JDK's own reader with no
+native at all. On a deployment without `libopencv_java.so`, baseline JPEG goes from working to
+failing. That is the one case where installing the native is a genuine new obligation rather than a
+replacement for an unmet one.
+
 ## Checking that it worked
 
 With the native loadable, these format names resolve; without it they are absent:

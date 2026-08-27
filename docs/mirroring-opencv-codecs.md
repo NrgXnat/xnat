@@ -4,7 +4,7 @@ XNAT resolves compressed DICOM pixel data through dcm4che 5's `ImageReaderFactor
 configuration names the OpenCV-backed plugins for every JPEG-family transfer syntax:
 
 ```
-# org/dcm4che3/imageio/codec/ImageReaderFactory.properties, in dcm4che-imageio-5.33.1.jar
+# org/dcm4che3/imageio/codec/ImageReaderFactory.properties, in dcm4che-imageio-5.35.0.jar
 1.2.840.10008.1.2.4.70 : jpeg-cv     : org.dcm4che3.opencv.NativeImageReader
 1.2.840.10008.1.2.4.90 : jpeg2000-cv : org.dcm4che3.opencv.NativeImageReader
 ```
@@ -27,7 +27,7 @@ per-platform natives were not, and are what `scripts/mirror-opencv-codecs.sh` de
 | `org.dcm4che:dcm4che-imageio-opencv:5.35.0` | was already present |
 | `org.weasis.core:weasis-core-img-bom:5.0.0` | was already present |
 | `org.weasis.core:weasis-core-img:5.0.0` | mirrored |
-| `org.weasis.thirdparty.org.opencv:libopencv_java:5.0.0-dcm` | mirrored, five classifiers |
+| `org.weasis.thirdparty.org.opencv:libopencv_java:5.0.0-dcm` | mirrored, four classifiers |
 
 The versions are not free choices. `dcm4che-imageio-opencv` must match the dcm4che version, and the
 Weasis library and its native must match what that dcm4che release pins: XNAT is on dcm4che 5.35.0,
@@ -153,7 +153,7 @@ needs `-Djava.library.path` and **no Helm chart change is required**.
 
 ```dockerfile
 # Dockerfile -- pinned by checksum, per architecture, failing the build if either is wrong
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 RUN set -eu; \
     case "${TARGETARCH}" in \
         amd64) classifier=linux-x86-64;  sha256=3552c806... ;; \
@@ -172,8 +172,15 @@ build rather than for the image:
 
 ```groovy
 // dicom-edit6/build.gradle
+tasks.register('stageOpenCvNative', Copy) {
+    from configurations.opencvNative
+    into layout.buildDirectory.dir('opencv-native')
+    rename '.*', openCv.fileName   // System.loadLibrary wants libopencv_java.so, not the
+}                                  // resolved name, which carries version and classifier
+
 test {
-    systemProperty 'java.library.path', configurations.opencvNative.singleFile.parent
+    dependsOn tasks.named('stageOpenCvNative')
+    systemProperty 'java.library.path', layout.buildDirectory.dir('opencv-native').get().asFile.absolutePath
 }
 ```
 

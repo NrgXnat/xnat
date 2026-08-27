@@ -113,29 +113,36 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
         final long   valueLength = nativeValueLength(value);
         final File   scratch     = createScratchFile();
 
-        long copied = 0;
-        try (InputStream in = openNative(value);
-             OutputStream out = new BufferedOutputStream(new FileOutputStream(scratch), 1 << 16)) {
-            final byte[] frame = new byte[(int) geometry.frameLength];
-            for (int index = 0; index < geometry.frames && copied < valueLength; index++) {
-                final int read = readFrame(in, frame, (int) Math.min(frame.length, valueLength - copied));
-                if (read <= 0) {
-                    break;
+        try {
+            long copied = 0;
+            try (InputStream in = openNative(value);
+                 OutputStream out = new BufferedOutputStream(new FileOutputStream(scratch), 1 << 16)) {
+                final byte[] frame = new byte[(int) geometry.frameLength];
+                // Until the value is consumed, rather than until NumberOfFrames is reached: pixel
+                // data longer than the frame count accounts for still has to be redacted, or those
+                // extra frames pass through carrying whatever was burned into them. A trailing pad
+                // byte is shorter than the rectangle, so the redactor leaves it alone.
+                while (copied < valueLength) {
+                    final int read = readFrame(in, frame, (int) Math.min(frame.length, valueLength - copied));
+                    if (read <= 0) {
+                        break;
+                    }
+                    redactor.redact(frame, read);
+                    out.write(frame, 0, read);
+                    copied += read;
                 }
-                redactor.redact(frame, read);
-                out.write(frame, 0, read);
-                copied += read;
             }
-            // Trailing bytes: an odd-length value's pad byte, or pixel data longer than
-            // NumberOfFrames accounts for. Neither is ours to reinterpret, so pass it through.
-            copied += copyRemainder(in, out, valueLength - copied);
-        }
 
-        if (copied != valueLength) {
+            if (copied != valueLength) {
+                throw new IOException("Redacted " + copied + " of " + valueLength + " pixel data bytes");
+            }
+            return scratch;
+        } catch (IOException | RuntimeException e) {
+            // Running out of space is the likely failure here, since a pixel edit needs the
+            // object's size again in scratch, and leaving a partial file behind compounds it.
             Files.deleteIfExists(scratch.toPath());
-            throw new IOException("Redacted " + copied + " of " + valueLength + " pixel data bytes");
+            throw e;
         }
-        return scratch;
     }
 
     /** Replaces PixelData with a reference to <b>scratch</b> and ties that file to the object. */
@@ -186,13 +193,6 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
         throw new IOException("Unexpected native pixel data value " + describe(value));
     }
 
-    private static String describe(final Object value) {
-        if (value instanceof Fragments) {
-            return "encapsulated in " + ((Fragments) value).size() + " fragments";
-        }
-        return value == null || value == Value.NULL ? "of null" : "of type " + value.getClass().getName();
-    }
-
     /** Reads up to <b>wanted</b> bytes, tolerating a short final frame rather than throwing. */
     private static int readFrame(final InputStream in, final byte[] frame, final int wanted) throws IOException {
         int filled = 0;
@@ -206,21 +206,11 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
         return filled;
     }
 
-    private static long copyRemainder(final InputStream in, final OutputStream out, final long expected)
-            throws IOException {
-        if (expected <= 0) {
-            return 0;
+    private static String describe(final Object value) {
+        if (value instanceof Fragments) {
+            return "encapsulated in " + ((Fragments) value).size() + " fragments";
         }
-        final byte[] buffer = new byte[(int) Math.min(expected, 1 << 16)];
-        long         copied = 0;
-        while (copied < expected) {
-            final int read = in.read(buffer, 0, (int) Math.min(buffer.length, expected - copied));
-            if (read < 0) {
-                throw new EOFException("Pixel data ended " + (expected - copied) + " bytes early");
-            }
-            out.write(buffer, 0, read);
-            copied += read;
-        }
-        return copied;
+        return value == null || value == Value.NULL ? "of null" : "of type " + value.getClass().getName();
     }
+
 }

@@ -55,6 +55,14 @@ final class PixelGeometry {
             throw new MizerException("BitsAllocated of " + geometry.bitsAllocated
                                      + " is not byte-aligned, cannot alter pixels.");
         }
+        if (geometry.frameLength > Integer.MAX_VALUE) {
+            // Redaction buffers one frame at a time, and a byte[] cannot hold this one. Refusing
+            // beats the alternatives: 2-4 GiB throws out of the array allocation, and beyond that
+            // the length narrows to a small positive number and every rectangle lands in the wrong
+            // place while the output still comes out the right size.
+            throw new MizerException("A single frame of " + geometry.frameLength
+                                     + " bytes is larger than can be buffered, cannot alter pixels.");
+        }
         return geometry;
     }
 
@@ -74,6 +82,11 @@ final class PixelGeometry {
      * {@code SimpleRectanglePixelEditHandler} turns into a {@link Color}; {@code v=N} arrives as
      * {@code Color(N,N,N)}, so the red component carries the grey value either way. Values are
      * written as stored values, not rescaled to the bit depth: a script asking for 100 gets 100.
+     * <p>
+     * That value is capped at 255, because the fill arrives as a {@link Color}. A 16-bit image can
+     * therefore only be filled from the bottom of its range, and {@code v=1000} fails in
+     * {@code SimpleRectanglePixelEditHandler} before reaching here. On PALETTE COLOR the value is a
+     * palette index rather than a shade, so what it looks like depends on the lookup table.
      * <p>
      * A null colour means the script's fill specification was unparseable; that fills with zero,
      * which is what this operation has always done.

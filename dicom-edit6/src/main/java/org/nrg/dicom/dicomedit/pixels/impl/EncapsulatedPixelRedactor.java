@@ -131,14 +131,15 @@ final class EncapsulatedPixelRedactor {
             final File encoded = StreamingRectanglePixelEditHandler.createScratchFile();
             try {
                 transcode(staged, encoded, targetTs, UID.ExplicitVRLittleEndian);
-            } catch (IOException e) {
+                discard(staged, temporary);
+                // Registered only once the object holds a reference to it. Until then nothing else
+                // will delete it, so any failure above has to discard it here.
+                replace(ds, read(encoded));
+                dobj.registerScratchFile(encoded);
+            } catch (IOException | RuntimeException e) {
                 discard(encoded, null);
                 throw e;
             }
-            discard(staged, temporary);
-
-            replace(ds, read(encoded));
-            dobj.registerScratchFile(encoded);
             return true;
         } catch (Exception e) {
             logger.warn("Unable to re-encode redacted pixel data as {}; the redacted object will be stored "

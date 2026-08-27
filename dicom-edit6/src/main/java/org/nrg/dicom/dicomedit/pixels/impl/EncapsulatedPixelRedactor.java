@@ -161,8 +161,12 @@ final class EncapsulatedPixelRedactor {
             transcoder.setIncludeFileMetaInformation(true);
             transcoder.setDestinationTransferSyntax(targetTs);
             transcoder.transcode((t, dataset) -> new FileOutputStream(destination));
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | LinkageError e) {
             // dcm4che reports a missing codec as an unchecked "No Reader/Writer for format" fault.
+            // A codec whose native library is absent reports it as an Error rather than an Exception
+            // -- OpenCV throws UnsatisfiedLinkError from inside the decode -- and an Error passes
+            // through every catch between here and the importer, so the object fails the archive
+            // with a stack trace about org.opencv.core.Mat instead of the reason above.
             throw new IOException("Unable to transcode pixel data from " + sourceTs + " to " + targetTs
                                   + ". A codec for the transfer syntax is required to redact pixels in a "
                                   + "compressed object.", e);
@@ -245,7 +249,9 @@ final class EncapsulatedPixelRedactor {
             final ImageWriter writer = ImageWriterFactory.getImageWriter(param);
             writer.dispose();
             return true;
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
+            // LinkageError too: an encoder backed by a native library that is not installed fails
+            // here as an Error, and the answer to "is a writer available" is still no.
             return false;
         }
     }

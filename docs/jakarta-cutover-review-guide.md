@@ -67,7 +67,7 @@ code history is ~102 commits.
 > This migration's regressions are almost entirely **runtime-only**: the ones recorded in the tracker were
 > found by Playwright and REST runs, not by the compiler. If something escapes review and surfaces after
 > merge, `git bisect` over these commits is the tool that finds it, and a single 779-file commit would
-> throw that away. The tracker also cites **22 commit SHAs** as evidence for individual findings, and
+> throw that away. The tracker also cites **21 commit SHAs** as evidence for individual findings, and
 > squashing would orphan every one of them.
 >
 > Collapsing just the `docs:` commits was considered and rejected too. They aren't one kind of thing — some

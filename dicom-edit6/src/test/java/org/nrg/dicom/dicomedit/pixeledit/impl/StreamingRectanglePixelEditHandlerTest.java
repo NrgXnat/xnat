@@ -132,16 +132,25 @@ public class StreamingRectanglePixelEditHandlerTest {
     @Test
     public void leavesImageAloneWhenRectangleMissesIt() throws Exception {
         final String source = "dicom/single-frame/US-evle-rgb-8bits.dcm";
-        final File   output = redact(source, new Rectangle2D.Float(5000, 5000, 10, 10), new Color(255, 0, 0));
-
-        final RawPixels before = RawPixels.of(resource(source));
-        final RawPixels after  = RawPixels.of(output);
-        assertEquals(before.length(), after.length());
-        for (int y = 0; y < before.rows; y++) {
-            for (int x = 0; x < before.columns; x++) {
-                for (int sample = 0; sample < before.samplesPerPixel; sample++) {
-                    assertEquals("pixel " + x + "," + y + " sample " + sample + " should be untouched",
-                                 before.sample(0, x, y, sample), after.sample(0, x, y, sample));
+        // Clear of the image in both axes, then in one axis at a time. The one-axis cases are not
+        // decoration: PixelGeometry.clip clamps width and height with separate expressions, and a
+        // rectangle that still overlaps in the other axis has an in-range origin to write from, so
+        // a clip that produced a positive width would corrupt real pixels rather than land
+        // harmlessly off the end of the frame.
+        for (final Rectangle2D rect : new Rectangle2D[]{new Rectangle2D.Float(5000, 5000, 10, 10),
+                                                        new Rectangle2D.Float(5000, 10, 10, 10),
+                                                        new Rectangle2D.Float(10, 5000, 10, 10)}) {
+            final File      output = redact(source, rect, new Color(255, 0, 0));
+            final RawPixels before = RawPixels.of(resource(source));
+            final RawPixels after  = RawPixels.of(output);
+            assertEquals(before.length(), after.length());
+            for (int y = 0; y < before.rows; y++) {
+                for (int x = 0; x < before.columns; x++) {
+                    for (int sample = 0; sample < before.samplesPerPixel; sample++) {
+                        assertEquals(rect + ": pixel " + x + "," + y + " sample " + sample
+                                     + " should be untouched",
+                                     before.sample(0, x, y, sample), after.sample(0, x, y, sample));
+                    }
                 }
             }
         }

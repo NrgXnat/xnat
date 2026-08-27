@@ -1,8 +1,11 @@
 package org.nrg.dicom.dicomedit.pixeledit.impl;
 
+import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.io.DicomOutputStream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -226,6 +229,59 @@ public class StreamingRectanglePixelEditHandlerTest {
         // every assertion above whether or not any redaction happened.
         assertTrue("the source already held the fill value throughout the region, so this case "
                    + "would pass without any redaction taking place", differedBefore > 0);
+    }
+
+    /**
+     * Pixel data that runs past the frame count the object declares must still be redacted.
+     * <p>
+     * Those bytes used to be copied through untouched, on the reasoning that anything beyond
+     * NumberOfFrames was not ours to interpret. That is right for an odd-length value's pad byte and
+     * wrong for an object carrying more frames than it admits to: they reached the archive with
+     * whatever was burned into them. Failing to redact is the one outcome this code should never
+     * choose quietly.
+     */
+    @Test
+    public void redactsFramesBeyondTheDeclaredCount() throws Exception {
+        final int side = 8, declared = 2, actual = 3;
+        final byte[] pixels = new byte[side * side * actual];
+        java.util.Arrays.fill(pixels, (byte) 0xAB);
+
+        final File source = temporaryFolder.newFile("undeclared-frames.dcm");
+        final Attributes ds = new Attributes();
+        ds.setString(Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
+        ds.setString(Tag.SOPInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498.7001");
+        ds.setInt(Tag.Rows, VR.US, side);
+        ds.setInt(Tag.Columns, VR.US, side);
+        ds.setInt(Tag.SamplesPerPixel, VR.US, 1);
+        ds.setString(Tag.PhotometricInterpretation, VR.CS, "MONOCHROME2");
+        ds.setInt(Tag.BitsAllocated, VR.US, 8);
+        ds.setInt(Tag.BitsStored, VR.US, 8);
+        ds.setInt(Tag.HighBit, VR.US, 7);
+        ds.setInt(Tag.PixelRepresentation, VR.US, 0);
+        ds.setInt(Tag.NumberOfFrames, VR.IS, declared);   // understates what follows
+        ds.setBytes(Tag.PixelData, VR.OB, pixels);
+        try (DicomOutputStream out = new DicomOutputStream(source)) {
+            out.writeDataset(ds.createFileMetaInformation(UID.ExplicitVRLittleEndian), ds);
+        }
+
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(source, DicomInputStream.IncludeBulkData.URI);
+        handler.process(new Rectangle2D.Float(0, 0, side, side), new Color(7, 7, 7), dobj);
+        final File output = temporaryFolder.newFile("undeclared-frames-out.dcm");
+        try (OutputStream out = new FileOutputStream(output)) {
+            dobj.write(out);
+        }
+        dobj.releaseScratchFiles();
+
+        final byte[] after;
+        try (DicomInputStream in = new DicomInputStream(output)) {
+            in.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
+            after = in.readDataset().getBytes(Tag.PixelData);
+        }
+        assertEquals("every byte of pixel data should still be there", pixels.length, after.length);
+        for (int at = 0; at < after.length; at++) {
+            assertEquals("byte " + at + " (frame " + (at / (side * side)) + ") should be redacted, "
+                         + "including the frame past NumberOfFrames", 7, after[at] & 0xFF);
+        }
     }
 
     private File redact(String resource, Rectangle2D rect, Color fill) throws Exception {

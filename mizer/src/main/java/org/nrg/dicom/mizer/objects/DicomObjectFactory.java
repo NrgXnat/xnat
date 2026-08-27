@@ -184,10 +184,24 @@ public class DicomObjectFactory {
                 if (!gzipped) {
                     dis.setURI(file.toURI().toString());
                 }
-                final Attributes fmi = dis.readFileMetaInformation();
-                dataset = dis.readDataset();
-                if (fmi != null) {
-                    dataset.addAll(fmi);
+                try {
+                    final Attributes fmi = dis.readFileMetaInformation();
+                    dataset = dis.readDataset();
+                    if (fmi != null) {
+                        dataset.addAll(fmi);
+                    }
+                } catch (IOException | RuntimeException e) {
+                    // Anything dcm4che spooled before the read failed holds pixel data, and no
+                    // object is going to exist to release it: the constructor is throwing. A
+                    // truncated gzipped source would otherwise leave it in the temp directory for
+                    // good.
+                    for (final File spooled : dis.getBulkDataFiles()) {
+                        if (spooled.exists() && !spooled.delete()) {
+                            logger.warn("Unable to delete bulk data spool file {} after a failed read of {}",
+                                        spooled, file);
+                        }
+                    }
+                    throw e;
                 }
                 // Non-empty only for the gzipped case, where dcm4che had to spool.
                 scratchFiles.addAll(dis.getBulkDataFiles());

@@ -8,11 +8,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -20,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Bulk data stays on disk when asked for by reference, and comes back byte for byte on write.
@@ -119,6 +122,46 @@ public class BulkDataLoadingTest {
         } finally {
             Files.deleteIfExists(written.toPath());
         }
+    }
+
+    /**
+     * A gzipped source that ends partway through leaves dcm4che having spooled some of the bulk
+     * data it read. Those files hold pixel data, and the constructor is throwing, so no object will
+     * exist to release them later. They have to go before the exception leaves.
+     */
+    @Test
+    public void deletesSpooledFilesWhenTheReadFails() throws Exception {
+        final byte[] gzipped;
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            try (OutputStream out = new GZIPOutputStream(buffer)) {
+                Files.copy(fixture().toPath(), out);
+            }
+            gzipped = buffer.toByteArray();
+        }
+
+        // Truncated hard enough to fail mid-read, but past the header and into the pixel data, so
+        // there is something spooled by the time it does.
+        final File truncated = temporaryFolder.newFile("truncated.dcm.gz");
+        Files.write(truncated.toPath(), Arrays.copyOf(gzipped, (int) (gzipped.length * 0.9)));
+
+        final File[] before = spoolFiles();
+        try {
+            DicomObjectFactory.newInstance(truncated, DicomInputStream.IncludeBulkData.URI);
+            fail("expected a truncated source to fail the read");
+        } catch (MizerException expected) {
+            // The point is what it leaves behind, not the message.
+        }
+        final File[] after = spoolFiles();
+
+        assertEquals("a failed read left " + (after.length - before.length) + " spool file(s) behind: "
+                     + Arrays.toString(after), before.length, after.length);
+    }
+
+    /** dcm4che names its spool files blk*.tmp and puts them in the system temp directory. */
+    private static File[] spoolFiles() {
+        final File[] found = new File(System.getProperty("java.io.tmpdir"))
+                .listFiles((directory, name) -> name.startsWith("blk") && name.endsWith(".tmp"));
+        return found == null ? new File[0] : found;
     }
 
     private static File write(final DicomObjectI dicomObject) throws MizerException, java.io.IOException {

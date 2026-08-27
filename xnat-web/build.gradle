@@ -82,7 +82,7 @@ configurations.matching { it.name != 'xdatGenerator' }.configureEach {
     exclude module: 'pipelineCNDAXNAT'
     exclude module: 'slf4j-simple'
 
-    // Old BouncyCastle (from itext/pixelmed transitive) — conflicts with bcpkix-jdk18on
+    // Old BouncyCastle (from itext transitive) — conflicts with bcpkix-jdk18on
     exclude group: 'bouncycastle'
     exclude group: 'org.bouncycastle', module: 'bcprov-jdk14'
     exclude group: 'org.bouncycastle', module: 'bcmail-jdk14'
@@ -195,6 +195,9 @@ dependencies {
     // plugin leaves RLE permanently in that branch, resolved by a jar 1.11 deletes.
     implementation libs.dcm4che5.dcm4che.imageio.rle
     implementation libs.dcm4che5.dcm4che.net
+    // Nothing in XNAT imports ij.*, and ij.jar registers no ImageIO or ServiceLoader
+    // providers, so this is on the classpath only for plugins that may compile against it.
+    // Remove in 1.11 alongside the dcm4che 2.x artifacts above.
     implementation libs.imagej.ij
 
     // --- Jackson ---

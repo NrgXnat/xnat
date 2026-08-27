@@ -122,11 +122,6 @@ dependencies {
         api libs.dcm4che5.dcm4che.tool.storescp
         api libs.dcm4che5.dcm4che.tool.storescu
 
-        // PixelMed
-        api libs.pixelmed.pixelmed
-        api libs.pixelmed.codec
-        api libs.pixelmed.imageio
-
         // ActiveMQ
         api libs.activemq.all
         api libs.activemq.broker

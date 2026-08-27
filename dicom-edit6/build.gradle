@@ -62,11 +62,7 @@ dependencies {
     api libs.spring.beans
     api libs.google.guava
     api libs.commons.lang3
-    api libs.pixelmed.pixelmed
     api libs.slf4j.api
-
-    runtimeOnly libs.pixelmed.codec
-    runtimeOnly libs.pixelmed.imageio
 
     compileOnly libs.metainf.services.metainf.services
     annotationProcessor libs.metainf.services.metainf.services
@@ -74,7 +70,6 @@ dependencies {
     testImplementation project(':test')
     testImplementation libs.junit.junit
     testImplementation libs.spring.test
-    testImplementation libs.imagej.ij
 
     // Codecs for compressed pixel data. dcm4che 5 resolves every JPEG-family transfer syntax to
     // the OpenCV-backed plugins, and RLE to its own pure-Java one; without them, redacting a
@@ -91,10 +86,6 @@ tasks.register('stageOpenCvNative', Copy) {
 }
 
 test {
-    // PixelmedPixelEditHandlerTest.multiframe_evle_rgb_8bit: GC overhead limit exceeded
-    // Same failure in Maven — not a migration issue
-    exclude '**/PixelmedPixelEditHandlerTest.class'
-
     dependsOn tasks.named('stageOpenCvNative')
     systemProperty 'java.library.path', layout.buildDirectory.dir('opencv-native').get().asFile.absolutePath
 }

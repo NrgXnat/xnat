@@ -129,9 +129,6 @@ nifti-io = "1.0"
 ohif-viewer = "3.0.0"
 org-apache-regexp = "1.5.0"
 org-postgresql = "42.7.3"
-pixelmed = "nrg-20200327"
-pixelmed-codec = "20200328"
-pixelmed-imageio = "20200328"
 quartz = "2.3.2"
 redisson = "3.22.0"
 reflections = "0.10.2"
@@ -350,9 +347,6 @@ mockito-junit-jupiter = { group = "org.mockito", name = "mockito-junit-jupiter",
 msv-core = { group = "net.java.dev.msv", name = "msv-core", version.ref = "msv" }
 msv-xsdlib = { group = "net.java.dev.msv", name = "xsdlib", version.ref = "msv" }
 nifti_io-nifti_io = { group = "nifti_io", name = "nifti_io", version.ref = "nifti-io" }
-pixelmed-codec = { group = "com.dclunie", name = "pixelmed-codec", version.ref = "pixelmed-codec" }
-pixelmed-imageio = { group = "com.dclunie", name = "pixelmed-imageio", version.ref = "pixelmed-imageio" }
-pixelmed-pixelmed = { group = "com.dclunie", name = "pixelmed", version.ref = "pixelmed" }
 postgresql-postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "org-postgresql" }
 projectlombok-lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
 python-jython = { group = "org.python", name = "jython", version.ref = "jython" }

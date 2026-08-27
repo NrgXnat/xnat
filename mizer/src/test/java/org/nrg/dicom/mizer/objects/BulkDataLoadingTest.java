@@ -3,7 +3,9 @@ package org.nrg.dicom.mizer.objects;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.DicomInputStream;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 
 import java.io.File;
@@ -11,9 +13,12 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.security.MessageDigest;
+import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -26,6 +31,9 @@ import static org.junit.Assert.assertTrue;
  * so it cannot be the only guard.
  */
 public class BulkDataLoadingTest {
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     // Must be an object that actually has pixel data. vr.dcm does not, and with no bulk data to
     // hold either way, the round-trip test below passes without proving anything.
@@ -76,6 +84,40 @@ public class BulkDataLoadingTest {
         } finally {
             Files.deleteIfExists(fromReference.toPath());
             Files.deleteIfExists(fromHeap.toPath());
+        }
+    }
+
+    /**
+     * A gzipped source cannot hold bulk data by reference: the offsets a
+     * {@link BulkData} carries are into the decompressed stream and bear no relation to positions
+     * in the file. dcm4che detects that and spools the bulk data to temporary files of its own
+     * instead, which nothing else will clean up -- one file the size of the pixel data, per object.
+     */
+    @Test
+    public void deletesTheFilesDcm4cheSpoolsForAGzippedSource() throws Exception {
+        final File gzipped = temporaryFolder.newFile("gzipped.dcm.gz");
+        try (OutputStream out = new GZIPOutputStream(new FileOutputStream(gzipped))) {
+            Files.copy(fixture().toPath(), out);
+        }
+
+        final DicomObjectI dicomObject =
+                DicomObjectFactory.newInstance(gzipped, DicomInputStream.IncludeBulkData.URI);
+
+        final Object value = dicomObject.getAttributes().getValue(Tag.PixelData);
+        assertTrue("pixel data should be a reference: "
+                   + (value == null ? "null" : value.getClass().getName()),
+                   value instanceof BulkData);
+        final File spooled = ((BulkData) value).getFile();
+        assertNotEquals("the reference should point at a spool file rather than at the gzipped source",
+                        gzipped.getCanonicalFile(), spooled.getCanonicalFile());
+        assertTrue("dcm4che should have spooled the bulk data to " + spooled, spooled.exists());
+
+        final File written = write(dicomObject);
+        try {
+            assertFalse("the spooled file should be gone once the object has been written and released",
+                        spooled.exists());
+        } finally {
+            Files.deleteIfExists(written.toPath());
         }
     }
 

@@ -22,7 +22,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +33,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -137,8 +140,9 @@ public class ResumableDicomInputStreamTest {
         read(HIGH_GROUP_WINDOW, spooled);
 
         assertEquals("the read should have spooled once", 1, spooled.size());
-        assertEquals("the spool file should be in the configured directory",
-                     scratch.getCanonicalFile(), spooled.get(0).getParentFile().getCanonicalFile());
+        assertEquals("the spool file should be under the configured directory",
+                     scratch.getCanonicalFile(),
+                     spooled.get(0).getParentFile().getParentFile().getCanonicalFile());
 
         ResumableDicomInputStream.deleteBulkDataFiles(spooled);
     }
@@ -154,7 +158,8 @@ public class ResumableDicomInputStreamTest {
         read(HIGH_GROUP_WINDOW, spooled);
 
         assertTrue("the directory should have been created", scratch.isDirectory());
-        assertEquals(scratch.getCanonicalFile(), spooled.get(0).getParentFile().getCanonicalFile());
+        assertEquals(scratch.getCanonicalFile(),
+                     spooled.get(0).getParentFile().getParentFile().getCanonicalFile());
 
         ResumableDicomInputStream.deleteBulkDataFiles(spooled);
     }
@@ -234,6 +239,24 @@ public class ResumableDicomInputStreamTest {
 
     private static boolean pixelDataDescriptorMatches(final int tag) {
         return BulkDataDescriptor.PIXELDATA.isBulkData(Collections.emptyList(), null, tag, VR.OW, 1000);
+    }
+
+    /**
+     * The files dcm4che spools hold pixel data, so nobody but this user should be able to read them. dcm4che
+     * creates them through the legacy File.createTempFile, which takes its mode from the umask, so the
+     * directory has to be what keeps them private.
+     */
+    @Test
+    public void spoolsSomewhereOnlyTheOwnerCanRead() throws Exception {
+        final List<File> spooled = new ArrayList<>();
+        read(HIGH_GROUP_WINDOW, spooled);
+        final Path directory = spooled.get(0).getParentFile().toPath();
+        assumeTrue("POSIX permissions", directory.getFileSystem().supportedFileAttributeViews().contains("posix"));
+
+        assertEquals("the spool directory should be owner-only",
+                     PosixFilePermissions.fromString("rwx------"), Files.getPosixFilePermissions(directory));
+
+        ResumableDicomInputStream.deleteBulkDataFiles(spooled);
     }
 
     /** Reads the fixture through the importer's own stream configuration, up to stopTag. */

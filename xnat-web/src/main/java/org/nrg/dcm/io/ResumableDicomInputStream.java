@@ -10,7 +10,11 @@ import org.dcm4che3.io.DicomInputStream;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -24,10 +28,16 @@ public final class ResumableDicomInputStream extends DicomInputStream {
 
     /**
      * Where bulk data read by {@link #openWithBulkDataOffHeap} is spooled. Sized for the pixel data, so not
-     * always suited to java.io.tmpdir, which may be smaller than an image and need not carry the archive's
-     * access controls. Unset leaves dcm4che at its default, which is java.io.tmpdir.
+     * always suited to java.io.tmpdir, which may be smaller than an image. Unset, the spool directory is made
+     * under java.io.tmpdir.
      */
     public static final String SCRATCH_DIR_PROPERTY = "dicom.import.scratch.dir";
+
+    /** @see #scratchDirectory() */
+    private static File scratchDirectory;
+
+    /** The {@link #SCRATCH_DIR_PROPERTY} value {@link #scratchDirectory} was made for, so a change re-resolves. */
+    private static String scratchDirectoryFor;
 
     /**
      * Matches pixel data in any of its three forms, and nothing else.
@@ -89,33 +99,52 @@ public final class ResumableDicomInputStream extends DicomInputStream {
         final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);
         dis.setIncludeBulkData(IncludeBulkData.URI);
         dis.setBulkDataDescriptor(PIXEL_DATA_OF_ANY_FORM);
-        final File scratchDirectory = getScratchDirectory();
-        if (null != scratchDirectory) {
-            dis.setBulkDataDirectory(scratchDirectory);
-        }
+        dis.setBulkDataDirectory(scratchDirectory());
         return dis;
     }
 
     /**
-     * The configured spool directory, created if it does not exist.
+     * A directory for dcm4che's spool files that only this user can read, under
+     * {@link #SCRATCH_DIR_PROPERTY} when it is set.
+     * <p>
+     * Those files hold pixel data, and dcm4che creates them through the legacy {@code File.createTempFile},
+     * which takes its mode from the umask and typically leaves them rw-r--r-- where {@code Files.createTempFile}
+     * would give rw-------. Their own mode is not ours to set, so they go somewhere nobody else can list or
+     * open: createTempDirectory gives owner-only permissions and an unguessable name, which also rules out
+     * anyone planting a directory at a predictable path first. One per JVM, since it holds nothing once the
+     * files are released.
+     * <p>
+     * A configured directory that cannot be created is an error rather than a fall back to the default: the
+     * reason for setting it may be that the pixel data must not go there.
      *
-     * @return the directory, or null to leave dcm4che at its default.
+     * @return the directory to spool into.
      *
-     * @throws IOException if the configured directory does not exist and cannot be created. Failing rather
-     *                     than falling back is deliberate: silently spooling to java.io.tmpdir would defeat
-     *                     the reason for configuring it, which may be that the pixel data must not go there.
+     * @throws IOException if the directory cannot be created.
      */
-    private static File getScratchDirectory() throws IOException {
+    private static synchronized File scratchDirectory() throws IOException {
         final String configured = System.getProperty(SCRATCH_DIR_PROPERTY);
-        if (null == configured) {
-            return null;
+        if (null != scratchDirectory && scratchDirectory.isDirectory()
+            && Objects.equals(configured, scratchDirectoryFor)) {
+            return scratchDirectory;
         }
-        final File directory = new File(configured);
-        if (!directory.isDirectory() && !directory.mkdirs()) {
-            throw new IOException("DICOM import scratch directory " + directory
-                                  + " does not exist and cannot be created");
+        try {
+            if (null == configured) {
+                scratchDirectory = Files.createTempDirectory("xnat-import-bulkdata").toFile();
+            } else {
+                final Path parent = Paths.get(configured);
+                // createDirectories rather than mkdirs: it succeeds when the directory is already there, so
+                // two imports creating it at the same moment cannot race one of them into a failure.
+                Files.createDirectories(parent);
+                scratchDirectory = Files.createTempDirectory(parent, "xnat-import-bulkdata").toFile();
+            }
+        } catch (IOException e) {
+            throw new IOException("DICOM import scratch directory"
+                                  + (null == configured ? "" : " " + configured + ", from " + SCRATCH_DIR_PROPERTY)
+                                  + " does not exist and cannot be created", e);
         }
-        return directory;
+        scratchDirectory.deleteOnExit();
+        scratchDirectoryFor = configured;
+        return scratchDirectory;
     }
 
     /**

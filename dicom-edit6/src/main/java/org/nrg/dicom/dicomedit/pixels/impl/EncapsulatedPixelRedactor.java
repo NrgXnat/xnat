@@ -58,14 +58,26 @@ final class EncapsulatedPixelRedactor {
     }
 
     /**
-     * @param ds       the dataset, replaced in place with the redacted object.
-     * @param dobj     the owning object, which takes ownership of the file holding the result.
-     * @param rect     the requested rectangle, in image coordinates.
-     * @param color    the requested fill, or null to fill with zero.
-     * @param sourceTs transfer syntax of the compressed object.
+     * @param ds             the dataset, replaced in place with the redacted object.
+     * @param dobj           the owning object, which takes ownership of the file holding the result.
+     * @param sourceGeometry the pixel module read off the compressed object, whose dimensions
+     *                       already describe the decoded image; only the layout changes on decoding.
+     * @param rect           the requested rectangle, in image coordinates.
+     * @param color          the requested fill, or null to fill with zero.
+     * @param sourceTs       transfer syntax of the compressed object.
      */
-    static void redact(final Attributes ds, final DicomObjectI dobj, final Rectangle2D rect,
-                       final Color color, final String sourceTs) throws IOException, MizerException {
+    static void redact(final Attributes ds, final DicomObjectI dobj, final PixelGeometry sourceGeometry,
+                       final Rectangle2D rect, final Color color, final String sourceTs)
+            throws IOException, MizerException {
+        if (sourceGeometry.decodesTooLongToExpress()) {
+            // Checked before decoding rather than after: the transcoder would write a wrapped
+            // length and drop most of the frames without failing, and the redaction would report
+            // success on an object that had quietly lost its pixel data.
+            throw new MizerException("Redacting this object means decoding " + sourceGeometry.frames
+                                     + " frames of " + sourceGeometry.frameLength + " bytes, which is longer "
+                                     + "than a pixel data element can express, cannot alter pixels.");
+        }
+
         final List<File> temporary = new ArrayList<>();
         try {
             // Serialise the object as it stands. Header edits made by the script so far are in the
@@ -83,7 +95,10 @@ final class EncapsulatedPixelRedactor {
             final Attributes decodedDs = read(decoded);
 
             final PixelGeometry geometry = PixelGeometry.of(decodedDs);
-            final FrameRedactor redactor = new FrameRedactor(geometry, geometry.clip(rect),
+            // Decoding normally leaves RGB behind, but the codecs that do not touch
+            // PhotometricInterpretation -- RLE among them -- can leave a sub-sampled layout here.
+            geometry.requireChromaWithinLines();
+            final LineRedactor redactor = new LineRedactor(geometry, geometry.clip(rect),
                                                              geometry.fillSamples(color));
             final File pixels = StreamingRectanglePixelEditHandler.stageRedactedPixels(decodedDs, geometry, redactor);
             temporary.add(pixels);

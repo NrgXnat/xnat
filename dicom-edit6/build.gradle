@@ -88,4 +88,8 @@ tasks.register('stageOpenCvNative', Copy) {
 test {
     dependsOn tasks.named('stageOpenCvNative')
     systemProperty 'java.library.path', layout.buildDirectory.dir('opencv-native').get().asFile.absolutePath
+    // LargeFramePixelEditTest builds a DICOM with a single frame larger than 2 GB to prove it can be
+    // redacted, which costs several GB of scratch and a minute or two. Opt in with
+    // -PlargeObjectTests, the same switch mizer's LargeDicomObjectTest uses.
+    systemProperty 'test.largeObjects', project.hasProperty('largeObjectTests')
 }

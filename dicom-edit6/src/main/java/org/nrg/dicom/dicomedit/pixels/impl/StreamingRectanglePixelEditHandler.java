@@ -8,6 +8,7 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.data.Value;
 import org.dcm4che3.imageio.codec.TransferSyntaxType;
+import org.dcm4che3.util.StreamUtils;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.slf4j.Logger;
@@ -16,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -30,7 +30,11 @@ import java.nio.file.Paths;
 
 /**
  * A {@link org.nrg.dicom.dicomedit.pixels.PixelEditHandler} that redacts a solid rectangle without
- * ever holding more than one frame in memory.
+ * its memory cost depending on the size of the object.
+ * <p>
+ * Pixel data is streamed through a fixed-size buffer holding a whole number of image lines, so a
+ * frame of any size costs the same; only a line has to be addressable, and Rows and Columns being US
+ * bounds that at a few hundred kilobytes.
  * <p>
  * The edited pixels are written to a scratch file and the dataset's PixelData value is replaced by
  * a {@link BulkData} reference to it, so the object stays streamable all the way to
@@ -78,11 +82,13 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
 
         try {
             if (tsType == null || !tsType.isPixeldataEncapsulated()) {
-                redactNative(ds, dobj, geometry, new FrameRedactor(geometry, clipped, geometry.fillSamples(color)));
+                geometry.requireChromaWithinLines();
+                redactNative(ds, dobj, geometry, new LineRedactor(geometry, clipped, geometry.fillSamples(color)));
             } else {
-                // Decoding can change the pixel layout, so the encapsulated path rebuilds the
-                // geometry for itself rather than reusing what was read off the compressed object.
-                EncapsulatedPixelRedactor.redact(ds, dobj, rect, color, sourceTs);
+                // The geometry goes in only to be checked before anything is decoded: decoding
+                // can change the pixel layout, so the redaction itself rebuilds the geometry from
+                // the decoded object rather than reusing what was read off the compressed one.
+                EncapsulatedPixelRedactor.redact(ds, dobj, geometry, rect, color, sourceTs);
             }
         } catch (IOException e) {
             throw new MizerException("Error editing rectangular pixel region.", e);
@@ -90,13 +96,14 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
     }
 
     /**
-     * Streams every frame through the redactor and repoints PixelData at the result.
+     * Streams the pixel data through the redactor a line at a time and repoints PixelData at the
+     * result.
      * <p>
      * The transfer syntax is untouched: the bytes written are in the same encoding as the bytes
      * read, so an Implicit VR Little Endian object stays implicit.
      */
     private void redactNative(final Attributes ds, final DicomObjectI dobj,
-                              final PixelGeometry geometry, final FrameRedactor redactor) throws IOException {
+                              final PixelGeometry geometry, final LineRedactor redactor) throws IOException {
         final File scratch = stageRedactedPixels(ds, geometry, redactor);
         repointPixelData(ds, dobj, scratch, scratch.length(), ds.getVR(Tag.PixelData), geometry.bigEndian);
     }
@@ -110,7 +117,7 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
      * whatever the object arrived as.
      */
     static File stageRedactedPixels(final Attributes ds, final PixelGeometry geometry,
-                                    final FrameRedactor redactor) throws IOException {
+                                    final LineRedactor redactor) throws IOException {
         final Object value       = ds.getValue(Tag.PixelData);
         final long   valueLength = nativeValueLength(value);
         final File   scratch     = createScratchFile();
@@ -118,19 +125,28 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
         try {
             long copied = 0;
             try (InputStream in = openNative(value);
-                 OutputStream out = new BufferedOutputStream(new FileOutputStream(scratch), 1 << 16)) {
-                final byte[] frame = new byte[(int) geometry.frameLength];
+                 OutputStream out = new FileOutputStream(scratch)) {
+                // A whole number of lines, and enough of them to keep reads and writes at a
+                // sensible size: the redaction addresses a line at a time, but one read per line
+                // costs a syscall per row of the image. A megabyte measured faster than both 64 KB
+                // and 4 MB, and faster than reading whole frames on every geometry tried.
+                final int    lineLength = (int) geometry.lineLength;
+                final byte[] buffer     = new byte[lineLength * Math.max(1, (1 << 20) / lineLength)];
+                long         lineIndex  = 0;
                 // Until the value is consumed, rather than until NumberOfFrames is reached: pixel
                 // data longer than the frame count accounts for still has to be redacted, or those
-                // extra frames pass through carrying whatever was burned into them. A trailing pad
-                // byte is shorter than the rectangle, so the redactor leaves it alone.
+                // extra frames pass through carrying whatever was burned into them.
                 while (copied < valueLength) {
-                    final int read = readFrame(in, frame, (int) Math.min(frame.length, valueLength - copied));
+                    final int wanted = (int) Math.min(buffer.length, valueLength - copied);
+                    final int read   = StreamUtils.readAvailable(in, buffer, 0, wanted);
                     if (read <= 0) {
                         break;
                     }
-                    redactor.redact(frame, read);
-                    out.write(frame, 0, read);
+                    for (int at = 0; at < read; at += lineLength) {
+                        redactor.redact(buffer, at, Math.min(lineLength, read - at), lineIndex);
+                        lineIndex = lineIndex + 1 == geometry.linesPerFrame ? 0 : lineIndex + 1;
+                    }
+                    out.write(buffer, 0, read);
                     copied += read;
                 }
             }
@@ -198,19 +214,6 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
             return new ByteArrayInputStream((byte[]) value);
         }
         throw new IOException("Unexpected native pixel data value " + describe(value));
-    }
-
-    /** Reads up to <b>wanted</b> bytes, tolerating a short final frame rather than throwing. */
-    private static int readFrame(final InputStream in, final byte[] frame, final int wanted) throws IOException {
-        int filled = 0;
-        while (filled < wanted) {
-            final int read = in.read(frame, filled, wanted - filled);
-            if (read < 0) {
-                break;
-            }
-            filled += read;
-        }
-        return filled;
     }
 
     private static String describe(final Object value) {

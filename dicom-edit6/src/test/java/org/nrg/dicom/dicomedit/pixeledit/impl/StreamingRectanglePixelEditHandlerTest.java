@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.nrg.dicom.dicomedit.BaseScriptApplicator;
 import org.nrg.dicom.dicomedit.pixels.impl.StreamingRectanglePixelEditHandler;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 
@@ -24,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Verifies that redaction writes the value the script asked for, in the right place, leaves
@@ -125,6 +127,26 @@ public class StreamingRectanglePixelEditHandlerTest {
                    result.dataset.getString(Tag.LossyImageCompressionMethod) != null);
         assertRedacted(RawPixels.of(resource("dicom/multi-frame/xa-jpeg1.dcm")), result,
                        new Rectangle2D.Float(20, 20, 60, 60), new Color(180, 180, 180), false);
+    }
+
+    @Test
+    public void redactsSubSampledLossyJpeg() throws Exception {
+        // The only guard against the sub-sampled refusal reaching compressed input.
+        // YBR_FULL_422 JPEG baseline. Two luma samples share a chroma pair in the compressed form,
+        // which the byte arithmetic could not address, but decoding rewrites
+        // PhotometricInterpretation to RGB and expands the samples, so what reaches the redaction is
+        // three whole samples to a pixel. The refusal in refusesSubSampledNativePixelData must not
+        // fire here.
+        final Rectangle2D rect   = new Rectangle2D.Float(100, 100, 60, 60);
+        final Color       fill   = new Color(180, 90, 30);
+        final String      source = "dicom/single-frame/US-jpg-ybr-8bits.dcm";
+        final RawPixels   result = RawPixels.of(redact(source, rect, fill));
+
+        assertEquals("lossy input should be stored uncompressed",
+                     UID.ExplicitVRLittleEndian, result.transferSyntax);
+        assertEquals("the decoded object should carry whole samples per pixel",
+                     "RGB", result.dataset.getString(Tag.PhotometricInterpretation));
+        assertRedacted(RawPixels.of(resource(source)), result, rect, fill, false);
     }
 
     // ------------------------------------------------------------------------------------ edge cases
@@ -290,6 +312,250 @@ public class StreamingRectanglePixelEditHandlerTest {
         for (int at = 0; at < after.length; at++) {
             assertEquals("byte " + at + " (frame " + (at / (side * side)) + ") should be redacted, "
                          + "including the frame past NumberOfFrames", 7, after[at] & 0xFF);
+        }
+    }
+
+    /**
+     * A frame far too large to hold in memory is redacted rather than refused.
+     * <p>
+     * What a redaction buffers is a line, not a frame, so the size of a frame does not bound what
+     * can be edited: only one line has to fit in memory, and since Rows and Columns are US that is
+     * a few hundred kilobytes at worst however large the image. This object declares a 65535x65535
+     * image -- a frame of nearly 4 GiB -- and carries only its first few rows of pixel data, which
+     * is what makes the case cheap enough to have a test. Buffering a frame refused this outright.
+     */
+    @Test
+    public void redactsAnImageWhoseFrameIsTooLargeToBuffer() throws Exception {
+        final int    side = 65535, storedLines = 4, width = 100, height = 2;
+        final byte[] pixels = new byte[side * storedLines];
+        java.util.Arrays.fill(pixels, (byte) 0xAB);
+
+        final File       source = temporaryFolder.newFile("huge-frame.dcm");
+        final Attributes ds     = new Attributes();
+        ds.setString(Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
+        ds.setString(Tag.SOPInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498.7003");
+        ds.setInt(Tag.Rows, VR.US, side);
+        ds.setInt(Tag.Columns, VR.US, side);
+        ds.setInt(Tag.SamplesPerPixel, VR.US, 1);
+        ds.setString(Tag.PhotometricInterpretation, VR.CS, "MONOCHROME2");
+        ds.setInt(Tag.BitsAllocated, VR.US, 8);
+        ds.setInt(Tag.BitsStored, VR.US, 8);
+        ds.setInt(Tag.HighBit, VR.US, 7);
+        ds.setInt(Tag.PixelRepresentation, VR.US, 0);
+        ds.setBytes(Tag.PixelData, VR.OB, pixels);
+        try (DicomOutputStream out = new DicomOutputStream(source)) {
+            out.writeDataset(ds.createFileMetaInformation(UID.ExplicitVRLittleEndian), ds);
+        }
+
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(source, DicomInputStream.IncludeBulkData.URI);
+        handler.process(new Rectangle2D.Float(0, 0, width, height), new Color(7, 7, 7), dobj);
+        final File output = temporaryFolder.newFile("huge-frame-out.dcm");
+        try (OutputStream out = new FileOutputStream(output)) {
+            dobj.write(out);
+        }
+        dobj.releaseScratchFiles();
+
+        final byte[] after;
+        try (DicomInputStream in = new DicomInputStream(output)) {
+            in.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
+            after = in.readDataset().getBytes(Tag.PixelData);
+        }
+        assertEquals("every byte of pixel data should still be there", pixels.length, after.length);
+        for (int at = 0; at < after.length; at++) {
+            final int row      = at / side;
+            final int column   = at % side;
+            final int expected = row < height && column < width ? 7 : 0xAB;
+            assertEquals("byte " + at + " (row " + row + ", column " + column + ")",
+                         expected, after[at] & 0xFF);
+        }
+    }
+
+    /**
+     * Colour-by-plane pixel data spanning more than one frame is redacted in every plane of every
+     * frame.
+     * <p>
+     * Buffering a line rather than a frame means the redactor is handed a line at a time and works
+     * out the plane and the row from which line of the frame it is, so the point where that count
+     * wraps from the last plane of one frame to the first plane of the next is the one place a
+     * rectangle can now land in the wrong frame. Nothing else covers it: the multi-frame fixtures
+     * are PALETTE COLOR, one sample to a pixel, and the planar fixture has a single frame, so this
+     * object is built here.
+     */
+    @Test
+    public void redactsEveryPlaneOfEveryFrameWhenColourIsByPlane() throws Exception {
+        final int    side = 4, samples = 3, frameCount = 2;
+        final byte[] pixels = new byte[side * side * samples * frameCount];
+        for (int at = 0; at < pixels.length; at++) {
+            // Varied deliberately, and clear of the fill values: a run written to the wrong plane,
+            // row or frame then shows up as a changed byte instead of coinciding with what was
+            // already there.
+            pixels[at] = (byte) (0x80 + at % 0x40);
+        }
+
+        final File       source = temporaryFolder.newFile("planar-multi-frame.dcm");
+        final Attributes ds     = new Attributes();
+        ds.setString(Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
+        ds.setString(Tag.SOPInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498.7004");
+        ds.setInt(Tag.Rows, VR.US, side);
+        ds.setInt(Tag.Columns, VR.US, side);
+        ds.setInt(Tag.SamplesPerPixel, VR.US, samples);
+        ds.setString(Tag.PhotometricInterpretation, VR.CS, "RGB");
+        ds.setInt(Tag.PlanarConfiguration, VR.US, 1);
+        ds.setInt(Tag.BitsAllocated, VR.US, 8);
+        ds.setInt(Tag.BitsStored, VR.US, 8);
+        ds.setInt(Tag.HighBit, VR.US, 7);
+        ds.setInt(Tag.PixelRepresentation, VR.US, 0);
+        ds.setInt(Tag.NumberOfFrames, VR.IS, frameCount);
+        ds.setBytes(Tag.PixelData, VR.OB, pixels);
+        try (DicomOutputStream out = new DicomOutputStream(source)) {
+            out.writeDataset(ds.createFileMetaInformation(UID.ExplicitVRLittleEndian), ds);
+        }
+
+        final Rectangle2D  rect = new Rectangle2D.Float(1, 1, 2, 2);
+        final Color        fill = new Color(10, 20, 30);
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(source, DicomInputStream.IncludeBulkData.URI);
+        handler.process(rect, fill, dobj);
+        final File output = temporaryFolder.newFile("planar-multi-frame-out.dcm");
+        try (OutputStream out = new FileOutputStream(output)) {
+            dobj.write(out);
+        }
+        dobj.releaseScratchFiles();
+
+        assertRedacted(RawPixels.of(source), RawPixels.of(output), rect, fill, true);
+    }
+
+    /**
+     * Sub-sampled pixel data that was never compressed is redacted where it was asked for.
+     * <p>
+     * YBR_FULL_422 carries one chroma pair for every two luma samples, stored Y Y Cb Cr, so a row is
+     * {@code columns * 2} bytes rather than the {@code columns * 3} that whole pixels would take, and
+     * a pixel is not a fixed run of bytes. Addressing it as though it were puts the rectangle about
+     * a third of the way down from where it was asked for and leaves the value length untouched, so
+     * the object would reach the archive reporting a redaction that did not happen.
+     * <p>
+     * The layout is dcm4che's: {@code ColorSubsampling.YBR_XXX_422.indexOfY(x, y, columns)} is
+     * {@code ((columns * y + x) * 2) - x % 2} and {@code indexOfBR} lands on the third byte of the
+     * pair, which is what this pins down. The rectangle here starts on an odd column on purpose:
+     * half a chroma pair cannot be given a new colour on its own, so the fill has to round outwards
+     * onto column 2, and over-redacting is the safe direction to err in.
+     */
+    @Test
+    public void redactsSubSampledNativePixelData() throws Exception {
+        final int    columns = 8, rows = 8, lineLength = columns * 2;
+        final byte[] pixels  = pattern(lineLength * rows);
+        final File   source  = nativeObject("ybr-422.dcm", pixels, "YBR_FULL_422", rows, columns, 3, 0);
+
+        // rgb(180,90,30) is Y=110 Cb=82 Cr=177 in full-range YBR, which is dcm4che's own conversion.
+        final byte[] after = redactBytes(source, new Rectangle2D.Float(3, 2, 3, 2), new Color(180, 90, 30));
+        final int[]  group = {110, 110, 82, 177};
+
+        assertEquals("the value length must not change", pixels.length, after.length);
+        for (int at = 0; at < after.length; at++) {
+            final int row    = at / lineLength;
+            final int within = at % lineLength;
+            // Columns 3 to 5 were asked for; groups 1 and 2 cover columns 2 to 5.
+            final int expected = row >= 2 && row < 4 && within >= 4 && within < 12
+                                 ? group[within % 4]
+                                 : pixels[at] & 0xFF;
+            assertEquals("byte " + at + " (row " + row + ", byte " + within + " of the row)",
+                         expected, after[at] & 0xFF);
+        }
+    }
+
+    /**
+     * A black fill on YBR pixel data is stored as black, not as green.
+     * <p>
+     * Y, Cb and Cr are not R, G and B: writing {@code v=0} into them unconverted stores Y=0 Cb=0
+     * Cr=0, which renders as a medium green rather than the black the script asked for. The pixelmed
+     * handler this replaces decoded to RGB and wrote real black, so this is the guard against
+     * regressing on that. Compressed YBR objects come back RGB from the decoder and are unaffected,
+     * which is why this case has to be built natively.
+     */
+    @Test
+    public void writesABlackFillAsBlackOnYbrPixelData() throws Exception {
+        final int    columns = 4, rows = 4, lineLength = columns * 3;
+        final byte[] pixels  = pattern(lineLength * rows);
+        final File   source  = nativeObject("ybr-full.dcm", pixels, "YBR_FULL", rows, columns, 3, 0);
+
+        final byte[] after = redactBytes(source, new Rectangle2D.Float(0, 0, 2, 1), new Color(0, 0, 0));
+        // Black is Y=0, Cb=128, Cr=128. Cb and Cr sit at the middle of their range, not at zero.
+        final int[] blackPixel = {0, 128, 128};
+
+        for (int at = 0; at < after.length; at++) {
+            final int expected = at < 6 ? blackPixel[at % 3] : pixels[at] & 0xFF;
+            assertEquals("byte " + at, expected, after[at] & 0xFF);
+        }
+    }
+
+    /**
+     * Pixel data whose chroma is shared between rows is refused.
+     * <p>
+     * YBR_PARTIAL_420 sub-samples vertically as well as horizontally, so a row cannot be recoloured
+     * without touching its neighbour and redacting a line at a time cannot address it. The standard
+     * permits it only with the MPEG transfer syntaxes, so an object carrying it uncompressed is
+     * malformed; refusing beats guessing at a layout, and unlike 422 there is no rounding that makes
+     * it safe.
+     */
+    @Test
+    public void refusesPixelDataWhoseChromaIsSharedBetweenRows() throws Exception {
+        final int  columns = 4, rows = 4;
+        final File source  = nativeObject("ybr-420.dcm", pattern(columns * rows / 2 * 3),
+                                          "YBR_PARTIAL_420", rows, columns, 3, 0);
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(source, DicomInputStream.IncludeBulkData.URI);
+        try {
+            handler.process(new Rectangle2D.Float(0, 0, 2, 2), new Color(0, 0, 0), dobj);
+            fail("pixel data with chroma shared between rows should be refused");
+        } catch (MizerException expected) {
+            assertTrue("the failure should say why, was: " + expected.getMessage(),
+                       expected.getMessage().contains("shares chroma samples between rows"));
+        }
+    }
+
+    /** Varied source bytes, clear of every fill value these tests use, so a stray write shows up. */
+    private static byte[] pattern(int length) {
+        final byte[] pixels = new byte[length];
+        for (int at = 0; at < length; at++) {
+            pixels[at] = (byte) (0x10 + at % 0x40);
+        }
+        return pixels;
+    }
+
+    /** An eight-bit Explicit VR Little Endian object with the given pixel module. */
+    private File nativeObject(String name, byte[] pixels, String photometricInterpretation,
+                              int rows, int columns, int samplesPerPixel, int planarConfiguration)
+            throws Exception {
+        final File       source = temporaryFolder.newFile(name);
+        final Attributes ds     = new Attributes();
+        ds.setString(Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
+        ds.setString(Tag.SOPInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498.7005");
+        ds.setInt(Tag.Rows, VR.US, rows);
+        ds.setInt(Tag.Columns, VR.US, columns);
+        ds.setInt(Tag.SamplesPerPixel, VR.US, samplesPerPixel);
+        ds.setString(Tag.PhotometricInterpretation, VR.CS, photometricInterpretation);
+        ds.setInt(Tag.PlanarConfiguration, VR.US, planarConfiguration);
+        ds.setInt(Tag.BitsAllocated, VR.US, 8);
+        ds.setInt(Tag.BitsStored, VR.US, 8);
+        ds.setInt(Tag.HighBit, VR.US, 7);
+        ds.setInt(Tag.PixelRepresentation, VR.US, 0);
+        ds.setBytes(Tag.PixelData, VR.OB, pixels);
+        try (DicomOutputStream out = new DicomOutputStream(source)) {
+            out.writeDataset(ds.createFileMetaInformation(UID.ExplicitVRLittleEndian), ds);
+        }
+        return source;
+    }
+
+    /** Redacts a file and returns the pixel data it wrote. */
+    private byte[] redactBytes(File source, Rectangle2D rect, Color fill) throws Exception {
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(source, DicomInputStream.IncludeBulkData.URI);
+        handler.process(rect, fill, dobj);
+        final File output = temporaryFolder.newFile(source.getName() + "-out.dcm");
+        try (OutputStream out = new FileOutputStream(output)) {
+            dobj.write(out);
+        }
+        dobj.releaseScratchFiles();
+        try (DicomInputStream in = new DicomInputStream(output)) {
+            in.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
+            return in.readDataset().getBytes(Tag.PixelData);
         }
     }
 

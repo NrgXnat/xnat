@@ -252,6 +252,15 @@ final class EncapsulatedPixelRedactor {
         } catch (Exception | LinkageError e) {
             // LinkageError too: an encoder backed by a native library that is not installed fails
             // here as an Error, and the answer to "is a writer available" is still no.
+            //
+            // Logged rather than discarded. The caller warns that the object will be stored
+            // uncompressed, which is the outcome; this is the reason, and the two differ in what
+            // they ask an operator to do. A NoClassDefFoundError here means a codec jar is missing
+            // from the deployment, not that the transfer syntax has no encoder -- and the object
+            // comes back in a different transfer syntax either way, so the distinction is worth
+            // one line. A syntax with no writer at all, RLE being the standing example, returns
+            // above on a null param and never reaches this.
+            logger.debug("No image writer could be constructed for transfer syntax {}", tsuid, e);
             return false;
         }
     }

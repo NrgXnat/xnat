@@ -14,7 +14,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.dcm4che3.util.TagUtils;
-import org.nrg.xnat.helpers.dicom.AttributeTags;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.model.CatCatalogI;
@@ -548,9 +547,15 @@ public final class EcatDump extends SecureResource {
                 subs.add(parts[i]);
             }
 
-            final int tag = AttributeTags.forName(tag_s);
-            if (AttributeTags.NOT_RESOLVED == tag) {
-                throw new IllegalArgumentException("not a valid ecat attribute tag: " + tag_s);
+            int tag;
+            try {
+                tag = TagUtils.forName(tag_s);
+            } catch (IllegalArgumentException e) {
+                try {
+                    tag = Integer.parseUnsignedInt(tag_s, 16);
+                } catch (NumberFormatException e1) {
+                    throw new IllegalArgumentException("not a valid ecat attribute tag: " + tag_s, e1);
+                }
             }
             fieldsb.put(tag, subs);
         }

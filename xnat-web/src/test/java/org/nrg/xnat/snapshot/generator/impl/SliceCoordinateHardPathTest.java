@@ -10,10 +10,15 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * The branch of {@link SliceCoordinateCalculator} taken when a scan mixes multi-frame and
@@ -60,6 +65,99 @@ public class SliceCoordinateHardPathTest {
         final List<SliceCoordinate> coordinates = calculator.getSliceCoordinates(1, 6, files);
 
         assertEquals(Arrays.asList(new SliceCoordinate(1, 0)), coordinates);
+    }
+
+    /**
+     * Objects past the last requested slice are never read. On shared storage each one is a round
+     * trip, and a single-panel montage selects the midpoint, so half the scan is skipped. The
+     * unreadable object stands in for that: reaching it at all fails the montage.
+     */
+    @Test
+    public void doesNotReadObjectsPastTheLastSelectedSlice() throws Exception {
+        // Four slices across three files, so neither shortcut applies and the hard path is taken.
+        final List<String> files = Arrays.asList(object("multi.dcm", 3), object("single.dcm", null),
+                                                 unreadable("never-read.dcm"));
+
+        // One panel of four slices selects slice 2, the last frame of multi.dcm.
+        final List<SliceCoordinate> coordinates = calculator.getSliceCoordinates(1, 4, files);
+
+        assertEquals(Collections.singletonList(new SliceCoordinate(0, 2)), coordinates);
+    }
+
+    /**
+     * Counting frames as the walk reaches each object is a restructure, not a change of result: for
+     * every layout it must place exactly the coordinates the eager version placed.
+     * <p>
+     * Checked against a reference copy of that eager walk over a grid of layouts and panel counts,
+     * rather than against coordinates written out by hand, so it covers combinations nobody thought
+     * to write a case for.
+     */
+    @Test
+    public void placesTheSameCoordinatesAsTheEagerWalk() throws Exception {
+        final int[][] layouts = {
+                {3, 1, 1}, {1, 3, 1}, {1, 1, 3}, {2, 2, 1}, {5, 1, 1, 1},
+                {1, 1, 1, 4, 1}, {3, 3}, {1, 2, 3, 4}, {4, 0, 4}, {1, 0, 1, 7},
+        };
+        int compared = 0;
+        for (int layout = 0; layout < layouts.length; layout++) {
+            final int[]        frames  = layouts[layout];
+            final List<String> files   = objects(layout, frames);
+            int                nSlices = 0;
+            for (final int f : frames) {
+                nSlices += f;
+            }
+            // Guard against the grid drifting into a branch that never reads a file at all.
+            assertNotEquals("layout " + layout + " does not reach the hard path", nSlices, files.size());
+
+            for (final int nPanels : new int[]{1, 2, 3, 4, 5, 9, 16}) {
+                assertEquals("layout " + Arrays.toString(frames) + " into " + nPanels + " panels",
+                             eagerWalk(nPanels, nSlices, files),
+                             calculator.getSliceCoordinates(nPanels, nSlices, files));
+                compared++;
+            }
+        }
+        assertEquals("every layout and panel count should have been compared", 70, compared);
+    }
+
+    /**
+     * The walk as it read before, counting every object up front. Kept here deliberately: it is the
+     * thing the implementation is being held equal to.
+     */
+    private List<SliceCoordinate> eagerWalk(final int nPanels, final int nSlices, final List<String> files) throws Exception {
+        final List<Integer> sliceNumbers      = calculator.selecctSliceIndices(nPanels, nSlices);
+        final List<Integer> frameCountPerFile = new ArrayList<>();
+        for (final String f : files) {
+            frameCountPerFile.add(FrameCounter.framesIn(new File(f)));
+        }
+        final List<SliceCoordinate> coordinates = new ArrayList<>();
+        int iSlice = 0, iSliceNumber = 0;
+        for (int iFile = 0; iFile < files.size() && iSliceNumber < sliceNumbers.size(); iFile++) {
+            for (int iFrame = 0; iFrame < frameCountPerFile.get(iFile) && iSliceNumber < sliceNumbers.size(); iFrame++) {
+                if (iSlice == sliceNumbers.get(iSliceNumber)) {
+                    coordinates.add(new SliceCoordinate(iFile, iFrame));
+                    iSliceNumber++;
+                }
+                iSlice++;
+            }
+        }
+        return coordinates;
+    }
+
+    /** One object per entry, of that many frames; zero means an object carrying no image. */
+    private List<String> objects(final int layout, final int[] frames) throws Exception {
+        final List<String> files = new ArrayList<>();
+        for (int i = 0; i < frames.length; i++) {
+            final String name = "L" + layout + "-" + i + ".dcm";
+            files.add(frames[i] == 0 ? report(name) : object(name, frames[i] == 1 ? null : frames[i]));
+        }
+        return files;
+    }
+
+    /** Not a DICOM object at all, so counting frames in it throws. */
+    private String unreadable(final String name) throws Exception {
+        final File file = temporaryFolder.newFile(name);
+        Files.write(file.toPath(), "not a DICOM object".getBytes(StandardCharsets.UTF_8));
+        return file.getAbsolutePath();
     }
 
     private String object(final String name, final Integer frames) throws Exception {

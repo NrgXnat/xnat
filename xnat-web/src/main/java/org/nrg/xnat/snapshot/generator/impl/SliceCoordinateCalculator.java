@@ -74,15 +74,16 @@ public class SliceCoordinateCalculator {
      * @throws MizerException
      */
     private List<SliceCoordinate> getSliceCoordinatesTheHardWay( List<Integer> sliceNumbers, List<String> files) throws MizerException {
-        final List<Integer> frameCountPerFile = new ArrayList<>();
-        for (final String f : files) {
-            frameCountPerFile.add(FrameCounter.framesIn(new File(f)));
-        }
         final List<SliceCoordinate> sliceCoordinates = new ArrayList<>();
         int iSlice = 0;
         int iSliceNumber = 0;
         for (int iFile = 0; iFile < files.size() && iSliceNumber < sliceNumbers.size(); iFile++) {
-            for (int iFrame = 0; iFrame < frameCountPerFile.get(iFile) && iSliceNumber < sliceNumbers.size(); iFrame++) {
+            // Counted as we reach each object rather than for all of them up front: the loop ends
+            // once the last requested slice is placed, and on shared storage every object it does
+            // not reach is a round trip saved. A single panel selects the midpoint, so that is
+            // half of them.
+            final int frames = FrameCounter.framesIn(new File(files.get(iFile)));
+            for (int iFrame = 0; iFrame < frames && iSliceNumber < sliceNumbers.size(); iFrame++) {
                 // Slice indices count from 0, so compare before advancing.
                 if (iSlice == sliceNumbers.get(iSliceNumber)) {
                     sliceCoordinates.add(new SliceCoordinate(iFile, iFrame));

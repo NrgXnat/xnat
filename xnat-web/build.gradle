@@ -199,6 +199,15 @@ dependencies {
     // providers, so this is on the classpath only for plugins that may compile against it.
     // Remove in 1.11 alongside the dcm4che 2.x artifacts above.
     implementation libs.imagej.ij
+    // Likewise pixelmed, which nothing in XNAT uses since alterPixels moved off it. It reached the
+    // WAR through dicom-edit6 until that dependency went with PixelmedPixelEditHandler, and is
+    // declared here so plugins built against it keep working. runtimeOnly, not implementation:
+    // no XNAT source compiles against it. Only pixelmed-imageio registers anything with ImageIO --
+    // a reader for the format name "jpeg-lossless", which no dcm4che 5 codec claims -- so this
+    // adds no second claimant for a format XNAT resolves. Remove in 1.11 with the rest.
+    runtimeOnly libs.pixelmed.pixelmed
+    runtimeOnly libs.pixelmed.codec
+    runtimeOnly libs.pixelmed.imageio
 
     // --- Jackson ---
     implementation libs.jackson.annotations

@@ -12,7 +12,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
@@ -23,6 +26,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Bulk data stays on disk when asked for by reference, and comes back byte for byte on write.
@@ -121,6 +125,45 @@ public class BulkDataLoadingTest {
                         spooled.exists());
         } finally {
             Files.deleteIfExists(written.toPath());
+        }
+    }
+
+    /**
+     * The files dcm4che spools hold pixel data, so nobody but this user should be able to read them.
+     * <p>
+     * dcm4che creates them through the legacy {@code File.createTempFile}, which takes its mode from
+     * the umask and typically leaves them rw-r--r--; on a shared host that is PHI any local account
+     * can read. Their own mode is not ours to set, so the guard is the directory they sit in.
+     * <p>
+     * Both halves are asserted because neither is enough on its own. The permissions check is
+     * vacuous wherever the shared temp directory already happens to be owner-only, as a macOS
+     * per-user {@code TMPDIR} is; the check that the spool directory is not that shared directory
+     * fails everywhere the wiring is missing.
+     */
+    @Test
+    public void spoolsBulkDataWhereOnlyThisUserCanReadIt() throws Exception {
+        final Path spoolRoot = temporaryFolder.getRoot().toPath();
+        final FileStore store = Files.getFileStore(spoolRoot);
+        assumeTrue("needs POSIX file permissions", store.supportsFileAttributeView("posix"));
+
+        final File gzipped = temporaryFolder.newFile("permissions.dcm.gz");
+        try (OutputStream out = new GZIPOutputStream(new FileOutputStream(gzipped))) {
+            Files.copy(fixture().toPath(), out);
+        }
+
+        final DicomObjectI dicomObject =
+                DicomObjectFactory.newInstance(gzipped, DicomInputStream.IncludeBulkData.URI);
+        try {
+            final File spooled = ((BulkData) dicomObject.getAttributes().getValue(Tag.PixelData)).getFile();
+            assertNotEquals("bulk data should spool into a directory of ours, not straight into the "
+                            + "shared temp directory, whose permissions are not ours to rely on",
+                            new File(System.getProperty("java.io.tmpdir")).getCanonicalFile(),
+                            spooled.getParentFile().getCanonicalFile());
+            assertEquals("the directory dcm4che spooled into should be readable by nobody else: " + spooled,
+                         PosixFilePermissions.fromString("rwx------"),
+                         Files.getPosixFilePermissions(spooled.getParentFile().toPath()));
+        } finally {
+            dicomObject.releaseScratchFiles();
         }
     }
 

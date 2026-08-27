@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,6 +123,9 @@ public class DicomObjectFactory {
      */
     public static class MizerDicomObject implements DicomObjectI {
 
+        /** @see #spoolDirectory() */
+        private static File spoolDirectory;
+
         private Attributes dataset;
         private final DeleteDicomObjectVisitor deleteVisitor = new DeleteDicomObjectVisitor();
 
@@ -181,7 +185,9 @@ public class DicomObjectFactory {
             try (final InputStream fin = getInputStream(file);
                  final DicomInputStream dis = new DicomInputStream(fin)) {
                 dis.setIncludeBulkData(includeBulkData);
-                if (!gzipped) {
+                if (gzipped) {
+                    dis.setBulkDataDirectory(spoolDirectory());
+                } else {
                     dis.setURI(file.toURI().toString());
                 }
                 try {
@@ -208,6 +214,29 @@ public class DicomObjectFactory {
             } catch (IOException e) {
                 throw new MizerException(e);
             }
+        }
+
+        /**
+         * A directory for dcm4che's bulk data spool files that only this user can read.
+         * <p>
+         * Those files hold pixel data, and dcm4che creates them through the legacy
+         * {@code File.createTempFile}, which takes its mode from the umask and typically leaves them
+         * rw-r--r-- where {@code Files.createTempFile} would give rw-------. Their own mode is not
+         * ours to set, so they go somewhere nobody else can list or open: createTempDirectory gives
+         * owner-only permissions and an unguessable name, which also rules out anyone planting a
+         * directory at a predictable path first. One per JVM, since it holds nothing once the files
+         * are released.
+         * <p>
+         * It does not follow {@code dicom.pixeledit.scratch.dir}: that property belongs to
+         * dicom-edit6, which sits above this, and a spool directory an operator can size separately
+         * would want a setting of its own.
+         */
+        private static synchronized File spoolDirectory() throws IOException {
+            if (spoolDirectory == null || !spoolDirectory.isDirectory()) {
+                spoolDirectory = Files.createTempDirectory("mizer-bulkdata").toFile();
+                spoolDirectory.deleteOnExit();
+            }
+            return spoolDirectory;
         }
 
         public MizerDicomObject(File file, int stopTag) throws MizerException {

@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * A {@link org.nrg.dicom.dicomedit.pixels.PixelEditHandler} that redacts a solid rectangle without
@@ -158,11 +160,16 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
         if (configured == null) {
             return Files.createTempFile("pixeledit", ".pixels").toFile();
         }
-        final File directory = new File(configured);
-        if (!directory.isDirectory() && !directory.mkdirs()) {
-            throw new IOException("Pixel edit scratch directory " + directory + " does not exist and cannot be created");
+        final Path directory = Paths.get(configured);
+        try {
+            // createDirectories rather than mkdirs: it succeeds when the directory is already there,
+            // so two imports creating it at the same moment cannot race one of them into a failure.
+            Files.createDirectories(directory);
+        } catch (IOException e) {
+            throw new IOException("Pixel edit scratch directory " + directory + ", from "
+                                  + SCRATCH_DIR_PROPERTY + ", does not exist and cannot be created", e);
         }
-        return Files.createTempFile(directory.toPath(), "pixeledit", ".pixels").toFile();
+        return Files.createTempFile(directory, "pixeledit", ".pixels").toFile();
     }
 
     /**

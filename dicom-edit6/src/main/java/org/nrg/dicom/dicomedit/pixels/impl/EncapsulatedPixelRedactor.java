@@ -5,18 +5,17 @@ import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
-import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.imageio.codec.Transcoder;
 import org.dcm4che3.imageio.codec.TransferSyntaxType;
 import org.dcm4che3.io.BulkDataDescriptor;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
+import org.nrg.dicom.dicomedit.pixels.ImageWriters;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageWriter;
 import java.awt.Color;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
@@ -119,7 +118,7 @@ final class EncapsulatedPixelRedactor {
      */
     private static boolean reencode(final Attributes decodedDs, final Attributes ds, final DicomObjectI dobj,
                                     final String targetTs, final List<File> temporary) {
-        if (!isWriterAvailable(targetTs)) {
+        if (!ImageWriters.isAvailable(targetTs)) {
             logger.warn("No image writer is available for transfer syntax {}; the redacted object will be "
                         + "stored uncompressed as Explicit VR Little Endian.", targetTs);
             return false;
@@ -237,31 +236,6 @@ final class EncapsulatedPixelRedactor {
                 return "ISO_13818_2";
             default:
                 return "ISO_10918_1";
-        }
-    }
-
-    private static boolean isWriterAvailable(final String tsuid) {
-        try {
-            final ImageWriterFactory.ImageWriterParam param = ImageWriterFactory.getImageWriterParam(tsuid);
-            if (param == null) {
-                return false;
-            }
-            final ImageWriter writer = ImageWriterFactory.getImageWriter(param);
-            writer.dispose();
-            return true;
-        } catch (Exception | LinkageError e) {
-            // LinkageError too: an encoder backed by a native library that is not installed fails
-            // here as an Error, and the answer to "is a writer available" is still no.
-            //
-            // Logged rather than discarded. The caller warns that the object will be stored
-            // uncompressed, which is the outcome; this is the reason, and the two differ in what
-            // they ask an operator to do. A NoClassDefFoundError here means a codec jar is missing
-            // from the deployment, not that the transfer syntax has no encoder -- and the object
-            // comes back in a different transfer syntax either way, so the distinction is worth
-            // one line. A syntax with no writer at all, RLE being the standing example, returns
-            // above on a null param and never reaches this.
-            logger.debug("No image writer could be constructed for transfer syntax {}", tsuid, e);
-            return false;
         }
     }
 

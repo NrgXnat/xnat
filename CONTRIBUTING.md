@@ -182,6 +182,26 @@ See [README — Key Files](./README.md#key-files) for the role of each root-leve
 ./gradlew :framework:test --tests "org.nrg.framework.SomeTest.testMethod"
 ```
 
+### REST integration tests
+
+The Gradle tests above are unit tests. End-to-end coverage runs against a live XNAT server over
+the REST API and lives in a separate repository,
+[NrgXnat/xnat-rest-tests](https://github.com/NrgXnat/xnat-rest-tests) — a Maven suite covering
+core XNAT and several common plugins:
+
+```bash
+git clone https://github.com/NrgXnat/xnat-rest-tests.git
+cd xnat-rest-tests
+mvn clean test -Dxnat.config=mycustom.properties -Dxnat.baseurl=<test-server-url>
+```
+
+Properties may be set on the command line or in a file under `src/test/resources/config`
+(`local.properties` by default, overridden with `-Dxnat.config`). Command-line values take
+precedence. See that repository's README for the full list.
+
+If a change here is observable through the REST API, add or update coverage there in a companion
+pull request and link the two.
+
 ## Branch Strategy
 
 | Branch | Purpose | Base |

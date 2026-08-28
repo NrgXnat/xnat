@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -197,40 +198,51 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
             return markBroken(sessionId, scanId);
         }
         final CatDcmcatalogBean catalog = (CatDcmcatalogBean) catalogBean;
-        // Sort the list of files by instance number. The catalog is not presorted.
-        List<String> files;
 
-        // If the DICOM objects have no Instance Number, the next statement will throw a Null Pointer exception.
-        // If that happens, then sort by UID
-        // It would be better to sort by spatial position, but that is not in the catalog.
-        try {
-            files = CatalogUtils.getEntriesByFilter(catalog, CatDcmentryBean.class::isInstance)
-                                               .stream()
-                                               .map(CatDcmentryBean.class::cast)
-                                               .sorted(Comparator.comparing(CatDcmentryBean::getInstancenumber))
-                                               .map(e -> (new File(dicomRootPath.toString(), e.getUri())).getAbsolutePath())
-                                               .collect(Collectors.toList());
-        } catch (java.lang.NullPointerException nullPointerException) {
-            files = CatalogUtils.getEntriesByFilter(catalog, CatDcmentryBean.class::isInstance)
-                                               .stream()
-                                               .map(CatDcmentryBean.class::cast)
-                                               .sorted(Comparator.comparing(CatDcmentryBean::getUid))
-                                               .map(e -> (new File(dicomRootPath.toString(), e.getUri())).getAbsolutePath())
-                                               .collect(Collectors.toList());
-        }
-
-        if (files.isEmpty()) {
+        final List<CatDcmentryBean> entries = CatalogUtils.getEntriesByFilter(catalog, CatDcmentryBean.class::isInstance)
+                                                          .stream()
+                                                          .map(CatDcmentryBean.class::cast)
+                                                          .collect(Collectors.toList());
+        if (entries.isEmpty()) {
             log.info("The DICOM catalog for scan {} in session {} lists no files, so there is nothing to render", scanId, sessionId);
             return markBroken(sessionId, scanId);
         }
+
+        final Function<CatDcmentryBean, String> toPath =
+                entry -> new File(dicomRootPath.toString(), entry.getUri()).getAbsolutePath();
+
+        // The secondary catalog records neither an instance number nor a frame count -- CatalogBuilder skips
+        // both in the branch that builds it -- so read whatever is missing off the objects, in one pass.
+        final boolean orderMissing = entries.stream().anyMatch(entry -> entry.getInstancenumber() == null);
+        final boolean countMissing = catalog.getDimensions_z() == null;
+        final Map<String, FrameCounter.ObjectHeader> headers = new HashMap<>();
+        if (orderMissing || countMissing) {
+            for (final CatDcmentryBean entry : entries) {
+                final String path = toPath.apply(entry);
+                try {
+                    headers.put(path, FrameCounter.headerOf(new File(path)));
+                } catch (MizerException e) {
+                    // Fatal for a frame count, which cannot silently omit part of the scan. For ordering it
+                    // is not: this object simply sorts last rather than taking the whole series with it.
+                    log.warn("Unable to read the header of {}", path, e);
+                    if (countMissing) {
+                        log.info("The DICOM catalog for scan {} in session {} has no frame count and the frames could not be counted from the objects either, so no snapshot can be generated", scanId, sessionId);
+                        return markBroken(sessionId, scanId);
+                    }
+                }
+            }
+        }
+
+        entries.sort(bySeriesOrder(toPath, headers));
+        final List<String> files = entries.stream().map(toPath).collect(Collectors.toList());
 
         Integer nSlices = catalog.getDimensions_z();
         if (nSlices == null) {
             // Only the primary catalog carries a frame count: CatalogBuilder sets dimensions_z inside
             // the branch that builds it, and a scan whose DICOM landed in the secondary catalog gets
             // one without. Rather than refuse to render, count the frames the same way the builder
-            // would have, by reading them back off the objects themselves.
-            nSlices = countFrames(files);
+            // would have, from the headers read above.
+            nSlices = countFrames(headers.values());
             if (nSlices == null) {
                 log.info("The DICOM catalog for scan {} in session {} has no frame count and the frames could not be counted from the objects either, so no snapshot can be generated", scanId, sessionId);
                 return markBroken(sessionId, scanId);
@@ -252,17 +264,62 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
      *         be read -- either way there is nothing to render from.
      */
     static Integer countFrames(final List<String> files) {
-        int total = 0;
+        final List<FrameCounter.ObjectHeader> headers = new ArrayList<>();
         for (final String path : files) {
             try {
-                total += FrameCounter.framesIn(new File(path));
+                headers.add(FrameCounter.headerOf(new File(path)));
             } catch (MizerException e) {
                 log.warn("Unable to read a frame count from {}", path, e);
                 return null;
             }
         }
+        return countFrames(headers);
+    }
+
+    /**
+     * Total montage slices across headers already read.
+     *
+     * @return the slice count, or null if the scan holds nothing renderable.
+     */
+    static Integer countFrames(final Collection<FrameCounter.ObjectHeader> headers) {
+        int total = 0;
+        for (final FrameCounter.ObjectHeader header : headers) {
+            total += header.frames();
+        }
         // Nothing renderable, so refuse rather than hand back a count the montage cannot use.
         return total > 0 ? total : null;
+    }
+
+    /**
+     * Series order: by Instance Number, then by SOP Instance UID.
+     * <p>
+     * The catalog's instance number is used when it has one and the object's own is read when it does not.
+     * An object with neither sorts last rather than throwing, which is what the previous
+     * {@code Comparator.comparing(CatDcmentryBean::getInstancenumber)} did -- it raised a
+     * NullPointerException on the first entry without one, and the catch discarded the whole sort in favour
+     * of UID order for every file, which bears no relation to acquisition order.
+     * <p>
+     * UID breaks ties rather than ordering anything meaningfully: two objects can share an instance number,
+     * and a montage that reshuffles between runs is worse than one in an arbitrary but stable order. Sorting
+     * by spatial position would be better still, and is now as available as the instance number, but that is
+     * a larger change than repairing the order.
+     */
+    private static Comparator<CatDcmentryBean> bySeriesOrder(final Function<CatDcmentryBean, String> toPath,
+                                                             final Map<String, FrameCounter.ObjectHeader> headers) {
+        return Comparator.comparing((final CatDcmentryBean entry) -> instanceNumberOf(entry, toPath, headers),
+                                    Comparator.nullsLast(Comparator.naturalOrder()))
+                         .thenComparing(CatDcmentryBean::getUid,
+                                        Comparator.nullsLast(Comparator.naturalOrder()));
+    }
+
+    private static Integer instanceNumberOf(final CatDcmentryBean entry,
+                                            final Function<CatDcmentryBean, String> toPath,
+                                            final Map<String, FrameCounter.ObjectHeader> headers) {
+        if (entry.getInstancenumber() != null) {
+            return entry.getInstancenumber();
+        }
+        final FrameCounter.ObjectHeader header = headers.get(toPath.apply(entry));
+        return header == null ? null : header.instanceNumber();
     }
 
     private static String getKey(final String sessionId, final String scanId) {

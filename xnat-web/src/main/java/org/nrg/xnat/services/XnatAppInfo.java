@@ -145,7 +145,7 @@ public class XnatAppInfo {
                 _properties.put(PROPERTY_NODE_ID, nodeId);
 
                 _versionDisplay = NON_RELEASE_VERSION_REGEX.matcher(rawVersion).matches()
-                                  ? rawVersion + "-" + getCommit() + "-" + getCommitHash() + (isDirty() ? ".dirty" : "") + " (build " + getBuildNumber() + " on " + getBuildDate() + ")"
+                                  ? rawVersion + "-" + getCommitHash() + (isDirty() ? ".dirty" : "") + " (build " + getBuildNumber() + " on " + getBuildDate() + ")"
                                   : rawVersion;
             } else {
                 log.warn("Attempted to load /META-INF/MANIFEST.MF but couldn't find it, all version information is unknown.");

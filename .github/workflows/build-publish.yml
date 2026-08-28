@@ -1,0 +1,77 @@
+name: Build and Publish
+
+# Thin caller around the shared reusable workflow in
+# NrgXnat/xnat-ci-workflows. All build/publish orchestration lives there;
+# this file only defines our triggers and the project-specific inputs
+# (gradle layout, image name, Dockerfile expectations, etc.).
+
+on:
+  push:
+    branches:
+      - main
+      - master         # transitional; remove after master is fully retired
+      - develop
+      - 'releases/*'   # RC / release branches, e.g. releases/1.10.1-rc
+  # Build and test every PR against these branches, so a break is caught before
+  # it lands rather than on the post-merge push. Runs the same `./gradlew build`
+  # the push builds run, so a green PR predicts a green develop. Nothing is
+  # published from a PR: both publish gates below require event_name == 'push'.
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+      - 'releases/*'
+  workflow_dispatch:
+    inputs:
+      publish_jfrog:
+        description: 'Publish all modules to JFrog Artifactory (nrgxnat)'
+        type: boolean
+        default: false
+      publish_ghcr:
+        description: 'Build and push Docker image to GHCR (ghcr.io)'
+        type: boolean
+        default: false
+
+# packages: write is required for the called workflow's GHCR push step.
+permissions:
+  contents: read
+  packages: write
+
+# Supersede a PR's in-flight run when it's pushed to again, so stacked commits
+# don't queue up whole ~12-minute builds. Push runs are never cancelled: they
+# publish to JFrog and GHCR and must be allowed to finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-publish:
+    uses: NrgXnat/xnat-ci-workflows/.github/workflows/gradle-build-publish.yml@v1
+    with:
+      # ──── Artifact ────
+      artifact-glob: 'xnat-web/build/libs/*.war'
+      artifact-name: 'xnat-war'
+
+      # ──── JFrog ────
+      # On any push: publish. On dispatch: only when publish_jfrog ticked. Never on a PR.
+      # The `== true` matters: on a pull_request event there is no inputs context, and a
+      # bare `inputs.publish_jfrog` would make the expression evaluate to null rather than
+      # to a boolean these typed inputs accept.
+      publish-jfrog: ${{ github.event_name == 'push' || inputs.publish_jfrog == true }}
+
+      # ──── GHCR ────
+      # Publishes to ghcr.io/nrgxnat/xnat (github.com/NrgXnat/xnat/pkgs/container/xnat).
+      # (The old 'xnat-web' package is linked to the legacy NrgXnat/xnat-web repo)
+      publish-ghcr: ${{ github.event_name == 'push' || inputs.publish_ghcr == true }}
+      image-name: 'xnat'
+      dockerfile-path: './Dockerfile'
+      docker-context-filename: 'xnat.war'
+      # No build-time logback surgery: the image ships the stock WAR (byte-identical to
+      # the JFrog artifact), and console logging is opt-in at runtime via XNAT_LOG_CONSOLE
+      # (XNAT-8782). Empty = the reusable workflow skips the rewrite step.
+      logback-path-in-war: ''
+
+    # secrets: inherit passes XNAT_ARTIFACTORY_USER/TOKEN (org-level) and
+    # the auto-injected GITHUB_TOKEN through to the reusable workflow.
+    secrets: inherit

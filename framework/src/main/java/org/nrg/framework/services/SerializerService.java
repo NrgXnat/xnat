@@ -26,6 +26,7 @@ import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
@@ -63,10 +64,18 @@ public class SerializerService {
 
         _documentBuilder = _documentBuilderFactory.newDocumentBuilder();
 
+        // This factory can't come from SerializerConfig like the others, because validating parsers are configured
+        // differently, but it still needs the same external entity restrictions those beans apply.
         _validatingSaxParserFactory = SAXParserFactory.newInstance();
         _validatingSaxParserFactory.setNamespaceAware(true);
         _validatingSaxParserFactory.setValidating(true);
         _validatingSaxParserFactory.setFeature("http://apache.org/xml/features/validation/schema", true);
+        _validatingSaxParserFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        _validatingSaxParserFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        _validatingSaxParserFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        _validatingSaxParserFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        _validatingSaxParserFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        _validatingSaxParserFactory.setXIncludeAware(false);
     }
 
     /**
@@ -347,6 +356,10 @@ public class SerializerService {
 
     public ValidationHandler validate(final InputSource inputSource, final String schemaLocations) throws Exception {
         final SAXParser parser = _validatingSaxParserFactory.newSAXParser();
+        parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        // Secure processing blocks external schema access outright, but schemaLocations arrives as local filesystem
+        // paths, so validation needs those protocols left open.
+        parser.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ALLOWED_SCHEMA_PROTOCOLS);
         if (StringUtils.isNotBlank(schemaLocations)) {
             parser.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation", schemaLocations);
         }
@@ -355,6 +368,7 @@ public class SerializerService {
         return validator;
     }
 
+    private static final String     ALLOWED_SCHEMA_PROTOCOLS         = "file,jar:file";
     private static final Properties DEFAULT_XML_TRANSFORM_PROPERTIES = ImmutableProperties.builder().property(OutputKeys.INDENT, "yes").property("{http://xml.apache.org/xslt}indent-amount", "4").build();
 
     private final ObjectMapper           _objectMapper;

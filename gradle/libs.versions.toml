@@ -12,6 +12,8 @@ aspectj = "1.8.10"
 assertj = "3.26.3"
 auto-value = "1.7.4"
 avalon = "4.3"
+aws-jdbc-wrapper = "4.3.0"
+awssdk = "2.48.1"
 batch-launch = "0.4.0"
 bouncycastle = "1.78.1"
 cargo = "1.6.5"
@@ -44,7 +46,7 @@ datasets = "1.0.0"
 datasource-proxy = "1.6"
 dcm4che = "2.0.29"
 dcm4che5 = "5.33.1"
-dicom-edit6 = "6.9.0"
+dicom-edit6 = "6.9.1"
 dom4j = "2.1.4"
 dqr = "1.0.0"
 easymock = "1.2_Java1.3"
@@ -54,7 +56,7 @@ ehcache3 = "3.10.8"
 fastmd5 = "2.7.1"
 fest-swing = "1.2.1"
 findbugs-jsr305 = "3.0.2"
-graaljs = "23.1.0"
+graaljs = "25.0.3"
 fop = "0.20.5"
 glassfish-jakarta-el = "4.0.2"
 glassfish-javax-el = "3.0.1-b12"
@@ -193,6 +195,11 @@ aspectj-rt = { group = "org.aspectj", name = "aspectjrt", version.ref = "aspectj
 aspectj-weaver = { group = "org.aspectj", name = "aspectjweaver", version.ref = "aspectj" }
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 avalon-framework-avalon-framework-impl = { group = "avalon-framework", name = "avalon-framework-impl", version.ref = "avalon" }
+aws-jdbc-wrapper = { group = "software.amazon.jdbc", name = "aws-advanced-jdbc-wrapper", version.ref = "aws-jdbc-wrapper" }
+awssdk-bom = { group = "software.amazon.awssdk", name = "bom", version.ref = "awssdk" }
+awssdk-rds = { group = "software.amazon.awssdk", name = "rds" }
+awssdk-sts = { group = "software.amazon.awssdk", name = "sts" }
+awssdk-url-connection-client = { group = "software.amazon.awssdk", name = "url-connection-client" }
 bitwalker-useragentutils = { group = "eu.bitwalker", name = "UserAgentUtils", version.ref = "user-agent-utils" }
 # SKIP: bmuschko-gradle-cargo-plugin = { group = "com.bmuschko", name = "gradle-cargo-plugin" } # unresolved version: ${gradle-cargo-plugin.version}
 # SKIP: bmuschko-gradle-tomcat-plugin = { group = "com.bmuschko", name = "gradle-tomcat-plugin" } # unresolved version: ${gradle-tomcat-plugin.version}
@@ -258,7 +265,7 @@ ehcache-ehcache = { group = "org.ehcache", name = "ehcache", version.ref = "ehca
 el-javax-el-api = { group = "javax.el", name = "javax.el-api", version.ref = "javax-el" }
 fop-fop = { group = "fop", name = "fop", version.ref = "fop" }
 getopt-java-getopt = { group = "gnu.getopt", name = "java-getopt", version.ref = "java-getopt" }
-graaljs-js-community = { group = "org.graalvm.polyglot", name = "js-community", version.ref = "graaljs" }
+graaljs-js = { group = "org.graalvm.polyglot", name = "js", version.ref = "graaljs" }
 graaljs-js-scriptengine = { group = "org.graalvm.js", name = "js-scriptengine", version.ref = "graaljs" }
 graaljs-polyglot = { group = "org.graalvm.polyglot", name = "polyglot", version.ref = "graaljs" }
 # SKIP: gitversion-gradle-git-version = { group = "com.palantir.gradle.gitversion", name = "gradle-git-version" } # unresolved version: ${gradle-git-version}

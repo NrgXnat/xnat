@@ -15,6 +15,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.collections.DisplayFieldCollection;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.om.base.BaseXdatStoredSearch;
@@ -64,6 +65,27 @@ public class XdatStoredSearch extends BaseXdatStoredSearch {
         ArrayList al = this.getSearchField();
         Collections.sort(al,XdatSearchField.SequenceComparator);
         return al;
+    }
+
+    /**
+     * Strip display fields whose ID ends with {@code SCAN_COUNT_AGG} (e.g. the
+     * xnat_imageSessionData "Scans" column backed by a view that aggregates
+     * xnat_imagescandata across every accessible session) when the
+     * {@code removeScanAggregateFields} site preference is set. Provides an
+     * escape hatch for instances where that per-search aggregate cost outweighs
+     * the UI value of seeing scan-type counts inline in search results.
+     */
+    public void removeScanAggregateFieldsIfConfigured() {
+        if (!XDAT.getBoolSiteConfigurationProperty("removeScanAggregateFields", Boolean.FALSE)) {
+            return;
+        }
+        final ArrayList<XdatSearchField> fields = getSearchField();
+        for (int i = 0; i < fields.size(); i++) {
+            if (StringUtils.endsWith(fields.get(i).getFieldId(), "SCAN_COUNT_AGG")) {
+                removeSearchField(i);
+                return;
+            }
+        }
     }
 
 

@@ -9,7 +9,6 @@
 
 package org.nrg.dicom.mizer.objects;
 
-import org.dcm4che2.data.DicomObject;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.SpecificCharacterSet;
 import org.dcm4che3.data.VR;
@@ -30,7 +29,7 @@ import java.util.Optional;
  * <p> Interface for manipulating DICOM Objects. </p>
  *
  * <p> These are the methods DicomEdit uses to manipulate DICOM Objects. It provides a facade behind which specific
- * versions of Dicom libraries can be hidden, e.g. dcm4che2. This separation facilitates the migration to other libs. </p>
+ * versions of Dicom libraries can be hidden. This separation facilitates the migration to other libs. </p>
  *
  * <p> {@link TagPath} is the primary object used to address tags within DICOM objects. {@link TagPath} can
  * contain wild-card characters and/or private-creator IDs so TagPaths don't necessarily address unique elements. It is up to
@@ -601,13 +600,6 @@ public interface DicomObjectI {
      * @param printStream
      */
     void dump(PrintStream printStream);
-
-    /**
-     * poke a hole for DicomEdit v4.
-     *
-     * @return Dcm4che2 instance of a Dicom Object.
-     */
-    DicomObject getDcm4che2Object();
 
     Attributes getAttributes();
 

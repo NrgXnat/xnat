@@ -9,7 +9,6 @@
 
 package org.nrg.xapi.rest.settings;
 
-import com.google.common.collect.ImmutableSet;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -20,9 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.config.services.ConfigService;
 import org.nrg.framework.annotations.XapiRestController;
-import org.nrg.framework.constants.Scope;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xapi.authorization.SiteConfigPreferenceXapiAuthorization;
 import org.nrg.xapi.exceptions.DataFormatException;
@@ -37,6 +34,7 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.merge.AnonUtils;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.nrg.xnat.utils.XnatHttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,19 +44,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xnat.helpers.merge.AnonUtils.ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT;
+import static org.nrg.xnat.helpers.merge.AnonUtils.SITEWIDE_ANONYMIZATION_SCRIPT;
 import static org.nrg.xdat.security.helpers.AccessLevel.Authorizer;
 import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -80,13 +75,13 @@ public class SiteConfigApi extends AbstractXapiRestController {
             final XnatAppInfo appInfo,
             final SiteConfigAccess access,
             final NamedParameterJdbcTemplate template,
-            final ConfigService configService) {
+            final AnonUtils anonUtils) {
         super(userManagementService, roleHolder);
         _preferences = preferences;
         _appInfo = appInfo;
         _access = access;
         _template = template;
-        _configService = configService;
+        _anonUtils = anonUtils;
     }
 
     @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -122,34 +117,18 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."),
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(consumes = {APPLICATION_FORM_URLENCODED_VALUE, APPLICATION_JSON_VALUE}, method = POST, restrictTo = Admin)
-    public void setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) throws DataFormatException {
+    public void setSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, Object> properties) throws DataFormatException, InitializationException {
         // Is this call initializing the system?
         final boolean isInitialized  = _appInfo.isInitialized();
         final boolean isInitializing = !isInitialized && properties.containsKey("initialized") && getInitializedValue(properties.get("initialized"));
 
         validateReCaptcha(properties);
-        // First try to handle any submitted preferences that should be handled as a group.
-        final List<? extends Set<String>> includedPrefsGroups = findPrefsGroups(properties.keySet());
-        if (!includedPrefsGroups.isEmpty()) {
-            final Set<String> referenced = new HashSet<>();
-            for (final Set<String> groupPreferences : includedPrefsGroups) {
-                referenced.addAll(groupPreferences);
-                final Map<String, String> group = new HashMap<>();
-                for (final String groupPreference : groupPreferences) {
-                    group.put(groupPreference, properties.get(groupPreference).toString());
-                }
-                try {
-                    _preferences.setBatch(group);
-                } catch (InvalidPreferenceName invalidPreferenceName) {
-                    log.error("Got an invalid preference name error when setting the preferences: {}, which is weird because the site configuration is not strict", groupPreferences, invalidPreferenceName);
-                }
-            }
-            // Remove all referenced properties. The assumption is that settings handled in prefs groups need to be
-            // handled in those groups and shouldn't be handled individually.
-            for (final String property : referenced) {
-                properties.remove(property);
-            }
-        }
+
+        // The site-wide anonymization settings are written through the anonymization service so that the
+        // config service copy — the one actually applied to incoming DICOM — is updated synchronously with
+        // the session user, with the preferences mirrored as part of the same call. The keys are removed here
+        // so the generic loop below doesn't set the preferences a second time.
+        setAnonymizationProperties(properties);
 
         if (!properties.isEmpty()) {
             for (final String name : properties.keySet()) {
@@ -163,7 +142,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
                     }
                     final Object value = properties.get(name);
                     if (value instanceof List<?> list) {
-                        //noinspection unchecked,rawtypes
                         _preferences.setListValue(name, list);
                     } else if (value instanceof Map<?,?> map) {
                         //noinspection unchecked,rawtypes
@@ -175,7 +153,7 @@ public class SiteConfigApi extends AbstractXapiRestController {
                     }
                     log.info("Set property {} to value: {}", name, value);
                 } catch (InvalidPreferenceName invalidPreferenceName) {
-                    log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
+                    log.error("Got an invalid preference name error for the preference: {}, which is weird because the site configuration is not strict", name);
                 }
             }
 
@@ -184,6 +162,27 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 // Now make the initialized setting true. This will kick off the initialized event handler.
                 _preferences.setInitialized(true);
             }
+        }
+    }
+
+    private void setAnonymizationProperties(final Map<String, Object> properties) throws DataFormatException, InitializationException {
+        if (!properties.containsKey(SITEWIDE_ANONYMIZATION_SCRIPT) && !properties.containsKey(ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT)) {
+            return;
+        }
+        // The keys are removed unconditionally so the generic loop below never sees them; JSON null values
+        // are treated the same as omitted keys — "leave unchanged" — so clients that serialize absent
+        // fields as explicit nulls can't accidentally clear the script or disable anonymization.
+        final Object  scriptValue = properties.remove(SITEWIDE_ANONYMIZATION_SCRIPT);
+        final String  script      = scriptValue != null ? scriptValue.toString() : null;
+        final Boolean enable      = AnonUtils.parseEnableFlag(properties.remove(ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT));
+        if (script == null && enable == null) {
+            return;
+        }
+        try {
+            _anonUtils.setSiteWideSettings(getSessionUser().getUsername(), script, enable);
+        } catch (ConfigServiceException e) {
+            log.error("The user {} tried to set the site-wide anonymization settings, but an error occurred", getSessionUser().getUsername(), e);
+            throw new InitializationException("An error occurred storing the site-wide anonymization settings");
         }
     }
 
@@ -232,11 +231,23 @@ public class SiteConfigApi extends AbstractXapiRestController {
                    @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "{property}", consumes = {TEXT_PLAIN_VALUE, APPLICATION_JSON_VALUE}, produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
     public void setSiteConfigProperty(@ApiParam(value = "The property to be set.", required = true) @PathVariable("property") final String property,
-                                      @ApiParam("The value to be set for the property.") @RequestBody final String value) throws InitializationException {
+                                      @ApiParam("The value to be set for the property.") @RequestBody final String value) throws DataFormatException, InitializationException {
         log.info("User '{}' set the value of the site configuration property {} to: {}", getSessionUser().getUsername(), property, value);
 
         if (StringUtils.equals("initialized", property) && StringUtils.equals("true", value)) {
             _preferences.setInitialized(true);
+        } else if (StringUtils.equalsAny(property, SITEWIDE_ANONYMIZATION_SCRIPT, ENABLE_SITEWIDE_ANONYMIZATION_SCRIPT)) {
+            // Route through the anonymization service: see setAnonymizationProperties() for the rationale.
+            try {
+                if (StringUtils.equals(property, SITEWIDE_ANONYMIZATION_SCRIPT)) {
+                    _anonUtils.setSiteWideScript(getSessionUser().getUsername(), value);
+                } else {
+                    _anonUtils.setSiteWideSettings(getSessionUser().getUsername(), null, AnonUtils.parseEnableFlag(value));
+                }
+            } catch (ConfigServiceException e) {
+                log.error("The user {} tried to set the {} property, but an error occurred", getSessionUser().getUsername(), property, e);
+                throw new InitializationException("An error occurred storing the site-wide anonymization settings");
+            }
         } else {
             try {
                 _preferences.set(value, property);
@@ -244,31 +255,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
                 throw new InitializationException("Got an invalid preference name error for the preference: " + property + ", which is weird because the site configuration is not strict");
             }
         }
-    }
-
-    @ApiOperation(value = "Disable orphaned series import filters for deleted projects.", notes = "Disable orphaned series import filters for deleted projects.")
-    @ApiResponses({@ApiResponse(code = 200, message = "Orphaned series import filters successfully disabled"),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 403, message = "Not authorized to modify site configuration properties."),
-            @ApiResponse(code = 500, message = "Unexpected error")})
-    @XapiRequestMapping(value="orphaned-projects/disable", produces = APPLICATION_JSON_VALUE, method = POST, restrictTo = Admin)
-    public void disableOrphanedSif(@ApiParam(value = "The deleted project IDs (comma-separated).", required = true) @RequestBody final String orphanedProjectIds) throws ConfigServiceException {
-        final UserI user = getSessionUser();
-        final String[] orphanedIds = Arrays.stream(orphanedProjectIds.split(","))
-                .map(String::trim)
-                .filter(StringUtils::isNotBlank)
-                .toArray(String[]::new);
-
-        for (final String projectId : orphanedIds) {
-            _configService.disable(user.getUsername(), "Deleted project", "seriesImportFilter", "config", Scope.Project, projectId);
-        }
-
-        final String currentEnabledProjects = _preferences.getEnableProjectsSeriesImportFilter();
-        final Set<String> enabledSifs = StringUtils.isBlank(currentEnabledProjects)
-                ? new HashSet<>()
-                : new HashSet<>(Arrays.asList(currentEnabledProjects.split(",")));
-        enabledSifs.removeAll(Arrays.asList(orphanedIds));
-        _preferences.setEnableProjectsSeriesImportFilter(String.join(",", enabledSifs));
     }
 
     @ApiOperation(value = "Returns a map of application build properties.", notes = "This includes the implementation version, Git commit hash, and build number and number.", response = String.class, responseContainer = "Map")
@@ -321,18 +307,6 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return _appInfo.getFormattedUptime();
     }
 
-
-
-    private List<? extends Set<String>> findPrefsGroups(final Set<String> keySet) {
-        final List<Set<String>> includedPrefsGroups = new ArrayList<>();
-        for (final Set<String> group : PREFS_GROUPS) {
-            if (keySet.containsAll(group)) {
-                includedPrefsGroups.add(group);
-            }
-        }
-        return includedPrefsGroups;
-    }
-
     private static boolean getInitializedValue(final Object initialized) {
         if (initialized == null) {
             return false;
@@ -346,12 +320,11 @@ public class SiteConfigApi extends AbstractXapiRestController {
         return BooleanUtils.toBoolean(initialized.toString());
     }
 
-    private static final String                      EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
-    private static final List<? extends Set<String>> PREFS_GROUPS = Collections.singletonList(ImmutableSet.of("enableSitewideSeriesImportFilter", "sitewideSeriesImportFilterMode", "sitewideSeriesImportFilter"));
+    private static final String EMAIL_UPDATE = "UPDATE xdat_user SET email = :adminEmail WHERE login IN ('admin', 'guest')";
 
+    private final AnonUtils                  _anonUtils;
     private final SiteConfigPreferences      _preferences;
     private final XnatAppInfo                _appInfo;
     private final SiteConfigAccess           _access;
     private final NamedParameterJdbcTemplate _template;
-    private final ConfigService _configService;
 }

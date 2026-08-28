@@ -213,33 +213,6 @@ public class TestScriptApplicator {
         assertFalse(f2.isHidden());
     }
 
-//    @Test
-//    public void testUnify() throws Exception {
-//        final ScriptApplicator a1 = new ScriptApplicator( new PermissiveScriptResourceAuthority(), bytes(S_INIT_VAR));
-//        final ScriptApplicator a2 = new ScriptApplicator( new PermissiveScriptResourceAuthority(), bytes(S_USE_VAR));
-//        final Variable a1StudyDesc = a1.getVariable("studyDescription");
-//        final Variable a2StudyDesc = a2.getVariable("studyDescription");
-//        assertNotSame(a2StudyDesc, a1StudyDesc);
-//        assertNull(a2StudyDesc.getInitialValue());
-//        a2.unify(a1StudyDesc);
-//        assertSame(a1.getVariable("studyDescription"), a2.getVariable("studyDescription"));
-//    }
-
-//    @Test
-//    public void testUnifyNestedValues() throws Exception {
-//        final ScriptApplicator a1 = new ScriptApplicator( new PermissiveScriptResourceAuthority(), bytes(S_INIT_VAR_FROM_TAG));
-//        final ScriptApplicator a2 = new ScriptApplicator( new PermissiveScriptResourceAuthority(),  bytes(S_USE_FORMAT_FROM_VAR));
-//
-//        final org.dcm4che2.data.DicomObject do4 = loader.apply(f4);
-//        assertEquals("head^DHead", do4.getString(Tag.StudyDescription));
-//        assertEquals("head^DHead_null", a2.apply(f4).getString(Tag.StudyDescription));
-//
-//        for (final Variable v : a1.getVariables().values()) {
-//            a2.unify(v);
-//        }
-//        assertEquals("head^DHead_Sample ID", a2.apply(f4).getString(Tag.StudyDescription));
-//    }
-
     @Test
     public void testRemovePrivate() throws Exception {
         final BaseScriptApplicator a1  = BaseScriptApplicator.getInstance( bytes(S_REMOVE_PRIVATE));

@@ -23,6 +23,7 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.util.TagUtils;
+import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
@@ -36,12 +37,11 @@ import org.nrg.dicom.mizer.objects.Dcm4cheConvert;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerService;
-import org.nrg.dicomtools.filters.DicomFilterService;
-import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
@@ -69,11 +69,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.Collections;
@@ -112,17 +114,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
         _directArchive &= _directArchiveSessionService != null;
     }
 
-    private int getMaxFilterTag(final SeriesImportFilter filter) {
-        if (filter == null || !filter.isEnabled()) {
-            return 0;
-        }
-       List<Integer> tags=filter.getFilterTags();
-       if (tags.isEmpty()) {
-           return 0;
-       }
-       return tags.get(tags.size()-1);
-    }
-
     public static boolean isAutoArchive(Map<String, Object> params) {
         if (params.containsKey(RequestUtil.AA) && (RequestUtil.TRUE.equalsIgnoreCase((String) params.get(RequestUtil.AA)))) {
             return true;
@@ -139,8 +130,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final String name = _fileWriter.getName();
         final XnatProjectdata project;
         final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
-        final SeriesImportFilter siteFilter = getDicomFilterService().getSeriesImportFilter();
-        final int lastTag = Math.max(getMaxFilterTag(siteFilter), Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription))+ 1;
+        final int lastTag = Math.max(dicomObjectIdentifier.getTags().last(), Tag.SeriesDescription) + 1;
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
              final DicomInputStream dis = new ResumableDicomInputStream(bis)) {
             Attributes fmi = dis.readFileMetaInformation();
@@ -182,43 +172,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
             dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
             if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicomObject, tempSession)) {
                 return returnEmptyList();
-            }
-            dataset = dicomObject.getAttributes();
-
-            final String projectId = project != null ? project.getId() : null;
-            final SeriesImportFilter projectFilter = StringUtils.isNotBlank(projectId) ? getDicomFilterService().getSeriesImportFilter(projectId) : null;
-            final int maxProjectTag = getMaxFilterTag(projectFilter)+1;
-            if (maxProjectTag > lastTag) {
-                try {
-                    dis.readAttributes(dataset, -1, maxProjectTag+1);
-                    dis.reset();
-                } catch (IOException e) {
-                    log.error("unable to re-read DICOM data stream for project filter", e);
-                    throw new ClientException("Unable to re-read DICOM data for project-specific filtering", e);
-                }
-            }
-            if (log.isDebugEnabled()) {
-                if (siteFilter != null) {
-                    if (projectFilter != null) {
-                        log.debug("Found " + (siteFilter.isEnabled() ? "enabled" : "disabled") + " site-wide series import filter and " + (siteFilter.isEnabled() ? "enabled" : "disabled") + " series import filter for the project " + projectId);
-                    } else if (StringUtils.isNotBlank(projectId)) {
-                        log.debug("Found " + (siteFilter.isEnabled() ? "enabled" : "disabled") + " site-wide series import filter and no series import filter for the project " + projectId);
-                    } else {
-                        log.debug("Found a site-wide series import filter and no project ID was specified");
-                    }
-                } else if (projectFilter != null) {
-                    log.debug("Found no site-wide series import filter and " + (projectFilter.isEnabled() ? "enabled" : "disabled") + " series import filter for the project " + projectId);
-                }
-            }
-
-            dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
-            if (!(shouldIncludeDicomObject(siteFilter, dicomObject) && shouldIncludeDicomObject(projectFilter, dicomObject))) {
-                return returnEmptyList();
-                /* TODO: Return information to user on rejected files. Unfortunately throwing an
-                 * exception causes DicomBrowser to display a panicked error message. Some way of
-                 * returning the information that a particular file type was not accepted would be
-                 * nice, though. Possibly record the information and display on an admin page.
-                 */
             }
             dataset = dicomObject.getAttributes();
 
@@ -426,6 +379,33 @@ public class GradualDicomImporter extends ImporterHandlerA {
                             "further anonymization.", session.getProject(), session.getSubject(), session.getName());
                 }
 
+                // Apply a one-off inline anonymization script supplied with the import request (the "Anon-Script"
+                // parameter). This runs after, and in addition to, the site-wide script.
+                final String inlineAnonScript = (String) TurbineUtils.unescapeParam(_parameters.get(ANON_SCRIPT_PARAM));
+                if (StringUtils.isNotBlank(inlineAnonScript)) {
+                    try {
+                        final AnonymizationResult inlineResult = _mizer.anonymize(outputFile, session.getProject(),
+                                session.getSubject(), session.getFolderName(), false, false,
+                                new ByteArrayInputStream(inlineAnonScript.getBytes(StandardCharsets.UTF_8)));
+                        if (inlineResult instanceof AnonymizationResultReject) {
+                            FileUtils.deleteQuietly(outputFile);
+                            return returnEmptyList();
+                        } else if (inlineResult instanceof AnonymizationResultError) {
+                            // A valid script that errors on this data (e.g. an absent tag) returns an error
+                            // result: a 400, cleaned up like the site-wide path. A parse failure instead throws
+                            // MizerException, which the catch below maps to a 500 (mizer can't tell it from a real fault).
+                            final ClientException error = new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
+                                    "The supplied inline anonymization script could not be applied: " +
+                                            String.join("\n", inlineResult.getMessages()));
+                            handleAnonymizationError(isNew, session, outputFile, error, error);
+                        }
+                    } catch (ClientException e) {
+                        throw e;
+                    } catch (Throwable e) {
+                        handleAnonymizationError(isNew, session, outputFile, e);
+                    }
+                }
+
             } finally {
                 //release the file lock
                 lock.release();
@@ -457,7 +437,25 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     private void handleAnonymizationError(AtomicBoolean isNew, SessionData session,File outputFile, Throwable e) throws ServerException {
-        log.debug("Dicom anonymization failed: {}", outputFile, e);
+        // Site-wide and other system-level anonymization failures surface as a 500 caused by the underlying error.
+        handleAnonymizationError(isNew, session, outputFile, e, new ServerException(Status.SERVER_ERROR_INTERNAL, e));
+    }
+
+    /**
+     * Cleans up the artifacts of a failed ingest &mdash; the newly-created prearchive/direct-archive session if this
+     * import created it, otherwise just the written file &mdash; then throws {@code toThrow}. Shared by the
+     * site-wide/system error path (which throws a 500 {@link ServerException}) and the inline Anon-Script error path
+     * (which throws a 400 {@link ClientException}). If the cleanup itself fails, a {@link ServerException} for that
+     * failure is thrown instead of {@code toThrow}.
+     *
+     * @param isNew      Whether this import created the session row, in which case the row is deleted
+     * @param session    The session being ingested
+     * @param outputFile The file written by this import
+     * @param cause      The underlying failure, used only for logging (may be the same object as {@code toThrow})
+     * @param toThrow    The exception to throw once cleanup completes
+     */
+    private <E extends ActionException> void handleAnonymizationError(AtomicBoolean isNew, SessionData session, File outputFile, Throwable cause, E toThrow) throws E, ServerException {
+        log.debug("Dicom anonymization failed: {}", outputFile, cause);
         try {
             // if we created a row in the database table for this session
             // delete it.
@@ -467,10 +465,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 outputFile.delete();
             }
         } catch (Throwable t) {
-            log.debug("Unable to delete relevant file: " + outputFile, e);
+            log.debug("Unable to delete relevant file: " + outputFile, cause);
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, t);
         }
-        throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
+        throw toThrow;
     }
 
     private void deleteSessionFromDb(SessionData session) throws Exception {
@@ -682,32 +680,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
         }
     }
 
-    private boolean shouldIncludeDicomObject(final SeriesImportFilter filter, final DicomObjectI dicom) {
-        // If we don't have a filter or the filter is turned off, then we include the DICOM object by default (no filtering)
-        if (filter == null || !filter.isEnabled()) {
-            return true;
-        }
-        final boolean shouldInclude = filter.shouldIncludeDicomObject(dicom.getAttributes());
-        if (log.isDebugEnabled()) {
-            final String association = StringUtils.isBlank(filter.getProjectId()) ? "site" : "project " + filter.getProjectId();
-            log.debug("The series import filter for " + association + " indicated a DICOM object from series \"" +
-                    dicom.getString(Tag.SeriesDescription) + "\" " +
-                    (shouldInclude ? "should" : "shouldn't") + " be included.");
-        }
-        return shouldInclude;
-    }
-
-    private DicomFilterService getDicomFilterService() {
-        if (_filterService == null) {
-            synchronized (this) {
-                if (_filterService == null) {
-                    _filterService = XDAT.getContextService().getBean(DicomFilterService.class);
-                }
-            }
-        }
-        return _filterService;
-    }
-
     private PrearchiveCode shouldAutoArchive(final XnatProjectdata project, final Attributes o) {
         if (null == project) {
             return null;
@@ -799,7 +771,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private final String              _directArchiveOverwrite;
 
     private String     _transferSyntax;
-    private DicomFilterService _filterService;
 
     private final MizerService _mizer;
     private final ArchiveProcessorInstanceService _processorInstanceService;
@@ -816,6 +787,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     public static final String CUSTOM_PROC_PARAM = "Custom-Processing";
     public static final String DIRECT_ARCHIVE_PARAM = "Direct-Archive";
     public static final String DIRECT_ARCHIVE_OVERWRITE_PARAM = "Direct-Archive-Overwrite";
+    public static final String ANON_SCRIPT_PARAM = "Anon-Script";
 
     public final static String NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ = "AfterDicomRead";
     public final static String NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED = "AfterProjectSet";

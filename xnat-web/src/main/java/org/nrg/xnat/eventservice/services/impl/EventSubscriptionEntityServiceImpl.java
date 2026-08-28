@@ -415,6 +415,7 @@ public class EventSubscriptionEntityServiceImpl extends AbstractHibernateEntityS
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Subscription> getAllSubscriptions() {
         List<Subscription> subscriptions = new ArrayList<>();
         for (SubscriptionEntity se : super.getAll()) {

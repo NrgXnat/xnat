@@ -17,7 +17,6 @@ import java.io.IOException;
 
 /**
  * Creates a DICOMDIR, given a DICOM file on the filesystem.
- * Upgraded from dcm4che2 to dcm4che3/5.
  */
 @Slf4j
 public class DicomDir {

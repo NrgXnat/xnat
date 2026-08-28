@@ -157,7 +157,7 @@ public abstract class AbstractZipStreamingResponseBody implements StreamingRespo
      *
      * @param rootPath          The root path for resolving resources.
      * @param bufferSize        The size of the buffer to use when writing files.
-     * @param history           The file where the zip write history should recorded.
+     * @param history           The file where the zip write history should be recorded.
      * @param closeOnCompletion Indicates whether the output stream should be closed when the write operation is completed.
      */
     public AbstractZipStreamingResponseBody(final Path rootPath, final int bufferSize, final File history, final boolean closeOnCompletion) {

@@ -153,25 +153,6 @@
                 </span>
             </div>
         #end
-         #if ($turbineUtils.isSiteAdmin($user) && ($siteConfig.enableSitewideSeriesImportFilter == true || $siteConfig.enableProjectsSeriesImportFilter !=""))
-             <div id="warning_bar" style="display:none;">
-                 <span class="close"><i class="fa fa-close"></i></span>
-                 <span>
-                     Your system has a series import filter running
-                     <span class="tip_text">(<i>what does this mean?</i>)
-                        <span class="tip shadowed">
-                            This feature has been deprecated in favor of Instance File Removal in DicomEdit scripts and will be removed in XNAT 1.10.<br>
-                            #if ($siteConfig.enableSitewideSeriesImportFilter == true)
-                                <br>Site-wide Series Import Filter is enabled.
-                            #end
-                            #if ($siteConfig.enableProjectsSeriesImportFilter !="")
-                                <br>Projects:<br> $siteConfig.enableProjectsSeriesImportFilter
-                            #end
-                        </span>
-                    </span>
-                 </span>
-             </div>
-         #end
 
                     #if ($sessionCount > 1 || $sessionIpCount > 1 )
                     ##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.
@@ -342,25 +323,7 @@
 
     XNAT.app.adjustHeaderAndNavForLogoSize = function(){
 
-        var header_logo$ = jq('#header_logo');
-
-        // adjust height of header if logo is taller than 65px
-        var hdr_logo_height = header_logo$.height();
-        if (hdr_logo_height > 65) {
-            jq('.main_header').height(hdr_logo_height + 10);
-        }
-
-        ## Commented out 2016/09/02 (XNAT-4501).  I don't think we want to do this (See home page when this takes effect)
-        ##// adjust width of main nav if logo is wider than 175px
-        ##var hdr_logo_width = header_logo$.width();
-        ##if (hdr_logo_width > 175) {
-        ##    jq('#main_nav').width(932 - hdr_logo_width - 20);
-        ##}
-
-        //
-        //var recent_proj_height = jq('#min_projects_list > div').height();
-        var recent_proj_height = 67;
-        //jq('#min_projects_list, #min_expt_list').height(recent_proj_height * 5).css({'min-width':349,'overflow-y':'scroll'});
+        // remove this function's capability. CSS is better used to adjust this header.
 
     }
 

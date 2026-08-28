@@ -14,7 +14,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
 import lombok.extern.slf4j.Slf4j;
 import org.dcm4che3.data.UID;
-import org.nrg.attr.ConversionFailureException;
 import org.nrg.dcm.DicomAttributeIndex;
 import org.nrg.dcm.DicomMetadataStore;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
@@ -22,11 +21,8 @@ import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
 import org.nrg.xdat.bean.XnatPetsessiondataBean;
 import org.nrg.xdat.preferences.HandlePetMr;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,31 +78,8 @@ public final class XnatPetmrImagesessiondataBeanFactory extends XnatImagesession
                 if (separatePetMr == HandlePetMr.Pet) {
                     return new XnatPetsessiondataBean();
                 }
-                // If it's set to petmr or not set, but we've met the PET/MR criteria, then they'll get a PET/MR session bean.
-                if (separatePetMr != HandlePetMr.Separate) {
-                    return new XnatPetmrsessiondataBean();
-                }
-                // If it's set to separate, we have to check whether the MR series just contain PET attenuation data. In that case,
-                // we're going to create a PET session bean.
-                final Map<DicomAttributeIndex, String> constraints = new HashMap<>();
-                constraints.put(Modality, "MR");
-                final Map<DicomAttributeIndex, ConversionFailureException> failed = new HashMap<>();
-                try {
-                    final SetMultimap<DicomAttributeIndex, String> descriptions = store.getUniqueValuesGiven(constraints, Collections.singletonList(SeriesDescription), failed);
-                    for (final DicomAttributeIndex attribute : descriptions.keySet()) {
-                        for (final String value : descriptions.get(attribute)) {
-                            // TODO: Use modality-map series import filters here to actually determine if the MR series really belong in a PET session or in a PET/MR session.
-                            // TODO: See also line 719 in PrearcDatabase.java.
-                            if (!value.contains("MRAC")) {
-                                logger.info("Found a series description \"" + value + "\" that doesn't seem to be PET attenuation data, creating a PET/MR session.");
-                                return new XnatPetmrsessiondataBean();
-                            }
-                        }
-                    }
-                } catch (SQLException | IOException e) {
-                    logger.error("An error occurred trying to retrieve the series descriptions.", e);
-                }
-                return new XnatPetsessiondataBean();
+                // Otherwise, we've met the PET/MR criteria, so they'll get a PET/MR session bean.
+                return new XnatPetmrsessiondataBean();
             }
         }
         return null;

@@ -11,6 +11,7 @@ package org.nrg.xft.utils.zip;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.Project;
@@ -249,10 +250,19 @@ public class ZipUtils implements ZipI {
 
     @Override
     public List<File> extract(InputStream is, String destination, boolean overwrite, EventMetaI ci) throws IOException {
-        return new ArrayList<>(extractMap(is, destination, overwrite, ci).values());
+        return extract(is, destination, overwrite, ci, null);
+    }
+
+    @Override
+    public List<File> extract(InputStream is, String destination, boolean overwrite, EventMetaI ci, IOFileFilter filter) throws IOException {
+        return new ArrayList<>(extractMap(is, destination, overwrite, ci, filter).values());
     }
 
     public Map<String, File> extractMap(final InputStream is, final String destination, final boolean overwrite, final EventMetaI ci) throws IOException {
+        return extractMap(is, destination, overwrite, ci, null);
+    }
+
+    public Map<String, File> extractMap(final InputStream is, final String destination, final boolean overwrite, final EventMetaI ci, final IOFileFilter filter) throws IOException {
         final Map<String, File> extractedFiles = new HashMap<>();
 
         final File destinationFolder = new File(destination);
@@ -269,18 +279,22 @@ public class ZipUtils implements ZipI {
                 if (!entry.isDirectory()) {
                     final File f = new File(destination, name);
 
-                    if (f.exists() && !overwrite) {
-                        _duplicates.add(name);
-                    } else {
-                        if (f.exists()) {
-                            FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
-                        }
-                        f.getParentFile().mkdirs();
-                        File absolute = f.getAbsoluteFile();
-                        Path filePath = absolute.toPath();
-                        Files.copy(zis, filePath, StandardCopyOption.REPLACE_EXISTING);
+                    if (filter == null || filter.accept(f)) {
+                        if (f.exists() && !overwrite) {
+                            _duplicates.add(name);
+                        } else {
+                            if (f.exists()) {
+                                FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
+                            }
+                            f.getParentFile().mkdirs();
+                            File absolute = f.getAbsoluteFile();
+                            Path filePath = absolute.toPath();
+                            Files.copy(zis, filePath, StandardCopyOption.REPLACE_EXISTING);
 
-                        extractedFiles.put(name, absolute);
+                            extractedFiles.put(name, absolute);
+                        }
+                    } else {
+                        log.warn("File {} was rejected by the provided filter and will not be extracted.", name);
                     }
                 } else {
                     final File subfolder = new File(destination, name);

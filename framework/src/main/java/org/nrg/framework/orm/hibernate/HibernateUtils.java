@@ -11,6 +11,8 @@ package org.nrg.framework.orm.hibernate;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
 import javax.persistence.ElementCollection;
@@ -102,6 +104,33 @@ public class HibernateUtils {
                 if (elementCollection.fetch() == FetchType.EAGER) {
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Indicates whether the indicated class type has one or more collections that Envers audits. Updates to such an
+     * entity must be applied with {@code Session.merge()} rather than {@code Session.update()}: reattaching a detached
+     * instance whose collection was replaced wholesale recreates that collection without its prior state, so Envers
+     * records additions but never removals. See {@link AbstractHibernateDAO#update(BaseHibernateEntity)}.
+     *
+     * @param clazz The class type to check for audited collections.
+     * @param <E>   The type of the entity to be checked.
+     *
+     * @return Returns true if the class has at least one audited collection, false otherwise.
+     */
+    public static <E> boolean hasAuditedCollection(Class<E> clazz) {
+        final boolean auditedType = clazz.isAnnotationPresent(Audited.class);
+        for (final Method method : clazz.getMethods()) {
+            if (method.getAnnotation(ManyToMany.class) == null && method.getAnnotation(OneToMany.class) == null && method.getAnnotation(ElementCollection.class) == null) {
+                continue;
+            }
+            if (method.getAnnotation(NotAudited.class) != null) {
+                continue;
+            }
+            if (auditedType || method.getAnnotation(Audited.class) != null) {
+                return true;
             }
         }
         return false;

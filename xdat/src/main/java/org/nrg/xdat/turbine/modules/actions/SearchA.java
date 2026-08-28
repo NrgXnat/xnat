@@ -125,10 +125,11 @@ public abstract class SearchA extends SecureAction {
 				}
 
                 XdatStoredSearch xss= search.convertToStoredSearch("", queryMode);
-					StringWriter sw = new StringWriter();
-					xss.toXML(sw, false);
+                xss.removeScanAggregateFieldsIfConfigured();
+                StringWriter sw = new StringWriter();
+                xss.toXML(sw, false);
 
-					context.put("xss", StringEscapeUtils.escapeXml10(sw.toString()));
+                context.put("xss", StringEscapeUtils.escapeXml10(sw.toString()));
 			}else{
 				DisplaySearch search = TurbineUtils.getSearch(data);
 				if (search != null && hasSuperSearchVariables(data))
@@ -146,9 +147,10 @@ public abstract class SearchA extends SecureAction {
 				}
 
 				XdatStoredSearch xss= search.convertToStoredSearch("", queryMode);
+				xss.removeScanAggregateFieldsIfConfigured();
 				StringWriter sw = new StringWriter();
 				xss.toXML(sw, false);
-				
+
 				context.put("xss", StringEscapeUtils.escapeXml10(sw.toString()));
 			}
 

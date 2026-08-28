@@ -8,7 +8,7 @@ dependencies {
     implementation libs.groovy.all
     api libs.python.jython.standalone
     implementation libs.graaljs.polyglot
-    implementation libs.graaljs.js.community
+    implementation libs.graaljs.js
     implementation libs.graaljs.js.scriptengine
     implementation libs.reflections.reflections
     implementation libs.google.guava

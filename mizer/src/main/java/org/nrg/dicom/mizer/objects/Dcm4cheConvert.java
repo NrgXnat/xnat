@@ -1,86 +1,16 @@
 package org.nrg.dicom.mizer.objects;
 
-import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.io.StopTagInputHandler;
-import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
-import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
-import org.dcm4che3.io.DicomOutputStream;
-import org.dcm4che3.util.UIDUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class Dcm4cheConvert {
 
     private Dcm4cheConvert() {
 
-    }
-
-    public static DicomObject toDcm4che2DicomObject(Attributes attrs) throws Exception {
-        String sopClassUID = attrs.getString(Tag.SOPClassUID);
-        String sopInstanceUID = attrs.getString(Tag.SOPInstanceUID);
-
-        if (sopClassUID == null) {
-            attrs.setString(Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
-        }
-        if (sopInstanceUID == null) {
-            attrs.setString(Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
-        }
-
-        // Step 1: Serialize dcm4che3 Attributes into byte[]
-        if (attrs.getString(Tag.TransferSyntaxUID) == null) {
-            attrs.setString(Tag.TransferSyntaxUID, VR.UI, UID.ExplicitVRLittleEndian);
-        }
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DicomOutputStream dos = new DicomOutputStream(baos, UID.ExplicitVRLittleEndian)) {
-            SplitAttributes split = splitFmiAndDataset(attrs);
-            dos.writeDataset(split.fmi, split.onlyDataset);
-            attrs.addAll(split.fmi);
-        }
-
-        // Step 2: Read back as dcm4che2 DicomObject, Not include pixelData
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        try (org.dcm4che2.io.DicomInputStream dis = new org.dcm4che2.io.DicomInputStream(bais)) {
-            dis.setHandler(new StopTagInputHandler(Tag.PixelData));
-            return dis.readDicomObject();
-        }
-    }
-
-    public static Attributes toDcm4che3Attributes(DicomObject dicomObject) throws Exception {
-        String sopClassUID = dicomObject.getString(org.dcm4che2.data.Tag.SOPClassUID);
-        String sopInstanceUID = dicomObject.getString(org.dcm4che2.data.Tag.SOPInstanceUID);
-        if (sopClassUID == null) {
-            sopClassUID = UID.SecondaryCaptureImageStorage;
-            dicomObject.putString(org.dcm4che2.data.Tag.SOPClassUID, org.dcm4che2.data.VR.UI, sopClassUID);
-        }
-        if (sopInstanceUID == null) {
-            sopInstanceUID = UIDUtils.createUID();
-            dicomObject.putString(org.dcm4che2.data.Tag.SOPInstanceUID, org.dcm4che2.data.VR.UI, sopInstanceUID);
-        }
-
-        dicomObject.initFileMetaInformation(UID.ImplicitVRLittleEndian);
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (org.dcm4che2.io.DicomOutputStream dos = new org.dcm4che2.io.DicomOutputStream(baos)) {
-            dos.writeDicomFile(dicomObject);
-        }
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        try (DicomInputStream dis = new DicomInputStream(bais)) {
-            dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
-            Attributes fmi = dis.readFileMetaInformation();
-            Attributes dataset = dis.readDataset();
-            if (fmi != null) {
-                dataset.addAll(fmi);
-            }
-            return dataset;
-        }
     }
 
     public static byte[] getNestedBytes(Attributes root, int[] tagPath) {

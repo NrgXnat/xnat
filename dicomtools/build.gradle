@@ -30,4 +30,6 @@ dependencies {
     testImplementation libs.h2database.h2
     testImplementation libs.hibernate.ehcache
     testImplementation libs.slf4j.simple
+    testImplementation libs.postgresql.postgresql
+    testImplementation libs.testcontainers.postgresql
 }

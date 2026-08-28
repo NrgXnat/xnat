@@ -48,7 +48,6 @@ public interface MizerService {
      * @param script
      * @return {@link AnonymizationResult} containing the processed Dicom and related messages
      */
-    // leak dcm4che2
     AnonymizationResult anonymize(DicomObjectI dicomFile,
                                   String project,
                                   String subject,

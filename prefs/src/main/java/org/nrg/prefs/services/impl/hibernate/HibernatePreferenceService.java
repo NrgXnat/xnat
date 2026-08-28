@@ -139,7 +139,15 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
             preference = new Preference(tool, preferenceName, scope, resolvedEntityId, value);
             getDao().create(preference);
         } else {
-            log.debug("Adding preference {} to tool {} with default value of {}, scope {} entity ID {}", preferenceName, tool.getToolId(), value, scope.code(), resolvedEntityId);
+            if (StringUtils.equals(preference.getValue(), value)) {
+                // No change: skip the write. Belt-and-braces here — this method is transactional, so the preference is
+                // still managed and Hibernate's dirty checking would suppress the no-op write anyway. The guard that
+                // suppression actually depends on is the one in DefaultNrgPreferenceService.setPreferenceValue, where
+                // the instance is detached and an update would always write (and Envers would always record).
+                log.debug("Preference {} on tool {} is unchanged ('{}'); skipping update", preferenceName, tool.getToolId(), value);
+                return;
+            }
+            log.debug("Updating preference {} on tool {} to value {}, scope {} entity ID {}", preferenceName, tool.getToolId(), value, scope.code(), resolvedEntityId);
             preference.setValue(value);
             getDao().update(preference);
         }

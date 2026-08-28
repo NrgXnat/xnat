@@ -26,10 +26,22 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
+/**
+ * @deprecated This service and its related functionality are deprecated and will be removed in a future release.
+ */
+@SuppressWarnings({"DeprecatedIsStillUsed"})
 @Service
+@Deprecated
 public class DicomFilterService {
     public static final String SERIES_IMPORT_TOOL = "seriesImportFilter";
     public static final String SERIES_IMPORT_PATH = "config";
+
+    private final ConfigService _configService;
+
+    @Autowired
+    public DicomFilterService(final ConfigService configService) {
+        _configService = configService;
+    }
 
     public SeriesImportFilter getSeriesImportFilter() {
         return getSeriesImportFilter(null);
@@ -207,7 +219,4 @@ public class DicomFilterService {
     }
 
     private static final ObjectMapper MAPPER = new ObjectMapper(new JsonFactory());
-
-    @Autowired
-    private ConfigService _configService;
 }

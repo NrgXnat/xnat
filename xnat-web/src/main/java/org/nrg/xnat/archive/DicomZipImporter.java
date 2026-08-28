@@ -30,7 +30,6 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveOperationHandlerResolver;
 import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveRebuildHandler;
-import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveSeparatePetMrHandler;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.actions.SessionImporter;
@@ -57,7 +56,6 @@ import java.util.zip.ZipInputStream;
 
 import static org.nrg.xnat.archive.GradualDicomImporter.isAutoArchive;
 import static org.nrg.xnat.archive.Operation.Rebuild;
-import static org.nrg.xnat.archive.Operation.Separate;
 
 @ImporterHandler(handler = ImporterHandlerA.DICOM_ZIP_IMPORTER)
 public final class DicomZipImporter extends ImporterHandlerA {
@@ -230,23 +228,9 @@ public final class DicomZipImporter extends ImporterHandlerA {
                 boolean buildSuccessful = handler.rebuild();
                 if (buildSuccessful) {
                     try {
-                        final boolean isSeparatePetMr = handler.needToHandleSeparablePetMrSession();
-                        if (isSeparatePetMr) {
-                            PrearchiveOperationRequest separateRequest = new PrearchiveOperationRequest(u, Separate, sessionData, new File(sessionData.getUrl()), populateAdditionalValues(params));
-                            PrearchiveSeparatePetMrHandler separatePetMrHandler = (PrearchiveSeparatePetMrHandler) resolver.getHandler(separateRequest);
-                            List<PrearchiveOperationRequest> requestList= separatePetMrHandler.separate();
-                            if (requestList != null) {
-                                for (PrearchiveOperationRequest r: requestList) {
-                                    if (isAutoArchive(params)) {
-                                        archiveSession(archiveUrls, override, appendMerge, r);
-                                    }
-                                }
-                            }
-                        } else {
-                            handler.postBuild();
-                            if (isAutoArchive(params)) {
-                                archiveSession(archiveUrls, override, appendMerge, request);
-                            }
+                        handler.postBuild();
+                        if (isAutoArchive(params)) {
+                            archiveSession(archiveUrls, override, appendMerge, request);
                         }
                     } catch (Exception e) {
                         throw new RuntimeException(e);

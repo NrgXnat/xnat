@@ -1,12 +1,12 @@
 # XNAT
 
 Single-repository source for XNAT, consolidating 25 previously separate repositories
-under a unified Gradle 9 build. The full git history of `xnat-web` is preserved on `master`.
+under a unified Gradle 9 build. The full git history of `xnat-web` is preserved on `main`.
 
 ## Directory Structure
 
 ```
-xnat-full/
+xnat/
 ├── settings.gradle           # Subproject registration (21 includes)
 ├── build.gradle              # Root build: sets group and version for all modules
 ├── gradle.properties         # Global build properties (version, parallel, cache, JVM args)
@@ -29,8 +29,8 @@ xnat-full/
 ├── framework/                # Core NRG framework: DI, ORM, services, annotations
 ├── transaction/              # Transaction management
 ├── extattr/                  # Extended attributes
-├── dicom-edit4/              # DICOM scripting DSL built on dcm4che 2.x (ANTLR 3)
-├── dicom-edit6/              # DICOM scripting DSL v6 built on dcm4che 5.x (ANTLR 4)
+├── dicom-edit4/              # DICOM scripting DSL built on ANTLR 3
+├── dicom-edit6/              # DICOM scripting DSL v6 built on ANTLR 4
 │
 │   Layer 2–3 — Services
 ├── prefs/                    # Preferences service (→ framework)
@@ -89,32 +89,41 @@ xnat-full/
 ## Quick Start
 
 ```bash
-# Build the deployable WAR
-./gradlew :xnat-web:war
-ls -lh xnat-web/build/libs/xnat-web-1.10.0.war
-
 # Full build (all modules, includes tests)
 ./gradlew build
+
+# Skip tests
+./gradlew build -x test
 
 # Build a single module
 ./gradlew :framework:build
 
-# Skip tests
-./gradlew build -x test
+# Build the deployable WAR
+./gradlew :xnat-web:war
+ls -lh xnat-web/build/libs/xnat-web-1.10.0.war
 ```
 
 ## Branches
 
 | Branch | Purpose | Version |
 |--------|---------|---------|
-| `master` | Latest release (advances via fast-forward on each release) | 1.10.0 |
+| `main` | Latest release (advances via fast-forward on each release) | 1.10.0 |
 | `releases/1.9.3.4` | 1.9.3.4 release reference | 1.9.3.4 |
+| `releases/1.9.3.5` | 1.9.3.5 release reference | 1.9.3.5 |
 | `develop` | Active development | 1.10.1-SNAPSHOT |
 
-Release tags (`1.9.3.4`, `1.10.0`) are annotated and reachable from `master`.
+Release tags `1.9.3.4` and `1.10.0` are reachable from `main`; tag `1.9.3.5` is reachable from `releases/1.9.3.5`.
 
 ## Documentation
 
 - [Contributing](./CONTRIBUTING.md) — build architecture, development workflow, branch strategy
 - [FAQ](./docs/faq.md) — dependency management, build troubleshooting, common tasks
 - [Plugin Migration Guide](./docs/plugin-migration-guide.md) — how to adapt external XNAT plugins to build against this monorepo
+
+## Miscellaneous
+
+### dcm4che 2
+
+XNAT 1.10._x_ includes a number of dcm4che 2.0.29 libraries in its dependencies. However all references to dcm4che 2.0.29 and its APIs have been removed since
+1.10.0 in favor of the latest 5._x_ version of dcm4che. The older version is provided solely for compatibility with plugins and other code that has not yet been
+migrated to the newer version and will be removed in XNAT 1.11.

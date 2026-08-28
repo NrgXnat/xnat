@@ -1,6 +1,9 @@
 .java-version
 .gradle/
-build/
+# Use anchored patterns so 'build/' doesn't match package-name dirs like
+# xnat-data-builder/src/main/groovy/org/nrg/xnat/build/ (which is source code).
+/build/
+*/build/
 buildSrc/build/
 buildSrc/.gradle/
 **/target/
@@ -12,6 +15,13 @@ buildSrc/.gradle/
 out/
 .DS_Store
 
+# Eclipse / jdtls / Buildship (Claude Code starts jdtls in background)
+.project
+.classpath
+.settings/
+bin/
+
 # OS
 .DS_Store
 Thumbs.db
+.claude/

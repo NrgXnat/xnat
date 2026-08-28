@@ -1,5 +1,6 @@
 package org.nrg.xft.utils.fileExtraction;
 
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.utils.FileUtils;
@@ -20,13 +21,13 @@ import java.util.zip.ZipOutputStream;
 
 /**
  * Service to extract File(s) from various archive/encoding types.
- *
+ * <p>
  * This encapsulates the ZipI interface implementors ZipUtils and TarUtils with a GZIP stream decompressor
  * to provide one interface for extracting file(s) from archives or compression. The zippers always assume the file is
  * an archive to be expanded. But sometimes the file is not intended to be expanded, just decompressed.
- *
+ * <p>
  * The encoding is assumed to be designated by filename suffixes.
- *
+ * <p>
  * Supported formats are
  * tar, tar.gz, tgz, zip, zar, xar, gz.
  */
@@ -53,7 +54,7 @@ public class FileExtractor {
 
     /**
      * Extract file(s) from the specified input file.
-     *
+     * <p>
      * This signature best supports CatalogUtils's use of FileWriterWrapperI.
      *
      * @param filename    The name of the input file.
@@ -67,23 +68,43 @@ public class FileExtractor {
      * @throws IOException When an error occurs reading the input file or writing its contents to the specified destination.
      */
     public List<File> extract(final String filename, final InputStream inputStream, final Path destination, final boolean overwrite, final EventMetaI ci) throws IOException {
+        return extract(filename, inputStream, destination, overwrite, ci, null);
+    }
+
+    /**
+     * Extract file(s) from the specified input file.
+     * <p>
+     * This signature best supports CatalogUtils's use of FileWriterWrapperI.
+     *
+     * @param filename    The name of the input file.
+     * @param inputStream An input stream for accessing the file contents.
+     * @param destination The destination where the contents of the input file should be extracted.
+     * @param overwrite   Whether existing files should be overwritten if there's a conflict.
+     * @param ci          The event metadata.
+     * @param filter      A filter to apply to the files being extracted. Only files that pass the filter will be extracted.
+     *
+     * @return A list of the files extracted from the input file.
+     *
+     * @throws IOException When an error occurs reading the input file or writing its contents to the specified destination.
+     */
+    public List<File> extract(final String filename, final InputStream inputStream, final Path destination, final boolean overwrite, final EventMetaI ci, final IOFileFilter filter) throws IOException {
         final List<File> files;
         final Format     format = Format.getFormat(filename);
         switch (format) {
             case TAR:
                 ZipI zipper = new TarUtils();
-                files = zipper.extract(inputStream, destination.toString(), overwrite, ci);
+                files = zipper.extract(inputStream, destination.toString(), overwrite, ci, filter);
                 _duplicates.addAll(zipper.getDuplicates());
                 break;
             case TGZ:
                 zipper = new TarUtils();
                 zipper.setCompressionMethod(ZipOutputStream.DEFLATED);
-                files = zipper.extract(inputStream, destination.toString(), overwrite, ci);
+                files = zipper.extract(inputStream, destination.toString(), overwrite, ci, filter);
                 _duplicates.addAll(zipper.getDuplicates());
                 break;
             case ZIP:
                 zipper = new ZipUtils();
-                files = zipper.extract(inputStream, destination.toString(), overwrite, ci);
+                files = zipper.extract(inputStream, destination.toString(), overwrite, ci, filter);
                 _duplicates.addAll(zipper.getDuplicates());
                 break;
             case GZ:
@@ -105,6 +126,17 @@ public class FileExtractor {
         }
 
         return files;
+    }
+
+    /**
+     * Extract into an empty caller-owned destination. Duplicate tracking and {@code moveToHistory}
+     * are the caller's responsibility (the {@code overwrite=true}, {@code ci=null} call below is
+     * a no-op against an empty destination).
+     *
+     * @param destination Empty destination directory.
+     */
+    public List<File> extract(final String filename, final InputStream inputStream, final Path destination, final IOFileFilter filter) throws IOException {
+        return extract(filename, inputStream, destination, true, null, filter);
     }
 
     public List<String> getDuplicates() {

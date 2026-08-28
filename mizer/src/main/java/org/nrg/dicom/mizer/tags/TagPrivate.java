@@ -77,7 +77,7 @@ public class TagPrivate extends Tag {
     }
 
     public int getPvtCreatorIDTag() {
-        return Integer.parseInt( group + DEFAULT_PRIVATE_CREATOR_ELEMENT, 16);
+        return Integer.parseUnsignedInt(group + DEFAULT_PRIVATE_CREATOR_ELEMENT, 16);
     }
 
     public String getElement() {
@@ -123,19 +123,6 @@ public class TagPrivate extends Tag {
     public boolean isInPrivateCreatorBlock( TagPrivateCreator pvtCreatorIDtag) {
         return isInPrivateBlock( pvtCreatorIDtag.getGroupAsInt(), pvtCreatorIDtag.getPrivateBlock());
     }
-
-    /**
-     * Return the integer value of this tag.
-     *
-     * Throws NumberFormatException if this tag has wild cards and does not map to a unique integer.
-     *
-     * This will always return the tag in block 10, i.e. gggg,10ee.  The actual tag value can only be resolved in the context
-     * of the specific dicom object that contains this tag.
-     * Use DicomObject's resolveTag method to do this.
-     *
-     * @return Returns the tag value as an integer.
-     */
-    public int asInt() { return Integer.parseInt( group + element, 16);}
 
     public String toString() {
         return asString();

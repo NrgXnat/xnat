@@ -14,12 +14,9 @@ import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
-import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
-import org.nrg.xdat.bean.reader.XDATXMLReader;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatSubjectdata;
-import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
@@ -81,7 +78,6 @@ import javax.annotation.Nullable;
 import static org.nrg.xft.event.XftItemEventI.CREATE;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
 import static org.nrg.xnat.archive.Operation.Rebuild;
-import static org.nrg.xnat.archive.Operation.Separate;
 
 @Slf4j
 @Service
@@ -211,16 +207,6 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     @Override
     public void archive(long id) throws NotFoundException, ArchivingException {
         SessionData target = directArchiveSessionHibernateService.setStatusToArchivingAndReturn(id);
-        try {
-            // If PET/MR are to be separated, we have to go through the prearchive
-            if(handleSeparatePetMr(id, target)) {
-                return;
-            }
-        } catch (Exception e) {
-            log.error("Issue during move to prearchive for PET/MR split for DirectArchiveSession id={}", id, e);
-            directArchiveSessionHibernateService.setStatusToError(id, e);
-            return;
-        }
 
         // Now, anonymize and archive
         // No perms checking, just use received file user
@@ -451,25 +437,6 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         } catch (Exception e) {
             log.error("Unable to fail workflow {}", workflow, e);
         }
-    }
-
-    private boolean handleSeparatePetMr(long id, SessionData target) throws IOException, SAXException, NotFoundException {
-        if(!HandlePetMr.shouldSeparatePetMr(target.getProject())) {
-            // not splitting
-            return false;
-        }
-        final File                     sessionXml = new File(target.getUrl() + ".xml");
-        final XnatImagesessiondataBean bean       = (XnatImagesessiondataBean) new XDATXMLReader().parse(sessionXml);
-        if(!(bean instanceof XnatPetmrsessiondataBean)) {
-            // nothing to split
-            return false;
-        }
-        moveToPrearchiveAndRequestSeparatePetMr(id, target);
-        return true;
-    }
-
-    private void moveToPrearchiveAndRequestSeparatePetMr(long id, SessionData target) throws NotFoundException {
-        doPrearchiveMove(id, target, Separate, PrearcUtils.PrearcStatus.RECEIVING, null);
     }
 
     private void moveToPrearchive(long id, SessionData target, Exception origException)

@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class DicomSender {
     private final Logger logger = LoggerFactory.getLogger(DicomSender.class);
@@ -28,6 +31,8 @@ public class DicomSender {
     private final ApplicationEntity remoteAE;
     private final Device device;
     private final Connection remoteConnection;
+    private final ExecutorService executor;
+    private final ScheduledExecutorService scheduledExecutor;
     private Association association; // current Association
 
     public DicomSender(final ApplicationEntity localAE, final ApplicationEntity remoteAE) {
@@ -35,7 +40,16 @@ public class DicomSender {
         this.remoteAE = remoteAE;
 
         this.device = new Device("DicomSender3Device");
+        // The device has to own the local AE's connections before the AE can be added to it: dcm4che3's
+        // Device.addApplicationEntity() rejects an AE that has connections belonging to another (or no) device.
+        localAE.getConnections().forEach(this.device::addConnection);
         this.device.addApplicationEntity(localAE);
+
+        // The device also requires executors: it uses them to run the association's reader and timeout tasks.
+        this.executor = Executors.newCachedThreadPool();
+        this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.device.setExecutor(executor);
+        this.device.setScheduledExecutor(scheduledExecutor);
 
         this.remoteConnection = new Connection();
         this.remoteConnection.setHostname(remoteAE.getConnections().get(0).getHostname());
@@ -85,10 +99,18 @@ public class DicomSender {
         String sopClassUID = dicomObject.getString(org.dcm4che3.data.Tag.SOPClassUID);
         String sopInstanceUID = dicomObject.getString(org.dcm4che3.data.Tag.SOPInstanceUID);
 
+        // The A-ASSOCIATE-RQ PDU can't be encoded without the called AE title. ApplicationEntity.connect() only fills
+        // that in for the overload that takes the remote AE, and this sender connects by Connection instead, so the
+        // titles have to be set here: otherwise encoding the PDU fails with "Called AET not initalized".
+        rq.setCallingAET(localAE.getAETitle());
+        rq.setCalledAET(remoteAE.getAETitle());
+
         // add Presentation Context
         rq.addPresentationContext(new PresentationContext(1, sopClassUID, UID.ImplicitVRLittleEndian));
 
-        // open Association
+        // open Association. Each object negotiates its own presentation context, so any association left over from a
+        // previous send() has to be released here rather than leaked: close() only ever released the last one.
+        release();
         association = localAE.connect(remoteConnection, rq);
 
         final CStoreRSPHandler rspHandler = new CStoreRSPHandler(association.nextMessageID());
@@ -97,9 +119,39 @@ public class DicomSender {
 
         // Wait
         association.waitForOutstandingRSP();
+
+        // The status the remote AE returned for the object has to be checked here: a C-STORE that the PACS rejects
+        // completes normally as far as the association is concerned, so without this the send silently "succeeds".
+        if (!rspHandler.hasStatus()) {
+            throw new IOException("The remote AE " + remoteAE.getAETitle() + " returned no status storing SOP instance " + sopInstanceUID);
+        }
+        switch (rspHandler.getStatus()) {
+            case FAILURE:
+                throw new IOException(describeStatus(sopInstanceUID, rspHandler));
+            case WARNING:
+                logger.warn(describeStatus(sopInstanceUID, rspHandler));
+                break;
+            default:
+                break;
+        }
     }
 
+    private String describeStatus(final String sopInstanceUID, final CStoreRSPHandler rspHandler) {
+        return "The remote AE %s returned status %04X (%s) storing SOP instance %s%s".formatted(remoteAE.getAETitle(), rspHandler.getStatusCode(), rspHandler.getStatusMeaning(), sopInstanceUID,
+                                                                                                rspHandler.getErrorComment() == null ? "" : ": " + rspHandler.getErrorComment());
+    }
+
+    /**
+     * Releases the current association and shuts down the device's executors. This sender can't be used to send any
+     * more objects once it's been closed.
+     */
     public void close() {
+        release();
+        executor.shutdown();
+        scheduledExecutor.shutdown();
+    }
+
+    private void release() {
         if (association != null && association.isReadyForDataTransfer()) {
             try {
                 association.release();

@@ -31,9 +31,6 @@ function fullConfigHandler() {
             document.getElementById('registration_save_button').onclick = saveSettings;
             document.getElementById('notifications_save_button').onclick = saveSettings;
             document.getElementById('anonymization_save_button').onclick = saveSettings;
-            if(document.getElementById('seriesImportFilter_save_button')){
-        		document.getElementById('seriesImportFilter_save_button').onclick = saveSettings;
-        	    }
             document.getElementById('dicomReceiver_save_button').onclick = saveSettings;
 
             xmodal.loading.close();
@@ -89,9 +86,6 @@ function configurationTabManagerInit() {
         document.getElementById('registration_save_button').onclick = fullConfigHandler;
         document.getElementById('notifications_save_button').onclick = fullConfigHandler;
         document.getElementById('anonymization_save_button').onclick = fullConfigHandler;
-        if(document.getElementById('seriesImportFilter_save_button')){
-            document.getElementById('seriesImportFilter_save_button').onclick = fullConfigHandler;
-    }
         document.getElementById('dicomReceiver_save_button').onclick = fullConfigHandler;
     }
 }
@@ -141,7 +135,6 @@ function SettingsTabManager(settingsTabDivId, settings, postLoad) {
             '#registration_reset_button, ' +
             '#notifications_reset_button, ' +
             '#anonymization_reset_button, ' +
-            '#seriesImportFilter_reset_button, ' +
             '#dicomReceiver_reset_button'
         ;
 

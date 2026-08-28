@@ -11,8 +11,6 @@ dependencies {
     implementation localGroovy()
 
     // Internal modules (transitive = false to avoid classpath conflicts)
-    // xnat-web is provided by the consumer plugin project's own classpath; compileOnly keeps it off the POM
-    compileOnly(project(':xnat-web')) { transitive = false }
     implementation(project(':xdat'))     { transitive = false }
     implementation(project(':framework')){ transitive = false }
     implementation(project(':config'))   { transitive = false }
@@ -25,6 +23,16 @@ dependencies {
     implementation libs.reflections.reflections
     implementation libs.commons.lang3
     implementation libs.commons.io
+
+    // xnat-web bundles the core XNAT schemas (xnat.xsd, assessments.xsd, etc.). External
+    // plugins' xnatDataBuilder task needs them on its RUNTIME classpath so XFTManager's
+    // PathMatchingResourcePatternResolver can resolve `<xs:import schemaLocation="../xnat/xnat.xsd"/>`
+    // in plugin-local .xsd files. Nothing in this module compiles against it, hence runtimeOnly.
+    // Explicit coordinates (not project(':xnat-web')) because xnat-web has both JAR
+    // (org.nrg.xnat:web) and WAR (org.nrg.xnat.web:xnat-web) publications, which makes POM
+    // generation ambiguous when referenced as a project dep.
+    // See the exclude rules below the dependencies block.
+    runtimeOnly("org.nrg.xnat:web:${project(':xnat-web').version}") { transitive = false }
 
     // Runtime: Spring, Jackson, etc. needed by external plugins at build time
     runtimeOnly libs.servlet.javax.servlet.api
@@ -58,6 +66,17 @@ dependencies {
     runtimeOnly libs.commons.configuration
     runtimeOnly libs.commons.collections
 }
+
+// xnat-web is declared above but deliberately excluded from this project's resolvable
+// classpaths. The coordinate carries this build's own version, which does not exist in
+// Artifactory until this build publishes it, and Gradle resolves these configurations eagerly
+// when the configuration cache serialises the task graph -- so every freshly cut RC or release
+// branch failed to build (compileClasspath under `implementation`, then runtimeClasspath via
+// pluginUnderTestMetadata under `runtimeOnly`). Exclude rules are per-configuration and are not
+// inherited by runtimeElements, so the published POM (scope=runtime) and module metadata still
+// carry the dependency for external plugin builds.
+configurations.runtimeClasspath     { exclude group: 'org.nrg.xnat', module: 'web' }
+configurations.testRuntimeClasspath { exclude group: 'org.nrg.xnat', module: 'web' }
 
 // Plugin registration
 gradlePlugin {

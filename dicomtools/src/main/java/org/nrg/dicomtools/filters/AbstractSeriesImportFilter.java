@@ -29,6 +29,11 @@ import java.util.Objects;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated This class and its related functionality are deprecated and will be removed in a future release.
+ */
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated
 @Slf4j
 public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
 

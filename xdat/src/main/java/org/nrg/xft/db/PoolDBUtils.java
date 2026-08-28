@@ -630,6 +630,11 @@ public class PoolDBUtils {
 							PoolDBUtils.ExecuteNonSelectQuery(QUERY_ITEM_CACHE_ADD_ID, dbName, login);
 						}
 						if (!(boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_ITEM_CACHE_HAS_INDEX, "cache_has_index", dbName, login)) {
+							final long duplicateCount = (long) PoolDBUtils.ReturnStatisticQuery(QUERY_COUNT_DUPLICATE_CACHE_ELEMENT_IDS, "duplicate_count", dbName, login);
+							if (duplicateCount > 0) {
+								logger.info("Found {} duplicate elementName/ids in the xs_item_cache table. Deleting duplicates.", duplicateCount);
+								PoolDBUtils.ExecuteNonSelectQuery(QUERY_DELETE_DUPLICATE_CACHE_ELEMENT_IDS, dbName, login);
+							}
 							PoolDBUtils.ExecuteNonSelectQuery(QUERY_ITEM_CACHE_ADD_INDEX, dbName, login);
 						}
 					} else {
@@ -1172,29 +1177,56 @@ public class PoolDBUtils {
 
 	private static final Logger logger = LoggerFactory.getLogger(PoolDBUtils.class);
 
-	private static final char[]  DELIMITERS                 = new char[]{' ', '(', '[', '\'', '\n', '\t'};
-	private static final String  EXPR_COLUMN_NOT_FOUND      = "column \"(?<column>[A-z0-9_-]+)\" does not exist";
-	private static final Pattern PATTERN_COLUMN_NOT_FOUND   = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
-	private static final String  EXPR_TABLE_NAME            = "(?<table>_[A-z0-9_]+_[\\d]+)";
-	private static final String  EXPR_DROP_TABLE_QUERY      = "DROP TABLE xdat_search\\." + EXPR_TABLE_NAME;
-	private static final Pattern PATTERN_DROP_TABLE_QUERY   = Pattern.compile(EXPR_DROP_TABLE_QUERY);
-	private static final String  EXPR_TABLE_NOT_FOUND       = "^.*table \"" + EXPR_TABLE_NAME + "\" does not exist.*$";
-	private static final Pattern CANNOT_DROP_MESSAGE        = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
-	private static final String  QUERY_ITEM_CACHE_EXISTS    = "SELECT EXISTS(SELECT relname FROM pg_catalog.pg_class WHERE relname = LOWER('xs_item_cache')) AS cache_exists";
-	private static final String  QUERY_ITEM_CACHE_HAS_ID    = "SELECT EXISTS(SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'xs_item_cache' AND column_name = 'id') AS cache_has_id";
-	private static final String  QUERY_ITEM_CACHE_HAS_INDEX = "SELECT EXISTS(SELECT 1 FROM pg_indexes WHERE tablename = 'xs_item_cache' AND indexname = 'idx_xs_item_cache_lookup') AS cache_has_index";
-	private static final String  QUERY_ITEM_CACHE_ADD_INDEX = "CREATE UNIQUE INDEX IF NOT EXISTS idx_xs_item_cache_lookup ON xs_item_cache(elementName, ids)";
-	private static final String  QUERY_CREATE_ITEM_CACHE    = """
-                                                              CREATE TABLE xs_item_cache
-                                                              (
-                                                                id BIGSERIAL PRIMARY KEY,
-                                                                elementName VARCHAR(255) NOT NULL,
-                                                                ids VARCHAR(255) NOT NULL,
-                                                                create_date timestamp DEFAULT now(),
-                                                                contents TEXT
-                                                              );
-                                                              CREATE UNIQUE INDEX idx_xs_item_cache_lookup ON xs_item_cache(elementName, ids);\
-                                                              """;
+	private static final char[]  DELIMITERS                               = new char[]{' ', '(', '[', '\'', '\n', '\t'};
+	private static final String  EXPR_COLUMN_NOT_FOUND                    = "column \"(?<column>[A-z0-9_-]+)\" does not exist";
+	private static final Pattern PATTERN_COLUMN_NOT_FOUND                 = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
+	private static final String  EXPR_TABLE_NAME                          = "(?<table>_[A-z0-9_]+_\\d+)";
+	private static final String  EXPR_DROP_TABLE_QUERY                    = "DROP TABLE xdat_search\\." + EXPR_TABLE_NAME;
+	private static final Pattern PATTERN_DROP_TABLE_QUERY                 = Pattern.compile(EXPR_DROP_TABLE_QUERY);
+	private static final String  EXPR_TABLE_NOT_FOUND                     = "^.*table \"" + EXPR_TABLE_NAME + "\" does not exist.*$";
+	private static final Pattern CANNOT_DROP_MESSAGE                      = Pattern.compile("^.*cannot\\s+drop\\s+(table|column)(?s).*because other objects depend on it.*$");
+	private static final String  QUERY_ITEM_CACHE_EXISTS                  = "SELECT EXISTS(SELECT relname FROM pg_catalog.pg_class WHERE relname = LOWER('xs_item_cache')) AS cache_exists";
+	private static final String  QUERY_ITEM_CACHE_HAS_ID                  = "SELECT EXISTS(SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'xs_item_cache' AND column_name = 'id') AS cache_has_id";
+	private static final String  QUERY_ITEM_CACHE_HAS_INDEX               = "SELECT EXISTS(SELECT 1 FROM pg_indexes WHERE tablename = 'xs_item_cache' AND indexname = 'idx_xs_item_cache_lookup') AS cache_has_index";
+	private static final String  QUERY_ITEM_CACHE_ADD_INDEX               = "CREATE UNIQUE INDEX IF NOT EXISTS idx_xs_item_cache_lookup ON xs_item_cache(elementName, ids)";
+	private static final String  QUERY_COUNT_DUPLICATE_CACHE_ELEMENT_IDS  = "WITH element_counts AS (SELECT DISTINCT elementname, ids, count(*) AS element_count " +
+	                                                                        "                        FROM xs_item_cache " +
+	                                                                        "                        GROUP BY elementname, ids), " +
+	                                                                        "     duplicate_elements AS (SELECT DISTINCT elementname, ids " +
+	                                                                        "                            FROM element_counts " +
+	                                                                        "                            WHERE element_count > 1), " +
+	                                                                        "     duplicate_ids AS (SELECT elementname, ids, id, max(id) OVER (PARTITION BY elementname, ids) AS max_id " +
+	                                                                        "                       FROM xs_item_cache " +
+	                                                                        "                       WHERE (elementname, ids) IN (SELECT elementname, ids FROM duplicate_elements)) " +
+	                                                                        "SELECT count(id) AS duplicate_count " +
+	                                                                        "FROM duplicate_ids " +
+	                                                                        "WHERE id < max_id";
+	private static final String  QUERY_DELETE_DUPLICATE_CACHE_ELEMENT_IDS = "WITH element_counts AS (SELECT DISTINCT elementname, ids, count(*) AS element_count " +
+	                                                                        "                        FROM xs_item_cache " +
+	                                                                        "                        GROUP BY elementname, ids), " +
+	                                                                        "     duplicate_elements AS (SELECT DISTINCT elementname, ids " +
+	                                                                        "                            FROM element_counts " +
+	                                                                        "                            WHERE element_count > 1), " +
+	                                                                        "     duplicate_ids AS (SELECT elementname, ids, id, max(id) OVER (PARTITION BY elementname, ids) AS max_id " +
+	                                                                        "                       FROM xs_item_cache " +
+	                                                                        "                       WHERE (elementname, ids) IN (SELECT elementname, ids FROM duplicate_elements)), " +
+	                                                                        "     removable_ids AS (SELECT id " +
+	                                                                        "                       FROM duplicate_ids " +
+	                                                                        "                       WHERE id < max_id) " +
+	                                                                        "DELETE " +
+	                                                                        "FROM xs_item_cache " +
+	                                                                        "WHERE id IN (SELECT id FROM removable_ids)";
+	private static final String  QUERY_CREATE_ITEM_CACHE                  = """
+	                                                                        CREATE TABLE xs_item_cache
+	                                                                        (
+	                                                                          id BIGSERIAL PRIMARY KEY,
+	                                                                          elementName VARCHAR(255) NOT NULL,
+	                                                                          ids VARCHAR(255) NOT NULL,
+	                                                                          create_date timestamp DEFAULT now(),
+	                                                                          contents TEXT
+	                                                                        );
+	                                                                        CREATE UNIQUE INDEX idx_xs_item_cache_lookup ON xs_item_cache(elementName, ids);\
+	                                                                        """;
 
 	private static Float VERSION = null;
 

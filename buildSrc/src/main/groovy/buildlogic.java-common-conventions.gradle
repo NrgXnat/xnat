@@ -1,9 +1,14 @@
+import java.net.HttpURLConnection
+import java.util.Base64
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+
 plugins {
     id 'java'
     id 'maven-publish'
     id 'jacoco'
     id 'idea'
     id 'eclipse'
+    id 'com.palantir.git-version'
 }
 
 // group and version are set by root build.gradle allprojects block
@@ -92,16 +97,39 @@ tasks.withType(Javadoc).configureEach {
     options.addStringOption('Xdoclint:none', '-quiet')
 }
 
-// --- Manifest (build info for all JARs) ---
+// --- Manifest (build info for all JARs, XNAT-8795) ---
 
 def buildDate = new Date()
 def buildNumber = System.getenv().BUILD_NUMBER?.toInteger() ?: 'Manual'
 
+def isDirty, branchName, gitHash, gitHashFull, isCleanTag
+try {
+    def gitDetails = versionDetails()
+    isDirty = gitVersion().endsWith '.dirty'
+    branchName = gitDetails.branchName ?: 'Unknown'
+    gitHash = gitDetails.gitHash
+    gitHashFull = gitDetails.gitHashFull
+    isCleanTag = gitDetails.isCleanTag
+} catch (Exception ignored) {
+    // Not under git control (e.g. building from a source archive) — use placeholders.
+    isDirty = true
+    branchName = 'Unknown'
+    gitHash = 'None'
+    gitHashFull = 'None'
+    isCleanTag = false
+}
+
 tasks.withType(Jar).configureEach {
     manifest {
-        attributes 'Build-Date': buildDate,
+        attributes 'Application-Name': project.name,
+                   'Build-Date': buildDate,
                    'Build-Number': buildNumber,
-                   'Implementation-Version': project.version
+                   'Implementation-Version': project.version,
+                   'Implementation-Sha': gitHash,
+                   'Implementation-Sha-Full': gitHashFull,
+                   'Implementation-Branch': branchName,
+                   'Implementation-CleanTag': isCleanTag,
+                   'Implementation-Dirty': isDirty
     }
 }
 
@@ -116,9 +144,77 @@ publishing {
     repositories {
         maven {
             name = 'XNAT_Artifactory'
-            url = project.version.toString().endsWith('-SNAPSHOT')
-                ? 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local'
-                : 'https://nrgxnat.jfrog.io/nrgxnat/libs-release-local'
+            // CI injects ORG_GRADLE_PROJECT_artifactoryUser/Token env vars.
+            // Local devs can set artifactoryUser/Token in ~/.gradle/gradle.properties.
+            credentials {
+                username = (project.findProperty('artifactoryUser')  ?: System.getenv('ARTIFACTORY_USER'))  ?: ''
+                password = (project.findProperty('artifactoryToken') ?: System.getenv('ARTIFACTORY_TOKEN')) ?: ''
+            }
+        }
+    }
+}
+
+// Decide snapshot-vs-release URL lazily, after each subproject's
+// build.gradle has run — needed because modules like dicom-edit6
+// override `project.version` to a non-SNAPSHOT release (6.9.0).
+// If we evaluate `project.version` at the time this convention is
+// applied, we'd see the root-level 1.10.1-SNAPSHOT and lock the URL
+// to the snapshot repo, which then rejects release artifacts with 409.
+afterEvaluate {
+    publishing.repositories.named('XNAT_Artifactory').configure {
+        url = project.version.toString().endsWith('-SNAPSHOT')
+            ? 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local'
+            : 'https://nrgxnat.jfrog.io/nrgxnat/libs-release-local'
+    }
+}
+
+// --- Skip publish if the release artifact already exists in Artifactory ---
+//
+// JFrog libs-release-local rejects redeploys with HTTP 409. Modules with
+// independent, non-SNAPSHOT versions (e.g. dicom-edit6 6.9.0) hit this on
+// every CI run after the first one, breaking the whole `./gradlew publish`.
+// HEAD-probe the main jar before publishing; if it already exists, skip
+// that module's publish task so the rest of the build keeps moving.
+//
+// SNAPSHOT versions are never probed (their repo allows redeploys).
+tasks.withType(PublishToMavenRepository).configureEach { publishTask ->
+    onlyIf("artifact not already present in Artifactory") {
+        if (project.version.toString().endsWith('-SNAPSHOT')) {
+            return true
+        }
+        def repo = publishTask.repository
+        def repoUrl = repo.url.toString().replaceAll('/$', '')
+        def groupPath = project.group.toString().replace('.', '/')
+        def jarUrl = "${repoUrl}/${groupPath}/${project.name}/${project.version}/${project.name}-${project.version}.jar"
+
+        def conn = new URL(jarUrl).openConnection() as HttpURLConnection
+        conn.requestMethod = 'HEAD'
+        conn.connectTimeout = 10_000
+        conn.readTimeout = 10_000
+        def user = repo.credentials.username
+        def pwd  = repo.credentials.password
+        if (user && pwd) {
+            def auth = Base64.encoder.encodeToString("${user}:${pwd}".bytes)
+            conn.setRequestProperty('Authorization', "Basic ${auth}")
+        }
+        try {
+            def code = conn.responseCode
+            if (code == 200) {
+                logger.warn("[publish] SKIP {}:{} — already exists at {}",
+                            project.name, project.version, jarUrl)
+                return false
+            }
+            if (code != 404) {
+                logger.warn("[publish] HEAD {} returned {} — proceeding anyway",
+                            jarUrl, code)
+            }
+            return true
+        } catch (Exception e) {
+            logger.warn("[publish] HEAD probe failed for {} ({}) — proceeding anyway",
+                        jarUrl, e.message)
+            return true   // network glitch shouldn't block publish; let PUT decide
+        } finally {
+            conn.disconnect()
         }
     }
 }

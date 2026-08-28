@@ -17,25 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
-import org.nrg.automation.entities.Script;
-import org.nrg.automation.services.ScriptService;
-import org.nrg.dicomtools.filters.DicomFilterService;
-import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.generics.GenericUtils;
 import org.nrg.framework.status.StatusListenerI;
-import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.bean.XnatMrsessiondataBean;
-import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
-import org.nrg.xdat.bean.XnatPetsessiondataBean;
-import org.nrg.xdat.model.XnatImagescandataI;
-import org.nrg.xdat.model.XnatPetscandataI;
-import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
@@ -50,8 +38,6 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.sql.*;
 import java.util.Date;
@@ -83,23 +69,6 @@ public final class PrearcDatabase {
     private static SessionDataDelegate sessionDelegate;
 
     private static String prearcPath;
-
-    public static final String SPLIT_PETMR_SESSION_ID = "SplitPetMrSessions";
-
-    public static final String DEFAULT_SPLIT_PETMR_SESSION_FILTER = """
-            {
-                "mode": "modalityMap",
-                "exclude": "/^yes$/i.test('#BurnedInAnnotation#')",
-                "PT": "'#Modality#' == 'PT' || ('#Modality#' == 'MR' && /^.*MRAC.*$/.test('#SeriesDescription#'))",
-                "MR": "'#Modality#' != 'PT' && !('#Modality#' == 'MR' && /^.*MRAC.*$/.test('#SeriesDescription#'))",
-                "default": "MR"
-            }
-            """;
-
-    public static final Script DEFAULT_SPLIT_PETMR_SESSION_SCRIPT = new Script(SPLIT_PETMR_SESSION_ID,
-            "Split PET/MR script",
-            "Default implementation of the split PET/MR session script.",
-            "groovy", "", DEFAULT_SPLIT_PETMR_SESSION_FILTER);
 
     private static final int LOCK_COUNT = 128;
     private static final Striped<Lock> SESSION_LOCKS = Striped.lazyWeakLock(LOCK_COUNT);
@@ -590,269 +559,6 @@ public final class PrearcDatabase {
         return true;
     }
 
-    /**
-     * Separate a PET/MR session into separate MR and PET sessions.
-     *
-     * @param session       The session name
-     * @param timestamp     The session timestamp
-     * @param project       The origin project of the session.
-     * @param petmrSession  The PET/MR session bean.
-     *
-     * @return Return true if successful, false otherwise
-     *
-     * @throws SessionException
-     * @throws SQLException
-     * @throws Exception
-     */
-    private static Map<String, SessionData> _separatePetMrSession(final String session, final String timestamp, final String project, final XnatPetmrsessiondataBean petmrSession) throws Exception {
-        final SessionData sessionData = PrearcDatabase.getSession(session, timestamp, project);
-
-        final XnatUserProvider provider = XDAT.getContextService().getBean("receivedFileUserProvider", XnatUserProvider.class);
-        final UserI            importer = provider.get();
-
-        final LockAndSync<Map<String, SessionData>> l = new LockAndSync<Map<String, SessionData>>(sessionData.getName(), sessionData.getTimestamp(), sessionData.getProject(), sessionData.getStatus()) {
-            @Override
-            Map<String, SessionData> extSync() throws PrearcDatabase.SyncFailedException {
-                final String label = petmrSession.getLabel();
-                _mrSession = getUniqueSessionLabel(label, "PETMR", "MR", sessionData.getProject(), importer);
-                _petSession = getUniqueSessionLabel(label, "PETMR", "PET", sessionData.getProject(), importer);
-                _mrSessionTimestamp = PrearcUtils.makeTimestamp();
-                do {
-                    _petSessionTimestamp = PrearcUtils.makeTimestamp();
-                } while (_mrSessionTimestamp.equals(_petSessionTimestamp));
-                try {
-                    _mrSessionFolder = PrearcUtils.getPrearcSessionDir(importer, sessionData.getProject(), _mrSessionTimestamp, _mrSession, true).getAbsolutePath();
-                    _petSessionFolder = PrearcUtils.getPrearcSessionDir(importer, sessionData.getProject(), _petSessionTimestamp, _petSession, true).getAbsolutePath();
-                } catch (Exception e) {
-                    throw new SyncFailedException("Sync failed trying to create new session folders", e);
-                }
-                final Map<String, List<String>> separatedScans;
-                try {
-                    separatedScans = separateScans(petmrSession);
-                } catch (IOException e) {
-                    throw new SyncFailedException("An error occurred trying to separate the scans", e);
-                }
-                _mrScanIds = separatedScans.get("MR");
-                _petScanIds = separatedScans.get("PT");
-                PrearcDatabase.sessionDelegate.moveScans(sessionData, _mrSession, _mrSessionFolder, _mrScanIds);
-                PrearcDatabase.sessionDelegate.moveScans(sessionData, _petSession, _petSessionFolder, _petScanIds);
-
-                s = new HashMap<>();
-                s.put("MR", getSessionData(_mrSessionFolder));
-                s.put("PT", getSessionData(_petSessionFolder));
-                return s;
-            }
-
-            @Override
-            void cacheSync() throws Exception {
-                PrearcDatabase.modifySession(sess, timestamp, proj, new SessionOp<Void>() {
-                    public Void op() throws Exception {
-                        SessionData mrSessionData = s.get("MR");
-                        SessionData petSessionData = s.get("PT");
-                        try {
-                            PrearcDatabase.addSession(mrSessionData);
-                            final File mrSessionDir = new File(_mrSessionFolder);
-                            PrearcDatabase.setStatus(mrSessionDir.getName(), _mrSessionTimestamp, project, PrearcUtils.PrearcStatus.BUILDING);
-                            PrearcDatabase.buildSession(mrSessionDir, mrSessionDir.getName(), _mrSessionTimestamp, project, sessionData.getVisit(), sessionData.getProtocol(), sessionData.getTimeZone(), sessionData.getSource());
-                            PrearcUtils.resetStatus(importer, project, _mrSessionTimestamp, mrSessionDir.getName(), true);
-                            PrearcUtils.log(mrSessionData, "Moved %d scans from %s to %s".formatted(_mrScanIds.size(), sessionData.getName(), _mrSession));
-
-                            PrearcDatabase.addSession(petSessionData);
-                            final File petSessionDir = new File(_petSessionFolder);
-                            PrearcDatabase.setStatus(petSessionDir.getName(), _petSessionTimestamp, project, PrearcUtils.PrearcStatus.BUILDING);
-                            PrearcDatabase.buildSession(petSessionDir, petSessionDir.getName(), _petSessionTimestamp, project, sessionData.getVisit(), sessionData.getProtocol(), sessionData.getTimeZone(), sessionData.getSource());
-                            PrearcUtils.resetStatus(importer, project, _petSessionTimestamp, petSessionDir.getName(), true);
-                            PrearcUtils.log(petSessionData, "Moved %d scans from %s to %s".formatted(_petScanIds.size(), sessionData.getName(), _petSession));
-                        } catch (SyncFailedException e) {
-                            log.error("Session sync failed", e);
-                            throw new IllegalStateException(e.getMessage());
-                        } finally {
-                            if (mrSessionData != null && petSessionData != null) {
-                                PrearcDatabase._unsafeDeleteSession(sess, timestamp, proj);
-                            }
-                        }
-                        return null;
-                    }
-                });
-            }
-
-            @Override
-            boolean checkStatus() {
-                return sessionData.getStatus().equals(PrearcStatus.SEPARATING);
-            }
-
-            private SessionData getSessionData(final String folder) {
-                final File path = Path.of(folder).toFile();
-                final SessionData newSessionData = new SessionData();
-                newSessionData.setName(path.getName());
-                newSessionData.setFolderName(path.getName());
-                newSessionData.setSubject(sessionData.getSubject());
-                newSessionData.setProject(sessionData.getProject());
-                newSessionData.setUrl(path.getAbsolutePath());
-                newSessionData.setUploadDate(sessionData.getUploadDate());
-                newSessionData.setTimestamp(path.getParentFile().getName());
-                newSessionData.setScan_date(sessionData.getScan_date());
-                newSessionData.setScan_time(sessionData.getScan_time());
-                newSessionData.setTag(sessionData.getTag());
-                newSessionData.setProtocol(sessionData.getProtocol());
-                newSessionData.setSource(sessionData.getSource());
-                newSessionData.setVisit(sessionData.getVisit());
-                newSessionData.setTimeZone(sessionData.getTimeZone());
-                newSessionData.setAutoArchive(sessionData.getAutoArchive());
-                newSessionData.setPreventAnon(sessionData.getPreventAnon());
-                newSessionData.setPreventAutoCommit(sessionData.getPreventAutoCommit());
-                newSessionData.setStatus(PrearcStatus.READY);
-                return newSessionData;
-            }
-
-            String _mrSession;
-            String _petSession;
-            String _mrSessionTimestamp;
-            String _petSessionTimestamp;
-            String _mrSessionFolder;
-            String _petSessionFolder;
-            List<String> _mrScanIds;
-            List<String> _petScanIds;
-        };
-
-        boolean ran;
-        Exception e = null;
-        try {
-            ran = l.run();
-        } catch (Exception _e) {
-            log.error("", _e);
-            e = _e;
-            ran = false;
-        }
-
-        if (!ran) {
-            wrapException(e);
-            return null;
-        }
-
-        return l.s;
-    }
-
-    public static SeriesImportFilter getSplitPetMrSessionsFilter() throws IOException {
-        final ScriptService service = XDAT.getContextService().getBean(ScriptService.class);
-        final Script script = service.getByScriptId(SPLIT_PETMR_SESSION_ID);
-        final String content;
-        if (script == null) {
-            content = DEFAULT_SPLIT_PETMR_SESSION_FILTER;
-        } else {
-            content = script.getContent();
-        }
-        final LinkedHashMap<String, String> keys = XDAT.getSerializerService().deserializeJson(content, SeriesImportFilter.MAP_TYPE_REFERENCE);
-        return DicomFilterService.buildSeriesImportFilter(keys);
-    }
-
-    static String getUniqueSessionLabel(final String stem, final String target, final String replacement, final String projectId, final UserI user) {
-        String label;
-        if (stem.contains(target.toUpperCase())) {
-            label = stem.replace(target.toUpperCase(), replacement.toUpperCase());
-        } else if (stem.contains(target.toLowerCase())) {
-            label = stem.replace(target.toLowerCase(), replacement.toLowerCase());
-        } else {
-            label = stem + "_" + replacement;
-        }
-
-        int index = 0;
-        while (XnatExperimentdata.GetExptByProjectIdentifier(projectId, getExperimentId(label, index), user, false) != null) {
-            index++;
-        }
-
-        return getExperimentId(label, index);
-    }
-
-    private static String getExperimentId(String label, int index) {
-        return label + (index == 0 ? "" : Integer.toString(index));
-    }
-
-    private static Map<String, List<String>> separateScans(final XnatPetmrsessiondataBean petmrSession) throws IOException {
-        final Map<String, List<String>> scansByModality = new HashMap<>();
-        scansByModality.put("MR", new ArrayList<String>());
-        scansByModality.put("PT", new ArrayList<String>());
-
-        final SeriesImportFilter splitPetMrSessionFilter = getSplitPetMrSessionsFilter();
-
-        final List<XnatImagescandataI> scans = petmrSession.getScans_scan();
-        if (log.isDebugEnabled()) {
-            log.debug("Processing {} scans from the PET/MR session {} from the scanner {} in the project {}", scans.size(), petmrSession.getId(), petmrSession.getScanner(), petmrSession.getProject());
-        }
-        for (final XnatImagescandataI scan : scans) {
-            final String index = scan.getId();
-            final String modality = getScanModality(scan);
-            final String description = scan.getSeriesDescription();
-            if (log.isDebugEnabled()) {
-                log.debug("Processing scan {} with modality {} and description {}", index, modality, description);
-            }
-            final Map<String, String> headers = new HashMap<>();
-            headers.put("SeriesNumber", index);
-            headers.put("Modality", modality);
-            headers.put("SeriesDescription", description);
-            final String foundModality = splitPetMrSessionFilter.findModality(headers);
-            if (StringUtils.isNotEmpty(foundModality)) {
-                final List<String> foundScans = scansByModality.get(foundModality);
-                if (foundScans != null) {
-                    foundScans.add(index);
-                } else {
-                    log.warn("Session " + petmrSession.getLabel() + " scan " + scan.getId() + "\"" + scan.getSeriesDescription() + "\" has a modality that didn't map to MR or PET according to the split PET/MR session series import filter: " + foundModality);
-                }
-            }
-        }
-        return scansByModality;
-    }
-
-    // TODO: This should use modality-mapped series import filters to define the appropriate modality.
-    private static String getScanModality(final XnatImagescandataI scan) {
-        if (!StringUtils.isBlank(scan.getModality())) {
-            return scan.getModality();
-        }
-        if (scan instanceof XnatPetscandataI) {
-            return "PT";
-        }
-        return "MR";
-    }
-
-    @SuppressWarnings("unused")
-    private static void copySessionMetaData(final XnatPetmrsessiondataBean petmrSession, final XnatPetsessiondataBean petSession, final XnatMrsessiondataBean mrSession) {
-        final Method[] methods = XnatPetmrsessiondataBean.class.getMethods();
-        for (final Method method : methods) {
-            if (Reflection.isGetter(method)) {
-                try {
-                    final Object value = method.invoke(petmrSession);
-                    invokeSetter(method, petSession, value);
-                    invokeSetter(method, mrSession, value);
-                } catch (IllegalAccessException e) {
-                    // This shouldn't happen since we're checking for accessibility, but still...
-                    log.warn("Illegal access of method " + method.getName(), e);
-                } catch (InvocationTargetException e) {
-                    log.warn("An error occurred invoking method " + method.getName(), e);
-                }
-            }
-        }
-        petSession.setId(petmrSession.getId().replace("PETMR", "PET"));
-        petSession.setLabel(petmrSession.getId().replace("PETMR", "PET"));
-        mrSession.setId(petmrSession.getId().replace("PETMR", "MR"));
-        mrSession.setLabel(petmrSession.getLabel().replace("PETMR", "MR"));
-
-        // TODO: Fill this in.
-    }
-
-    private static void invokeSetter(final Method method, final Object target, final Object value) {
-        try {
-            final Method setter = target.getClass().getMethod(method.getName().replaceFirst("get", "set"), method.getReturnType());
-            setter.invoke(target, value);
-        } catch (NoSuchMethodException ignored) {
-            // This is totally OK: it just means that, e.g., the MR session bean doesn't have one of the PET properties or vice versa.
-        } catch (IllegalAccessException e) {
-            // This shouldn't happen since we're checking for accessibility, but still...
-            log.warn("Illegal access of method " + method.getName(), e);
-        } catch (InvocationTargetException e) {
-            log.warn("An error occurred invoking method " + method.getName(), e);
-        }
-    }
-
     private static void pruneDatabase() throws Exception {
         // construct list of timestamps with extant folders
         Set<String> timestamps = PrearcDatabase.getPrearchiveFolderTimestamps();
@@ -913,18 +619,6 @@ public final class PrearcDatabase {
             }
         } else {
             return false;
-        }
-    }
-
-    public static Map<String, SessionData> separatePetMrSession(final String session, final String timestamp, final String project, final XnatPetmrsessiondataBean petmrSession) throws Exception {
-        final SessionData sessionData = getSession(session, timestamp, project);
-        if (!sessionData.getStatus().equals(PrearcStatus._SEPARATING) && markSession(sessionData.getSessionDataTriple(), PrearcStatus.SEPARATING)) {
-            return PrearcDatabase._separatePetMrSession(session, timestamp, project, petmrSession);
-        } else {
-            // Something weird happened...
-            log.error("Couldn't separate the session {}, not sure what happened.", sessionData.getUrl());
-            markSession(sessionData.getSessionDataTriple(), PrearcStatus.READY);
-            return null;
         }
     }
 
@@ -1209,8 +903,25 @@ public final class PrearcDatabase {
      * @throws Exception if SQL transaction fails
      */
     public static boolean setStatus(final SessionData sessionData, final PrearcUtils.PrearcStatus status) throws Exception {
+        return setStatus(sessionData, status, false);
+    }
+
+    /**
+     * Set the status of an existing session, optionally overriding the session lock. All arguments must be non-null and non-empty.
+     *
+     * @param sessionData   The session data pojo.
+     * @param status        Status to be set.
+     * @param overrideLock  When true, the status is set even if the session is locked, i.e. its current status is one
+     *                      of the in-process statuses that begin with '_'. Only site administrators should be able to
+     *                      reach this with a value of true: see XNAT-8767.
+     *
+     * @return True if the status was set, false if the session was locked and overrideLock was false.
+     *
+     * @throws Exception if SQL transaction fails
+     */
+    public static boolean setStatus(final SessionData sessionData, final PrearcUtils.PrearcStatus status, final boolean overrideLock) throws Exception {
         return setStatus(sessionData.getFolderName(), sessionData.getTimestamp(), sessionData.getProject(),
-                status, false);
+                status, overrideLock);
     }
 
     /**

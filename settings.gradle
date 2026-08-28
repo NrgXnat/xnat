@@ -1,4 +1,4 @@
-rootProject.name = 'xnat-monorepo'
+rootProject.name = 'xnat'
 
 // Foundation
 include 'parent'

@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
+import org.nrg.dicom.mizer.exceptions.MizerException;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -217,13 +219,50 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
                                                .collect(Collectors.toList());
         }
 
-        if (files.isEmpty() || catalog.getDimensions_z() == null) {
-            log.info("The DICOM catalog for scan {} in session {} does not contain any number-of-frames info. This is above my pay grade. Get a smarter SnapshotResourceGenerator", scanId, sessionId);
+        if (files.isEmpty()) {
+            log.info("The DICOM catalog for scan {} in session {} lists no files, so there is nothing to render", scanId, sessionId);
             return markBroken(sessionId, scanId);
         }
 
+        Integer nSlices = catalog.getDimensions_z();
+        if (nSlices == null) {
+            // Only the primary catalog carries a frame count: CatalogBuilder sets dimensions_z inside
+            // the branch that builds it, and a scan whose DICOM landed in the secondary catalog gets
+            // one without. Rather than refuse to render, count the frames the same way the builder
+            // would have, by reading them back off the objects themselves.
+            nSlices = countFrames(files);
+            if (nSlices == null) {
+                log.info("The DICOM catalog for scan {} in session {} has no frame count and the frames could not be counted from the objects either, so no snapshot can be generated", scanId, sessionId);
+                return markBroken(sessionId, scanId);
+            }
+            log.info("The DICOM catalog for scan {} in session {} has no frame count, which is normal for a secondary catalog. Counted {} frames across {} objects instead.", scanId, sessionId, nSlices, files.size());
+        }
+
         log.debug("Found {} files in the catalog {} (ID: {}) for session {} scan {}", files.size(), catalogBean.getCatCatalogId(), catalogBean.getId(), sessionId, scanId);
-        return setAttributes(sessionId, scanId, SnapshotAttributes.builder().sessionId(sessionId).scanId(scanId).hasSnapshot(true).files(files).nSlices(catalog.getDimensions_z()).build());
+        return setAttributes(sessionId, scanId, SnapshotAttributes.builder().sessionId(sessionId).scanId(scanId).hasSnapshot(true).files(files).nSlices(nSlices).build());
+    }
+
+    /**
+     * Total montage slices across the given objects, counted as {@code CatalogBuilder} counts them.
+     * <p>
+     * Reads headers only and runs once per scan, since the result is cached with the rest of the
+     * scan's attributes.
+     *
+     * @return the slice count, or null if the scan holds nothing renderable or an object could not
+     *         be read -- either way there is nothing to render from.
+     */
+    static Integer countFrames(final List<String> files) {
+        int total = 0;
+        for (final String path : files) {
+            try {
+                total += FrameCounter.framesIn(new File(path));
+            } catch (MizerException e) {
+                log.warn("Unable to read a frame count from {}", path, e);
+                return null;
+            }
+        }
+        // Nothing renderable, so refuse rather than hand back a count the montage cannot use.
+        return total > 0 ? total : null;
     }
 
     private static String getKey(final String sessionId, final String scanId) {

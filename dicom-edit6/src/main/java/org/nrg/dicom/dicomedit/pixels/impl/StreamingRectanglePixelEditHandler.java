@@ -63,7 +63,7 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
     @Override
     public void process(final Rectangle2D rect, final Color color, final DicomObjectI dobj) throws MizerException {
         final Attributes ds = dobj.getAttributes();
-        if (!ds.contains(Tag.PixelData)) {
+        if (PixelGeometry.pixelDataTag(ds) == 0) {
             logger.warn("Skipping DICOM object with no pixel data, SOP Instance UID {}",
                         ds.getString(Tag.SOPInstanceUID));
             return;
@@ -105,7 +105,8 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
     private void redactNative(final Attributes ds, final DicomObjectI dobj,
                               final PixelGeometry geometry, final LineRedactor redactor) throws IOException {
         final File scratch = stageRedactedPixels(ds, geometry, redactor);
-        repointPixelData(ds, dobj, scratch, scratch.length(), ds.getVR(Tag.PixelData), geometry.bigEndian);
+        repointPixelData(ds, dobj, scratch, scratch.length(), geometry.pixelDataTag,
+                         ds.getVR(geometry.pixelDataTag), geometry.bigEndian);
     }
 
     /**
@@ -118,7 +119,7 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
      */
     static File stageRedactedPixels(final Attributes ds, final PixelGeometry geometry,
                                     final LineRedactor redactor) throws IOException {
-        final Object value       = ds.getValue(Tag.PixelData);
+        final Object value       = ds.getValue(geometry.pixelDataTag);
         final long   valueLength = nativeValueLength(value);
         final File   scratch     = createScratchFile();
 
@@ -165,8 +166,8 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
 
     /** Replaces PixelData with a reference to <b>scratch</b> and ties that file to the object. */
     static void repointPixelData(final Attributes ds, final DicomObjectI dobj, final File scratch,
-                                 final long length, final VR vr, final boolean bigEndian) {
-        ds.setValue(Tag.PixelData, vr == null ? VR.OW : vr,
+                                 final long length, final int tag, final VR vr, final boolean bigEndian) {
+        ds.setValue(tag, vr == null ? VR.OW : vr,
                     new BulkData(scratch.toURI().toString(), 0, length, bigEndian));
         dobj.registerScratchFile(scratch);
     }

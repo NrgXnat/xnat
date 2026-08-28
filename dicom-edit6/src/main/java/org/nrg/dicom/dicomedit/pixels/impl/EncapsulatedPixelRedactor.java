@@ -69,6 +69,14 @@ final class EncapsulatedPixelRedactor {
     static void redact(final Attributes ds, final DicomObjectI dobj, final PixelGeometry sourceGeometry,
                        final Rectangle2D rect, final Color color, final String sourceTs)
             throws IOException, MizerException {
+        if (sourceGeometry.pixelDataTag != Tag.PixelData) {
+            // Float Pixel Data and Double Float Pixel Data are not permitted with an encapsulated
+            // transfer syntax, so this is a malformed object rather than one to guess at. Left
+            // explicit because everything below reads (7FE0,0010) and would otherwise find nothing.
+            throw new MizerException("Floating point pixel data cannot be encapsulated, so this "
+                                     + "object's transfer syntax and pixel data element disagree, "
+                                     + "cannot alter pixels.");
+        }
         if (sourceGeometry.decodesTooLongToExpress()) {
             // Checked before decoding rather than after: the transcoder would write a wrapped
             // length and drop most of the frames without failing, and the redaction would report

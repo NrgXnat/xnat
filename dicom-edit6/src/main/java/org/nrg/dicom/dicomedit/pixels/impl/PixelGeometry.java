@@ -23,6 +23,14 @@ final class PixelGeometry {
      */
     private static final long MAX_PIXEL_DATA_LENGTH = 0xFFFFFFFEL;
 
+    /**
+     * The element the pixels are in: PixelData, or one of the floating point elements a parametric
+     * map carries them in instead. An object has exactly one of the three.
+     */
+    final int     pixelDataTag;
+    /** Whether a sample is an IEEE float rather than an integer, which is what the tag decides. */
+    final boolean floatingPoint;
+
     final int     rows;
     final int     columns;
     final int     samplesPerPixel;
@@ -71,6 +79,9 @@ final class PixelGeometry {
     private final YBR ybr;
 
     private PixelGeometry(Attributes ds) {
+        pixelDataTag  = pixelDataTag(ds);
+        floatingPoint = pixelDataTag == Tag.FloatPixelData || pixelDataTag == Tag.DoubleFloatPixelData;
+
         rows                = ds.getInt(Tag.Rows, 0);
         columns             = ds.getInt(Tag.Columns, 0);
         samplesPerPixel     = ds.getInt(Tag.SamplesPerPixel, 1);
@@ -78,7 +89,11 @@ final class PixelGeometry {
         planarConfiguration = ds.getInt(Tag.PlanarConfiguration, 0);
         frames              = Math.max(1, ds.getInt(Tag.NumberOfFrames, 1));
         bigEndian           = ds.bigEndian();
-        bytesPerSample      = bitsAllocated / 8;
+        // A floating point element states its own sample width, and BitsAllocated is not always
+        // there to be read: OF is four bytes, OD is eight.
+        bytesPerSample      = pixelDataTag == Tag.FloatPixelData ? 4
+                              : pixelDataTag == Tag.DoubleFloatPixelData ? 8
+                              : bitsAllocated / 8;
 
         photometricInterpretation = ds.getString(Tag.PhotometricInterpretation);
         final PhotometricInterpretation pmi = standard(photometricInterpretation);
@@ -121,8 +136,10 @@ final class PixelGeometry {
             throw new MizerException("DICOM object declares " + geometry.samplesPerPixel
                                      + " samples per pixel, cannot alter pixels.");
         }
-        if (geometry.bitsAllocated <= 0 || geometry.bitsAllocated % 8 != 0) {
-            // BitsAllocated of 1 packs 8 pixels per byte, so a rectangle is not a byte range.
+        if (!geometry.floatingPoint && (geometry.bitsAllocated <= 0 || geometry.bitsAllocated % 8 != 0)) {
+            // BitsAllocated of 1 packs 8 pixels per byte, so a rectangle is not a byte range. Only
+            // asked of integer samples: a floating point element is byte-aligned by its VR, and
+            // BitsAllocated is not required alongside it.
             throw new MizerException("BitsAllocated of " + geometry.bitsAllocated
                                      + " is not byte-aligned, cannot alter pixels.");
         }
@@ -141,6 +158,28 @@ final class PixelGeometry {
                                      + " bytes is larger than can be buffered, cannot alter pixels.");
         }
         return geometry;
+    }
+
+    /**
+     * The element <b>ds</b> carries its pixels in, or zero if it carries none.
+     * <p>
+     * Parametric maps and some enhanced objects store pixels as floating point values in
+     * {@code (7FE0,0008)} or {@code (7FE0,0009)} rather than in {@code (7FE0,0010)}, and an object
+     * has exactly one of the three. Asking only about PixelData would pass those through with their
+     * burned-in regions intact, and dcm4che treats all three as bulk data, so they cost the same to
+     * redact.
+     */
+    static int pixelDataTag(final Attributes ds) {
+        if (ds.contains(Tag.PixelData)) {
+            return Tag.PixelData;
+        }
+        if (ds.contains(Tag.FloatPixelData)) {
+            return Tag.FloatPixelData;
+        }
+        if (ds.contains(Tag.DoubleFloatPixelData)) {
+            return Tag.DoubleFloatPixelData;
+        }
+        return 0;
     }
 
     /**

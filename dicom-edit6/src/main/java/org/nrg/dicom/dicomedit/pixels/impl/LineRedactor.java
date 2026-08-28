@@ -105,10 +105,16 @@ final class LineRedactor {
     }
 
     private void putSample(byte[] buffer, int offset, int value) {
+        // A floating point sample takes the fill as a value, not as a bit pattern: a script asking
+        // for 100 means 100.0, and the zero of a blackout is 0.0, which is all-zero bits either way.
+        final long bits = !geometry.floatingPoint ? value
+                          : geometry.bytesPerSample == 4
+                            ? Float.floatToIntBits(value) & 0xFFFFFFFFL
+                            : Double.doubleToLongBits(value);
         for (int byteIndex = 0; byteIndex < geometry.bytesPerSample; byteIndex++) {
             // Little endian puts the least significant byte first; big endian, last.
             final int shift = 8 * (geometry.bigEndian ? geometry.bytesPerSample - 1 - byteIndex : byteIndex);
-            buffer[offset + byteIndex] = (byte) (value >>> shift);
+            buffer[offset + byteIndex] = (byte) (bits >>> shift);
         }
     }
 }

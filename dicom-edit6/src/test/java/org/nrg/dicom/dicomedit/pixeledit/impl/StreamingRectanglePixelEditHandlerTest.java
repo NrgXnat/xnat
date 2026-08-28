@@ -511,6 +511,90 @@ public class StreamingRectanglePixelEditHandlerTest {
         }
     }
 
+    /**
+     * Pixels stored as floating point values are redacted where they lie.
+     * <p>
+     * A parametric map carries them in Float Pixel Data {@code (7FE0,0008)} or Double Float Pixel
+     * Data {@code (7FE0,0009)} rather than in {@code (7FE0,0010)}, and an object has exactly one of
+     * the three. Asking only about PixelData passed those through untouched with a warning, which is
+     * the silent decline this handler exists to avoid.
+     * <p>
+     * pixelmed did not redact them either, whatever its {@code isImage()} answered. Its
+     * {@code ImageEditUtilities.blackout} names no floating point element anywhere: it decoded the
+     * floats, wrote a new integer {@code (7FE0,0010)} with rewritten BitsAllocated, and left
+     * {@code (7FE0,0008)} in place still holding the original pixels. That is a malformed object
+     * carrying the unredacted values it claimed to have removed, so there is nothing here to
+     * preserve bug-for-bug.
+     * <p>
+     * The fill is written as a value rather than as a bit pattern: a script asking for 100 gets
+     * 100.0, not the float whose bits are 100.
+     */
+    @Test
+    public void redactsFloatPixelData() throws Exception {
+        assertFloatPixelsRedacted(Tag.FloatPixelData, VR.OF);
+    }
+
+    @Test
+    public void redactsDoubleFloatPixelData() throws Exception {
+        // Same path, other width: eight bytes a sample and Double.doubleToLongBits rather than four
+        // and Float.floatToIntBits, which nothing else would catch.
+        assertFloatPixelsRedacted(Tag.DoubleFloatPixelData, VR.OD);
+    }
+
+    private void assertFloatPixelsRedacted(int tag, VR vr) throws Exception {
+        final int      side   = 4;
+        final double[] source = new double[side * side];
+        for (int at = 0; at < source.length; at++) {
+            source[at] = (at + 1) * 1.5;
+        }
+
+        final File       file = temporaryFolder.newFile("float-pixels-" + vr + ".dcm");
+        final Attributes ds   = new Attributes();
+        ds.setString(Tag.SOPClassUID, VR.UI, UID.ParametricMapStorage);
+        ds.setString(Tag.SOPInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498.7006");
+        ds.setInt(Tag.Rows, VR.US, side);
+        ds.setInt(Tag.Columns, VR.US, side);
+        ds.setInt(Tag.SamplesPerPixel, VR.US, 1);
+        ds.setString(Tag.PhotometricInterpretation, VR.CS, "MONOCHROME2");
+        if (vr == VR.OF) {
+            final float[] floats = new float[source.length];
+            for (int at = 0; at < source.length; at++) {
+                floats[at] = (float) source[at];
+            }
+            ds.setFloat(tag, vr, floats);
+        } else {
+            ds.setDouble(tag, vr, source);
+        }
+        try (DicomOutputStream out = new DicomOutputStream(file)) {
+            out.writeDataset(ds.createFileMetaInformation(UID.ExplicitVRLittleEndian), ds);
+        }
+
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(file, DicomInputStream.IncludeBulkData.URI);
+        handler.process(new Rectangle2D.Float(1, 1, 2, 2), new Color(100, 100, 100), dobj);
+        final File output = temporaryFolder.newFile("float-pixels-" + vr + "-out.dcm");
+        try (OutputStream out = new FileOutputStream(output)) {
+            dobj.write(out);
+        }
+        dobj.releaseScratchFiles();
+
+        final Attributes after;
+        try (DicomInputStream in = new DicomInputStream(output)) {
+            in.setIncludeBulkData(DicomInputStream.IncludeBulkData.YES);
+            after = in.readDataset();
+        }
+        assertTrue("the pixels should still be in " + vr + ", not moved into PixelData",
+                   !after.contains(Tag.PixelData) && after.contains(tag));
+
+        final double[] redacted = after.getDoubles(tag);
+        assertEquals("the value length must not change", source.length, redacted.length);
+        for (int at = 0; at < redacted.length; at++) {
+            final int    x        = at % side;
+            final int    y        = at / side;
+            final double expected = x >= 1 && x < 3 && y >= 1 && y < 3 ? 100.0 : source[at];
+            assertEquals("sample " + x + "," + y, expected, redacted[at], 1e-6);
+        }
+    }
+
     /** Varied source bytes, clear of every fill value these tests use, so a stray write shows up. */
     private static byte[] pattern(int length) {
         final byte[] pixels = new byte[length];

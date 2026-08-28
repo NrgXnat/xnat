@@ -1,7 +1,6 @@
 package org.nrg.xnat.snapshot.generator.impl;
 
 import org.nrg.dicom.mizer.exceptions.MizerException;
-import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -75,22 +74,22 @@ public class SliceCoordinateCalculator {
      * @throws MizerException
      */
     private List<SliceCoordinate> getSliceCoordinatesTheHardWay( List<Integer> sliceNumbers, List<String> files) throws MizerException {
-        List<Integer> frameCountPerFile = new ArrayList<>();
-        for( String f: files) {
-            String s = DicomObjectFactory.newInstance(new File(f)).getString(0x00280008);
-            int nFrames = (s != null) ? Integer.getInteger(s) : 1;
-            frameCountPerFile.add(nFrames);
-        }
-        List<SliceCoordinate> sliceCoordinates = new ArrayList<>();
+        final List<SliceCoordinate> sliceCoordinates = new ArrayList<>();
         int iSlice = 0;
         int iSliceNumber = 0;
-        for( int iFile = 0; iFile < files.size(); iFile++) {
-            for( int iFrame = 0; iFrame < frameCountPerFile.get(iFile); iFrame++) {
-                iSlice++;
-                if( iSlice == sliceNumbers.get( iSliceNumber)) {
-                    sliceCoordinates.add( new SliceCoordinate( iFile, iFrame));
+        for (int iFile = 0; iFile < files.size() && iSliceNumber < sliceNumbers.size(); iFile++) {
+            // Counted as we reach each object rather than for all of them up front: the loop ends
+            // once the last requested slice is placed, and on shared storage every object it does
+            // not reach is a round trip saved. A single panel selects the midpoint, so that is
+            // half of them.
+            final int frames = FrameCounter.framesIn(new File(files.get(iFile)));
+            for (int iFrame = 0; iFrame < frames && iSliceNumber < sliceNumbers.size(); iFrame++) {
+                // Slice indices count from 0, so compare before advancing.
+                if (iSlice == sliceNumbers.get(iSliceNumber)) {
+                    sliceCoordinates.add(new SliceCoordinate(iFile, iFrame));
                     iSliceNumber++;
                 }
+                iSlice++;
             }
         }
         return sliceCoordinates;

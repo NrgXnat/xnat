@@ -45,27 +45,31 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
     }
 
     /**
-     * How far to read for these indices: the last tag any of them may ask for, never less than the tag before the
-     * pixel data.
+     * How far to read for these indices: the last tag any of them may ask for.
      * <p>
      * The read used to stop at the pixel data unconditionally, so an index pointing at anything sorting after it --
      * a private group &gt;= 0x8000, for instance -- found nothing, and the attribute came back empty with no error.
-     * The floor keeps the window exactly as it was for every index that stops short of the pixel data, which is
-     * all of the standard ones, so only an index that reaches past it reads any further than before.
+     * <p>
+     * It is the highest bound rather than a fixed one in either direction, so a store whose indices all stop early
+     * reads only that far. The standard session and scan attributes top out around (0040,0260), well below the
+     * pixel data, so what used to be read and discarded includes whole groups -- per-frame functional groups among
+     * them, which are not small. An index that does not know its own bound reports {@link DicomAttributeIndex#getMaxTag()
+     * the tag before the pixel data}, which keeps the window open for everyone and is exactly where it used to stop.
      *
      * @param tags the indices the store will query.
      *
      * @return the last tag to read, compared unsigned.
      */
     static int stopTagFor(final Collection<DicomAttributeIndex> tags) {
-        int stopTag = Tag.PixelData - 1;
+        int stopTag = 0;
         for (final DicomAttributeIndex index : tags) {
             final int maxTag = index.getMaxTag();
             if (Integer.compareUnsigned(maxTag, stopTag) > 0) {
                 stopTag = maxTag;
             }
         }
-        return stopTag;
+        // Nothing was asked for, so read as far as this always did rather than not at all.
+        return 0 == stopTag ? Tag.PixelData - 1 : stopTag;
     }
 
     /*

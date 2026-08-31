@@ -97,16 +97,7 @@ public final class BasicCodedEntryAttributeIndex extends AbstractDicomAttributeI
      * {@inheritDoc}
 	 */
 	public int getMaxTag() {
-		int max = valueTag;
-		for (final Integer[] path : new Integer[][]{sequencePath, codingSchemeDesignatorPath}) {
-			for (final Integer tag : path) {
-				// A null index means "every item of the sequence" rather than a tag.
-				if (null != tag && Integer.compareUnsigned(tag, max) > 0) {
-					max = tag;
-				}
-			}
-		}
-		return max;
+		return maxTagIn(valueTag, maxTagIn(sequencePath, codingSchemeDesignatorPath));
 	}
 
 	@Override

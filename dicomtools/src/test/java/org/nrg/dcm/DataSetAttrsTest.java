@@ -88,11 +88,36 @@ public class DataSetAttrsTest {
         assertEquals("after pixel data", dsa.get(AFTER_PIXEL_DATA));
     }
 
-    /** Every standard index stops short of the pixel data, so the window must not move for them. */
+    /** The window is the highest tag asked for, not a fixed one: ordinary attributes stop well short. */
     @Test
-    public final void doesNotWidenTheWindowForOrdinaryAttributes() {
-        assertEquals(Tag.PixelData - 1,
+    public final void readsOnlyAsFarAsTheAttributesAsked() {
+        // SequenceName (0018,0024) is the highest of the three, and well below the pixel data.
+        assertEquals(Tag.SequenceName,
                      DataSetAttrs.stopTagFor(Sets.newHashSet(SEQUENCE_NAME, ACQUISITION_DATE, OPERATORS_NAME)));
+    }
+
+    /**
+     * An index that does not know its own bound reports the tag before the pixel data, which is where the read
+     * always stopped -- so one such index in the set keeps the window open for all of them.
+     */
+    @Test
+    public final void keepsTheOldWindowForAnIndexThatDoesNotKnowItsBound() {
+        final DicomAttributeIndex unbounded = new DicomAttributeIndex() {
+            public String getAttributeName(final org.dcm4che3.data.Attributes attributes) { return "unbounded"; }
+            public String getColumnName() { return "unbounded"; }
+            public Integer[] getPath(final org.dcm4che3.data.Attributes context) { return new Integer[0]; }
+            public String getString(final org.dcm4che3.data.Attributes attributes) { return null; }
+            public String getString(final org.dcm4che3.data.Attributes attributes, final String defaultValue) { return defaultValue; }
+            public String[] getStrings(final org.dcm4che3.data.Attributes attributes) { return new String[0]; }
+        };
+
+        assertEquals(Tag.PixelData - 1, unbounded.getMaxTag());
+        assertEquals(Tag.PixelData - 1, DataSetAttrs.stopTagFor(Sets.newHashSet(SEQUENCE_NAME, unbounded)));
+    }
+
+    /** Asking for nothing reads as far as it always did rather than not at all. */
+    @Test
+    public final void readsTheOldWindowWhenNothingIsAskedFor() {
         assertEquals(Tag.PixelData - 1, DataSetAttrs.stopTagFor(Sets.newHashSet()));
     }
 

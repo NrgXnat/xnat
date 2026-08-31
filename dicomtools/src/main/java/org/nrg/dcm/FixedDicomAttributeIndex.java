@@ -80,13 +80,7 @@ public final class FixedDicomAttributeIndex extends AbstractDicomAttributeIndex 
      */
     @Override
     public int getMaxTag() {
-        int max = 0;
-        for (final int tag : path) {
-            if (Integer.compareUnsigned(tag, max) > 0) {
-                max = tag;
-            }
-        }
-        return max;
+        return maxTagIn(path);
     }
 
     /**

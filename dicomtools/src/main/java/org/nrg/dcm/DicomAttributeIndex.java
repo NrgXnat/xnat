@@ -9,6 +9,7 @@
 package org.nrg.dcm;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import org.nrg.attr.ConversionFailureException;
 
 public interface DicomAttributeIndex {
@@ -41,13 +42,16 @@ public interface DicomAttributeIndex {
      * A conservative over-estimate is fine; an under-estimate means the reader stops short and the attribute
      * comes back empty.
      * <p>
-     * The default is 0, which contributes nothing. An implementation that can reference a tag sorting after the
-     * pixel data must override it, or the store will not read far enough to find the value.
+     * The default is the tag before the pixel data, which is how far every read went before this existed. An
+     * implementation that knows its tags should override it and say so -- the reader stops at the highest
+     * bound it is given, so one index that does not know keeps the window open for all of them. An
+     * implementation that can reference a tag sorting <i>after</i> the pixel data must override it, or the
+     * store will not read far enough to find the value.
      *
      * @return the highest tag this index may read, as an unsigned value.
      */
     default int getMaxTag() {
-        return 0;
+        return Tag.PixelData - 1;
     }
 
     /**

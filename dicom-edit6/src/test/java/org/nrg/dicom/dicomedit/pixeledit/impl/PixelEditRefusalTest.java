@@ -61,6 +61,55 @@ public class PixelEditRefusalTest {
     }
 
     /**
+     * A 422 group is laid out Y Y Cb Cr, so it needs three samples to fill. An object declaring a
+     * 422 photometric interpretation with any other sample count disagrees with itself; the fill
+     * would run off the end of the samples it was given.
+     */
+    @Test
+    public void refusesSubsampledColourThatDoesNotCarryThreeSamples() throws Exception {
+        final File   source = subsampled(1);
+        final byte[] before = Files.readAllBytes(source.toPath());
+
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(source, DicomInputStream.IncludeBulkData.URI);
+        try {
+            handler.process(new Rectangle2D.Float(0, 0, 8, 8), new Color(0, 0, 0), dobj);
+            fail("expected a refusal for YBR_FULL_422 with 1 sample per pixel");
+        } catch (MizerException e) {
+            final String message = String.valueOf(e.getMessage());
+            assertTrue("the message should name the layout, was: " + message, message.contains("YBR_FULL_422"));
+            assertTrue("the message should name the sample count, was: " + message, message.contains("1 samples per pixel"));
+        } finally {
+            dobj.releaseScratchFiles();
+        }
+        assertArrayEquals("a refused object must be left exactly as it was",
+                          before, Files.readAllBytes(source.toPath()));
+    }
+
+    /** A 422 object declaring the given sample count, which for 422 may only legally be three. */
+    private File subsampled(final int samplesPerPixel) throws Exception {
+        final int        side    = 16;
+        final Attributes dataset = new Attributes();
+        dataset.setString(Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
+        dataset.setString(Tag.SOPInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498.8" + samplesPerPixel);
+        dataset.setInt(Tag.Rows, VR.US, side);
+        dataset.setInt(Tag.Columns, VR.US, side);
+        dataset.setInt(Tag.SamplesPerPixel, VR.US, samplesPerPixel);
+        dataset.setString(Tag.PhotometricInterpretation, VR.CS, "YBR_FULL_422");
+        dataset.setInt(Tag.PlanarConfiguration, VR.US, 0);
+        dataset.setInt(Tag.BitsAllocated, VR.US, 8);
+        dataset.setInt(Tag.BitsStored, VR.US, 8);
+        dataset.setInt(Tag.HighBit, VR.US, 7);
+        dataset.setInt(Tag.PixelRepresentation, VR.US, 0);
+        dataset.setBytes(Tag.PixelData, VR.OB, new byte[side * side * 2]);
+
+        final File file = temporaryFolder.newFile("subsampled-" + samplesPerPixel + ".dcm");
+        try (final DicomOutputStream out = new DicomOutputStream(file)) {
+            out.writeDataset(dataset.createFileMetaInformation(UID.ExplicitVRLittleEndian), dataset);
+        }
+        return file;
+    }
+
+    /**
      * Refusing has to leave the object as it was: the importer reports the failure, and an object
      * that had been partly rewritten first would be neither redacted nor original.
      */

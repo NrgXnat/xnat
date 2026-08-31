@@ -143,6 +143,14 @@ final class PixelGeometry {
             throw new MizerException("BitsAllocated of " + geometry.bitsAllocated
                                      + " is not byte-aligned, cannot alter pixels.");
         }
+        if (geometry.pixelsPerGroup > 1 && geometry.samplesPerPixel != 3) {
+            // A 422 group is laid out Y Y Cb Cr, so the fill needs a luma and both chroma samples.
+            // Refused here rather than left to fail on the third of them, which would report an
+            // array index and say nothing about the header that is actually wrong.
+            throw new MizerException("PhotometricInterpretation of " + geometry.photometricInterpretation
+                                     + " with " + geometry.samplesPerPixel + " samples per pixel rather "
+                                     + "than 3, cannot alter pixels.");
+        }
         if (geometry.pixelsPerGroup > 1 && geometry.bytesPerSample != 1) {
             // The 422 layouts are defined for 8-bit samples, which is what a group of four bytes
             // assumes; dcm4che's own ColorSubsampling ignores BitsAllocated for the same reason.

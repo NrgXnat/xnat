@@ -1,6 +1,7 @@
 package org.nrg.dicom.dicomedit.pixeledit.impl;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
@@ -20,6 +21,7 @@ import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -196,6 +198,34 @@ public class StreamingRectanglePixelEditHandlerTest {
 
         final File scratch = scratchFileOf(dobj);
         assertTrue("redaction should have staged pixels on disk", scratch.exists());
+        dobj.releaseScratchFiles();
+        assertTrue("scratch pixels should be deleted on release", !scratch.exists());
+    }
+
+    /**
+     * Staging is unconditional: a redaction writes its pixels to a scratch file whatever form the
+     * object's bulk data arrived in, so a caller owes a release either way.
+     * <p>
+     * The heap is the case that makes the point rather than the case anything uses -- having never
+     * asked for a reference, a caller could reasonably expect no file to have appeared. One has,
+     * and only {@link DicomObjectI#releaseScratchFiles()} removes it.
+     */
+    @Test
+    public void stagesAScratchFileEvenWhenBulkDataWasReadOntoTheHeap() throws Exception {
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(
+                resource("dicom/single-frame/US-evle-mono2-8bits.dcm"), DicomInputStream.IncludeBulkData.YES);
+        assertTrue("this test is about the heap path, so the fixture must have been read onto it",
+                   dobj.getAttributes().getValue(Tag.PixelData) instanceof byte[]);
+
+        handler.process(new Rectangle2D.Float(10, 10, 20, 20), new Color(0, 0, 0), dobj);
+
+        // Checked before reading the file out of it, so editing the heap array in place fails here
+        // and says so, rather than failing on the cast with a ClassCastException.
+        assertTrue("redaction should have staged pixels on disk and repointed the object at them, "
+                   + "even though the pixels were already on the heap",
+                   dobj.getAttributes().getValue(Tag.PixelData) instanceof BulkData);
+        final File scratch = scratchFileOf(dobj);
+        assertTrue("the staged file should exist", scratch.exists());
         dobj.releaseScratchFiles();
         assertTrue("scratch pixels should be deleted on release", !scratch.exists());
     }

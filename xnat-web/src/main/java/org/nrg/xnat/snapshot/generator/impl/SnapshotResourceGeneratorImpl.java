@@ -60,7 +60,7 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
 
         final SnapshotAttributes attributes   = getAttributes(sessionId, scanId);
         final Path               montageFile  = _tmpRoot.resolve(getSnapshotResourceName(sessionId, scanId, nRows, nCols, getFormat()));
-        final BufferedImage      montageImage = new MontageGenerator().generate(attributes.getFiles(), attributes.getNSlices(), nRows, nCols);
+        final BufferedImage      montageImage = new MontageGenerator().generate(attributes.getFiles(), attributes.getNSlices(), nRows, nCols, attributes.getFrameCounts());
 
         writeImage(montageFile.toFile(), montageImage);
         return Optional.of(new FileResource(montageFile, getSnapshotContentName(nRows, nCols), getFormat()));
@@ -79,7 +79,7 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
 
         final SnapshotAttributes attributes     = getAttributes(sessionId, scanId);
         final Path               thumbnailFile  = _tmpRoot.resolve(getThumbnailResourceName(sessionId, scanId, nRows, nCols, getFormat()));
-        final BufferedImage      montageImage   = new MontageGenerator().generate(attributes.getFiles(), attributes.getNSlices(), nRows, nCols);
+        final BufferedImage      montageImage   = new MontageGenerator().generate(attributes.getFiles(), attributes.getNSlices(), nRows, nCols, attributes.getFrameCounts());
         final BufferedImage      thumbnailImage = new ThumbnailGenerator().rescale(montageImage, scaleRows, scaleCols);
 
         writeImage(thumbnailFile.toFile(), thumbnailImage);
@@ -251,7 +251,9 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
         }
 
         log.debug("Found {} files in the catalog {} (ID: {}) for session {} scan {}", files.size(), catalogBean.getCatCatalogId(), catalogBean.getId(), sessionId, scanId);
-        return setAttributes(sessionId, scanId, SnapshotAttributes.builder().sessionId(sessionId).scanId(scanId).hasSnapshot(true).files(files).nSlices(nSlices).build());
+        final Map<String, Integer> frameCounts = new HashMap<>();
+        headers.forEach((path, header) -> frameCounts.put(path, header.frames()));
+        return setAttributes(sessionId, scanId, SnapshotAttributes.builder().sessionId(sessionId).scanId(scanId).hasSnapshot(true).files(files).nSlices(nSlices).frameCounts(frameCounts).build());
     }
 
     /**
@@ -339,6 +341,9 @@ public class SnapshotResourceGeneratorImpl extends DicomImageRenderer implements
         private final int          nSlices;
         @Builder.Default
         private final List<String> files = new ArrayList<>();
+        /** Frames per file, for the objects whose headers init() had to read. Empty when it read none. */
+        @Builder.Default
+        private final Map<String, Integer> frameCounts = new HashMap<>();
     }
 
     private static final String DEFAULT_FORMAT = "gif";

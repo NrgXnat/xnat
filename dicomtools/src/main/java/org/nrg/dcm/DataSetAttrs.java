@@ -45,6 +45,15 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
     }
 
     /**
+     * The largest bound this can return. A caller turns the bound into an exclusive stop tag by adding one, and
+     * one more than 0xFFFFFFFF is zero -- which dcm4che reads as "stop at the first element", so every file would
+     * come back empty. Only a DICOM mapping can name a tag that high, since parseDicomTag accepts the whole
+     * unsigned range, and (FFFF,FFFF) is not a legal tag in any case. Capping here reads to the end of the
+     * object instead.
+     */
+    private static final int HIGHEST_STOP_TAG = 0xFFFFFFFE;
+
+    /**
      * How far to read for these indices: the last tag any of them may ask for.
      * <p>
      * A fixed stop tag cannot serve both ends of this. An index may point at a tag sorting after the pixel data --
@@ -71,14 +80,11 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
             }
         }
         if (0 == stopTag) {
-            // Nothing was asked for, so read as far as this always did rather than not at all.
+            // Nothing was asked for. Read to the pixel data rather than not at all, so a caller that queries an
+            // index it never declared still finds it.
             return Tag.PixelData - 1;
         }
-        // The caller adds one to get an exclusive stop tag, and 0xFFFFFFFF + 1 is 0 -- which dcm4che reads as
-        // "stop at the first element", so every file would come back empty. A tag is only this high because a
-        // DICOM mapping named one: parseDicomTag accepts the whole unsigned range, and (FFFF,FFFF) is not a
-        // legal tag anyway. Step back one, which reads to the end of the object and cannot wrap.
-        return -1 == stopTag ? 0xFFFFFFFE : stopTag;
+        return Integer.compareUnsigned(stopTag, HIGHEST_STOP_TAG) > 0 ? HIGHEST_STOP_TAG : stopTag;
     }
 
     /*

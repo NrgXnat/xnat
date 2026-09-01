@@ -14,6 +14,29 @@ sourceSets {
     }
 }
 
+// The OpenCV native is loaded by name through java.library.path rather than off the classpath, so
+// it has to be staged under the filename System.loadLibrary expects -- the resolved artifact
+// carries its version and classifier in the name. Which artifact to resolve depends on the machine
+// running the build.
+configurations {
+    opencvNative
+}
+
+ext.openCv = {
+    final String os   = System.getProperty('os.name').toLowerCase()
+    final String arch = System.getProperty('os.arch').toLowerCase()
+    final boolean arm = arch.contains('aarch64') || arch.contains('arm64')
+    if (os.contains('mac')) {
+        return [classifier: arm ? 'macosx-aarch64' : 'macosx-x86-64', extension: 'dylib',
+                fileName: 'libopencv_java.dylib']
+    }
+    if (os.contains('windows')) {
+        return [classifier: 'windows-x86-64', extension: 'dll', fileName: 'opencv_java.dll']
+    }
+    return [classifier: arm ? 'linux-aarch64' : 'linux-x86-64', extension: 'so',
+            fileName: 'libopencv_java.so']
+}()
+
 generateGrammarSource {
     arguments += ['-visitor', '-listener', '-package', 'org.nrg.dicom.dicomedit']
     def libDir = layout.buildDirectory
@@ -39,11 +62,7 @@ dependencies {
     api libs.spring.beans
     api libs.google.guava
     api libs.commons.lang3
-    api libs.pixelmed.pixelmed
     api libs.slf4j.api
-
-    runtimeOnly libs.pixelmed.codec
-    runtimeOnly libs.pixelmed.imageio
 
     compileOnly libs.metainf.services.metainf.services
     annotationProcessor libs.metainf.services.metainf.services
@@ -51,11 +70,26 @@ dependencies {
     testImplementation project(':test')
     testImplementation libs.junit.junit
     testImplementation libs.spring.test
-    testImplementation libs.imagej.ij
+
+    // Codecs for compressed pixel data. dcm4che 5 resolves every JPEG-family transfer syntax to
+    // the OpenCV-backed plugins, and RLE to its own pure-Java one; without them, redacting a
+    // compressed object cannot decode it. See docs/mirroring-opencv-codecs.md.
+    testRuntimeOnly libs.dcm4che5.dcm4che.imageio.opencv
+    testRuntimeOnly libs.dcm4che5.dcm4che.imageio.rle
+    opencvNative "org.weasis.thirdparty.org.opencv:libopencv_java:${libs.versions.weasis.opencv.get()}:${openCv.classifier}@${openCv.extension}"
+}
+
+tasks.register('stageOpenCvNative', Copy) {
+    from configurations.opencvNative
+    into layout.buildDirectory.dir('opencv-native')
+    rename '.*', openCv.fileName
 }
 
 test {
-    // PixelmedPixelEditHandlerTest.multiframe_evle_rgb_8bit: GC overhead limit exceeded
-    // Same failure in Maven — not a migration issue
-    exclude '**/PixelmedPixelEditHandlerTest.class'
+    dependsOn tasks.named('stageOpenCvNative')
+    systemProperty 'java.library.path', layout.buildDirectory.dir('opencv-native').get().asFile.absolutePath
+    // LargeFramePixelEditTest builds a DICOM with a single frame larger than 2 GB to prove it can be
+    // redacted, which costs several GB of scratch and a minute or two. Opt in with
+    // -PlargeObjectTests, the same switch mizer's LargeDicomObjectTest uses.
+    systemProperty 'test.largeObjects', project.hasProperty('largeObjectTests')
 }

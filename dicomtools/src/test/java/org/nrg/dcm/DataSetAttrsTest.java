@@ -115,6 +115,21 @@ public class DataSetAttrsTest {
         assertEquals(Tag.PixelData - 1, DataSetAttrs.stopTagFor(Sets.newHashSet(SEQUENCE_NAME, unbounded)));
     }
 
+    /**
+     * The caller adds one to get an exclusive stop tag, so a bound of 0xFFFFFFFF would wrap to 0 and dcm4che
+     * would stop at the first element -- every file empty. A DICOM mapping can name that tag: parseDicomTag
+     * accepts the whole unsigned range.
+     */
+    @Test
+    public final void doesNotLetTheStopTagWrapToZero() {
+        final DicomAttributeIndex highest = new FixedDicomAttributeIndex(0xFFFFFFFF);
+
+        final int stopTag = DataSetAttrs.stopTagFor(Sets.newHashSet(highest));
+
+        assertEquals("stepped back so the exclusive stop tag cannot wrap", 0xFFFFFFFE, stopTag);
+        assertEquals("and that exclusive stop tag reads to the end", -1, stopTag + 1);
+    }
+
     /** Asking for nothing reads as far as it always did rather than not at all. */
     @Test
     public final void readsTheOldWindowWhenNothingIsAskedFor() {

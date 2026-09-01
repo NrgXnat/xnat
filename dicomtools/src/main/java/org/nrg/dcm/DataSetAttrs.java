@@ -51,10 +51,11 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
      * a private group &gt;= 0x8000, for instance -- found nothing, and the attribute came back empty with no error.
      * <p>
      * It is the highest bound rather than a fixed one in either direction, so a store whose indices all stop early
-     * reads only that far. The standard session and scan attributes top out around (0040,0260), well below the
-     * pixel data, so what used to be read and discarded includes whole groups -- per-frame functional groups among
-     * them, which are not small. An index that does not know its own bound reports {@link DicomAttributeIndex#getMaxTag()
-     * the tag before the pixel data}, which keeps the window open for everyone and is exactly where it used to stop.
+     * reads only that far. For a session builder store that is (5200,9230): DicomAttributes.chain reaches into
+     * the per-frame functional groups, and every modality's attributes are registered on every store, so those
+     * sequences are what holds the window open rather than what gets skipped. An index that does not know its
+     * own bound reports {@link DicomAttributeIndex#getMaxTag() the tag before the pixel data}, which keeps the
+     * window open for everyone and is exactly where it used to stop.
      *
      * @param tags the indices the store will query.
      *
@@ -68,8 +69,15 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
                 stopTag = maxTag;
             }
         }
-        // Nothing was asked for, so read as far as this always did rather than not at all.
-        return 0 == stopTag ? Tag.PixelData - 1 : stopTag;
+        if (0 == stopTag) {
+            // Nothing was asked for, so read as far as this always did rather than not at all.
+            return Tag.PixelData - 1;
+        }
+        // The caller adds one to get an exclusive stop tag, and 0xFFFFFFFF + 1 is 0 -- which dcm4che reads as
+        // "stop at the first element", so every file would come back empty. A tag is only this high because a
+        // DICOM mapping named one: parseDicomTag accepts the whole unsigned range, and (FFFF,FFFF) is not a
+        // legal tag anyway. Step back one, which reads to the end of the object and cannot wrap.
+        return -1 == stopTag ? 0xFFFFFFFE : stopTag;
     }
 
     /*

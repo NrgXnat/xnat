@@ -96,10 +96,14 @@ public final class BasicCodedEntryAttributeIndex extends AbstractDicomAttributeI
 	/**
      * {@inheritDoc}
 	 */
+	@Override
 	public int getMaxTag() {
 		return maxTagIn(valueTag, maxTagIn(sequencePath, codingSchemeDesignatorPath));
 	}
 
+	/**
+     * {@inheritDoc}
+	 */
 	@Override
 	public Integer[] getPath(final Attributes unused) {
 		return Arrays.copyOf(sequencePath, sequencePath.length);

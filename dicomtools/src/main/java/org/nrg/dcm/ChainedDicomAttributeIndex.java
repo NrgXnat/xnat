@@ -119,6 +119,9 @@ public final class ChainedDicomAttributeIndex extends AbstractDicomAttributeInde
         return maxTagIn(paths);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Integer[] getPath(final Attributes context) {
         return paths.stream()

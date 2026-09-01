@@ -625,6 +625,50 @@ public class StreamingRectanglePixelEditHandlerTest {
         }
     }
 
+    /**
+     * An encapsulated redaction releases the pixels it staged.
+     * <p>
+     * Both encapsulated paths stage a file and hand ownership of it to the object, and neither was
+     * covered: deletesScratchFilesOnRelease works on a native fixture, so it pins only the
+     * registration in the handler. Dropping either of the two in EncapsulatedPixelRedactor left
+     * every test passing while a file the size of the uncompressed pixel data -- which is to say,
+     * the pixel data -- stayed in the scratch directory for good.
+     */
+    @Test
+    public void releasesTheStagedPixelsOfARecompressedRedaction() throws Exception {
+        // JPEG 2000 Lossless: decoded, redacted, re-encoded, and it is the re-encoded file that the
+        // object ends up owning.
+        assertStagedPixelsReleased("dicom/DE44/horos_jpg2k.dcm");
+    }
+
+    @Test
+    public void releasesTheStagedPixelsOfARedactionStoredUncompressed() throws Exception {
+        // Lossy JPEG, so it is not re-encoded: the object ends up owning the decoded and redacted
+        // pixels instead, staged by a different line.
+        assertStagedPixelsReleased("dicom/multi-frame/xa-jpeg1.dcm");
+    }
+
+    private void assertStagedPixelsReleased(final String resource) throws Exception {
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(resource(resource),
+                                                                 DicomInputStream.IncludeBulkData.URI);
+        final int before = stagedPixelFiles().length;
+        handler.process(new Rectangle2D.Float(10, 10, 40, 40), new Color(0, 0, 0), dobj);
+
+        // Asserted before releasing rather than after: a test that cannot see the staged files at
+        // all would otherwise pass whether or not anything is ever cleaned up.
+        assertEquals("redaction should have left exactly one staged file for the object to own",
+                     before + 1, stagedPixelFiles().length);
+        dobj.releaseScratchFiles();
+        assertEquals("releasing the object should have deleted it", before, stagedPixelFiles().length);
+    }
+
+    /** Staged pixels are named pixeledit*.pixels and, with no scratch directory set, go to the temp one. */
+    private static File[] stagedPixelFiles() {
+        final File[] found = new File(System.getProperty("java.io.tmpdir"))
+                .listFiles((directory, name) -> name.startsWith("pixeledit") && name.endsWith(".pixels"));
+        return found == null ? new File[0] : found;
+    }
+
     /** Varied source bytes, clear of every fill value these tests use, so a stray write shows up. */
     private static byte[] pattern(int length) {
         final byte[] pixels = new byte[length];

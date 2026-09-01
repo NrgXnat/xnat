@@ -174,37 +174,65 @@ public class BulkDataLoadingTest {
      */
     @Test
     public void deletesSpooledFilesWhenTheReadFails() throws Exception {
-        final byte[] gzipped;
-        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
-            try (OutputStream out = new GZIPOutputStream(buffer)) {
-                Files.copy(fixture().toPath(), out);
-            }
-            gzipped = buffer.toByteArray();
-        }
-
+        final File spoolDirectory = spoolDirectory();
         // Truncated hard enough to fail mid-read, but past the header and into the pixel data, so
         // there is something spooled by the time it does.
-        final File truncated = temporaryFolder.newFile("truncated.dcm.gz");
-        Files.write(truncated.toPath(), Arrays.copyOf(gzipped, (int) (gzipped.length * 0.9)));
+        final File truncated = gzipped("truncated.dcm.gz", 0.9);
 
-        final File[] before = spoolFiles();
+        final File[] before = spoolFiles(spoolDirectory);
         try {
             DicomObjectFactory.newInstance(truncated, DicomInputStream.IncludeBulkData.URI);
             fail("expected a truncated source to fail the read");
         } catch (MizerException expected) {
             // The point is what it leaves behind, not the message.
         }
-        final File[] after = spoolFiles();
+        final File[] after = spoolFiles(spoolDirectory);
 
         assertEquals("a failed read left " + (after.length - before.length) + " spool file(s) behind: "
                      + Arrays.toString(after), before.length, after.length);
     }
 
-    /** dcm4che names its spool files blk*.tmp and puts them in the system temp directory. */
-    private static File[] spoolFiles() {
-        final File[] found = new File(System.getProperty("java.io.tmpdir"))
-                .listFiles((directory, name) -> name.startsWith("blk") && name.endsWith(".tmp"));
+    /**
+     * The directory dcm4che spools into, found by asking for one rather than by assuming where it is.
+     * <p>
+     * The files are named blk*.tmp, but they do not sit in the system temp directory: mizer points
+     * dcm4che at a directory of its own so the pixel data in them is not left world-readable. A test
+     * that looked in java.io.tmpdir would find none of them and pass whether or not anything was
+     * cleaned up, which is exactly what happened when that directory was introduced. Asking a
+     * successful read where its own spool file went keeps this working wherever they are put.
+     */
+    private File spoolDirectory() throws Exception {
+        final DicomObjectI dicomObject =
+                DicomObjectFactory.newInstance(gzipped("locate-spool.dcm.gz", 1.0),
+                                               DicomInputStream.IncludeBulkData.URI);
+        try {
+            final Object value = dicomObject.getAttributes().getValue(Tag.PixelData);
+            assertTrue("a gzipped source should spool its bulk data to a file: "
+                       + (value == null ? "null" : value.getClass().getName()), value instanceof BulkData);
+            return ((BulkData) value).getFile().getParentFile();
+        } finally {
+            dicomObject.releaseScratchFiles();
+        }
+    }
+
+    /** dcm4che names its spool files blk*.tmp. */
+    private static File[] spoolFiles(final File directory) {
+        final File[] found = directory.listFiles((d, name) -> name.startsWith("blk") && name.endsWith(".tmp"));
         return found == null ? new File[0] : found;
+    }
+
+    /** A gzip of the fixture, keeping the leading <b>fraction</b> of it. */
+    private File gzipped(final String name, final double fraction) throws Exception {
+        final byte[] whole;
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            try (OutputStream out = new GZIPOutputStream(buffer)) {
+                Files.copy(fixture().toPath(), out);
+            }
+            whole = buffer.toByteArray();
+        }
+        final File file = temporaryFolder.newFile(name);
+        Files.write(file.toPath(), Arrays.copyOf(whole, (int) (whole.length * fraction)));
+        return file;
     }
 
     private static File write(final DicomObjectI dicomObject) throws MizerException, java.io.IOException {

@@ -102,6 +102,12 @@ public class BaseScriptApplicator implements ScriptApplicatorI {
      * Apply this script to the specified DICOM object file.
      *
      * @param file {@link java.io.File}  The DICOM object file.
+     * <p>
+     * If the script redacts pixels, the returned object's pixel data is a reference into a scratch
+     * file that it reads from when written. The caller owns that file: call
+     * {@link org.nrg.dicom.mizer.objects.DicomObjectI#releaseScratchFiles()} once the object has
+     * been written out, or it is left behind, one per redacted object.
+     *
      * @return {@link AnonymizationResult} encapsulates the modified DicomObject and processing details. Users must
      * examine this object for status of the anon process.
      * @throws MizerException When an error occurs creating a DICOM object from the submitted file.
@@ -117,6 +123,12 @@ public class BaseScriptApplicator implements ScriptApplicatorI {
      * Apply this script to the specified DICOM object input stream.
      *
      * @param is {@link InputStream}  The DICOM object input stream.
+     * <p>
+     * If the script redacts pixels, the returned object's pixel data is a reference into a scratch
+     * file that it reads from when written. The caller owns that file: call
+     * {@link org.nrg.dicom.mizer.objects.DicomObjectI#releaseScratchFiles()} once the object has
+     * been written out, or it is left behind, one per redacted object.
+     *
      * @return {@link AnonymizationResult} encapsulates the modified DicomObject and processing details. Users must
      * examine this object for status of the anon process.
      * @throws MizerException When an error occurs creating a DICOM object from the specified stream.

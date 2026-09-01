@@ -148,11 +148,32 @@ public class BaseMizerServiceTest extends BaseMizerTest {
     @Test
     public void mizerServiceDE6UpdatesDicomObjectDeidentificationMethodCodeSequence() {
         try {
-            getTestDicomObject();
+            final DicomObjectI dicomObject = getTestDicomObject();
+            // Built through createContext, the same way the file path builds its own, so the entry
+            // point is the only thing that differs between this and its File counterpart. record and
+            // scriptId are what make the sequence get written at all: AbstractMizer.anonymize calls
+            // addRecord only when isRecord() is set and the script id is above zero, and the
+            // in-memory convenience overloads do not carry either.
+            final MizerContextWithScript context =
+                    service.createContext(PROJECT, SUBJECT, SESSION, 1L, SET_STD_ATTRS_DE6, true, false);
+            service.anonymize(dicomObject, context);
 
-            final MizerContextWithScript context = new MizerContextWithScript();
-            context.setElement("project", "project");
-            context.setScript("version \"6.1\"\nstudyDescription := project\n(0008,103e) := studyDescription\n");
+            assertEquals(PROJECT, dicomObject.getString(TAG_PROJECT));
+            assertEquals(SUBJECT, dicomObject.getString(TAG_SUBJECT));
+            assertEquals(SESSION, dicomObject.getString(TAG_SESSION));
+
+            final DicomElementI element = dicomObject.get(Tag.DeidentificationMethodCodeSequence);
+
+            assertNotNull(element);
+            assertTrue(element.hasItems());
+            assertEquals(1, element.countItems());
+
+            final DicomObjectI sequence = element.getDicomObject(0);
+            assertNotNull(sequence);
+            assertEquals("1", sequence.getString(Tag.CodeValue));
+            assertEquals("XNAT DicomEdit 6 Script", sequence.getString(Tag.CodeMeaning));
+            assertEquals("XNAT", sequence.getString(Tag.CodingSchemeDesignator));
+            assertEquals("1.0", sequence.getString(Tag.CodingSchemeVersion));
         } catch (IOException e) {
             fail("Test setup failed: " + e);
         } catch (MizerException ae) {
@@ -194,10 +215,34 @@ public class BaseMizerServiceTest extends BaseMizerTest {
     @Test
     public void mizerServiceDE4UpdatesDicomObjectDeidentificationMethodCodeSequence() {
         try {
-            final MizerContextWithScript context = new MizerContextWithScript();
+            final DicomObjectI dicomObject = getTestDicomObject();
+            // Built through createContext, the same way the file path builds its own, so the entry
+            // point is the only thing that differs between this and its File counterpart. record and
+            // scriptId are what make the sequence get written at all: AbstractMizer.anonymize calls
+            // addRecord only when isRecord() is set and the script id is above zero, and the
+            // in-memory convenience overloads do not carry either.
+            final MizerContextWithScript context =
+                    service.createContext(PROJECT, SUBJECT, SESSION, 1L, SET_STD_ATTRS_DE4, true, false);
+            service.anonymize(dicomObject, context);
 
-            context.setElement("project", "project");
-            context.setScript("version \"6.1\"\nstudyDescription := project\n(0008,103e) := studyDescription\n");
+            assertEquals(PROJECT, dicomObject.getString(TAG_PROJECT));
+            assertEquals(SUBJECT, dicomObject.getString(TAG_SUBJECT));
+            assertEquals(SESSION, dicomObject.getString(TAG_SESSION));
+
+            final DicomElementI element = dicomObject.get(Tag.DeidentificationMethodCodeSequence);
+
+            assertNotNull(element);
+            assertTrue(element.hasItems());
+            assertEquals(1, element.countItems());
+
+            final DicomObjectI sequence = element.getDicomObject(0);
+            assertNotNull(sequence);
+            assertEquals("1", sequence.getString(Tag.CodeValue));
+            assertEquals("XNAT DicomEdit 4 Script", sequence.getString(Tag.CodeMeaning));
+            assertEquals("XNAT", sequence.getString(Tag.CodingSchemeDesignator));
+            assertEquals("1.0", sequence.getString(Tag.CodingSchemeVersion));
+        } catch (IOException e) {
+            fail("Test setup failed: " + e);
         } catch (MizerException ae) {
             fail("Unexpected exception: " + ae);
         }

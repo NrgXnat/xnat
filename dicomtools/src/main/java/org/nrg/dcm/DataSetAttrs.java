@@ -47,15 +47,16 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
     /**
      * How far to read for these indices: the last tag any of them may ask for.
      * <p>
-     * The read used to stop at the pixel data unconditionally, so an index pointing at anything sorting after it --
-     * a private group &gt;= 0x8000, for instance -- found nothing, and the attribute came back empty with no error.
+     * A fixed stop tag cannot serve both ends of this. An index may point at a tag sorting after the pixel data --
+     * a private group &gt;= 0x8000, for instance -- and the read has to reach it or the attribute comes back empty
+     * with no error; a store whose indices all stop early should not read past them for nothing. So it is the
+     * highest bound the indices report, and an index that cannot report one asks for
+     * {@link DicomAttributeIndex#getMaxTag() the tag before the pixel data}, which holds the window open for the
+     * rest of the set.
      * <p>
-     * It is the highest bound rather than a fixed one in either direction, so a store whose indices all stop early
-     * reads only that far. For a session builder store that is (5200,9230): DicomAttributes.chain reaches into
-     * the per-frame functional groups, and every modality's attributes are registered on every store, so those
-     * sequences are what holds the window open rather than what gets skipped. An index that does not know its
-     * own bound reports {@link DicomAttributeIndex#getMaxTag() the tag before the pixel data}, which keeps the
-     * window open for everyone and is exactly where it used to stop.
+     * For a session builder store the bound is (5200,9230): DicomAttributes.chain reaches into the per-frame
+     * functional groups, and every modality's attributes are registered on every store, so those sequences are
+     * what holds the window open.
      *
      * @param tags the indices the store will query.
      *

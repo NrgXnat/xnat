@@ -42,11 +42,11 @@ public interface DicomAttributeIndex {
      * A conservative over-estimate is fine; an under-estimate means the reader stops short and the attribute
      * comes back empty.
      * <p>
-     * The default is the tag before the pixel data, which is how far every read went before this existed. An
-     * implementation that knows its tags should override it and say so -- the reader stops at the highest
-     * bound it is given, so one index that does not know keeps the window open for all of them. An
-     * implementation that can reference a tag sorting <i>after</i> the pixel data must override it, or the
-     * store will not read far enough to find the value.
+     * The default is the tag before the pixel data, which covers every standard attribute. An implementation
+     * that knows its own tags should override it and say so: the reader stops at the highest bound it is given,
+     * so one index falling back to the default holds the window open for the whole set. An implementation that
+     * can reference a tag sorting <i>after</i> the pixel data must override it, or the store will not read far
+     * enough to find the value.
      *
      * @return the highest tag this index may read, as an unsigned value.
      */

@@ -72,8 +72,8 @@ public class DataSetAttrsTest {
     }
 
     /**
-     * The read used to stop at the pixel data unconditionally, so an index pointing past it -- a private group
-     * &gt;= 0x8000 sorts there -- found nothing and the attribute came back empty with no error.
+     * A private group &gt;= 0x8000 sorts after the pixel data, so an index pointing at one is only readable if the
+     * window reaches past it. Without that the attribute comes back empty with no error.
      */
     @Test
     public final void readsAnAttributeThatSortsAfterThePixelData()

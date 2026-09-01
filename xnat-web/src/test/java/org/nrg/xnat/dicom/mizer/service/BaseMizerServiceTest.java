@@ -53,6 +53,15 @@ public class BaseMizerServiceTest extends BaseMizerTest {
         assertEquals(2, mizers.size());
     }
 
+    // Still ignored, and not because it fails: the body is empty, so running it asserts nothing.
+    // Writing it needs a decision first. BaseMizerService's javadoc says handlers are "presented in
+    // descending max version order", so that findMizer returns the highest-versioned implementation
+    // able to handle a script. The code sorts ascending -- VersionString.compareTo orders low to
+    // high and AbstractMizer.compareTo delegates to it -- and the mizers really do come back
+    // DE4Mizer (4.0) then DE6Mizer (6.7). Asserting descending would fail; asserting ascending
+    // would pin behaviour that contradicts the documented intent. Harmless today, since each mizer
+    // rejects the other's scripts through understands(), but the doc and the code should agree
+    // before this becomes a test.
     @Test
     @Ignore
     public void mizersAreInDescendingMaxVersionOrder() {
@@ -136,15 +145,35 @@ public class BaseMizerServiceTest extends BaseMizerTest {
         }
     }
 
-    @Ignore
     @Test
     public void mizerServiceDE6UpdatesDicomObjectDeidentificationMethodCodeSequence() {
         try {
-            getTestDicomObject();
+            final DicomObjectI dicomObject = getTestDicomObject();
+            // Built through createContext, the same way the file path builds its own, so the entry
+            // point is the only thing that differs between this and its File counterpart. record and
+            // scriptId are what make the sequence get written at all: AbstractMizer.anonymize calls
+            // addRecord only when isRecord() is set and the script id is above zero, and the
+            // in-memory convenience overloads do not carry either.
+            final MizerContextWithScript context =
+                    service.createContext(PROJECT, SUBJECT, SESSION, 1L, SET_STD_ATTRS_DE6, true, false);
+            service.anonymize(dicomObject, context);
 
-            final MizerContextWithScript context = new MizerContextWithScript();
-            context.setElement("project", "project");
-            context.setScript("version \"6.1\"\nstudyDescription := project\n(0008,103e) := studyDescription\n");
+            assertEquals(PROJECT, dicomObject.getString(TAG_PROJECT));
+            assertEquals(SUBJECT, dicomObject.getString(TAG_SUBJECT));
+            assertEquals(SESSION, dicomObject.getString(TAG_SESSION));
+
+            final DicomElementI element = dicomObject.get(Tag.DeidentificationMethodCodeSequence);
+
+            assertNotNull(element);
+            assertTrue(element.hasItems());
+            assertEquals(1, element.countItems());
+
+            final DicomObjectI sequence = element.getDicomObject(0);
+            assertNotNull(sequence);
+            assertEquals("1", sequence.getString(Tag.CodeValue));
+            assertEquals("XNAT DicomEdit 6 Script", sequence.getString(Tag.CodeMeaning));
+            assertEquals("XNAT", sequence.getString(Tag.CodingSchemeDesignator));
+            assertEquals("1.0", sequence.getString(Tag.CodingSchemeVersion));
         } catch (IOException e) {
             fail("Test setup failed: " + e);
         } catch (MizerException ae) {
@@ -183,14 +212,37 @@ public class BaseMizerServiceTest extends BaseMizerTest {
         }
     }
 
-    @Ignore
     @Test
     public void mizerServiceDE4UpdatesDicomObjectDeidentificationMethodCodeSequence() {
         try {
-            final MizerContextWithScript context = new MizerContextWithScript();
+            final DicomObjectI dicomObject = getTestDicomObject();
+            // Built through createContext, the same way the file path builds its own, so the entry
+            // point is the only thing that differs between this and its File counterpart. record and
+            // scriptId are what make the sequence get written at all: AbstractMizer.anonymize calls
+            // addRecord only when isRecord() is set and the script id is above zero, and the
+            // in-memory convenience overloads do not carry either.
+            final MizerContextWithScript context =
+                    service.createContext(PROJECT, SUBJECT, SESSION, 1L, SET_STD_ATTRS_DE4, true, false);
+            service.anonymize(dicomObject, context);
 
-            context.setElement("project", "project");
-            context.setScript("version \"6.1\"\nstudyDescription := project\n(0008,103e) := studyDescription\n");
+            assertEquals(PROJECT, dicomObject.getString(TAG_PROJECT));
+            assertEquals(SUBJECT, dicomObject.getString(TAG_SUBJECT));
+            assertEquals(SESSION, dicomObject.getString(TAG_SESSION));
+
+            final DicomElementI element = dicomObject.get(Tag.DeidentificationMethodCodeSequence);
+
+            assertNotNull(element);
+            assertTrue(element.hasItems());
+            assertEquals(1, element.countItems());
+
+            final DicomObjectI sequence = element.getDicomObject(0);
+            assertNotNull(sequence);
+            assertEquals("1", sequence.getString(Tag.CodeValue));
+            assertEquals("XNAT DicomEdit 4 Script", sequence.getString(Tag.CodeMeaning));
+            assertEquals("XNAT", sequence.getString(Tag.CodingSchemeDesignator));
+            assertEquals("1.0", sequence.getString(Tag.CodingSchemeVersion));
+        } catch (IOException e) {
+            fail("Test setup failed: " + e);
         } catch (MizerException ae) {
             fail("Unexpected exception: " + ae);
         }
@@ -223,6 +275,12 @@ public class BaseMizerServiceTest extends BaseMizerTest {
     }
 
     @Test
+    // Ignored because it fails, and has since it was written: a multi-script anonymization
+    // whose second script errors leaves the first script's edits on disk instead of rolling
+    // back, so the file is left partially de-identified. Reproduced unchanged against
+    // origin/develop, so this is a standing defect in the rollback path rather than
+    // fallout from any one change. The other three tests here were ignored alongside it and
+    // pass, so they now run.
     @Ignore
     public void rollbackOn2ndStepErrorTest() {
         File anonTestFile = new File("/tmp/anonTestFile");

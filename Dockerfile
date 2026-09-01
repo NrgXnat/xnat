@@ -63,12 +63,51 @@ RUN chmod +x /usr/local/bin/*.sh
 # for the WAR expansion below).
 RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
+        curl \
+        ca-certificates \
         netcat-traditional \
         iputils-ping \
         net-tools \
         traceroute \
         dcmtk \
     && rm -rf /var/lib/apt/lists/*
+
+# -----------------------------------------------------------------------------
+# OpenCV native for dcm4che's image codecs.
+#
+# dcm4che 5 resolves every JPEG-family transfer syntax to the OpenCV-backed ImageIO plugins in
+# org.dcm4che:dcm4che-imageio-opencv, which is Java glue over this binary. Without it, anything
+# decoding compressed pixel data -- snapshots, thumbnails, montages, and redaction by the
+# alterPixels anonymization function -- fails with "No Reader for format: jpeg2000-cv registered".
+#
+# It is fetched rather than copied from the build context because the context is assembled by the
+# reusable CI workflow and carries only the WAR. /usr/java/packages/lib is already on the JVM's
+# default java.library.path on Linux, so nothing needs -Djava.library.path.
+#
+# Set INSTALL_OPENCV=false for 1.9.x builds, which are on dcm4che 2 and would carry ~19 MB unused.
+# See docs/mirroring-opencv-codecs.md.
+# -----------------------------------------------------------------------------
+ARG INSTALL_OPENCV=true
+# No default: BuildKit populates TARGETARCH with the architecture actually being built for, and a
+# default here would mask it -- an arm64 build would silently install the amd64 native. Empty (a
+# pre-BuildKit builder) falls through to the error case, which is the right answer.
+ARG TARGETARCH
+ARG OPENCV_VERSION=5.0.0-dcm
+ARG OPENCV_BASE=https://nrgxnat.jfrog.io/nrgxnat/libs-release/org/weasis/thirdparty/org/opencv/libopencv_java/${OPENCV_VERSION}
+RUN set -eu; \
+    if [ "${INSTALL_OPENCV}" != "true" ]; then \
+        echo "INSTALL_OPENCV=${INSTALL_OPENCV}, skipping the OpenCV native"; \
+    else \
+        case "${TARGETARCH}" in \
+            amd64) classifier=linux-x86-64;  sha256=3552c806744192c734f6cf492bf95a139cbfd6f800ff662688d18b6a199f92f1 ;; \
+            arm64) classifier=linux-aarch64; sha256=b07190e6ef6e233c2b7dc7f945c5b470be44450a49f9915aeaaa86f8799ef6a0 ;; \
+            *) echo "No OpenCV native published for TARGETARCH=${TARGETARCH}" >&2; exit 1 ;; \
+        esac; \
+        mkdir -p /usr/java/packages/lib; \
+        curl -fsSL --retry 3 -o /usr/java/packages/lib/libopencv_java.so \
+             "${OPENCV_BASE}/libopencv_java-${OPENCV_VERSION}-${classifier}.so"; \
+        echo "${sha256}  /usr/java/packages/lib/libopencv_java.so" | sha256sum -c -; \
+    fi
 
 # XNAT directory layout — pre-created so a fresh container has somewhere
 # to write before any volume is mounted. Most of these are intended to

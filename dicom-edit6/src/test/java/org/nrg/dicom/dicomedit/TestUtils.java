@@ -1,6 +1,5 @@
 package org.nrg.dicom.dicomedit;
 
-import org.nrg.dicom.dicomedit.pixeledit.impl.PixelEditTestParams;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
@@ -53,7 +52,7 @@ public class TestUtils {
     }
 
     public static InputStream resourceFileInputStream(final String resourceFile) throws IOException, URISyntaxException {
-        ClassLoader loader = PixelEditTestParams.class.getClassLoader();
+        ClassLoader loader = TestUtils.class.getClassLoader();
         File file = new File(loader.getResource(resourceFile).toURI());
         return new FileInputStream( file);
     }

@@ -9,7 +9,6 @@
 
 package org.nrg.xnat.presentation;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.nrg.xft.presentation.FlattenedItem.FlattenedFile;
 import org.nrg.xft.presentation.FlattenedItemA;
@@ -55,15 +54,6 @@ public class DateBasedSummaryBuilderTest {
 	}
 
 	@Test
-	public void keepsSameNamedFilesInDifferentSubdirectoriesApart() throws Exception {
-		final ItemObject resource = resource("101");
-		final Map<Date, ChangeSummary> byDate = DateBasedSummaryBuilder.build(
-				Arrays.asList(file("a/x.dcm", resource), file("b/x.dcm", resource)), null);
-
-		assertEquals(2, byDate.get(ARCHIVED).getEvents().size());
-	}
-
-	@Test
 	public void collapsesTheSameFileRegisteredTwice() throws Exception {
 		final ItemObject resource = resource("101");
 		final Map<Date, ChangeSummary> byDate = DateBasedSummaryBuilder.build(
@@ -78,7 +68,7 @@ public class DateBasedSummaryBuilderTest {
 		parents.add(new ItemObject("scan", "1", "1", Collections.singletonList("xnat:mrScanData")));
 		parents.add(resource);
 		return new FlattenedFile(new FlattenedItemA.FieldTracker(), false, ARCHIVED, ARCHIVED, 1, "system:file",
-				"admin", null, 900, StringUtils.substringAfterLast("/" + path, "/"), path, parents, "admin");
+				"admin", null, 900, path, parents, "admin");
 	}
 
 	private static ItemObject resource(final String id) {

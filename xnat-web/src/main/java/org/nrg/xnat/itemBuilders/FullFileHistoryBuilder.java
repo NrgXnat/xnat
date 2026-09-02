@@ -54,7 +54,7 @@ public class FullFileHistoryBuilder extends FileHistoryBuilderAbst implements Fl
 		Date last_modified=FlattenedItemA.parseDate(entry.getModifiedtime());
 		Date insert_date=FlattenedItemA.parseDate(entry.getCreatedtime());
 
-		return new FlattenedItem.FlattenedFile(ft,isHistory,last_modified,insert_date,idGenerator.call(),"system:file",entry.getCreatedby(),entry.getModifiedeventid(),entry.getCreatedeventid(),getLabel(entry),getIdentifier(entry),parents,entry.getCreatedby());
+		return new FlattenedItem.FlattenedFile(ft,isHistory,last_modified,insert_date,idGenerator.call(),"system:file",entry.getCreatedby(),entry.getModifiedeventid(),entry.getCreatedeventid(),getIdentifier(entry),parents,entry.getCreatedby());
 	}
 
 	public static String getLabel(CatEntryI entry){
@@ -70,9 +70,11 @@ public class FullFileHistoryBuilder extends FileHistoryBuilderAbst implements Fl
 	}
 
 	/**
-	 * Identifies an entry within its resource: the path the catalog recorded for it, not its name. Two
-	 * files in different subdirectories of one resource share a name, and identifying them by it reports
-	 * the second as a revision of the first.
+	 * Identifies an entry within its resource, and labels it on screen: the path the catalog recorded for
+	 * it, not its name. Two files in different subdirectories of one resource share a name, and a name is
+	 * a file's only tracked field, so identifying them by it makes the pair identical and the merge throws
+	 * the second away. A file at the root of its resource records its name as its path, so the common case
+	 * reads exactly as before.
 	 * 
 	 * <p>The recorded path is also what still matches an entry to its earlier versions. A history entry
 	 * is a copy of the entry it superseded with only the URI rewritten, to an absolute path under

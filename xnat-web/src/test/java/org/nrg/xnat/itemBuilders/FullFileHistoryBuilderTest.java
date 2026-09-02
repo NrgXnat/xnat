@@ -45,8 +45,15 @@ public class FullFileHistoryBuilderTest {
 	}
 
 	@Test
-	public void stillReadsAsItsNameOnScreen() throws Exception {
-		assertEquals("x.dcm", file(entry("a/x.dcm", "a/x.dcm"), false).getItemObject().getObjectLabel());
+	public void readsAsItsPathOnScreen() throws Exception {
+		//two rows both reading "x.dcm" would be no more use than the one row they replace
+		assertEquals("a/x.dcm", file(entry("a/x.dcm", "a/x.dcm"), false).getItemObject().getObjectLabel());
+	}
+
+	@Test
+	public void readsAsItsBareNameAtTheRootOfAResource() throws Exception {
+		//a root-level entry records its name as its path, so the common case is unchanged
+		assertEquals("x.dcm", file(entry("x.dcm", "x.dcm"), false).getItemObject().getObjectLabel());
 	}
 
 	/** An entry as the catalog records one: the path in ID, the bare name in name. */

@@ -253,7 +253,7 @@ public class FlattenedItem extends FlattenedItemA {
 
         public FlattenedFile(FlattenedItemA.FieldTracker ft, boolean isHistory,
                              Date last_modified, Date insert_date,
-                             Integer id, String xsiType, String modifiedBy, Integer modifiedEventId, Integer createEventId, String label, List<FlattenedItemA.ItemObject> parents, String createdBy) {
+                             Integer id, String xsiType, String modifiedBy, Integer modifiedEventId, Integer createEventId, String label, String identifier, List<FlattenedItemA.ItemObject> parents, String createdBy) {
             super(ft, isHistory, last_modified, insert_date, (isHistory) ? FlattenedItemA.DELETED : "active", id, xsiType, parents);
 
             if (isHistory) {
@@ -265,13 +265,16 @@ public class FlattenedItem extends FlattenedItemA {
             create_event_id = createEventId;
             create_username = createdBy;
 
-            String lbl = label.intern();
-            FlattenedItemA.putValue("uri", "uri", lbl, ft);
+            // the label is what a reader sees; the identifier is which file this is. They differ
+            // whenever one resource holds the same name in more than one subdirectory.
+            final String lbl = label.intern();
+            final String path = identifier.intern();
+            FlattenedItemA.putValue("uri", "uri", path, ft);
 
             pks = Collections.singletonList("uri");
             displayIdentifiers = Collections.singletonList("uri");
 
-            o = new FlattenedItemA.ItemObject("file", lbl, lbl, Collections.singletonList("system:file"));
+            o = new FlattenedItemA.ItemObject("file", lbl, path, Collections.singletonList("system:file"));
         }
 
         public FlattenedFile(FlattenedFile fi) throws Exception {

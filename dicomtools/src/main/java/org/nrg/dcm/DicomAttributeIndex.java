@@ -9,6 +9,7 @@
 package org.nrg.dcm;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Tag;
 import org.nrg.attr.ConversionFailureException;
 
 public interface DicomAttributeIndex {
@@ -32,6 +33,26 @@ public interface DicomAttributeIndex {
      * @return The tag path for the indicated object.
      */
     Integer[] getPath(Attributes context);
+
+    /**
+     * Returns an upper bound, compared unsigned, on the tags this index may read.
+     * <p>
+     * {@link #getPath(Attributes)} needs the object to resolve, which is no use to a reader deciding how far to
+     * read in the first place, so this reports the highest tag the index could ask for without seeing anything.
+     * A conservative over-estimate is fine; an under-estimate means the reader stops short and the attribute
+     * comes back empty.
+     * <p>
+     * The default is the tag before the pixel data, which covers every standard attribute. An implementation
+     * that knows its own tags should override it and say so: the reader stops at the highest bound it is given,
+     * so one index falling back to the default holds the window open for the whole set. An implementation that
+     * can reference a tag sorting <i>after</i> the pixel data must override it, or the store will not read far
+     * enough to find the value.
+     *
+     * @return the highest tag this index may read, as an unsigned value.
+     */
+    default int getMaxTag() {
+        return Tag.PixelData - 1;
+    }
 
     /**
      * Returns the value of the target attributes in the provided dataset.

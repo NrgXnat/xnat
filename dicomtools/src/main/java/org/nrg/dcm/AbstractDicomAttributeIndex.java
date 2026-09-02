@@ -16,6 +16,43 @@ import org.nrg.dicomtools.utilities.DicomUtils;
 import java.util.*;
 
 public abstract class AbstractDicomAttributeIndex implements DicomAttributeIndex {
+
+    /**
+     * The highest of the given tags, compared unsigned. For {@link DicomAttributeIndex#getMaxTag()}, which every
+     * index answers by taking the largest tag it could reach.
+     */
+    protected static int maxTagIn(final int... tags) {
+        int max = 0;
+        for (final int tag : tags) {
+            if (Integer.compareUnsigned(tag, max) > 0) {
+                max = tag;
+            }
+        }
+        return max;
+    }
+
+    /**
+     * As above, over tag paths. A null entry is a sequence wildcard -- every item of it -- rather than a tag,
+     * so it is skipped.
+     */
+    protected static int maxTagIn(final Integer[]... paths) {
+        return maxTagIn(Arrays.asList(paths));
+    }
+
+    /**
+     * As above, for an index that already holds its paths in a collection.
+     */
+    protected static int maxTagIn(final Collection<Integer[]> paths) {
+        int max = 0;
+        for (final Integer[] path : paths) {
+            for (final Integer tag : path) {
+                if (null != tag && Integer.compareUnsigned(tag, max) > 0) {
+                    max = tag;
+                }
+            }
+        }
+        return max;
+    }
     protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private static int compare(final Integer[] a0, final Integer[] a1) {

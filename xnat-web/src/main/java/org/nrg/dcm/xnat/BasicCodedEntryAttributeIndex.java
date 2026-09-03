@@ -96,6 +96,17 @@ public final class BasicCodedEntryAttributeIndex extends AbstractDicomAttributeI
 	/**
      * {@inheritDoc}
 	 */
+	@Override
+	public int getMaxTag() {
+		// codingSchemeDesignatorPath is sequencePath extended, so both enter at the same tag, and valueTag is
+		// read out of a nested context by getStrings rather than from the top level. The sequence is the bound.
+		return entryTagOf(sequencePath);
+	}
+
+	/**
+     * {@inheritDoc}
+	 */
+	@Override
 	public Integer[] getPath(final Attributes unused) {
 		return Arrays.copyOf(sequencePath, sequencePath.length);
 	}

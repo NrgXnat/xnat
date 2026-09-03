@@ -245,6 +245,7 @@ dependencies {
     implementation(libs.turbine.turbine) {
         exclude group: 'commons-dbcp'
         exclude group: 'commons-email'
+        exclude group: 'commons-fileupload', module: 'commons-fileupload'
         exclude group: 'commons-pool'
         exclude group: 'fulcrum'
         exclude group: 'javax.activation', module: 'activation'

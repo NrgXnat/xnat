@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -169,6 +171,44 @@ public class SliceCoordinateHardPathTest {
             dataset.setInt(Tag.NumberOfFrames, VR.IS, frames);
         }
         return write(name, dataset);
+    }
+
+    /**
+     * A count the caller already read is used instead of opening the file. The generator reads every header
+     * to total the slices when the catalog records no frame count, so opening them again here was the same
+     * work twice -- and a path that does not exist cannot be opened at all, which is what pins it.
+     */
+    @Test
+    public void usesFrameCountsTheCallerAlreadyRead() throws Exception {
+        final List<String> files = Arrays.asList(new File(temporaryFolder.getRoot(), "never-written-a.dcm").getAbsolutePath(),
+                                                 new File(temporaryFolder.getRoot(), "never-written-b.dcm").getAbsolutePath());
+        final Map<String, Integer> known = new HashMap<>();
+        known.put(files.get(0), 2);
+        known.put(files.get(1), 3);
+
+        final List<SliceCoordinate> coordinates =
+                new SliceCoordinateCalculator().getSliceCoordinates(5, 5, files, known);
+
+        assertEquals("placed from the counts alone, without opening either file",
+                     Arrays.asList(new SliceCoordinate(0, 0), new SliceCoordinate(0, 1),
+                                   new SliceCoordinate(1, 0), new SliceCoordinate(1, 1),
+                                   new SliceCoordinate(1, 2)),
+                     coordinates);
+    }
+
+    /** A file the caller knows nothing about is still read, so a partial map is not a broken one. */
+    @Test
+    public void readsOnlyTheFilesTheCallerDidNotAlreadyCount() throws Exception {
+        final List<String> files = Arrays.asList(new File(temporaryFolder.getRoot(), "never-written.dcm").getAbsolutePath(),
+                                                 object("read-me.dcm", 2));
+        final Map<String, Integer> known = new HashMap<>();
+        known.put(files.get(0), 1);
+
+        final List<SliceCoordinate> coordinates =
+                new SliceCoordinateCalculator().getSliceCoordinates(3, 3, files, known);
+
+        assertEquals(Arrays.asList(new SliceCoordinate(0, 0), new SliceCoordinate(1, 0), new SliceCoordinate(1, 1)),
+                     coordinates);
     }
 
     /** No Rows, Columns or pixel data, as a structured report has. */

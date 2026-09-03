@@ -75,19 +75,19 @@ public class FullFileHistoryBuilder extends FileHistoryBuilderAbst implements Fl
 	 * a file's only tracked field, so identifying them by it makes the pair identical and the merge throws
 	 * the second away. A file at the root of its resource records its name as its path, so the common case
 	 * reads exactly as before.
-	 * 
+	 *
 	 * <p>The recorded path is also what still matches an entry to its earlier versions. A history entry
 	 * is a copy of the entry it superseded with only the URI rewritten, to an absolute path under
 	 * {@code history/}, so the URI cannot do it. An entry old enough to record no path falls back to the
 	 * label, which is what identified every entry before.
 	 */
 	public static String getIdentifier(CatEntryI entry){
-		final String path=StringUtils.defaultIfBlank(entry.getId(),entry.getCachepath());
+		final String path = StringUtils.defaultIfBlank(entry.getId(), entry.getCachepath());
 		if(StringUtils.isNotBlank(path)){
 			return path;
 		}
-		
-		final String uri=entry.getUri();
-		return (StringUtils.isNotBlank(uri) && !FileUtils.IsAbsolutePath(uri))?uri:getLabel(entry);
+
+		final String uri = entry.getUri();
+		return (StringUtils.isNotBlank(uri) && !FileUtils.IsAbsolutePath(uri)) ? uri : getLabel(entry);
 	}
 }

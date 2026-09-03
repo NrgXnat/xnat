@@ -447,12 +447,12 @@ public abstract class FlattenedItemA implements FlattenedItemI{
 		public int compareTo(ItemObject io){
 			//both sides have to be read the same way: getObjectHeader() renames a few headers for display,
 			//so comparing it against the raw field made an object unequal to itself for those types.
-			int i=io.getObjectHeader().compareTo(this.getObjectHeader());
+			int i = io.getObjectHeader().compareTo(this.getObjectHeader());
 			
 			if(i!=0){
 				return i;
 			}else{
-				return ObjectUtils.compare((Comparable)io.objectId,(Comparable)this.objectId);
+				return ObjectUtils.compare((Comparable) io.objectId, (Comparable) this.objectId);
 			}
 		}
 		

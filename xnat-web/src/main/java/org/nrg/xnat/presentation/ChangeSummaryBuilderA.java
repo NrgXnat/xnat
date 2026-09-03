@@ -194,20 +194,20 @@ public abstract class ChangeSummaryBuilderA extends ItemHistoryBuilder{
 	
 	/**
 	 * Has this change already been recorded against this timestamp?
-	 * 
+	 *
 	 * <p>The object it belongs to is part of the comparison because an object's id only identifies it
 	 * within its parent. Files are the case that matters: a file is identified by its name, so on the
 	 * object alone the same file name in two different resources looks like one object and every
 	 * resource after the first is dropped as a duplicate.
 	 */
-	protected boolean contains(Map<Date,ChangeSummary> sb, Date d, String action,FlattenedItemA.ItemObject io,FlattenedItemA.ItemObject parent){
+	protected boolean contains(Map<Date,ChangeSummary> sb, Date d, String action, FlattenedItemA.ItemObject io, FlattenedItemA.ItemObject parent){
 		ChangeSummary ies=sb.get(d);
 		if(ies==null){
 			return false;
 		}
 		
 		for(ItemEventI ie:ies.getEvents()){
-			if(ie.getAction().equals(action) && ie.getItemObject().equals(io) && isSameParent(ie.getParent(),parent)){
+			if(ie.getAction().equals(action) && ie.getItemObject().equals(io) && isSameParent(ie.getParent(), parent)){
 				return true;
 			}
 		}
@@ -215,10 +215,10 @@ public abstract class ChangeSummaryBuilderA extends ItemHistoryBuilder{
 		return false;
 	}
 	
-	private static boolean isSameParent(FlattenedItemA.ItemObject p1,FlattenedItemA.ItemObject p2){
-		return (p1==null || p2==null)?(p1==p2):p1.equals(p2);
+	private static boolean isSameParent(FlattenedItemA.ItemObject p1, FlattenedItemA.ItemObject p2){
+		return (p1 == null || p2 == null) ? (p1 == p2) : p1.equals(p2);
 	}
-	
+
 	
 	public void  renderChildren(Map<String,FlattenedItemA.ChildCollection> items, Map<Date,ChangeSummary> sb, Integer parent) throws Exception{
 		for(Map.Entry<String,FlattenedItemA.ChildCollection> entry: items.entrySet()){
@@ -243,7 +243,7 @@ public abstract class ChangeSummaryBuilderA extends ItemHistoryBuilder{
 	
 	protected void registerEvent(Map<Date,ChangeSummary> sb, ItemObject io,Number change_id, Date d, List<ItemEventI> ies){
 		for(ItemEventI ie:ies){
-			if(MODIFIED.equals(ie.getAction()) || !contains(sb,d,ie.getAction(),io,ie.getParent())){
+			if(MODIFIED.equals(ie.getAction()) || !contains(sb, d, ie.getAction(), io, ie.getParent())){
 				addMessage(sb,d,change_id,ie);
 			}
 		}

@@ -67,9 +67,9 @@ public class XFTItemDBLoader {
 	public ItemCollection getMultiDBChildren(GenericWrapperElement foreign, XFTManyToManyReference many, String mapping_name, UserI user, boolean allowMultiples) {
 		//the same reference is read through both the live mapping table and its history, so the mapping
 		//table belongs in the key; without it the second read is answered with the first one's result
-		final String key=many.toString()+mapping_name;
+		final String key = many.toString() + mapping_name;
 		if(cache!=null){
-			ItemCollection temp=cache.getDBChildren(id,foreign.getXSIType(), key);
+			ItemCollection temp = cache.getDBChildren(id, foreign.getXSIType(), key);
 			if(temp!=null){
 				return temp;
 			}
@@ -98,7 +98,7 @@ public class XFTItemDBLoader {
 			query += ";";
 
 			if (nullKey) {
-				return cacheDBChildren(id,foreign.getXSIType(), key, new ItemCollection());
+				return cacheDBChildren(id, foreign.getXSIType(), key, new ItemCollection());
 			} else {
 				String login = null;
 				if (user != null) {
@@ -135,12 +135,12 @@ public class XFTItemDBLoader {
 					search.add(col);
 
 					if (nullKey) {
-						return cacheDBChildren(id,foreign.getXSIType(), key, new ItemCollection());
+						return cacheDBChildren(id, foreign.getXSIType(), key, new ItemCollection());
 					}
 
-					return cacheDBChildren(id,foreign.getXSIType(), key, search.exec(allowMultiples));
+					return cacheDBChildren(id, foreign.getXSIType(), key, search.exec(allowMultiples));
 				} else {
-					return cacheDBChildren(id,foreign.getXSIType(), key, new ItemCollection());
+					return cacheDBChildren(id, foreign.getXSIType(), key, new ItemCollection());
 				}
 			}
 		} catch (Exception e) {
@@ -150,12 +150,12 @@ public class XFTItemDBLoader {
 	}
 	
 	public ItemCollection cacheDBChildren(String id, String type, XFTReferenceI ref, ItemCollection items){
-		return cacheDBChildren(id,type,ref.toString(), items);
+		return cacheDBChildren(id, type, ref.toString(), items);
 	}
 
-	public ItemCollection cacheDBChildren(String id, String type, String key, ItemCollection items){
+	public ItemCollection cacheDBChildren(String id, String type, String key, ItemCollection items) {
 		if(cache!=null){
-			cache.setDBChildren(id,type,key, items);
+			cache.setDBChildren(id, type, key, items);
 		}
 		return items;
 	}

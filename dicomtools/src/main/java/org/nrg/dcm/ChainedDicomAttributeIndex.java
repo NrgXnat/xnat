@@ -116,7 +116,7 @@ public final class ChainedDicomAttributeIndex extends AbstractDicomAttributeInde
      */
     @Override
     public int getMaxTag() {
-        return maxTagIn(paths);
+        return highestEntryTag(paths);
     }
 
     /**

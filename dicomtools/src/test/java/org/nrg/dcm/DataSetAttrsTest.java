@@ -36,6 +36,9 @@ public class DataSetAttrsTest {
     /** Carries a private block on each side of the pixel data. */
     private static final String AFTER_PIXEL_DATA_RESOURCE = "dataSetAttrs/tagAfterPixelData.dcm";
 
+    /** A sequence at a low tag holding a private tag far above it. */
+    private static final String NESTED_RESOURCE = "dataSetAttrs/tagNestedInSequence.dcm";
+
     private static final DicomAttributeIndex BEFORE_PIXEL_DATA = new FixedDicomAttributeIndex(0x00191050);
     private static final DicomAttributeIndex AFTER_PIXEL_DATA  = new FixedDicomAttributeIndex(0xF2151050);
 
@@ -128,6 +131,27 @@ public class DataSetAttrsTest {
 
         assertEquals("stepped back so the exclusive stop tag cannot wrap", 0xFFFFFFFE, stopTag);
         assertEquals("and that exclusive stop tag reads to the end", -1, stopTag + 1);
+    }
+
+    /**
+     * The bound for a nested index is the sequence it enters, not the tag inside it -- and that is enough,
+     * because reading a sequence element brings its items with it whatever the stop tag says. This is the
+     * assertion that makes the narrower bound safe rather than merely smaller.
+     */
+    @Test
+    public final void reachesANestedAttributeFromItsSequencesBound() throws Exception {
+        final DicomAttributeIndex nested =
+                new FixedDicomAttributeIndex("nested", Tag.ReferencedImageSequence, 0, 0xF2151050);
+
+        assertEquals("bounded at the sequence, not the tag within it",
+                     Tag.ReferencedImageSequence, DataSetAttrs.stopTagFor(Sets.newHashSet(nested)));
+
+        final URL url = getClass().getClassLoader().getResource(NESTED_RESOURCE);
+        assertNotNull(url);
+        final DataSetAttrs dsa = DataSetAttrs.create(url.toURI(), Sets.newHashSet(nested),
+                                                    FileURIOpener.getInstance());
+
+        assertEquals("and the value inside the sequence is still found", "deep value", dsa.get(nested));
     }
 
     /** Asking for nothing reads as far as it always did rather than not at all. */

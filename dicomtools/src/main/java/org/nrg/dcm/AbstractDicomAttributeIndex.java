@@ -18,40 +18,41 @@ import java.util.*;
 public abstract class AbstractDicomAttributeIndex implements DicomAttributeIndex {
 
     /**
-     * The highest of the given tags, compared unsigned. For {@link DicomAttributeIndex#getMaxTag()}, which every
-     * index answers by taking the largest tag it could reach.
+     * The tag at which a path enters the object: its first element.
+     * <p>
+     * That is the only element a stop tag gates. Reading a top-level sequence brings its items with it whatever
+     * the stop tag says, so a tag nested inside one needs no wider a window than the sequence itself -- and a
+     * nested tag sorting above its own sequence would otherwise widen every read for nothing.
+     *
+     * @return the entry tag, or 0 for a path that names none.
      */
-    protected static int maxTagIn(final int... tags) {
-        int max = 0;
-        for (final int tag : tags) {
-            if (Integer.compareUnsigned(tag, max) > 0) {
-                max = tag;
-            }
-        }
-        return max;
+    protected static int entryTagOf(final int... path) {
+        return 0 == path.length ? 0 : path[0];
     }
 
     /**
-     * As above, over tag paths. A null entry is a sequence wildcard -- every item of it -- rather than a tag,
-     * so it is skipped.
+     * As above. A null entry is a sequence wildcard rather than a tag, so a path beginning with one names no
+     * entry tag.
      */
-    protected static int maxTagIn(final Integer[]... paths) {
-        return maxTagIn(Arrays.asList(paths));
+    protected static int entryTagOf(final Integer... path) {
+        return 0 == path.length || null == path[0] ? 0 : path[0];
     }
 
     /**
-     * As above, for an index that already holds its paths in a collection.
+     * The highest {@link #entryTagOf entry tag} among these paths, compared unsigned.
+     * <p>
+     * A max across paths, not along one: the paths are alternative places the same attribute may sit, and the
+     * read has to reach whichever the object turns out to use.
      */
-    protected static int maxTagIn(final Collection<Integer[]> paths) {
-        int max = 0;
+    protected static int highestEntryTag(final Collection<Integer[]> paths) {
+        int highest = 0;
         for (final Integer[] path : paths) {
-            for (final Integer tag : path) {
-                if (null != tag && Integer.compareUnsigned(tag, max) > 0) {
-                    max = tag;
-                }
+            final int entry = entryTagOf(path);
+            if (Integer.compareUnsigned(entry, highest) > 0) {
+                highest = entry;
             }
         }
-        return max;
+        return highest;
     }
     protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 

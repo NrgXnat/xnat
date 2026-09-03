@@ -35,12 +35,15 @@ public interface DicomAttributeIndex {
     Integer[] getPath(Attributes context);
 
     /**
-     * Returns an upper bound, compared unsigned, on the tags this index may read.
+     * Returns an upper bound, compared unsigned, on the top-level tags this index may read.
      * <p>
      * {@link #getPath(Attributes)} needs the object to resolve, which is no use to a reader deciding how far to
      * read in the first place, so this reports the highest tag the index could ask for without seeing anything.
      * A conservative over-estimate is fine; an under-estimate means the reader stops short and the attribute
      * comes back empty.
+     * <p>
+     * Top-level, because that is all a stop tag gates: reading a sequence element brings its items with it, so
+     * an index that reaches into one is bounded by the sequence rather than by the tag it reaches.
      * <p>
      * The default is the tag before the pixel data, which covers every standard attribute. An implementation
      * that knows its own tags should override it and say so: the reader stops at the highest bound it is given,

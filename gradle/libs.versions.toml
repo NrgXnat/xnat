@@ -32,7 +32,7 @@ commons-dbcp2 = "2.9.0"
 commons-digester = "1.8.1"
 commons-discovery = "0.5"
 commons-email = "1.5"
-commons-fileupload = "1.5"
+commons-fileupload = "1.6.0"
 commons-io = "2.15.1"
 commons-lang = "2.6"
 commons-lang3 = "3.11"
@@ -45,8 +45,11 @@ container-service = "3.0.0"
 datasets = "1.0.0"
 datasource-proxy = "1.6"
 dcm4che = "2.0.29"
-dcm4che5 = "5.33.1"
-dicom-edit6 = "6.9.1"
+dcm4che5 = "5.35.0"
+# Native OpenCV build behind dcm4che-imageio-opencv. Declared provided-scope by Weasis, so it is
+# never resolved transitively and has to be asked for by classifier. See docs/mirroring-opencv-codecs.md.
+weasis-opencv = "5.0.0-dcm"
+dicom-edit6 = "7.0.0-SNAPSHOT"
 dom4j = "2.1.4"
 dqr = "1.0.0"
 easymock = "1.2_Java1.3"
@@ -142,7 +145,7 @@ spring-framework = "5.3.39"
 spring-jwt = "1.1.1.RELEASE"
 spring-ldap = "2.4.2"
 spring-oauth2 = "2.5.2.RELEASE"
-spring-security = "5.7.13"
+spring-security = "5.7.14"
 spring-test-junit5 = "1.5.0"
 springockito = "1.0.5"
 swagger = "2.9.2"
@@ -246,6 +249,7 @@ dcm4che5-dcm4che-dict-priv = { group = "org.dcm4che", name = "dcm4che-dict-priv"
 dcm4che5-dcm4che-dict-private = { group = "org.dcm4che", name = "dcm4che-dict-private", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-image = { group = "org.dcm4che", name = "dcm4che-image", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-imageio = { group = "org.dcm4che", name = "dcm4che-imageio", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-imageio-opencv = { group = "org.dcm4che", name = "dcm4che-imageio-opencv", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-imageio-rle = { group = "org.dcm4che", name = "dcm4che-imageio-rle", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-javascript = { group = "org.dcm4che", name = "dcm4che-javascript", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-js-dict = { group = "org.dcm4che", name = "dcm4che-js-dict", version.ref = "dcm4che5" }

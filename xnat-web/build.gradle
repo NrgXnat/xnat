@@ -82,7 +82,7 @@ configurations.matching { it.name != 'xdatGenerator' }.configureEach {
     exclude module: 'pipelineCNDAXNAT'
     exclude module: 'slf4j-simple'
 
-    // Old BouncyCastle (from itext/pixelmed transitive) — conflicts with bcpkix-jdk18on
+    // Old BouncyCastle (from itext transitive) — conflicts with bcpkix-jdk18on
     exclude group: 'bouncycastle'
     exclude group: 'org.bouncycastle', module: 'bcprov-jdk14'
     exclude group: 'org.bouncycastle', module: 'bcmail-jdk14'
@@ -168,18 +168,46 @@ dependencies {
     }
 
     // --- DICOM dcm4che 2.x ---
+    // Retained only so plugins not yet migrated off the 2.x API keep working; removed in 1.11.
+    // dcm4che-imageio-rle is deliberately absent: it is not an API plugins compile against, it is
+    // an ImageIO codec registering for the same "rle" format name as the 5.x reader below, and
+    // leaving both in place means two claimants for one format. See the note there.
     implementation libs.dcm4che.core
     implementation libs.dcm4che.image
     implementation libs.dcm4che.imageio
-    implementation libs.dcm4che.imageio.rle
     implementation libs.dcm4che.iod
     implementation libs.dcm4che.net
     // --- DICOM dcm4che 5.x ---
     implementation libs.dcm4che5.dcm4che.core
     implementation libs.dcm4che5.dcm4che.image
     implementation libs.dcm4che5.dcm4che.imageio
+    // Codecs for the JPEG family. dcm4che 5's ImageReaderFactory names the OpenCV-backed plugins
+    // for every one of those transfer syntaxes, so without this nothing that decodes compressed
+    // pixel data works -- snapshots and thumbnails included, not just pixel redaction. This is the
+    // Java glue; the native it loads is installed by the Dockerfile, since it is platform-specific
+    // and not a classpath entry. See docs/mirroring-opencv-codecs.md.
+    implementation libs.dcm4che5.dcm4che.imageio.opencv
+    // The sole RLE Lossless codec, so the choice of decoder is fixed rather than incidental.
+    // ImageReaderFactory looks readers up by format name and then scans that iterator for the
+    // class its properties name -- org.dcm4che3.imageio.plugins.rle.RLEImageReader for RLE. When
+    // that class is not registered it logs "No preferred Reader ... - use ..." and takes whichever
+    // reader the iterator last yielded, which is service registry order. Shipping only dcm4che 2's
+    // plugin leaves RLE permanently in that branch, resolved by a jar 1.11 deletes.
+    implementation libs.dcm4che5.dcm4che.imageio.rle
     implementation libs.dcm4che5.dcm4che.net
+    // Nothing in XNAT imports ij.*, and ij.jar registers no ImageIO or ServiceLoader
+    // providers, so this is on the classpath only for plugins that may compile against it.
+    // Remove in 1.11 alongside the dcm4che 2.x artifacts above.
     implementation libs.imagej.ij
+    // Likewise pixelmed, which nothing in XNAT uses since alterPixels moved off it. It reached the
+    // WAR through dicom-edit6 until that dependency went with PixelmedPixelEditHandler, and is
+    // declared here so plugins built against it keep working. runtimeOnly, not implementation:
+    // no XNAT source compiles against it. Only pixelmed-imageio registers anything with ImageIO --
+    // a reader for the format name "jpeg-lossless", which no dcm4che 5 codec claims -- so this
+    // adds no second claimant for a format XNAT resolves. Remove in 1.11 with the rest.
+    runtimeOnly libs.pixelmed.pixelmed
+    runtimeOnly libs.pixelmed.codec
+    runtimeOnly libs.pixelmed.imageio
 
     // --- Jackson ---
     implementation libs.jackson.annotations
@@ -217,6 +245,7 @@ dependencies {
     implementation(libs.turbine.turbine) {
         exclude group: 'commons-dbcp'
         exclude group: 'commons-email'
+        exclude group: 'commons-fileupload', module: 'commons-fileupload'
         exclude group: 'commons-pool'
         exclude group: 'fulcrum'
         exclude group: 'javax.activation', module: 'activation'

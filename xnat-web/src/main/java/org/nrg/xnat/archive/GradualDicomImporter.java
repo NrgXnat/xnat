@@ -146,6 +146,12 @@ public class GradualDicomImporter extends ImporterHandlerA {
         // Populated only when the window above reaches the pixel data, so empty for an ordinary import.
         // See ResumableDicomInputStream.openWithBulkDataOffHeap for why they exist and who owns them.
         final List<File> bulkDataFiles = new ArrayList<>();
+        // A processor running a script with alterPixels stages the redacted pixels in a scratch
+        // file of its own and points the dataset at that instead. It is not one of the spool files
+        // above -- those come from the read, this is written afterwards by the edit -- so deleting
+        // them does not delete it. Each round below wraps the dataset afresh, so a registration can
+        // be left on any of the wrappers and every one of them has to be released.
+        final List<DicomObjectI> processedObjects = new ArrayList<>();
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
              final DicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis)) {
             Attributes fmi = dis.readFileMetaInformation();
@@ -164,6 +170,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             dataset.addAll(fmi);
 
             DicomObjectI dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
+            processedObjects.add(dicomObject);
             if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AT_BEGINNING_AFTER_DICOM_OBJECT_IS_READ, dicomObject, null)) {
                 return returnEmptyList();
             }
@@ -186,6 +193,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             tempSession.setFolderName("");
 
             dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
+            processedObjects.add(dicomObject);
             if (_doCustomProcessing & !customProcessing(NAME_OF_LOCATION_AFTER_PROJECT_HAS_BEEN_ASSIGNED, dicomObject, tempSession)) {
                 return returnEmptyList();
             }
@@ -318,6 +326,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 deleteSessionFromDb(session); return null;} : () -> null;
 
             dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
+            processedObjects.add(dicomObject);
             if (_doCustomProcessing &&
                     !customProcessing(NAME_OF_LOCATION_NEAR_END_AFTER_SESSION_HAS_BEEN_ADDED_TO_THE_PREARCHIVE_DATABASE,
                             dicomObject, session, cleanupPrearcDb)
@@ -441,6 +450,11 @@ public class GradualDicomImporter extends ImporterHandlerA {
         } catch (Throwable t) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);
         } finally {
+            // Only safe here, and for the same reason as the spool files below: the dataset holds
+            // references into the staged pixels and write() reads them.
+            for (final DicomObjectI processed : processedObjects) {
+                processed.releaseScratchFiles();
+            }
             // Only safe here: the dataset holds references into these files, and write() reads them.
             ResumableDicomInputStream.deleteBulkDataFiles(bulkDataFiles);
         }

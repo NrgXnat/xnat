@@ -2,6 +2,7 @@ package org.nrg.dicom.mizer.objects;
 
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.ElementDictionary;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.SpecificCharacterSet;
@@ -27,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -55,6 +57,18 @@ import java.util.zip.GZIPInputStream;
 public class DicomObjectFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DicomObjectFactory.class);
+
+    /**
+     * Buffer size, in bytes, for streaming bulk data such as pixel data between a file and a stream:
+     * one mebibyte.
+     * <p>
+     * dcm4che moves a bulk data value 2 KB at a time, and {@code DicomOutputStream} passes each piece
+     * straight to the stream beneath it, so without a buffer on both sides a gigabyte of pixel data
+     * is half a million read calls and half a million write calls. A megabyte per call is what the
+     * pixel redactor measured as fastest against 64 KB and 4 MB, it is the transfer size Linux NFS
+     * clients typically negotiate, and at one allocation per object it costs nothing worth counting.
+     */
+    public static final int BULK_DATA_BUFFER_SIZE = 1 << 20;
 
     /**
      * Create an empty DicomObjectI.
@@ -116,6 +130,30 @@ public class DicomObjectFactory {
 
     public static DicomObjectI newInstance(final InputStream inputStream, int stopTag) throws MizerException {
         return new MizerDicomObject(inputStream, stopTag);
+    }
+
+    /**
+     * What dcm4che does for a bulk data value when the stream has a URI -- record where the value
+     * sits in the file and skip past it -- except that the reference reads ahead when opened, since
+     * dcm4che would otherwise read it back from a bare {@code FileInputStream} in 2 KB pieces.
+     * See {@link #BULK_DATA_BUFFER_SIZE}.
+     */
+    private static BulkData referenceIntoFile(final DicomInputStream in) throws IOException {
+        final long length = in.unsignedLength();
+        final BulkData reference = new ReadAheadBulkData(in.getURI(), in.getPosition(), length, in.bigEndian());
+        in.skipFully(length);
+        return reference;
+    }
+
+    private static final class ReadAheadBulkData extends BulkData {
+        ReadAheadBulkData(final String uri, final long offset, final long length, final boolean bigEndian) {
+            super(uri, offset, length, bigEndian);
+        }
+
+        @Override
+        public InputStream openStream() throws IOException {
+            return new BufferedInputStream(super.openStream(), BULK_DATA_BUFFER_SIZE);
+        }
     }
 
     /**
@@ -189,6 +227,7 @@ public class DicomObjectFactory {
                     dis.setBulkDataDirectory(spoolDirectory());
                 } else {
                     dis.setURI(file.toURI().toString());
+                    dis.setBulkDataCreator(DicomObjectFactory::referenceIntoFile);
                 }
                 try {
                     final Attributes fmi = dis.readFileMetaInformation();
@@ -1137,7 +1176,9 @@ public class DicomObjectFactory {
                     tsString = "1.2.840.10008.1.2.1"; // Explicit VR Little Endian
                     dataset.setString(org.dcm4che3.data.Tag.TransferSyntaxUID, VR.UI, tsString);
                 }
-                try (DicomOutputStream out = new DicomOutputStream(os, UID.ExplicitVRLittleEndian)) {
+                // Buffered here rather than left to each caller, because every caller needs it: see
+                // BULK_DATA_BUFFER_SIZE for what dcm4che does to a bare FileOutputStream.
+                try (DicomOutputStream out = new DicomOutputStream(new BufferedOutputStream(os, BULK_DATA_BUFFER_SIZE), UID.ExplicitVRLittleEndian)) {
                     String sopClassUID = dataset.getString(org.dcm4che3.data.Tag.SOPClassUID);
                     String sopInstanceUID = dataset.getString(org.dcm4che3.data.Tag.SOPInstanceUID);
 

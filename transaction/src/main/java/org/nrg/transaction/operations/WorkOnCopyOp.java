@@ -15,8 +15,27 @@ import org.nrg.transaction.TransactionException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Calendar;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.UUID;
 
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
+/**
+ * Runs an operation that produces a new version of a file, then puts that version in the file's
+ * place.
+ * <p>
+ * The operation writes to a staging file in <b>tempDir</b>; the source is not touched until the
+ * operation has finished. When tempDir is on the same filesystem as the source the staged file is
+ * renamed over the source, which is atomic: a reader sees the old bytes or the new ones, never a
+ * missing or partial file. On a different filesystem a rename is impossible and the staged file is
+ * copied over the source instead, which is what this always did.
+ * <p>
+ * Staging names carry a random component. Files worked on concurrently often share a name -- every
+ * scan has a 1.dcm -- and a tempDir shared between them has to keep them apart.
+ */
 public final class WorkOnCopyOp<T> extends Transaction<T> {
     public WorkOnCopyOp(File source, File tempDir, CallOnFile<T> callOnFile) {
         _source = source;
@@ -27,48 +46,39 @@ public final class WorkOnCopyOp<T> extends Transaction<T> {
     @Override
     public T run() throws TransactionException {
         try {
-            final long ms = Calendar.getInstance().getTimeInMillis();
-            _callOnFile.setFile(new File(_tempDir.getAbsolutePath(), ms + _source.getName()));
+            _callOnFile.setFile(new File(_tempDir, "staged-" + UUID.randomUUID() + "-" + _source.getName()));
             final T result = _callOnFile.call();
-
-            String originalPath = _source.getAbsolutePath();
-            if (!_source.delete()) {
-                throw new RollbackException("Unable to delete " + originalPath + ". A backup exists at " + _callOnFile.getFile().getAbsolutePath());
-            }
-            // Simple renameTo fails on Windows if the destination directory exists
-            // So we have to copy the original directory to the destination and then
-            // delete the original. There has to be a better way to do this.
-            try {
-                FileUtils.copyFile(_callOnFile.getFile(), new File(originalPath));
-            } catch (IOException e) {
-                throw new RollbackException(e);
-            }
-            if (!_callOnFile.getFile().delete()) {
-                throw new RollbackException("Unable to delete " + _callOnFile.getFile().getAbsolutePath());
-            }
+            replace(_callOnFile.getFile().toPath(), _source.toPath());
             return result;
         } catch (Throwable e) {
             throw new TransactionException(e);
         }
     }
 
+    private static void replace(final Path staged, final Path source) throws IOException {
+        try {
+            Files.move(staged, source, ATOMIC_MOVE, REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            // Another filesystem. Without ATOMIC_MOVE, Files.move copies the staged file over the
+            // source and then deletes it.
+            Files.move(staged, source, REPLACE_EXISTING);
+        }
+    }
+
     @Override
     public void rollback() throws RollbackException {
-        File tmp = new File(_tempDir.getAbsolutePath(), _source.getName());
-        if (tmp.exists()) {
-            if (tmp.isDirectory()) {
-                try {
-                    FileUtils.deleteDirectory(tmp);
-                } catch (IOException e) {
-                    throw new RollbackException(e);
-                }
+        final File staged = _callOnFile.getFile();
+        if (staged == null || !staged.exists()) {
+            return;
+        }
+        try {
+            if (staged.isDirectory()) {
+                FileUtils.deleteDirectory(staged);
             } else {
-                try {
-                    FileUtils.forceDelete(tmp);
-                } catch (IOException e) {
-                    throw new RollbackException(e);
-                }
+                FileUtils.forceDelete(staged);
             }
+        } catch (IOException e) {
+            throw new RollbackException(e);
         }
     }
 

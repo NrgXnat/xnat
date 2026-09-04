@@ -775,7 +775,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             fmi.setString(Tag.SourceApplicationEntityTitle, VR.AE, (String) sourceAeTitle);
         }
         try (final FileOutputStream fos = new FileOutputStream(outputFile);
-             final BufferedOutputStream bos = new BufferedOutputStream(fos);
+             final BufferedOutputStream bos = new BufferedOutputStream(fos, DicomObjectFactory.BULK_DATA_BUFFER_SIZE);
              final DicomOutputStream dos = new DicomOutputStream(bos, UID.ExplicitVRLittleEndian)) {
                 // open stream with Explicit VR Little Endian because that's the required TS for FMI.
                 // stream object will switch to our provided TS after writing FMI.

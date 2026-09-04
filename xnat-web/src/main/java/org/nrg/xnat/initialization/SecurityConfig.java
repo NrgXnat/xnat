@@ -42,6 +42,7 @@ import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -68,6 +69,7 @@ import org.springframework.security.web.authentication.session.ConcurrentSession
 import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionFixationProtectionStrategy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.session.SimpleRedirectSessionInformationExpiredStrategy;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -306,6 +308,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .maxSessionsPreventsLogin(true)
             .sessionRegistry(sessionRegistry())
             .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)));
+
+        // CVE-2026-22732: with shouldWriteHeadersEagerly left at its default of false, the headers configured
+        // below can go unwritten on responses that commit early, leaving requests without the content security
+        // policy, frame options and referrer policy. No public Spring Security 5.7.x release carries the fix, so
+        // apply the vendor's documented workaround.
+        http.headers().addObjectPostProcessor(new ObjectPostProcessor<HeaderWriterFilter>() {
+            @Override
+            public <O extends HeaderWriterFilter> O postProcess(final O filter) {
+                filter.setShouldWriteHeadersEagerly(true);
+                return filter;
+            }
+        });
 
         http.headers().frameOptions().sameOrigin().cacheControl().disable().contentSecurityPolicy(CONTENT_SECURITY_POLICY)
             .and().referrerPolicy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)

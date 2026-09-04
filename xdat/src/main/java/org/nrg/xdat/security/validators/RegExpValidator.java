@@ -15,6 +15,7 @@ import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
 @Component
@@ -34,6 +35,13 @@ public class RegExpValidator implements PasswordValidator {
 
     @Override
     public String isValid(final String password, final UserI user) {
+        // bcrypt only hashes the first 72 bytes of a password, and CVE-2025-22228 means anything beyond that is
+        // ignored on comparison as well: two passwords sharing a 72-byte prefix both authenticate. Reject rather
+        // than silently truncate, so a user is never given credentials whose tail does not count.
+        if (password != null && password.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
+            return "Password must be " + MAX_PASSWORD_BYTES + " characters or fewer.";
+        }
+
         final String regexp = getPasswordComplexity();
         return StringUtils.isBlank(regexp) || Pattern.matches(regexp, password)
                ? ""
@@ -47,6 +55,12 @@ public class RegExpValidator implements PasswordValidator {
     private String getPasswordComplexityMessage() {
         return _preferences != null ? _preferences.getPasswordComplexityMessage() : "Password is not sufficiently complex.";
     }
+
+    /**
+     * The maximum number of bytes bcrypt incorporates into a hash. Passwords longer than this are rejected: see
+     * CVE-2025-22228.
+     */
+    private static final int MAX_PASSWORD_BYTES = 72;
 
     private final SiteConfigPreferences _preferences;
 }

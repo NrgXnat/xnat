@@ -222,6 +222,25 @@ public class FileUtilsTest {
         assertThat(filesFromFileToFile).isNotNull().isNotEmpty().hasSize(ENDING_FILES.size()).containsExactlyElementsOf(ENDING_FILES);
     }
 
+    @Test
+    public void testIsCanonicalPathAcceptsSafeRelativePaths() throws IOException {
+        final File destinationDir = new File(dest, "archive");
+
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, "file1.txt"));
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, "subdir/file1.txt"));
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, "./subdir/../file1.txt"));
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, ""));
+    }
+
+    @Test
+    public void testIsCanonicalPathRejectsPathTraversal() throws IOException {
+        final File destinationDir = new File(dest, "archive");
+
+        Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "../evil.txt"));
+        Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "../../etc/passwd"));
+        Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "subdir/../../evil.txt"));
+    }
+
     private static List<List<String>> getUntranslatedCsvFileToList(final File file) throws IOException {
         try (final InputStream input = Files.newInputStream(file.toPath())) {
             return IOUtils.readLines(input, Charset.defaultCharset()).stream().map(XftStringUtils::CommaDelimitedStringToArrayList).collect(Collectors.toList());

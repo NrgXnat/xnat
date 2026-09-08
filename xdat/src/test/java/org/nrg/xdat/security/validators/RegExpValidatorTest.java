@@ -17,8 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.apache.commons.lang3.StringUtils.repeat;
 
 /**
- * Covers the password length ceiling added for CVE-2025-22228. The package-protected constructor gives the
- * "panic mode" defaults, so the complexity pattern is {@code ^.*$} and length is the only thing under test.
+ * The package-protected constructor gives the "panic mode" defaults, so the complexity pattern is {@code ^.*$}
+ * and length is the only thing under test.
  */
 public class RegExpValidatorTest {
     @Test

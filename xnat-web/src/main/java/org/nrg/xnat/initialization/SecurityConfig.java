@@ -309,10 +309,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionRegistry(sessionRegistry())
             .expiredSessionStrategy(new SimpleRedirectSessionInformationExpiredStrategy("/app/template/Login.vm", redirectStrategy(_preferences, detector)));
 
-        // CVE-2026-22732: with shouldWriteHeadersEagerly left at its default of false, the headers configured
-        // below can go unwritten on responses that commit early, leaving requests without the content security
-        // policy, frame options and referrer policy. No public Spring Security 5.7.x release carries the fix, so
-        // apply the vendor's documented workaround.
+        // CVE-2026-22732: at the default of false, the headers configured below can go unwritten on responses
+        // that commit early. No public 5.7.x release carries the fix, so apply the vendor's workaround.
         http.headers().addObjectPostProcessor(new ObjectPostProcessor<HeaderWriterFilter>() {
             @Override
             public <O extends HeaderWriterFilter> O postProcess(final O filter) {

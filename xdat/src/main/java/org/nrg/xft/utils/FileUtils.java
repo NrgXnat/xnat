@@ -6,7 +6,6 @@
  *
  * Released under the Simplified BSD.
  */
-
 package org.nrg.xft.utils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -457,6 +456,30 @@ public  class FileUtils {
         }
 
         return p;
+    }
+
+    /**
+     * Determines whether the given (untrusted) relative path, once resolved against <b>destinationDir</b>, remains a
+     * canonical descendant of that directory. This guards against path traversal ("zip-slip") attacks where a
+     * maliciously crafted relative path -- e.g. one containing {@code ../} segments or an absolute path -- is used to
+     * escape the intended destination directory and read or write files elsewhere on the file system.
+     *
+     * <p>This is typically used to validate the entry names found in an uploaded archive (zip, tar, etc.) before any
+     * of the archive's contents are extracted to disk.</p>
+     *
+     * @param destinationDir The directory the relative path is expected to resolve within.
+     * @param relativePath   The untrusted relative path to validate, e.g. an entry name taken from an archive.
+     *
+     * @return {@code true} if the canonical path of <b>relativePath</b>, resolved against <b>destinationDir</b>, is
+     *         located within the canonical path of <b>destinationDir</b> (i.e. it is safe); {@code false} if it
+     *         escapes the destination directory.
+     *
+     * @throws IOException When an error occurs resolving the canonical path of either file.
+     */
+    public static boolean isCanonicalPath(final File destinationDir, final String relativePath) throws IOException {
+        final String destinationCanonical = destinationDir.getCanonicalPath();
+        final String targetCanonical      = new File(destinationDir, relativePath).getCanonicalPath();
+        return targetCanonical.equals(destinationCanonical) || targetCanonical.startsWith(destinationCanonical + File.separator);
     }
 
 	public static File CreateTempFolder(String prefix,File directory) throws IOException

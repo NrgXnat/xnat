@@ -100,7 +100,11 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 						throw new ClientException("Couldn't obtain zipper for archive file - " + pFn);
 					}
 				} catch (IOException e) {
-					throw new ClientException("Couldn't unzip archive file - " + pFn);
+					// e.getMessage() isn't safe to forward to the client as-is: it can come from Ant's Expand task,
+					// java.util.zip, or a raw OS I/O error, any of which may embed a local server file path. Log the
+					// full detail server-side and keep the client-facing message generic.
+					log.error("Couldn't unzip archive file - {}", pFn, e);
+					throw new ClientException("Couldn't unzip archive file - " + pFn + ". See the server log for details.");
 				}
     		}
     		dirName = dirName + "_1";

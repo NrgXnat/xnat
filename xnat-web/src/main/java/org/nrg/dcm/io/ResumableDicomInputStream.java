@@ -1,18 +1,27 @@
 package org.nrg.dcm.io;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.ItemPointer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.BulkDataDescriptor;
 import org.dcm4che3.io.DicomInputStream;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.objects.ReadAheadBulkData;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -80,13 +89,19 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * {@link IncludeBulkData#YES}, which costs heap per concurrent read and fails outright above 2 GiB --
      * dcm4che throws "tag value too large, must be less than 2Gib". {@link IncludeBulkData#URI URI} stores a
      * reference instead. When the source is a file the reference points into it, but here it is a stream, so
-     * dcm4che spools the value to a temporary file of its own. Nothing else owns those files and dcm4che does
-     * not remove them: the caller must pass {@link #getBulkDataFiles()} to {@link #deleteBulkDataFiles} once
-     * everything holding a reference is done with it.
+     * the value is spooled to a file and the reference points there. The spooling is this class's own rather
+     * than dcm4che's, which writes 2 KB at a time to an unbuffered stream and hands back references that read
+     * the same way: a gigabyte of pixel data would cost a million system calls each way. Here every value of an
+     * object goes into one spool file through a {@link DicomObjectFactory#BULK_DATA_BUFFER_SIZE} buffer, and the
+     * references read ahead by the same amount.
+     * <p>
+     * Nothing else owns the spool files and nothing else removes them: the caller must pass
+     * {@link #getSpoolFiles()} to {@link #deleteBulkDataFiles} once everything holding a reference is done
+     * with them. The spool is complete, flushed and closed, when the top-level dataset read returns.
      * <p>
      * The descriptor is restricted to the pixel data deliberately; see {@link #PIXEL_DATA_OF_ANY_FORM}.
      *
-     * Where they land is {@link #SCRATCH_DIR_PROPERTY configurable}.
+     * Where the spool lands is {@link #SCRATCH_DIR_PROPERTY configurable}.
      *
      * @param in the object's bytes.
      *
@@ -99,20 +114,89 @@ public final class ResumableDicomInputStream extends DicomInputStream {
         final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);
         dis.setIncludeBulkData(IncludeBulkData.URI);
         dis.setBulkDataDescriptor(PIXEL_DATA_OF_ANY_FORM);
-        dis.setBulkDataDirectory(scratchDirectory());
+        dis._spoolDirectory = scratchDirectory();
+        dis.setBulkDataCreator(stream -> dis.spool());
         return dis;
     }
 
     /**
-     * A directory for dcm4che's spool files that only this user can read, under
-     * {@link #SCRATCH_DIR_PROPERTY} when it is set.
+     * The files bulk data was spooled to by a stream from {@link #openWithBulkDataOffHeap}: at most one, and
+     * none when the read never reached any bulk data, which is the ordinary case.
+     */
+    public List<File> getSpoolFiles() {
+        final List<File> files = new ArrayList<>(_spoolFiles);
+        files.addAll(getBulkDataFiles());
+        return files;
+    }
+
+    /**
+     * Copies the value at the stream position into the spool and returns a reference to it there. Called by
+     * dcm4che for every bulk data value and every fragment of encapsulated pixel data.
+     */
+    private BulkData spool() throws IOException {
+        final long length = unsignedLength();
+        if (_spool == null) {
+            final File file = Files.createTempFile(_spoolDirectory.toPath(), "xnat-import-", ".bulk").toFile();
+            _spoolFiles.add(file);
+            _spoolFile     = file;
+            _spool         = new BufferedOutputStream(new FileOutputStream(file), DicomObjectFactory.BULK_DATA_BUFFER_SIZE);
+            _spoolPosition = 0;
+        }
+        if (_copyBuffer == null) {
+            _copyBuffer = new byte[DicomObjectFactory.BULK_DATA_BUFFER_SIZE];
+        }
+        long remaining = length;
+        while (remaining > 0) {
+            final int read = read(_copyBuffer, 0, (int) Math.min(_copyBuffer.length, remaining));
+            if (read < 0) {
+                throw new EOFException("Stream ended " + remaining + " bytes short of a " + length
+                                       + " byte value at " + getPosition());
+            }
+            _spool.write(_copyBuffer, 0, read);
+            remaining -= read;
+        }
+        final BulkData reference = new ReadAheadBulkData(_spoolFile.toURI().toString(), _spoolPosition, length, bigEndian());
+        _spoolPosition += length;
+        return reference;
+    }
+
+    /**
+     * Once the top-level read is done, the spool is closed so that everything written to it can be read back
+     * through the references. Nested reads, of sequence items, return here too, at a deeper level.
+     */
+    @Override
+    public void readAttributes(final Attributes attrs, final long len, final Predicate<DicomInputStream> stopPredicate) throws IOException {
+        super.readAttributes(attrs, len, stopPredicate);
+        if (level() == 0) {
+            closeSpool();
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            closeSpool();
+        } finally {
+            super.close();
+        }
+    }
+
+    private void closeSpool() throws IOException {
+        final OutputStream spool = _spool;
+        if (spool != null) {
+            _spool = null;
+            spool.close();
+        }
+    }
+
+    /**
+     * A directory for spool files that only this user can read, under {@link #SCRATCH_DIR_PROPERTY} when it
+     * is set.
      * <p>
-     * Those files hold pixel data, and dcm4che creates them through the legacy {@code File.createTempFile},
-     * which takes its mode from the umask and typically leaves them rw-r--r-- where {@code Files.createTempFile}
-     * would give rw-------. Their own mode is not ours to set, so they go somewhere nobody else can list or
-     * open: createTempDirectory gives owner-only permissions and an unguessable name, which also rules out
-     * anyone planting a directory at a predictable path first. One per JVM, since it holds nothing once the
-     * files are released.
+     * Those files hold pixel data. They are created with owner-only permissions, and they go somewhere nobody
+     * else can list or open either: createTempDirectory gives owner-only permissions and an unguessable name,
+     * which also rules out anyone planting a directory at a predictable path first. One per JVM, since it
+     * holds nothing once the files are released.
      * <p>
      * A configured directory that cannot be created is an error rather than a fall back to the default: the
      * reason for setting it may be that the pixel data must not go there.
@@ -148,9 +232,9 @@ public final class ResumableDicomInputStream extends DicomInputStream {
     }
 
     /**
-     * Deletes the files dcm4che spooled bulk data to.
+     * Deletes the files bulk data was spooled to.
      *
-     * @param bulkDataFiles the spool files, as reported by {@link #getBulkDataFiles()}. Empty when the read
+     * @param bulkDataFiles the spool files, as reported by {@link #getSpoolFiles()}. Empty when the read
      *                      never reached any bulk data, which is the ordinary case.
      */
     public static void deleteBulkDataFiles(final List<File> bulkDataFiles) {
@@ -160,4 +244,11 @@ public final class ResumableDicomInputStream extends DicomInputStream {
             }
         }
     }
+
+    private final List<File> _spoolFiles = new ArrayList<>();
+    private File             _spoolDirectory;
+    private File             _spoolFile;
+    private OutputStream     _spool;
+    private long             _spoolPosition;
+    private byte[]           _copyBuffer;
 }

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  DRAFT — Turbine 5.1 YAAFI component configuration for XNAT (Phase 0b).
+  NOT wired into the build yet. Destination when enabled: WEB-INF/conf/componentConfiguration.xml
+  Wire via TurbineResources.properties:
+    services.AvalonComponentService.componentConfiguration=/WEB-INF/conf/componentConfiguration.xml
+
+  Per-component settings for the roles declared in roleConfiguration.xml.
+  Structure/defaults taken from the Turbine 2.3.3->4.0 migration wiki + Fulcrum docs,
+  then tailored to XNAT (see inline XNAT: notes). Validate with the Appendix C boot test.
+-->
+<componentConfig>
+
+    <factory/>
+
+    <!-- XNAT: RunData pool capacity carried over from the (commented) 2.3.3 setting
+         TurbineResources.properties:613
+         #services.PoolService.pool.capacity.org.apache.turbine.services.rundata.DefaultTurbineRunData=512
+         NOTE the Restlet path uses RestletRunData (constructed directly, not pooled — see
+         upgrade-plan Appendix B.2); this capacity governs the stock /app RunData only. -->
+    <pool>
+        <capacity>
+            <org.apache.turbine.services.rundata.DefaultTurbineRunData>512</org.apache.turbine.services.rundata.DefaultTurbineRunData>
+            <default>128</default>
+        </capacity>
+    </pool>
+
+    <cache cacheInitialSize="20" cacheCheckFrequency="5"/>
+
+    <!-- Trim candidate (see roleConfiguration.xml). Standard provider set. -->
+    <crypto>
+        <algorithm>
+            <unix>org.apache.fulcrum.crypto.provider.UnixCrypt</unix>
+            <clear>org.apache.fulcrum.crypto.provider.ClearCrypt</clear>
+            <java>org.apache.fulcrum.crypto.provider.JavaCrypt</java>
+            <oldjava>org.apache.fulcrum.crypto.provider.OldJavaCrypt</oldjava>
+        </algorithm>
+    </crypto>
+
+    <parser>
+        <!-- XNAT: MUST be 'none'. XNAT uses case-sensitive, camelCase request params
+             (search_field, topTab, search_element, ...). The Fulcrum default/example
+             'lower' would fold parameter names and break screen/action parameter lookup. -->
+        <urlCaseFolding>none</urlCaseFolding>
+        <!-- XNAT: verify. utf-8 aligns with the Velocity 2 default-encoding change, but
+             SecureAction uses ISO-8859-1 for URL-encoding (SecureAction.java:102); confirm
+             request-parameter decoding behavior is unchanged under utf-8. -->
+        <parameterEncoding>utf-8</parameterEncoding>
+        <!-- XNAT: verify interaction with Spring multipart + Restlet upload paths. 'true'
+             preserves 2.3.3 behavior (RunData auto-parsed multipart) but means Fulcrum will
+             consume multipart bodies on /app posts; set 'false' if that conflicts with the
+             other upload handlers or if only UploadBatch needs it. -->
+        <automaticUpload>true</automaticUpload>
+    </parser>
+
+    <!-- Trim candidate (see roleConfiguration.xml). XNAT: sizes aligned with the Spring
+         multipart defaults in XnatWebAppInitializer (20 MB max / 10 MB threshold); the real
+         limits come from xnat-conf.properties (spring.http.multipart.*). repository should
+         point at the xnat.home/work temp area rather than '.'. -->
+    <upload repository="." sizeMax="20971520" sizeThreshold="10485760"/>
+
+</componentConfig>

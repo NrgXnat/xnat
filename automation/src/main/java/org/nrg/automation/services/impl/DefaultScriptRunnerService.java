@@ -12,7 +12,7 @@ package org.nrg.automation.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.automation.annotations.Supports;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptOutput;

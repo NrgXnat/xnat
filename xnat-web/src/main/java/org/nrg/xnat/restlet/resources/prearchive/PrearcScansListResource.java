@@ -15,10 +15,10 @@ import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xft.XFTTable;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.Request;
+import org.restlet.Response;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
 
 import java.util.ArrayList;
 import java.util.Hashtable;

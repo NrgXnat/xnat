@@ -12,7 +12,7 @@ import org.nrg.framework.services.NrgEventServiceI;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 

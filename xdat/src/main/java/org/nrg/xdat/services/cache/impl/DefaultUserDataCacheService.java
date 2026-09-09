@@ -3,7 +3,7 @@ package org.nrg.xdat.services.cache.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;

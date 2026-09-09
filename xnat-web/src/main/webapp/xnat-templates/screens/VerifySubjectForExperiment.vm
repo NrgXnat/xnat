@@ -1,5 +1,5 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-$page.addAttribute("onLoad", "document.form1.participant.focus();")
+$page.addBodyAttribute("onLoad", "document.form1.participant.focus();")
 <font face="$ui.sansSerifFonts" size="2">
 #if ($turbineUtils.GetPassedParameter("popup",$data))
 	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )

@@ -20,7 +20,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.PrearcImporterFactory;
 import org.nrg.xnat.event.archive.ArchiveStatusProducer;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.channels.FileLock;

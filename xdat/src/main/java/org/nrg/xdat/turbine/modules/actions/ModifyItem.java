@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.actions;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.ScreenLoader;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -57,8 +58,9 @@ public class ModifyItem  extends SecureAction {
         return false;
     }
 
-	public void doPerform(RunData data, Context context) throws Exception
+	public void doPerform(PipelineData pipelineData, Context context) throws Exception
 	{
+        RunData data = pipelineData.getRunData();
         XFTItem first =null;
         preserveVariables(data,context);
 		//TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
@@ -105,7 +107,7 @@ public class ModifyItem  extends SecureAction {
             	}else{
             	    if (screenName.equals("XDATScreen_edit_" + e.getFormattedName()))
             	    {
-            	        EditScreenA screen = (EditScreenA) ScreenLoader.getInstance().getInstance(screenName);
+            	        EditScreenA screen = (EditScreenA) ScreenLoader.getInstance().getAssembler(screenName);
             			XFTItem newItem = (XFTItem)screen.getEmptyItem(data);
             			populater = PopulateItem.Populate(data,element,true,newItem);
             	    }else{

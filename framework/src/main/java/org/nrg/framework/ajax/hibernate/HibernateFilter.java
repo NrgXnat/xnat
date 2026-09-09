@@ -19,10 +19,10 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.framework.orm.hibernate.BaseHibernateEntity;
 import org.nrg.framework.utilities.CompareUtils;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;

@@ -10,6 +10,7 @@
 
 package org.nrg.xdat.display;
 
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -409,7 +410,7 @@ public class ElementDisplay extends DisplayFieldCollection {
         try {
             String templateName = "/screens/" + this.getSchemaElement().getFormattedName() + "_search.vm";
 
-            if (Velocity.resourceExists(templateName)) {
+            if (TurbineUtils.GetInstance().resourceExists(templateName)) {
                 return templateName;
             } else {
                 return null;
@@ -425,12 +426,12 @@ public class ElementDisplay extends DisplayFieldCollection {
             try {
                 String templateName = "/screens/" + this.getSchemaElement().getFormattedName() + "_search_brief.vm";
 
-                if (Velocity.resourceExists(templateName)) {
+                if (TurbineUtils.GetInstance().resourceExists(templateName)) {
                     return templateName;
                 } else {
                     templateName = "/screens/" + this.getSchemaElement().getFormattedName() + "_search.vm";
 
-                    if (Velocity.resourceExists(templateName)) {
+                    if (TurbineUtils.GetInstance().resourceExists(templateName)) {
                         return templateName;
                     } else {
                         return null;

@@ -511,7 +511,7 @@ ERROR:  No $displayManager.getPluralDisplayNameForProject().toLowerCase() exist.
 							<select name="subject_bmonth" ID="subject_bmonth">
 								<option value="bad">(SELECT)</option>
 								#foreach ($month in $months)
-									#set ($monthCount = $velocityCount)
+									#set ($monthCount = $foreach.count)
 					        		<option value="$monthCount">
 										$month
 									</option>

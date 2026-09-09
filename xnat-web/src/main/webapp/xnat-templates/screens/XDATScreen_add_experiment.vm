@@ -1,5 +1,5 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-$page.addAttribute("onLoad", "document.form1.destination.focus();")
+$page.addBodyAttribute("onLoad", "document.form1.destination.focus();")
 ##<font face="$ui.sansSerifFonts" size="2">
 ##<span class="ui_sansSerifFonts">
 

@@ -14,6 +14,7 @@ $page.setBgColor($ui.bgcolor)
         #if($last_login)
             <span id="last_login">Last login: $turbineUtils.formatDateTime($last_login)</span>
         #end
+#if(!$user && $data)#set($user = $turbineUtils.getUser($data))#end
         #if($user)
             #if(!$siteConfig.requireLogin && $user.isGuest())
                 <span id="user_info">Logged in as: <span style="color:red;">Guest</span>

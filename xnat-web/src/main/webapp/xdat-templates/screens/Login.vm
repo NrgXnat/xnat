@@ -1,7 +1,7 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 $page.setTitle("XDAT -- Please Login")
 $page.setBgColor($ui.bgcolor)
-$page.addAttribute("onLoad", "document.getElementById('username').focus();")
+$page.addBodyAttribute("onLoad", "document.getElementById('username').focus();")
 <div valign="top">
     <br>
     <br>

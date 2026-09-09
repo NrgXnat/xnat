@@ -3,7 +3,7 @@ package org.nrg.xnat.compute.entities;
 import lombok.*;
 import org.nrg.xnat.compute.models.ComputeEnvironmentHardwareOptions;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;

@@ -22,13 +22,14 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
+import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.StringRepresentation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -51,13 +52,13 @@ public class AliasTokenRestlet extends SecureResource {
 
         _serializer = XDAT.getSerializerService();
         if (_serializer == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
-            throw new ResourceException(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "ERROR: Serializer service was not properly initialized.");
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
+            throw new ResourceException(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "ERROR: Serializer service was not properly initialized.");
         }
         _service = XDAT.getContextService().getBean(AliasTokenService.class);
         if (_service == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Alias token service was not properly initialized.");
-            throw new ResourceException(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "ERROR: Alias token service was not properly initialized.");
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "Alias token service was not properly initialized.");
+            throw new ResourceException(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "ERROR: Alias token service was not properly initialized.");
         }
 
         final String     tokenId = (String) getRequest().getAttributes().get(PARAM_TOKEN);
@@ -100,7 +101,6 @@ public class AliasTokenRestlet extends SecureResource {
         _secret = (String) getRequest().getAttributes().get(PARAM_SECRET);
     }
 
-    @Override
     public Representation represent() throws ResourceException {
         final UserI user = getUser();
 

@@ -14,14 +14,14 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.data.MediaType;
-import org.restlet.resource.OutputRepresentation;
+import org.restlet.representation.OutputRepresentation;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,7 +53,8 @@ public class ZipRepresentation extends OutputRepresentation {
         _compression = deriveCompression(compression);
     }
 
-    @Override
+    // Restlet 2.x removed Representation.getDownloadName()/setDownloadName()/setDownloadable();
+    // the download filename + attachment flag now live on a Disposition. These retain the 1.1-style API.
     public String getDownloadName() {
         final MediaType mediaType = getMediaType();
         if (mediaType.equals(MediaType.APPLICATION_GNU_TAR)) {
@@ -66,6 +67,18 @@ public class ZipRepresentation extends OutputRepresentation {
             return getTokenName() + ".xar";
         }
         return getTokenName() + ".zip";
+    }
+
+    public void setDownloadName(final String name) {
+        final org.restlet.data.Disposition disposition = getDisposition() != null ? getDisposition() : new org.restlet.data.Disposition();
+        disposition.setFilename(name);
+        setDisposition(disposition);
+    }
+
+    public void setDownloadable(final boolean downloadable) {
+        final org.restlet.data.Disposition disposition = getDisposition() != null ? getDisposition() : new org.restlet.data.Disposition();
+        disposition.setType(downloadable ? org.restlet.data.Disposition.TYPE_ATTACHMENT : org.restlet.data.Disposition.TYPE_INLINE);
+        setDisposition(disposition);
     }
 
     @Override

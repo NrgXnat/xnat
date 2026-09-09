@@ -12,7 +12,7 @@ package org.nrg.mail.api;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

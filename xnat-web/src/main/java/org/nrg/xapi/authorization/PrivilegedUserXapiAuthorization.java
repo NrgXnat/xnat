@@ -9,7 +9,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.customforms.utils.CustomFormsConstants;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 public class PrivilegedUserXapiAuthorization extends AbstractXapiAuthorization {

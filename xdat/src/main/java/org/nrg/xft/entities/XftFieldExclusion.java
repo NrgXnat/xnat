@@ -12,12 +12,12 @@ package org.nrg.xft.entities;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.regex.Pattern;
 
 @XmlRootElement

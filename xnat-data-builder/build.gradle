@@ -49,8 +49,6 @@ dependencies {
     runtimeOnly libs.spring.tx
     runtimeOnly libs.spring.web
     runtimeOnly libs.spring.webmvc
-    runtimeOnly libs.springfox.swagger2
-    runtimeOnly libs.springfox.swagger.ui
     runtimeOnly libs.spring.security.spring.security.acl
     runtimeOnly libs.spring.security.spring.security.aspects
     runtimeOnly libs.spring.security.spring.security.config

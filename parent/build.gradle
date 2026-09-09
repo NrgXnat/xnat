@@ -59,17 +59,23 @@ dependencies {
         api libs.spring.security.spring.security.config
         api libs.spring.security.spring.security.core
         api libs.spring.security.spring.security.ldap
-        api libs.spring.security.spring.security.openid
         api libs.spring.security.spring.security.taglibs
         api libs.spring.security.spring.security.web
         api libs.spring.security.spring.security.test
         api libs.spring.security.spring.security.jwt
+        // DEPRECATED — javax-era, scheduled for removal in 1.12 (status doc 1-23); kept for 1.11 so
+        // external OAuth/OpenID auth plugins still resolve through the Jakarta cutover.
         api libs.spring.security.oauth2.spring.security.oauth2
         api libs.spring.ldap.spring.ldap.core
 
         // Hibernate
         api libs.hibernate.core
         api libs.hibernate.envers
+        // hibernate-ehcache/jcache have no -jakarta variant and transitively reference the javax
+        // hibernate-core. A java-platform only pins versions — it cannot carry an `exclude` (that
+        // closure was a no-op and broke module-metadata generation), so any exclusion of the javax
+        // hibernate-core is the consuming module's responsibility. libs.hibernate.core resolves to
+        // the differently-named hibernate-core-jakarta artifact, so the two do not collide here.
         api libs.hibernate.ehcache
         api libs.hibernate.jcache
         api libs.hibernate.validator
@@ -165,8 +171,8 @@ dependencies {
         api libs.commons.dbcp2
         api libs.commons.digester
         api libs.commons.discovery
-        api libs.commons.email
-        api libs.commons.fileupload
+        api libs.commons.fileupload2.core
+        api libs.commons.fileupload2.jakarta
         api libs.commons.io
         api libs.commons.lang
         api libs.commons.lang3
@@ -196,9 +202,8 @@ dependencies {
         api libs.google.collections
         api libs.google.jsr305
 
-        // Swagger
-        api libs.springfox.swagger2
-        api libs.springfox.swagger.ui
+        // OpenAPI / Swagger UI (springdoc replaces dead springfox 2.9)
+        api libs.springdoc.openapi.starter.webmvc.ui
 
         // Bouncy Castle
         api libs.bouncycastle.bcpkix.jdk18on
@@ -214,9 +219,13 @@ dependencies {
         api libs.jms.javax.jms.api
         api libs.mail.javax.mail
         api libs.mail.javax.mail.api
+        // JAXB left the JDK at 11; jakarta 4.x api + runtime for the javax.xml.bind -> jakarta.xml.bind sweep
+        api libs.jakarta.xml.bind.api
+        api libs.glassfish.jaxb.runtime
         api libs.j2ee.javax.management.j2ee.api
         api libs.servlet.javax.servlet.api
         api libs.servlet.jstl
+        api libs.servlet.jstl.api
         api libs.glassfish.javax.el
         api libs.glassfish.jakarta.el
 
@@ -268,8 +277,6 @@ dependencies {
 
         // Legacy
         api libs.turbine.turbine
-        api libs.torque.torque
-        api libs.torque.village
         api libs.apache.velocity
         api libs.apache.velocity.tools
         api libs.ecs.ecs
@@ -281,7 +288,6 @@ dependencies {
         api libs.restlet.org.restlet
         api libs.restlet.com.noelios.restlet
         api libs.restlet.com.noelios.restlet.ext.servlet
-        api libs.restlet.org.restlet.ext.fileupload
 
         // Scripting
         api libs.groovy.all

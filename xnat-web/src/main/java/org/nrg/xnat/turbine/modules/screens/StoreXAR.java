@@ -21,14 +21,15 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.zip.ZipOutputStream;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.commons.fileupload.FileItem;
+import jakarta.servlet.http.Part;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
@@ -66,7 +67,8 @@ public class StoreXAR extends RawScreen {
     UserI user=null;
 
     @Override
-    public void doOutput(RunData data)  {
+    public void doOutput(PipelineData pipelineData)  {
+        RunData data = pipelineData.getRunData();
         final HttpServletResponse response = data.getResponse();
         response.setContentType("text/xml");
         response.setHeader("Cache-Control", "no-cache");
@@ -85,7 +87,7 @@ public class StoreXAR extends RawScreen {
 
             final ParameterParser params = data.getParameters();
 
-            final FileItem fi = params.getFileItem("archive");
+            final Part fi = params.getPart("archive");
 
 
             if (fi != null )
@@ -555,7 +557,8 @@ public class StoreXAR extends RawScreen {
 
     @Override
 
-    protected String getContentType(RunData data) {
+    protected String getContentType(PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
 
         return "text/xml";
 

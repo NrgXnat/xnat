@@ -24,7 +24,7 @@ import org.nrg.xft.event.methods.XftItemEventCriteria;
 import org.nrg.xnat.services.cache.extractors.DataExtractor;
 
 import javax.cache.Cache;
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

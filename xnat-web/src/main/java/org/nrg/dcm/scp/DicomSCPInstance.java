@@ -18,7 +18,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.audit.NrgRevisionEntity;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.util.*;
@@ -36,7 +36,7 @@ import java.util.*;
  * <p>The inherited "enabled" property is explicitly audited because for a receiver it is real configuration — whether
  * the receiver accepts connections at all, as the named query below relies on — rather than the soft-delete
  * bookkeeping it represents on most entities. Envers does not audit
- * {@link javax.persistence.MappedSuperclass} properties unless told to.
+ * {@link jakarta.persistence.MappedSuperclass} properties unless told to.
  */
 @Entity
 @Audited

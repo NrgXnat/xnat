@@ -10,7 +10,7 @@
 package org.nrg.xnat.restlet.services;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload2.core.FileUploadException;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -37,14 +37,14 @@ import org.nrg.xnat.status.StatusList;
 import org.restlet.Context;
 import org.restlet.data.ClientInfo;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
+import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.StringRepresentation;
-import org.restlet.resource.Variant;
-import org.restlet.util.Template;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.representation.Variant;
+import org.restlet.routing.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

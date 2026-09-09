@@ -17,7 +17,7 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 
 @Configuration
 @Import({ObjectMapperConfig.class})
-public class RestApiTestConfig extends WebMvcConfigurerAdapter {
+public class RestApiTestConfig implements WebMvcConfigurer {
     @Bean
     @Qualifier("mockXnatAppInfo")
     public XnatAppInfo mockAppInfo() {

@@ -28,7 +28,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.utilities.Patterns;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.List;

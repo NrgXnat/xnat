@@ -19,7 +19,7 @@ dependencies {
     testImplementation libs.sbrannen.spring.test.junit5
     testImplementation libs.h2database.h2
     testImplementation libs.assertj.core
-    testImplementation libs.ehcache.ehcache
+    testImplementation variantOf(libs.ehcache.ehcache) { classifier('jakarta') }
     testImplementation libs.spring.test
     testImplementation libs.logback.classic
 }

@@ -7,7 +7,7 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.services.archive.PathResourceMap;
 import org.springframework.core.io.Resource;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Writes out a map of resources to a zip stream. This can be set as the response body for Spring controller and REST

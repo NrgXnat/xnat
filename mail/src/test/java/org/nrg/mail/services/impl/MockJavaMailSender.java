@@ -11,7 +11,7 @@ package org.nrg.mail.services.impl;
 
 import java.io.InputStream;
 
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage;
 
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;

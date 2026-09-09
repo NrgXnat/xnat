@@ -9,6 +9,9 @@
 #end
 
 #parse($turbineUtils.getTemplateName("report","xnat:imageAssessorData",$project))
+## $mr = the scanned image session ($om here is the QC assessor); derive it if not injected, else the
+## scan-snapshot URLs build /REST/experiments//scans// (undefined $mr -> null on Velocity 2).
+#if(!$mr && $om)#set($mr = $om.getImageSessionData())#end
 
 <script type="text/javascript">
 	document.title = "Manual QC Assessment for $!mr.getIdentifier($project,false)";

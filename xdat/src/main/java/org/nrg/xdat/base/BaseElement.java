@@ -10,6 +10,7 @@
 
 package org.nrg.xdat.base;
 
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
@@ -409,22 +410,19 @@ public abstract class BaseElement extends ItemWrapper implements ItemI, Serializ
 	        boolean velocityInit = false;
 
 	        try {
-                Velocity.resourceExists(templateName);
+                TurbineUtils.GetInstance().resourceExists(templateName);
                 velocityInit=true;
             } catch (Exception e1) {
             }
 
             if (velocityInit)
             {
-                boolean exists= Velocity.resourceExists("/screens/" + templateName);
+                boolean exists= TurbineUtils.GetInstance().resourceExists("/screens/" + templateName);
                 if (exists)
                 {
                     VelocityContext context = new VelocityContext();
                     context.put("item",this);
-                    StringWriter sw = new StringWriter();
-                    Template template =Velocity.getTemplate("/screens/" + templateName);
-                    template.merge(context,sw);
-                    return sw.toString();
+                    return org.nrg.xft.utils.VelocityUtils.render(context, "/screens/" + templateName);
                 }else{
                     logger.info("No Velocity TEXT vm found for " + getItem().getGenericSchemaElement().getFullXMLName());
                     return getItem().toXML_String();
@@ -432,7 +430,7 @@ public abstract class BaseElement extends ItemWrapper implements ItemI, Serializ
             }else
             {
                 VelocityUtils.init();
-                boolean exists= Velocity.resourceExists(getItem().getGenericSchemaElement().getFormattedName() +"_text.vm");
+                boolean exists= TurbineUtils.GetInstance().resourceExists(getItem().getGenericSchemaElement().getFormattedName() +"_text.vm");
                 String path = XFTManager.GetInstance().getSourceDir() + "src/templates/text/"+ templateName;
                 File f = new File(path);
                 if (f.exists())

@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.Velocity;
@@ -43,7 +44,8 @@ import java.util.Map;
 public class ProcessAccessRequest extends SecureAction {
     static Logger logger = Logger.getLogger(ProcessAccessRequest.class);
 
-    public void doDenial(RunData data, Context context) throws Exception {
+    public void doDenial(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         Integer id = TurbineUtils.GetPassedInteger("id",data);
         UserI other = Users.getUser(id);
 
@@ -107,7 +109,8 @@ public class ProcessAccessRequest extends SecureAction {
         this.redirectToReportScreen("XDATScreen_report_xnat_projectData.vm", project, data);
     }
     
-    public void doApprove(RunData data, Context context) throws Exception {
+    public void doApprove(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         Integer id = TurbineUtils.GetPassedInteger("id",data);
         UserI user = TurbineUtils.getUser(data);
         UserI other = Users.getUser(id);
@@ -217,7 +220,8 @@ public class ProcessAccessRequest extends SecureAction {
      * @see org.apache.turbine.modules.actions.VelocitySecureAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     @Override
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
 
     }
 

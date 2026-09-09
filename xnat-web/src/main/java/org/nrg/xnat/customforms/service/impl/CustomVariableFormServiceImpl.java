@@ -7,7 +7,7 @@ import org.nrg.xnat.customforms.service.CustomVariableFormService;
 import org.nrg.xnat.entities.CustomVariableForm;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
 

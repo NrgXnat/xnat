@@ -11,12 +11,13 @@ package org.nrg.xnat.restlet.resources;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.noelios.restlet.http.HttpConstants;
+import org.restlet.engine.header.HeaderConstants;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.fileupload.DefaultFileItemFactory;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload2.core.DiskFileItem;
+import org.apache.commons.fileupload2.core.DiskFileItemFactory;
+import org.apache.commons.fileupload2.core.FileUploadException;
+import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -94,9 +95,13 @@ import org.nrg.xnat.utils.InteractiveAgentDetector;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
-import org.restlet.ext.fileupload.RestletFileUpload;
+import org.restlet.data.Status;
+import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
 import org.restlet.resource.*;
 import org.restlet.util.Series;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
@@ -104,9 +109,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -117,6 +122,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -124,11 +131,16 @@ import static org.nrg.xdat.preferences.SiteConfigPreferences.SITE_URL;
 import static org.nrg.xft.event.XftItemEventI.DELETE;
 
 @SuppressWarnings("deprecation")
-public abstract class SecureResource extends Resource {
+public abstract class SecureResource extends ServerResource {
 
     private static final String COMPRESSION = "compression";
 
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
+
+    // Content-Disposition is a Restlet 2.x STANDARD_HEADER (dropped if added to the raw header Series), so
+    // setContentDisposition() records the intent here and the get/post/put/delete bridges stamp it onto the
+    // returned representation via applyDisposition() -> Restlet serializes it as a Content-Disposition header.
+    private Disposition pendingDisposition;
 
     private static final String ACTION = "action";
 
@@ -172,21 +184,24 @@ public abstract class SecureResource extends Resource {
     public       String       filepath;
 
     public SecureResource(Context context, Request request, Response response) {
-        super(context, request, response);
+        super();
+        // Restlet 2.x: ServerResource has no (Context,Request,Response) constructor; wire up via init()
+        // so the constructor body below (which uses getRequest()/getResponse()) works as it did in 1.1.
+        init(context, request, response);
 
         _serializer = XDAT.getSerializerService();
         if (null == _serializer) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: Serializer service was not properly initialized.");
         }
         _template = XDAT.getNamedParameterJdbcTemplate();
         if (_template == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Named parameter JDBC template was not properly initialized.");
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "Named parameter JDBC template was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: Named parameter JDBC template was not properly initialized.");
         }
         _userDataCache = XDAT.getContextService().getBean(UserDataCache.class);
         if (_userDataCache == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "User data cache was not properly initialized.");
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_FAILED_DEPENDENCY, "User data cache was not properly initialized.");
             throw new NrgServiceRuntimeException("ERROR: User data cache was not properly initialized.");
         }
 
@@ -214,6 +229,170 @@ public abstract class SecureResource extends Resource {
             throw new RuntimeException("An error occurred where it really should not have occurred", e);
         }
     }
+
+    // ===== Restlet 2.x compatibility bridge =====
+    // Restlet 2.x replaced the 1.1 Resource model (getVariants()/represent()/handleX) with
+    // ServerResource's get/post/put/delete(Variant). These bridges dispatch the 2.x handlers to the
+    // 1.1-style methods XNAT's resource subclasses still override, so subclasses need no changes.
+    // (org.restlet.resource.ResourceException is a RuntimeException in 2.x, so no throws juggling.)
+
+    @Override
+    protected Representation get(final Variant variant) throws ResourceException {
+        handleGet();
+        final Representation entity = getResponse().getEntity();
+        return applyDisposition(entity != null ? entity : getRepresentation(variant));
+    }
+
+    @Override
+    protected Representation get() throws ResourceException {
+        return get(null);
+    }
+
+    @Override
+    protected Representation post(final Representation entity, final Variant variant) throws ResourceException {
+        handlePost();
+        markBodylessOk();
+        return applyDisposition(getResponse().getEntity());
+    }
+
+    @Override
+    protected Representation put(final Representation entity, final Variant variant) throws ResourceException {
+        handlePut();
+        markBodylessOk();
+        return applyDisposition(getResponse().getEntity());
+    }
+
+    @Override
+    protected Representation delete(final Variant variant) throws ResourceException {
+        handleDelete();
+        markBodylessOk();
+        return applyDisposition(getResponse().getEntity());
+    }
+
+    // Restlet 1.1 answered entity-less success with 200 (OK); 2.x ServerResource.handle() rewrites
+    // an entity-less 200 to 204 (No Content) after the handler returns. XNAT's REST clients and the
+    // xnat_rest_tests harness assert the 1.1 behavior (e.g. logout's DELETE /data/JSESSION expects
+    // 200). The rewrite only fires when the handler finished with the DEFAULT bodyless OK, so mark
+    // exactly that case in the bridge and restore the 200 after super.handle(). Handlers that
+    // explicitly set 204 (or any other status) are never marked and stay untouched.
+    private static final String BODYLESS_OK_ATTR = SecureResource.class.getName() + ".bodylessOk";
+
+    private void markBodylessOk() {
+        if (isBodylessOk(getResponse().getEntity(), getResponse().getStatus())) {
+            getRequest().getAttributes().put(BODYLESS_OK_ATTR, Boolean.TRUE);
+        }
+    }
+
+    static boolean isBodylessOk(final Representation entity, final Status status) {
+        // A zero-size entity (e.g. FileList's StringRepresentation("") on upload success) reports
+        // isAvailable()==false and gets the same 204 rewrite as a null entity, so mark both.
+        return Status.SUCCESS_OK.equals(status) && (entity == null || !entity.isAvailable());
+    }
+
+    static Status okParity(final boolean bodylessOk, final Status status) {
+        return bodylessOk && Status.SUCCESS_NO_CONTENT.equals(status) ? Status.SUCCESS_OK : status;
+    }
+
+    @Override
+    public Representation handle() {
+        final Representation result = super.handle();
+        getResponse().setStatus(okParity(
+                Boolean.TRUE.equals(getRequest().getAttributes().get(BODYLESS_OK_ATTR)),
+                getResponse().getStatus()));
+        return result;
+    }
+
+    // No-variant forms. When a resource declares no variants (getVariants() empty), Restlet 2.x's
+    // doNegotiatedHandle() bypasses the (Representation, Variant) hooks above and dispatches to these
+    // no-arg forms, whose ServerResource defaults look for an @Post/@Put/@Delete annotation and otherwise
+    // return 405. XNAT uses no such annotations, so bridge them to the variant forms (which ignore the
+    // variant and call handlePost/handlePut/handleDelete). Parallels get()/get(Variant) both being overridden.
+    @Override
+    protected Representation post(final Representation entity) throws ResourceException {
+        return post(entity, null);
+    }
+
+    @Override
+    protected Representation put(final Representation entity) throws ResourceException {
+        return put(entity, null);
+    }
+
+    @Override
+    protected Representation delete() throws ResourceException {
+        return delete((Variant) null);
+    }
+
+    /** 1.1-style GET hook. Default no-op; GET falls through to {@link #represent(Variant)}. */
+    public void handleGet() { }
+
+    /** 1.1-style GET representation producer; subclasses override to render the negotiated entity. */
+    public Representation represent(final Variant variant) throws ResourceException {
+        return null;
+    }
+
+    /** 1.1 Resource GET producer (parallel to represent()); default delegates to {@link #represent(Variant)}. */
+    public Representation getRepresentation(final Variant variant) {
+        return represent(variant);
+    }
+
+    /** Restlet 1.1 no-arg preferred-variant helper (2.x moved it to getPreferredVariant(List)). */
+    public Variant getPreferredVariant() {
+        return getPreferredVariant(getVariants());
+    }
+
+    // 1.1 Resource method-allowance flags. Subclasses override to permit a method; getAllowedMethods()
+    // below consults them so disallowed methods still yield 405 as they did under Restlet 1.1.
+    public boolean allowGet()    { return true; }
+    public boolean allowPost()   { return false; }
+    public boolean allowPut()    { return false; }
+    public boolean allowDelete() { return false; }
+
+    @Override
+    public java.util.Set<Method> getAllowedMethods() {
+        final java.util.Set<Method> allowed = new java.util.HashSet<>();
+        if (allowGet())    { allowed.add(Method.GET); allowed.add(Method.HEAD); }
+        if (allowPost())   { allowed.add(Method.POST); }
+        if (allowPut())    { allowed.add(Method.PUT); }
+        if (allowDelete()) { allowed.add(Method.DELETE); }
+        allowed.add(Method.OPTIONS);
+        return allowed;
+    }
+
+    /** 1.1-style POST hook; default delegates to {@link #acceptRepresentation(Representation)}. */
+    public void handlePost() {
+        acceptRepresentation(getRequest() == null ? null : getRequest().getEntity());
+    }
+
+    public void acceptRepresentation(final Representation entity) throws ResourceException {
+        getResponse().setStatus(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED);
+    }
+
+    /** 1.1-style PUT hook; default delegates to {@link #storeRepresentation(Representation)}. */
+    public void handlePut() {
+        storeRepresentation(getRequest() == null ? null : getRequest().getEntity());
+    }
+
+    public void storeRepresentation(final Representation entity) throws ResourceException {
+        getResponse().setStatus(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED);
+    }
+
+    /** 1.1-style DELETE hook; default delegates to {@link #removeRepresentations()}. */
+    public void handleDelete() {
+        removeRepresentations();
+    }
+
+    public void removeRepresentations() throws ResourceException {
+        getResponse().setStatus(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED);
+    }
+
+    /** 1.1 Resource modifiability toggles — no-ops in 2.x (allowance derives from overridden handlers). */
+    public void setModifiable(final boolean modifiable) { }
+
+    public void setReadable(final boolean readable) { }
+
+    public boolean isModifiable() { return allowPut() || allowPost() || allowDelete(); }
+
+    public boolean isReadable() { return allowGet(); }
 
     public static Object getParameter(Request request, String key) {
         return TurbineUtils.escapeParam(request.getAttributes().get(key));
@@ -323,11 +502,128 @@ public abstract class SecureResource extends Resource {
             final Representation entity = getRequest().getEntity();
             if (RequestUtil.isMultiPartFormData(entity) && entity.getSize() > 0) {
                 _mediaType = entity.getMediaType();
-                _body = new Form(entity);
+                _body = bodyOnlyForm(new Form(entity));
             }
         }
 
         return _body;
+    }
+
+    /**
+     * Reads the request body as raw text, for resources that parse the body themselves rather than
+     * through {@link #getBodyAsForm()}.
+     *
+     * <p><b>Why this exists (Restlet 2.6 + Servlet 6):</b> for {@code application/x-www-form-urlencoded}
+     * content the Restlet servlet connector builds its entity from the servlet parameter map. Per
+     * Servlet 6.0 §3.1 the container only populates that map for <b>POST</b>, so on a form-encoded
+     * <b>PUT</b> the Restlet entity comes back empty and {@code Request.isEntityAvailable()} is false —
+     * even though the client sent a body. Under Restlet 1.1 the raw body was always exposed, so
+     * resources written against 1.1 silently lose their payload on PUT. See status doc item 1-24.
+     *
+     * <p>Sources are tried in order: the Restlet entity; the raw servlet reader (intact on PUT, since
+     * the container never parsed it); finally the servlet parameter map re-encoded as
+     * {@code k=v&k=v} (the POST case, where the container consumed the stream).
+     *
+     * @return the request body as text, or an empty string when the request carries no body.
+     */
+    protected String getRequestBodyText() {
+        final Request request = getRequest();
+        if (request == null) {
+            return "";
+        }
+
+        // 1. The Restlet entity — correct for every non-form content type, and for POST forms.
+        try {
+            if (request.isEntityAvailable() && request.getEntity() != null) {
+                final String text = request.getEntity().getText();
+                if (StringUtils.isNotEmpty(text)) {
+                    return text;
+                }
+            }
+        } catch (IOException e) {
+            logger.debug("Could not read the Restlet entity, falling back to the servlet request", e);
+        }
+
+        final HttpServletRequest servletRequest = new RequestUtil().getHttpServletRequest(request);
+        if (servletRequest == null) {
+            return "";
+        }
+
+        // 2. The raw servlet body — the form-encoded PUT case: unparsed by the container, unread by Restlet.
+        try (final Reader reader = servletRequest.getReader()) {
+            final String raw = new java.io.BufferedReader(reader).lines().collect(Collectors.joining("\n"));
+            if (StringUtils.isNotEmpty(raw)) {
+                return raw;
+            }
+        } catch (IllegalStateException | IOException e) {
+            logger.debug("Servlet body stream unavailable, falling back to the parameter map", e);
+        }
+
+        // 3. The parameter map — the container already drained a POST form body into it.
+        final Map<String, String[]> parameters = servletRequest.getParameterMap();
+        if (parameters == null || parameters.isEmpty()) {
+            return "";
+        }
+        return parameters.entrySet().stream()
+                         .flatMap(entry -> Arrays.stream(entry.getValue())
+                                                 .map(value -> encodeParameter(entry.getKey()) + "=" + encodeParameter(value)))
+                         .collect(Collectors.joining("&"));
+    }
+
+    private static String encodeParameter(final String value) {
+        return value == null ? "" : URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Reduce the parameter form parsed from the request entity to its <b>body-only</b> parameters.
+     *
+     * <p>Under Restlet 2.x's servlet connector ({@code org.restlet.ext.servlet.ServletUtils}), an
+     * {@code application/x-www-form-urlencoded} POST has already been parsed by the servlet container,
+     * which merges the query string and the form body into one decoded namespace
+     * ({@code jakarta.servlet.ServletRequest#getParameterMap()}, Servlet 6.0 §3.1) and consumes the body
+     * input stream in the process. Restlet therefore reconstructs the request entity <i>from</i> that
+     * merged map, so {@code new Form(entity)} yields query+body — the raw body alone is no longer
+     * recoverable. Computing {@code merged − query} is thus how a body-only view is obtained in 2.x, not
+     * a legacy shim: it is required because the entity is the container's merged parameters. (Restlet
+     * 1.1's {@code ServletCall} instead exposed the raw body, so no reduction was needed there.)</p>
+     *
+     * <p>This matters because callers read the query string separately via {@link #getQueryVariableForm()}
+     * / {@link #loadQueryVariables()}. Leaving the query in the body form counts every query parameter
+     * twice — which broke single- vs multi-session dispatch in
+     * {@link org.nrg.xnat.restlet.services.Archiver}: a lone {@code src} became two, so
+     * {@code sessions.size() != 1} routed an empty-session archive to the asynchronous batch path
+     * ({@code PrearcDatabase.archive(List)}), which is fire-and-forget and swallows the
+     * {@code SyncFailedException}, returning HTTP 200 where the synchronous single-session path returns
+     * 500.</p>
+     *
+     * <p>Multipart bodies are unaffected: their field name/value pairs do not match the query string, so
+     * nothing is removed. (A cleaner long-term model — reading the merged namespace once instead of
+     * splitting body vs. query — is tracked as a follow-up; see {@code docs/tomcat10-upgrade-status.md}.)</p>
+     *
+     * @param merged the parameter form parsed from the request entity (query+body under the servlet connector).
+     * @return the form with one occurrence of each query-string parameter removed (body-only).
+     */
+    private Form bodyOnlyForm(final Form merged) {
+        if (merged == null || merged.isEmpty() || getRequest() == null) {
+            return merged;
+        }
+        final Form query = getQueryVariableForm(getRequest());
+        if (query == null || query.isEmpty()) {
+            return merged;
+        }
+        final List<Parameter> body = new ArrayList<>(merged);
+        for (final Parameter q : query) {
+            for (final Iterator<Parameter> it = body.iterator(); it.hasNext(); ) {
+                final Parameter b = it.next();
+                if (Objects.equals(b.getName(), q.getName()) && Objects.equals(b.getValue(), q.getValue())) {
+                    it.remove();   // remove exactly one occurrence per query parameter
+                    break;
+                }
+            }
+        }
+        final Form result = new Form();
+        result.addAll(body);
+        return result;
     }
 
     protected MediaType getMediaType() {
@@ -338,7 +634,8 @@ public abstract class SecureResource extends Resource {
         Map<String, String> map = Maps.newLinkedHashMap();
         if (q != null) {
             for (String s : q.getValuesMap().keySet()) {
-                map.put(s, TurbineUtils.escapeParam(q.getFirstValue(s)));
+                // emptyToNull: Restlet 1.1 delivered ?a= as a null value (see getQueryVariable)
+                map.put(s, TurbineUtils.escapeParam(emptyToNull(q.getFirstValue(s))));
             }
         }
         return map;
@@ -401,7 +698,7 @@ public abstract class SecureResource extends Resource {
     public String getBodyVariable(String key) {
         Form f = getBodyAsForm();
         if (f != null) {
-            return TurbineUtils.escapeParam(f.getFirstValue(key));
+            return TurbineUtils.escapeParam(emptyToNull(f.getFirstValue(key)));
         }
         return null;
     }
@@ -441,9 +738,20 @@ public abstract class SecureResource extends Resource {
     public static String getQueryVariable(String key, Request request) {
         Form f = getQueryVariableForm(request);
         if (f != null && f.getValuesMap().containsKey(key)) {
-            return TurbineUtils.escapeParam(f.getFirstValue(key));
+            return TurbineUtils.escapeParam(emptyToNull(f.getFirstValue(key)));
         }
         return null;
+    }
+
+    /**
+     * Restlet 1.1 parsed an empty-valued parameter ({@code ?a=}) to a null value; 2.x parses it to
+     * the empty string. XNAT's handlers treat null as "absent" (PopulateItem skips the field) but
+     * set an empty string verbatim — which for typed columns fails in the database (e.g. PUT with
+     * {@code tracer/startTime=} → "invalid input syntax for type timestamp"). Normalize to the
+     * 1.1 semantics at the readers.
+     */
+    private static String emptyToNull(final String value) {
+        return StringUtils.isEmpty(value) ? null : value;
     }
 
     public boolean containsQueryVariable(String key) {
@@ -459,7 +767,10 @@ public abstract class SecureResource extends Resource {
         Form f = getQueryVariableForm();
         if (f != null) {
             for (Parameter p : f) {
-                params.put(p.getName(), p.getValue());
+                // skip empty values: Restlet 1.1 parsed ?a= to null, which a Hashtable can't hold
+                if (StringUtils.isNotEmpty(p.getValue())) {
+                    params.put(p.getName(), p.getValue());
+                }
             }
         }
         return params;
@@ -747,12 +1058,12 @@ public abstract class SecureResource extends Resource {
                 //handle multi part form data (where xml is being submitted as a field in a multi part form)
                 //req_format is checked to allow the body parsing to use the form method rather then file fields.
                 try {
-                    org.apache.commons.fileupload.DefaultFileItemFactory factory = new DefaultFileItemFactory();
-                    org.restlet.ext.fileupload.RestletFileUpload upload = new RestletFileUpload(factory);
+                    final DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
+                    final JakartaServletFileUpload<DiskFileItem, DiskFileItemFactory> upload = new JakartaServletFileUpload<>(factory);
 
-                    List<FileItem> items = upload.parseRequest(getRequest());
+                    List<DiskFileItem> items = upload.parseRequest(getHttpServletRequest());
 
-                    for (FileItem fi : items) {
+                    for (DiskFileItem fi : items) {
                         if (fi.getName().endsWith(".xml")) {
                             SAXReader reader = new SAXReader(user);
                             if (item != null) {
@@ -772,16 +1083,16 @@ public abstract class SecureResource extends Resource {
                                 }
                             } catch (SAXParseException e) {
                                 logger.error("An error occurred parsing the XML", e);
-                                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred parsing the XML: " + e.getMessage());
-                                throw new ClientException(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
+                                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred parsing the XML: " + e.getMessage());
+                                throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
                             } catch (IOException e) {
                                 logger.error("An error occurred reading the XML", e);
                                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "An error occurred reading the XML: " + e.getMessage());
                                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
                             } catch (SAXException e) {
                                 logger.error("An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself.", e);
-                                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself: " + e.getMessage());
-                                throw new ClientException(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
+                                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself: " + e.getMessage());
+                                throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
                             } catch (Exception e) {
                                 logger.error("An unknown error occurred", e);
                                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "An unknown error occurred: " + e.getMessage());
@@ -818,16 +1129,16 @@ public abstract class SecureResource extends Resource {
 
                 } catch (SAXParseException e) {
                     logger.error("An error occurred parsing the XML", e);
-                    getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred parsing the XML: " + e.getMessage());
-                    throw new ClientException(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
+                    getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred parsing the XML: " + e.getMessage());
+                    throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
                 } catch (IOException e) {
                     logger.error("An error occurred reading the XML", e);
                     getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "An error occurred reading the XML: " + e.getMessage());
                     throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
                 } catch (SAXException e) {
                     logger.error("An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself.", e);
-                    getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself: " + e.getMessage());
-                    throw new ClientException(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
+                    getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "An error occurred with the XML parser. Note that this doesn't mean that there is an issue with the XML itself: " + e.getMessage());
+                    throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e);
                 } catch (Exception e) {
                     logger.error("An unknown error occurred", e);
                     getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "An unknown error occurred: " + e.getMessage());
@@ -1022,15 +1333,30 @@ public abstract class SecureResource extends Resource {
         returnRepresentation(representItem(item, MediaType.TEXT_XML));
     }
 
-    @SuppressWarnings("SameParameterValue")
+    @SuppressWarnings({"SameParameterValue", "unchecked"})
     protected void setResponseHeader(String key, String value) {
-        Form responseHeaders = (Form) getResponse().getAttributes().get("org.restlet.http.headers");
-
-        if (responseHeaders == null) {
-            responseHeaders = new Form();
-            getResponse().getAttributes().put("org.restlet.http.headers", responseHeaders);
+        // Cache-Control is one of Restlet 2.x's STANDARD_HEADERS: if added to the raw header Series it is
+        // logged ("...is not allowed as such") and DROPPED by HeaderUtils.addExtensionHeaders, so it never
+        // emits. It must go through the typed API instead, which Restlet serializes back to a Cache-Control
+        // header at commit time.
+        if ("Cache-Control".equalsIgnoreCase(key)) {
+            for (final String token : value.split(",")) {
+                final String directive = token.trim();
+                if (!directive.isEmpty()) {
+                    getResponse().getCacheDirectives().add(new CacheDirective(directive));
+                }
+            }
+            return;
         }
-
+        // Restlet 2.x stores the response-headers attribute as a Series<Header> (org.restlet.data.Header);
+        // Restlet 1.1 used a Form (Series<Parameter>). Using a Form throws ClassCastException in
+        // HeaderUtils.addExtensionHeaders at response-commit time -> 500 after the body is already written.
+        final Map<String, Object> attributes = getResponse().getAttributes();
+        Series<Header> responseHeaders = (Series<Header>) attributes.get(HeaderConstants.ATTRIBUTE_HEADERS);
+        if (responseHeaders == null) {
+            responseHeaders = new Series<>(Header.class);
+            attributes.put(HeaderConstants.ATTRIBUTE_HEADERS, responseHeaders);
+        }
         responseHeaders.add(key, value);
     }
 
@@ -1154,21 +1480,24 @@ public abstract class SecureResource extends Resource {
      * @param filename     The suggested filename for downloaded content.
      * @param isAttachment Indicates whether the content is an attachment or inline.
      */
-    @SuppressWarnings("unchecked")
     public void setContentDisposition(String filename, boolean isAttachment) {
-        final Map<String, Object> attributes = getResponse().getAttributes();
-        if (attributes.containsKey(CONTENT_DISPOSITION)) {
+        if (pendingDisposition != null) {
             throw new IllegalStateException("A content disposition header has already been added to this response.");
         }
-        Object oHeaders = attributes.get(HttpConstants.ATTRIBUTE_HEADERS);
-        Series<Parameter> headers;
-        if (oHeaders != null) {
-            headers = (Series<Parameter>) oHeaders;
-        } else {
-            headers = new Form();
+        // Build the typed Restlet 2.x Disposition; applyDisposition() stamps it onto the returned
+        // representation in the bridge methods. Adding "Content-Disposition" to the raw header Series would
+        // be silently dropped (STANDARD_HEADER), same as Cache-Control in setResponseHeader.
+        final Disposition disposition = new Disposition(isAttachment ? Disposition.TYPE_ATTACHMENT : Disposition.TYPE_INLINE);
+        disposition.setFilename(filename);
+        pendingDisposition = disposition;
+    }
+
+    /** Stamp any pending Content-Disposition (from {@link #setContentDisposition}) onto the outgoing entity. */
+    private Representation applyDisposition(final Representation entity) {
+        if (entity != null && pendingDisposition != null) {
+            entity.setDisposition(pendingDisposition);
         }
-        headers.add(new Parameter(CONTENT_DISPOSITION, TurbineUtils.createContentDispositionValue(filename, isAttachment)));
-        attributes.put(HttpConstants.ATTRIBUTE_HEADERS, headers);
+        return entity;
     }
 
     /**
@@ -1272,16 +1601,21 @@ public abstract class SecureResource extends Resource {
                 wrappers.add(new FileWriterWrapper(entity, fileName));
             }
         } else if (RequestUtil.isMultiPartFormData(entity)) {
-            final DefaultFileItemFactory factory = new DefaultFileItemFactory();
-            final RestletFileUpload upload = new RestletFileUpload(factory);
+            final DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
+            final JakartaServletFileUpload<DiskFileItem, DiskFileItemFactory> upload = new JakartaServletFileUpload<>(factory);
 
-            List<FileItem> items = upload.parseRequest(getRequest());
+            List<DiskFileItem> items = upload.parseRequest(getHttpServletRequest());
 
-            for (final FileItem item : items) {
+            for (final DiskFileItem item : items) {
                 if (item.isFormField()) {
                     // Load form field to passed parameters map
                     String fieldName = item.getFieldName();
-                    String value = item.getString();
+                    final String value;
+                    try {
+                        value = item.getString();
+                    } catch (IOException e) {
+                        throw new FileUploadException("Unable to read the value of the form field " + fieldName, e);
+                    }
                     if (fieldName.equals("reference")) {
                         throw new FileUploadException("multi-part form posts may not be used to upload files via reference.");
                     } else {
@@ -1301,7 +1635,7 @@ public abstract class SecureResource extends Resource {
                 wrappers.add(new FileWriterWrapper(item, useFileFieldName ? item.getFieldName() : fileName));
             }
         } else {
-            String name = entity.getDownloadName();
+            String name = entity.getDisposition() != null ? entity.getDisposition().getFilename() : null;
             logger.debug(name);
         }
 

@@ -22,7 +22,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
+import org.restlet.Request;
 
 public class ItemHTMLRepresentation extends TurbineScreenRepresentation {
 	static org.apache.log4j.Logger logger = Logger.getLogger(ItemHTMLRepresentation.class);

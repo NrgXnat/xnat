@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
@@ -41,7 +42,8 @@ public class ElementSecurityWizard extends AdminAction {
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
     }
 
     /**
@@ -49,7 +51,8 @@ public class ElementSecurityWizard extends AdminAction {
      * @param context
      * @throws Exception
      */
-    public void doStep1(RunData data, Context context) throws Exception{
+    public void doStep1(PipelineData pipelineData, Context context) throws Exception{
+        RunData data = pipelineData.getRunData();
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 
@@ -68,7 +71,8 @@ public class ElementSecurityWizard extends AdminAction {
      * @param context
      * @throws Exception
      */
-    public void doStep2(RunData data, Context context) throws Exception{
+    public void doStep2(PipelineData pipelineData, Context context) throws Exception{
+        RunData data = pipelineData.getRunData();
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 
@@ -105,7 +109,8 @@ public class ElementSecurityWizard extends AdminAction {
      * @param context
      * @throws Exception
      */
-    public void doStep3(RunData data, Context context) throws Exception{
+    public void doStep3(PipelineData pipelineData, Context context) throws Exception{
+        RunData data = pipelineData.getRunData();
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 
@@ -122,10 +127,10 @@ public class ElementSecurityWizard extends AdminAction {
 		        String actionName = item.getStringProperty("element_action_name");
 		        String templateName = "XDATScreen_"+ actionName + "_" + SchemaElement.GetElement(found.getStringProperty("xdat:element_security.element_name")).getSQLName() + ".vm";
 		        boolean foundScreen = false;
-		        if (Velocity.resourceExists("/screens/" + templateName))
+		        if (TurbineUtils.GetInstance().resourceExists("/screens/" + templateName))
 	    		{
 		            foundScreen = true;
-	    		}else if(Velocity.resourceExists("/screens/XDATScreen_" + actionName + ".vm")){
+	    		}else if(TurbineUtils.GetInstance().resourceExists("/screens/XDATScreen_" + actionName + ".vm")){
 	    		    foundScreen = true;
 	    		}
 
@@ -147,7 +152,7 @@ public class ElementSecurityWizard extends AdminAction {
 		            String s = "xdat:element_security.element_actions.element_action__"+count;
 
 		            String templateName = "XDATScreen_edit_" + SchemaElement.GetElement(found.getStringProperty("xdat:element_security.element_name")).getFormattedName() + ".vm";
-		    		if (Velocity.resourceExists("/screens/" + templateName))
+		    		if (TurbineUtils.GetInstance().resourceExists("/screens/" + templateName))
 		    		{
 			            found.setProperty(s + ".element_action_name","edit");
 			            found.setProperty(s + ".display_name","Edit");
@@ -279,7 +284,8 @@ public class ElementSecurityWizard extends AdminAction {
      * @param context
      * @throws Exception
      */
-    public void doStep4(RunData data, Context context) throws Exception{
+    public void doStep4(PipelineData pipelineData, Context context) throws Exception{
+        RunData data = pipelineData.getRunData();
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 

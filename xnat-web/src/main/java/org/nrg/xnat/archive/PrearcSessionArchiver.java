@@ -65,9 +65,10 @@ import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.data.Status;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.xml.sax.SAXException;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serial;
@@ -391,7 +392,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
         try {
             lock(prearcSession.getUrl());
         } catch (LockedItemException e3) {
-            throw new ClientException(Status.CLIENT_ERROR_LOCKED, "Duplicate archive attempt. Prearchive session already archiving.", e3);
+            throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_LOCKED, "Duplicate archive attempt. Prearchive session already archiving.", e3);
         }
 
         try {
@@ -418,7 +419,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 try {
                     lock(existing.getId());
                 } catch (LockedItemException e3) {
-                    throw new ClientException(Status.CLIENT_ERROR_LOCKED, "Duplicate archive attempt.  Destination session in use.", e3);
+                    throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_LOCKED, "Duplicate archive attempt.  Destination session in use.", e3);
                 }
                 src.setId(existing.getId());
                 preventConcurrentArchiving(existing.getId(), user);

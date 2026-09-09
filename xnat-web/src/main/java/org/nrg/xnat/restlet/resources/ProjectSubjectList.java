@@ -29,11 +29,12 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.xml.sax.SAXParseException;
 
 import java.util.ArrayList;
@@ -90,7 +91,7 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 				XnatSubjectdata sub = new XnatSubjectdata(item);
 
 				if (sub.getExperiments_experiment().size() > 0) {
-					this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted subject record must not include subject assessors.");
+					this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted subject record must not include subject assessors.");
 					return;
 				}
 
@@ -118,7 +119,7 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 						}
 					}
 				} else {
-					getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted subject record must include the project attribute.");
+					getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted subject record must include the project attribute.");
 					return;
 				}
 
@@ -165,12 +166,12 @@ public class ProjectSubjectList extends QueryOrganizerResource {
 
 				this.returnSuccessfulCreateFromList(sub.getId());
 			} else {
-				this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
+				this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
 			}
 		} catch (ActionException e) {
 			this.getResponse().setStatus(e.getStatus(), e.getMessage());
 		} catch (SAXParseException e) {
-			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
+			this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
 		} catch (InvalidValueException e) {
 			this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 		} catch (Exception e) {

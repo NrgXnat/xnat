@@ -13,12 +13,13 @@ package org.nrg.xdat.turbine.modules.screens;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.util.Calendar;
 
@@ -36,7 +37,8 @@ public class XDATScreen_xml_file extends RawScreen {
      * @param data Turbine information.
      * @return content type.
      */
-    public String getContentType(final RunData data) {
+    public String getContentType(final PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
         return "text/xml";
     }
 
@@ -70,7 +72,8 @@ public class XDATScreen_xml_file extends RawScreen {
      * @param data RunData
      * @throws Exception When something goes wrong.
      */
-    protected final void doOutput(final RunData data) throws Exception {
+    protected final void doOutput(final PipelineData pipelineData) throws Exception {
+        RunData data = pipelineData.getRunData();
         try (final ByteArrayOutputStream outputStream = buildXml(data)) {
             if (outputStream != null) {
                 final String fileName = StringUtils.defaultIfBlank((String) TurbineUtils.GetPassedParameter("fileName", data), XML_FILENAME_FORMAT.formatted(Calendar.getInstance().getTime()));

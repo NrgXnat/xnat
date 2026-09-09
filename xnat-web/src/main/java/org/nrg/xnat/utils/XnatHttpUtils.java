@@ -33,7 +33,7 @@ import org.springframework.security.crypto.codec.Base64;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 

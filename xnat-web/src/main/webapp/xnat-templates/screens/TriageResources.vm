@@ -60,7 +60,7 @@ $!template.setLayoutTemplate("/ScreenOnly.vm")
 	#set($fsource=$!row.get(10))
 
 	#if($user.checkFeature($project,"QuarantineReview") || $user.getUsername().equals($theuser))
-		<tr id="resItem${velocityCount}" class="resItem">
+		<tr id="resItem${foreach.count}" class="resItem">
 			<td>$resource</td>
 			<td>
 				<b>Source: </b><span>$fsource</span>
@@ -72,9 +72,9 @@ $!template.setLayoutTemplate("/ScreenOnly.vm")
 			<td>	
 				<button class="button1" onclick="window.location='${url}/files?format=zip';return false;">Download</button><br>
 				#if($user.checkFeature($project,"QuarantineReview"))
-					<button class="button1" onclick="XNAT.app.TriageResourceApprover.requestMove('$velocityCount','$resource','${src}/files','$target','$overwrite','$event_reason','$!format','$!content','$fsource','$date','$theuser');return false;">Approve</button><br>
+					<button class="button1" onclick="XNAT.app.TriageResourceApprover.requestMove('$foreach.count','$resource','${src}/files','$target','$overwrite','$event_reason','$!format','$!content','$fsource','$date','$theuser');return false;">Approve</button><br>
 				#end
-				<button class="button1" onclick="XNAT.app.TriageResourceDeleter.requestDelete('$velocityCount','$resource','$url','$fsource','$date','$theuser');return false;">Remove</button>
+				<button class="button1" onclick="XNAT.app.TriageResourceDeleter.requestDelete('$foreach.count','$resource','$url','$fsource','$date','$theuser');return false;">Remove</button>
 			</td>
 		</tr>
 	#end

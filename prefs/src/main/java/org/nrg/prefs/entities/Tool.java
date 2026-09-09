@@ -19,9 +19,9 @@ import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 
 /**
  * Represents a tool or feature for the purposes of grouping {@link Preference preferences} into functional areas. The

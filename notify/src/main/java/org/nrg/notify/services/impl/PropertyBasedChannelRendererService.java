@@ -11,7 +11,7 @@ package org.nrg.notify.services.impl;
 
 import java.util.Map;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.nrg.notify.entities.ChannelRendererProvider;
 import org.nrg.notify.exceptions.ChannelRendererNotFoundException;

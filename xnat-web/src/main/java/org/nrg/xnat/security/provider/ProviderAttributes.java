@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 
 import java.util.*;

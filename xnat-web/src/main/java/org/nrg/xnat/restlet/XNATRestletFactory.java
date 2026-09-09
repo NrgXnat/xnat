@@ -15,7 +15,7 @@ import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.restlet.Application;
-import org.restlet.VirtualHost;
+import org.restlet.routing.VirtualHost;
 
 import java.io.File;
 import java.util.ArrayList;

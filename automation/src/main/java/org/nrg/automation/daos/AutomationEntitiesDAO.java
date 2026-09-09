@@ -14,9 +14,9 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.framework.orm.hibernate.BaseHibernateEntity;
 import org.nrg.framework.orm.hibernate.QueryBuilder;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.From;
-import javax.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.From;
+import jakarta.persistence.criteria.Predicate;
 
 @Slf4j
 public abstract class AutomationEntitiesDAO<E extends BaseHibernateEntity> extends AbstractHibernateDAO<E> {

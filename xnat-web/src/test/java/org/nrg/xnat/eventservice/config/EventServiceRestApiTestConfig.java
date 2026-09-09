@@ -13,16 +13,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.TestingAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
 @EnableWebMvc
 @EnableWebSecurity
 @Import({RestApiTestConfig.class, EventServiceTestConfig.class})
-public class EventServiceRestApiTestConfig extends WebSecurityConfigurerAdapter{
+public class EventServiceRestApiTestConfig {
     @Bean
     public EventServiceRestApi eventServiceRestApi(final EventService eventService,
                                                    final UserManagementServiceI userManagementService,
@@ -35,9 +35,9 @@ public class EventServiceRestApiTestConfig extends WebSecurityConfigurerAdapter{
         return Mockito.mock(CatalogService.class);
     }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(new TestingAuthenticationProvider());
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        return new ProviderManager(new TestingAuthenticationProvider());
     }
     @Bean
     public ContextService contextService(final ApplicationContext applicationContext) {

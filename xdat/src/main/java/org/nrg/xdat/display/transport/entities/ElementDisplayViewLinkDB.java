@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.python.apache.commons.compress.utils.Lists;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.List;
 
 

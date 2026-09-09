@@ -21,8 +21,8 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xnat.helpers.uri.URIManager.DataURIA;
-import org.restlet.util.Template;
-import org.restlet.util.Variable;
+import org.restlet.routing.Template;
+import org.restlet.routing.Variable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

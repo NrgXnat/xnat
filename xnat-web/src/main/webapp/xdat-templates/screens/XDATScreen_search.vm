@@ -61,7 +61,7 @@ function selectDefault(elementName){
 #foreach ($typeObject in $typeObjects)
 					           <SCRIPT language="javascript">spans.push("panel$typeObject.getElementName()");</SCRIPT>
 			  <span id="panel$typeObject.getElementName()" VALIGN="top" style="display:none;">
-			  <FORM name="search$velocityCount" method="post" action="$link.setAction("DisplaySearchAction")">
+			  <FORM name="search$foreach.count" method="post" action="$link.setAction("DisplaySearchAction")">
 				  #xdatSearchForm($typeObject.getSchemaElement() 3)
 			  </FORM>
 		      </span>

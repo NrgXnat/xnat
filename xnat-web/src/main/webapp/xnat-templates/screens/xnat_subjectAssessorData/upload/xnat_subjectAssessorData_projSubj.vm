@@ -18,8 +18,8 @@
     #if (!$subject)
 
     ## #else
-        #if($mr.getSubjectData())
-            #set($subject=$mr.getSubjectData())
+        #if($om.getSubjectData())
+            #set($subject=$om.getSubjectData())
         #else
             #if($part)
                 #set($subject=$part)

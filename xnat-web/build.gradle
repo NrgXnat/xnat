@@ -10,14 +10,22 @@ group = 'org.nrg.xnat'
 // --- Global exclusions (must match original xnat-web/build.gradle exactly, see monorepo A6) ---
 configurations.matching { it.name != 'xdatGenerator' }.configureEach {
     resolutionStrategy {
-        // commons-text 1.11.0 calls Range.of() which is missing in commons-lang3
-        // bundled by Tomcat — pin to versions that work in production.
-        force 'org.apache.commons:commons-lang3:3.11'
+        // Phase 0b: bump commons-lang3 to 3.17 — Velocity 2.4.1's MethodMap.<clinit> calls
+        // MethodUtils.getMethodObject() (added in lang3 3.15+); the previous 3.11 pin crashed every
+        // $obj.method() introspection with NoSuchMethodError. 3.17 also provides Range.of(), so
+        // commons-text (kept at 1.10.0 for the Tomcat-classpath concern) still resolves cleanly.
+        force 'org.apache.commons:commons-lang3:3.17.0'
         force 'org.apache.commons:commons-text:1.10.0'
-        // dcm4che 5.x pulls slf4j-api 2.x, but logback 1.2.x only supports 1.7.x.
-        force 'org.slf4j:slf4j-api:1.7.36'
+        // Logging unification (1-16): slf4j 2.0 + logback 1.5 (jakarta line). dcm4che 5.x's slf4j 2.x
+        // is now natural, so the old slf4j-api:1.7.36 force is gone. Turbine 7 logs via
+        // java.lang.System.Logger routed to slf4j (slf4j-jdk-platform-logging), so the Turbine-5.1
+        // log4j-core alignment (log4j-api 2.23.1 vs core 2.14.1) is no longer needed; log4j bridges
+        // stay excluded (below) so logback is the sole backend.
     }
     exclude group: 'ant',                      module: 'ant'
+    // Phase-0b (Turbine 5.1): drop legacy Avalon + old Torque coords (see docs/dep-dryrun-phase0-findings.md)
+    exclude group: 'avalon-framework'
+    exclude group: 'torque'
     exclude group: 'avalon-logkit'
     exclude group: 'berkeleydb'
     exclude group: 'com.github.jai-imageio'
@@ -61,6 +69,12 @@ configurations.matching { it.name != 'xdatGenerator' }.configureEach {
     exclude group: 'ojb',                       module: 'ojb'
     exclude group: 'org.apache.geronimo.specs'
     exclude group: 'org.apache.struts'
+    // hibernate-ehcache/jcache have no -jakarta build and transitively drag in the javax
+    // org.hibernate:hibernate-core, which lands in WEB-INF/lib alongside hibernate-core-jakarta. Both
+    // jars define the same org.hibernate.* classes (incl. BeanValidationIntegrator), so the Tomcat 10
+    // web classloader can pick the javax one and fail to boot with
+    // NoClassDefFoundError: javax/validation/ValidatorFactory. We only ever use hibernate-core-jakarta.
+    exclude group: 'org.hibernate',             module: 'hibernate-core'
     exclude group: 'org.nrg',                   module: 'nrg'
     exclude group: 'org.nrg',                   module: 'nrgutil'
     exclude group: 'org.nrg',                   module: 'plexiviewer'
@@ -132,6 +146,8 @@ dependencies {
 
     // --- Spring ---
     api libs.spring.web
+    implementation libs.swagger.annotations
+    implementation libs.springdoc.openapi.starter.webmvc.ui
     api libs.spring.jms
     api libs.spring.jdbc
     api libs.spring.beans
@@ -147,6 +163,8 @@ dependencies {
 
     // --- Spring Security ---
     api libs.spring.security.spring.security.ldap
+    // DEPRECATED — javax-era, scheduled for removal in 1.12 (status doc 1-23). Kept `api` for 1.11 so
+    // external OAuth/OpenID auth plugins still compile; nothing in core or the current plugin set uses it.
     api libs.spring.security.oauth2.spring.security.oauth2
     api libs.spring.security.spring.security.jwt
     implementation libs.spring.security.spring.security.acl
@@ -160,7 +178,7 @@ dependencies {
     implementation libs.hibernate.jcache
     implementation libs.hibernate.validator
     implementation libs.hibernate.envers
-    implementation libs.ehcache.ehcache
+    implementation variantOf(libs.ehcache.ehcache) { classifier('jakarta') }
     implementation libs.vladmihalcea.hibernate.types55
     implementation(libs.redisson.redisson) {
         // redisson 3.22 pulls reactor-core 3.x; framework needs 2.x (forced in convention plugin).
@@ -220,8 +238,6 @@ dependencies {
     implementation libs.jackson.datatype.jsr310
 
     // --- Springfox / Swagger ---
-    implementation libs.springfox.swagger2
-    implementation libs.springfox.swagger.ui
 
     // --- Jakarta ORO (transitive from restlet in Maven) ---
     implementation 'oro:oro:2.0.8'
@@ -230,7 +246,6 @@ dependencies {
     implementation libs.restlet.org.restlet
     implementation libs.restlet.com.noelios.restlet
     implementation libs.restlet.com.noelios.restlet.ext.servlet
-    implementation libs.restlet.org.restlet.ext.fileupload
 
     // --- JMS ---
     implementation libs.jms.javax.jms.api
@@ -238,11 +253,11 @@ dependencies {
     // --- Reactor (from satellite merge) ---
     implementation libs.reactor.bus
 
-    // --- Turbine/Torque (from satellite merge) ---
-    // transitive=false would cut off torque (turbine's core dep) and cause
-    // NoClassDefFoundError: GroupPeerManagerConstants at Tomcat runtime.
-    // Use precise excludes for legacy/conflicting artifacts instead.
+    // --- Turbine ---
+    // Torque is fully excluded (Phase 1-5): XNAT has zero source references to it; the 2.3.3-era
+    // OM security it backed is replaced by the Fulcrum in-memory stack below.
     implementation(libs.turbine.turbine) {
+        exclude group: 'org.apache.torque'
         exclude group: 'commons-dbcp'
         exclude group: 'commons-email'
         exclude group: 'commons-fileupload', module: 'commons-fileupload'
@@ -262,7 +277,12 @@ dependencies {
         exclude group: 'tomcat'
         exclude group: 'xerces'
     }
-    implementation libs.torque.village
+    // Fulcrum components not pulled transitively — required by XNAT's YAAFI config.
+    implementation libs.fulcrum.cache
+    implementation libs.fulcrum.upload
+    // Turbine 5.1's TurbineYaafiComponentService (the service container) is an optional Turbine dep; add it.
+    implementation libs.fulcrum.yaafi
+    implementation libs.fulcrum.security.memory
     implementation(libs.apache.velocity) { transitive = false }
     implementation libs.ecs.ecs
 
@@ -273,7 +293,8 @@ dependencies {
     implementation libs.commons.configuration
     implementation libs.commons.digester
     implementation libs.commons.discovery
-    implementation libs.commons.fileupload
+    implementation libs.commons.fileupload2.core
+    implementation libs.commons.fileupload2.jakarta
     implementation libs.commons.net
     implementation libs.commons.configuration2
     implementation libs.commons.math
@@ -299,6 +320,7 @@ dependencies {
     implementation libs.apache.xbean.spring
     implementation libs.msv.xsdlib
     implementation libs.servlet.jstl
+    implementation libs.servlet.jstl.api
     implementation libs.google.gson
     implementation libs.google.guava
     implementation libs.postgresql.postgresql
@@ -314,6 +336,8 @@ dependencies {
     implementation libs.logback.classic
     implementation libs.logback.core
     implementation libs.logback.logstash.logback.encoder
+    // 1-16: bridge Turbine 7's java.lang.System.Logger onto slf4j -> logback (unifies Turbine + XNAT logging)
+    runtimeOnly libs.slf4j.jdk.platform.logging
     implementation libs.google.auto.value.annotations
     implementation libs.jsonpath.json.path
     implementation libs.json.json
@@ -323,6 +347,7 @@ dependencies {
     // --- Provided (container) ---
     compileOnly libs.google.jsr305
     compileOnly libs.servlet.javax.servlet.api
+    compileOnly libs.servlet.jsp.api
     compileOnly libs.metainf.services.metainf.services
 
     // --- Runtime only ---
@@ -477,3 +502,97 @@ publishing {
         }
     }
 }
+
+// ===========================================================================
+// javax-EE guard (jakarta cutover). Fails the build if any jar on the deployed
+// runtime classpath references a javax.* EE package that moved to jakarta.* and
+// that NOTHING on the classpath provides -- a guaranteed NoClassDefFoundError the
+// instant that class links on Tomcat 10. This is the trap that silently broke
+// container command-save (jackson-datatype-hibernate5 -> javax.persistence.Transient);
+// see docs/tomcat10-upgrade-status.md item 1-21. Precise by construction: a javax
+// reference is only failed when UNPROVIDED. References that still resolve (JDK-owned
+// javax.transaction.xa, or a leftover javax API jar that is itself present) are not
+// failed. Genuinely-unreachable library features are ALLOWLISTED with a reason.
+// ===========================================================================
+tasks.register('verifyNoOrphanedJavaxEE') {
+    group = 'verification'
+    description = 'Fail if a runtime jar references a jakarta-migrated javax.* package that nothing provides.'
+    def runtimeCp = configurations.runtimeClasspath
+    inputs.files(runtimeCp)
+    def marker = layout.buildDirectory.file('javax-ee-guard.ok')
+    outputs.file(marker)
+
+    // javax.* EE prefixes (internal-name form) that moved to jakarta.*. Deliberately EXCLUDES
+    // what stays javax: javax/transaction/xa (JDK java.sql), javax/cache (JCache),
+    // javax/annotation/{Nullable,Nonnull,..} (JSR-305), javax/xml/{parsers,transform,xpath,..} (JAXP).
+    def EE = [
+        'javax/persistence/', 'javax/servlet/', 'javax/validation/', 'javax/ws/rs/',
+        'javax/mail/', 'javax/jms/', 'javax/xml/bind/', 'javax/xml/soap/', 'javax/xml/ws/',
+        'javax/activation/', 'javax/el/', 'javax/faces/', 'javax/enterprise/', 'javax/inject/',
+        'javax/interceptor/', 'javax/json/', 'javax/batch/', 'javax/websocket/',
+        'javax/annotation/security/', 'javax/annotation/sql/',
+        'javax/transaction/Transactional', 'javax/transaction/UserTransaction',
+        'javax/transaction/TransactionManager', 'javax/transaction/TransactionSynchronizationRegistry',
+    ]
+
+    // jar-name prefix -> why its (unprovided) javax-EE reference never links at runtime.
+    def ALLOWLIST = [
+        'h2-'                     : 'javax.servlet: embedded H2 web console, never started (Postgres is the DB)',
+        'jython-standalone-'      : 'javax.servlet: PyServlet; Jython runs scripts, not servlets',
+        'groovy-all-'             : 'javax.servlet: groovy.servlet.*, unused',
+        'commons-jcs3-core-'      : 'javax.servlet: JCS admin servlet, not mapped',
+        'commons-configuration-'  : 'javax.servlet: ServletContext config, XNAT uses file/props config',
+        'commons-configuration2-' : 'javax.servlet: ServletContext config, XNAT uses file/props config',
+        'datasource-proxy-'       : 'javax.servlet: servlet query-logging bridge, unused',
+        'reflections-'            : 'javax.servlet: ServletContext scanner helper, XNAT uses URL scanners',
+        'log4j-core-'             : 'javax.{mail,jms,activation}: SMTP/JMS appenders, log4j2 is a dormant backend',
+        'log4j-1.2-api-'          : 'javax.jms: JMSAppender, unused',
+        'cache-api-'              : 'javax.enterprise: JCache CDI integration, no CDI container',
+        'jodd-core-'              : 'javax.activation: jodd mail/mime, XNAT uses jakarta.mail',
+        // transitive javax-JAXB chain via hibernate-types-55 (tracked: status doc 1-22) -- unreached JAXB/JSON paths
+        'jackson-module-jaxb-annotations-' : 'javax.{xml.bind,activation}: JaxbAnnotationModule not registered by XNAT; tracked 1-22',
+        'jaxb-api-2'              : 'javax.{xml.bind,activation}: javax JAXB API pulled by hibernate-types-55, unreached; tracked 1-22',
+        'pixelmed'                : 'javax.{json,xml.bind}: pixelmed JAXB/JSON paths not exercised by XNAT; tracked 1-22',
+        // plugin-facing legacy dep, removal decision pending (tracked: status doc 1-2)
+        'spring-security-oauth2-' : 'javax.{servlet,annotation,xml.bind}: legacy oauth2, plugin-facing, removal pending; tracked 1-23',
+        // jakarta-transformed Hibernate 5.6 line: residual javax refs in unreached legacy classes.
+        // The used ORM + JSON-column paths are verified working (full suite + container CommandEntity save).
+        'hibernate-core-jakarta-' : 'javax.{persistence,transaction,validation}: residual refs in unreached legacy classes; core ORM verified working',
+        'hibernate-types-55-'     : 'javax.persistence: unreached legacy refs; used JsonStringType/JsonBinaryType path verified working; tracked 1-22',
+        'commons-dbcp2-'          : 'javax.transaction: JTA managed/XA datasource classes, unused (XNAT uses BasicDataSource)',
+        'ehcache-2'               : 'javax.{servlet,transaction}: legacy ehcache2 via hibernate-ehcache; monitor servlet + XA unused; tracked 1-22 (double-ehcache)',
+    ]
+
+    doLast {
+        def jars = runtimeCp.files.findAll { it.name.endsWith('.jar') }
+        def provided = [] as Set
+        jars.each { f ->
+            def zf = new java.util.zip.ZipFile(f)
+            try { for (e in zf.entries()) { if (e.name.endsWith('.class')) for (p in EE) if (e.name.startsWith(p)) provided << p } }
+            finally { zf.close() }
+        }
+        def offenders = [:].withDefault { new TreeSet() }
+        jars.each { f ->
+            def zf = new java.util.zip.ZipFile(f)
+            try {
+                for (e in zf.entries()) {
+                    if (!e.name.endsWith('.class')) continue
+                    def txt = new String(zf.getInputStream(e).bytes, 'ISO-8859-1')
+                    for (p in EE) if (!provided.contains(p) && txt.contains(p)) offenders[f.name] << p.replaceAll('/[A-Z].*$', '').replaceAll('/$', '')
+                }
+            } finally { zf.close() }
+        }
+        def bad = offenders.findAll { jar, pkgs -> !ALLOWLIST.keySet().any { jar.startsWith(it) } }
+        offenders.each { jar, pkgs -> if (ALLOWLIST.keySet().any { jar.startsWith(it) }) logger.info("javax-EE guard: allowlisted ${jar} -> ${pkgs.join(', ')}") }
+        if (bad) {
+            throw new GradleException(
+                "javax-EE guard: orphaned javax.* EE references (guaranteed NoClassDefFoundError on Tomcat 10):\n" +
+                bad.collect { jar, pkgs -> "  ${jar} -> ${pkgs.join(', ')}" }.join('\n') +
+                "\n\nFix: switch the offending artifact to its -jakarta variant; or, if the reference is genuinely\n" +
+                "unreachable, add the jar to the ALLOWLIST in xnat-web/build.gradle with a justification.")
+        }
+        marker.get().asFile.text = "ok: ${offenders.size()} jars reference javax-EE, all provided or allowlisted\n"
+        logger.lifecycle("javax-EE guard OK: ${offenders.size()} jars reference javax-EE, all provided or allowlisted.")
+    }
+}
+tasks.named('check') { dependsOn 'verifyNoOrphanedJavaxEE' }

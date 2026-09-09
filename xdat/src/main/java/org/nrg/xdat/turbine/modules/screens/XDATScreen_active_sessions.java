@@ -13,16 +13,19 @@ package org.nrg.xdat.turbine.modules.screens;
 import java.util.Collection;
 import java.util.Date;
 
-import org.apache.turbine.services.session.TurbineSession;
+import org.apache.turbine.services.TurbineServices;
+import org.apache.turbine.services.session.SessionService;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 
 public class XDATScreen_active_sessions extends AdminScreen {
 
     @Override
-    protected void doBuildTemplate(RunData data, Context context) throws Exception {
+    protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         try {
-            Collection col = TurbineSession.getActiveSessions();
+            Collection col = ((SessionService) TurbineServices.getInstance().getService(SessionService.SERVICE_NAME)).getActiveSessions();
             context.put("sessions", col);
             context.put("dateUtil",new LongDateUtil());
         } catch (Throwable e) {

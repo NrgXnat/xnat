@@ -35,7 +35,7 @@ import reactor.fn.Consumer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PreDestroy;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;

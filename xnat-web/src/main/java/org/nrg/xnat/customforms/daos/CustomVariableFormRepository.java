@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
 

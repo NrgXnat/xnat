@@ -39,6 +39,7 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.restlet.resources.ScriptTriggerTemplateResource;
 import org.restlet.data.Status;
 import org.restlet.resource.ResourceException;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -482,7 +483,7 @@ public class BaseWrkWorkflowdata extends AutoWrkWorkflowdata implements Persiste
 				}
 				
 				if(locked.contains(oldStatus)){
-					throw new ClientException(Status.CLIENT_ERROR_LOCKED,"Workflow entry is already " + oldStatus + " and cannot be modified.");
+					throw new ClientException(XnatWebDavStatus.CLIENT_ERROR_LOCKED,"Workflow entry is already " + oldStatus + " and cannot be modified.");
 				}
 				
 				UserI currentUser=this.getUser();

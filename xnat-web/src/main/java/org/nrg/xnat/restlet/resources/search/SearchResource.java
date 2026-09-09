@@ -9,9 +9,11 @@
 
 package org.nrg.xnat.restlet.resources.search;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadException;
+import org.restlet.ext.servlet.ServletUtils;
+import org.apache.commons.fileupload2.core.DiskFileItem;
+import org.apache.commons.fileupload2.core.DiskFileItemFactory;
+import org.apache.commons.fileupload2.core.FileUploadException;
+import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.display.DisplayFieldReferenceI;
@@ -37,11 +39,12 @@ import org.nrg.xnat.restlet.presentation.RESTHTMLPresenter;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -92,12 +95,12 @@ public class SearchResource extends SecureResource {
             final UserI user = getUser();
             if (entity != null && entity.getMediaType() != null && entity.getMediaType().getName().equals(MediaType.MULTIPART_FORM_DATA.getName())) {
                 try {
-                    @SuppressWarnings("deprecation") org.apache.commons.fileupload.DefaultFileItemFactory factory = new org.apache.commons.fileupload.DefaultFileItemFactory();
-                    org.restlet.ext.fileupload.RestletFileUpload upload = new org.restlet.ext.fileupload.RestletFileUpload(factory);
+                    final DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
+                    final JakartaServletFileUpload<DiskFileItem, DiskFileItemFactory> upload = new JakartaServletFileUpload<>(factory);
 
-                    List<FileItem> items = upload.parseRequest(getRequest());
+                    List<DiskFileItem> items = upload.parseRequest(getHttpServletRequest());
 
-                    for (final FileItem fi : items) {
+                    for (final DiskFileItem fi : items) {
                         if (fi.getName().endsWith(".xml")) {
                             SAXReader reader = new SAXReader(user);
                             try {
@@ -115,7 +118,7 @@ public class SearchResource extends SecureResource {
                                 }
                             } catch (SAXParseException e) {
                                 logger.error("", e);
-                                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
+                                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
                                 throw e;
                             } catch (Exception e) {
                                 logger.error("", e);
@@ -129,7 +132,7 @@ public class SearchResource extends SecureResource {
                 }
             } else {
                 if (entity != null) {
-                    final Reader sax = entity.getReader();
+                    final Reader sax = new java.io.StringReader(extractSearchXml(entity.getText()));
                     try {
                         final SAXReader reader = new SAXReader(user);
                         item = reader.parse(sax);
@@ -146,7 +149,7 @@ public class SearchResource extends SecureResource {
                         }
                     } catch (SAXParseException e) {
                         logger.error("", e);
-                        getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
+                        getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
                         throw e;
                     } catch (Exception e) {
                         logger.error("", e);
@@ -156,7 +159,7 @@ public class SearchResource extends SecureResource {
             }
 
             if (item == null || !item.instanceOf("xdat:stored_search")) {
-                getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+                getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
                 return;
             }
 
@@ -208,7 +211,7 @@ public class SearchResource extends SecureResource {
                     ds.setPagingOn(false);
                     MediaType mt = getRequestedMediaType();
                     if (mt != null && mt.equals(SecureResource.APPLICATION_XLIST)) {
-                        table = (XFTTable) ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletCall.getRequest(getRequest())), null, user, sortBy), user.getLogin());
+                        table = (XFTTable) ds.execute(new RESTHTMLPresenter(TurbineUtils.GetRelativePath(ServletUtils.getRequest(getRequest())), null, user, sortBy), user.getLogin());
                     } else {
                         table = (XFTTable) ds.execute(null, user.getLogin());
                     }
@@ -259,11 +262,72 @@ public class SearchResource extends SecureResource {
             returnDefaultRepresentation();
         } catch (SAXException e) {
             logger.error("Failed POST", e);
-            getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
         } catch (Exception e) {
             logger.error("Failed POST", e);
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
         }
+    }
+
+    /**
+     * Recovers the stored-search XML from a POST body that may be form-wrapped.
+     *
+     * <p>The XNAT search UI ({@code dataTableSearch.js}) posts the bundle as {@code text/xml}, so the
+     * body is bare XML and the first branch below returns it unchanged. This became necessary under
+     * Tomcat 10 / Restlet 2.6: an {@code application/x-www-form-urlencoded} POST body is drained by the
+     * servlet parameter parser before it reaches this resource (the XML is not exposed as a parameter
+     * and {@link Representation#getText()} yields only the query string), so the bundle was lost and the
+     * SAX parser died with "Content is not allowed in prolog". Restlet 1.1 tolerated a www-form body;
+     * 2.6 does not — hence the client posts {@code text/xml}.
+     *
+     * <p>The form-unwrapping branches remain as defence in depth for any client (or proxy) that still
+     * delivers a form-wrapped body {@code "XNAT_CSRF=...&format=json&...&<search XML>"}: take everything
+     * from the {@code <?xml} marker (literal, or the percent-encoded {@code %3C%3Fxml}, whose remainder
+     * is then leniently percent-decoded).
+     */
+    static String extractSearchXml(final String body) {
+        if (body == null) {
+            return "";
+        }
+        if (StringUtils.startsWith(StringUtils.stripStart(body, null), "<")) {
+            return body;   // already bare XML
+        }
+        final int literal = body.indexOf("<?xml");
+        if (literal >= 0) {
+            return body.substring(literal);
+        }
+        final int encoded = StringUtils.indexOfIgnoreCase(body, "%3C%3Fxml");
+        if (encoded >= 0) {
+            return lenientPercentDecode(body.substring(encoded));
+        }
+        return body;   // no marker found; let the parser report the problem
+    }
+
+    /**
+     * Percent-decodes {@code %XX} escapes while leaving a literal {@code +} and any malformed {@code %}
+     * sequence untouched, and never throwing. {@link java.net.URLDecoder#decode} is unsuitable here: it
+     * turns {@code +} into a space (corrupting XML that contains a literal {@code +}) and throws
+     * {@link IllegalArgumentException} on a stray {@code %} — e.g. a {@code %} wildcard in a LIKE search
+     * value — after which the old caller returned the still-encoded string and SAX died with
+     * "Content is not allowed in prolog" on the leading {@code %} (a 422 on every affected search). Bytes
+     * are accumulated so multi-byte UTF-8 escapes decode correctly.
+     */
+    private static String lenientPercentDecode(final String s) {
+        final java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream(s.length());
+        for (int i = 0; i < s.length(); i++) {
+            final char c = s.charAt(i);
+            if (c == '%' && i + 2 < s.length()) {
+                final int hi = Character.digit(s.charAt(i + 1), 16);
+                final int lo = Character.digit(s.charAt(i + 2), 16);
+                if (hi >= 0 && lo >= 0) {
+                    buf.write((hi << 4) + lo);
+                    i += 2;
+                    continue;
+                }
+            }
+            buf.write((byte) c);   // literal '+', a malformed '%', or a plain ASCII char
+        }
+        return new String(buf.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
     }
 
     @Override
@@ -373,7 +437,7 @@ public class SearchResource extends SecureResource {
                             linkProps.append(prop.getName()).append("\"");
                             linkProps.append(",\"value\":\"");
                             String v = prop.getValue();
-                            v = StringUtils.replace(v, "@WEBAPP", TurbineUtils.GetRelativePath(ServletCall.getRequest(sr.getRequest())) + "/");
+                            v = StringUtils.replace(v, "@WEBAPP", TurbineUtils.GetRelativePath(ServletUtils.getRequest(sr.getRequest())) + "/");
 
                             linkProps.append(v).append("\"");
 
@@ -445,7 +509,7 @@ public class SearchResource extends SecureResource {
                     }
 
                     if (dfr.isImage()) {
-                        cp.get(id).put("imgRoot", TurbineUtils.GetRelativePath(ServletCall.getRequest(sr.getRequest())) + "/");
+                        cp.get(id).put("imgRoot", TurbineUtils.GetRelativePath(ServletUtils.getRequest(sr.getRequest())) + "/");
                     }
                 } catch (XFTInitException | ElementNotFoundException e) {
                     logger.error("", e);

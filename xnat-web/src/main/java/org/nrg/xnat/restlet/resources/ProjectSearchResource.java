@@ -22,11 +22,12 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.xml.sax.SAXException;
 
 import java.io.Reader;
@@ -114,7 +115,7 @@ public class ProjectSearchResource extends ItemResource {
 			XFTItem item = reader.parse(sax);
 
 			if(!item.instanceOf("xdat:stored_search")){
-				this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 				return;
 			}
 			XdatStoredSearch search = new XdatStoredSearch(item);
@@ -145,7 +146,7 @@ public class ProjectSearchResource extends ItemResource {
 			}
 		} catch (SAXException e) {
 			logger.error("",e);
-			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+			this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 		} catch (Exception e) {
 			logger.error("",e);
 			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
@@ -185,7 +186,7 @@ public class ProjectSearchResource extends ItemResource {
 				}
 			} catch (SAXException e) {
 				logger.error("",e);
-				this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+				this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 			} catch (Exception e) {
 				logger.error("",e);
 				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);

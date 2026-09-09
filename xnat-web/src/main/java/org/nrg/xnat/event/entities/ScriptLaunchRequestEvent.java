@@ -12,9 +12,9 @@ package org.nrg.xnat.event.entities;
 import java.io.Serial;
 import java.util.Map;
 
-import javax.persistence.Entity;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.Transient;
+import jakarta.persistence.Entity;
+import jakarta.persistence.PrimaryKeyJoinColumn;
+import jakarta.persistence.Transient;
 
 import org.nrg.automation.event.AutomationCompletionEventI;
 import org.nrg.automation.event.AutomationEventImplementerI;

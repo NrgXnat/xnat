@@ -9,7 +9,7 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.security.UserI;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**

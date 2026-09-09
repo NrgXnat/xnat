@@ -4,10 +4,10 @@ import lombok.*;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.compute.models.Constraint;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.MapsId;
-import javax.persistence.OneToOne;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
 
 import java.io.Serial;
 import java.util.HashSet;

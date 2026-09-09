@@ -35,7 +35,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;

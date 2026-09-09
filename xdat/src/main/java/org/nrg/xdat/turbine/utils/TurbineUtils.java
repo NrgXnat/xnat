@@ -17,9 +17,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
-import org.apache.turbine.services.intake.model.Group;
+import org.apache.turbine.pipeline.PipelineData;
+import org.apache.turbine.services.TurbineServices;
+import org.apache.fulcrum.intake.model.Group;
+import org.apache.turbine.services.velocity.VelocityService;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -58,9 +61,9 @@ import org.restlet.data.Status;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.xml.sax.InputSource;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.StringReader;
@@ -118,6 +121,15 @@ public class TurbineUtils {
         }
 
         return INSTANCE;
+    }
+
+    /**
+     * Obtains a Velocity {@link Context} from Turbine's VelocityService. Replaces the
+     * {@code org.apache.turbine.services.velocity.TurbineVelocity} static facade, which was
+     * removed in Turbine 5.x. Accepts a {@link RunData} directly (RunData is-a PipelineData).
+     */
+    public static Context getVelocityContext(final PipelineData pipelineData) {
+        return ((VelocityService) TurbineServices.getInstance().getService(VelocityService.SERVICE_NAME)).getContext(pipelineData);
     }
 
     private XdatSecurity getSecurityObject() {
@@ -733,9 +745,7 @@ public class TurbineUtils {
         //TurbineUtils.OutputDataParameters(data);
         final Map<String, String> hash  = new Hashtable<>();
         ParameterParser           pp    = data.getParameters();
-        Enumeration<Object>       penum = pp.keys();
-        while (penum.hasMoreElements()) {
-            final String key   = penum.nextElement().toString();
+        for (final String key : pp.getKeys()) {
             final Object value = TurbineUtils.escapeParam(data.getParameters().get(key));
             if (value != null && !value.equals("")) {
                 hash.put(TurbineUtils.escapeParam(key), value.toString());
@@ -1070,7 +1080,18 @@ public class TurbineUtils {
     }
 
     public boolean resourceExists(String screen) {
-        return Velocity.resourceExists(screen);
+        if (StringUtils.isBlank(screen)) {
+            return false;
+        }
+        // Turbine 5.1 / Velocity 2: the VelocityService uses its own VelocityEngine, not the
+        // org.apache.velocity.app.Velocity singleton, so Velocity.resourceExists() checks an
+        // unconfigured engine and always returns false. Resolve against the same
+        // CustomClasspathResourceLoader that VelocityService (#parse) actually loads templates through.
+        try (java.io.InputStream is = CustomClasspathResourceLoader.getInputStream(screen)) {
+            return is != null;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     public String validateTemplate(String screen, String project) {

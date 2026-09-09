@@ -26,7 +26,7 @@
 #macro (textEditNColsRow $names $fields)
 <tr>
   #foreach ($name in $names)
-	  #set ($index = $velocityCount - 1)
+	  #set ($index = $foreach.count - 1)
 		<td>$name</td>
 		<td>#xdatTextBox("$fields.get($index)" $item "" $vr)</td>
   #end

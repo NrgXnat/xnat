@@ -32,9 +32,13 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.restlet.Context;
 import org.restlet.data.*;
-import org.restlet.resource.Representation;
+import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
+import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXParseException;
 
@@ -163,7 +167,7 @@ public class ProtocolResource extends ItemResource {
                 throw e;
             }
         } catch (SAXParseException e) {
-            getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
+            getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
             log.error("An error was detected in format for the protocol definition", e);
         } catch (ActionException e) {
             getResponse().setStatus(e.getStatus(), e.getMessage());

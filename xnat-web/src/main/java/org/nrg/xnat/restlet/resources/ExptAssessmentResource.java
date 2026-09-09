@@ -36,11 +36,12 @@ import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -232,7 +233,7 @@ public class ExptAssessmentResource extends ItemResource {
 							}
 						}
 					}else{
-						this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Submitted subject record must include the project attribute.");
+						this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Submitted subject record must include the project attribute.");
 						return;
 					}
 
@@ -343,7 +344,7 @@ public class ExptAssessmentResource extends ItemResource {
 					this.returnString(assessor.getId(),(existing==null)?Status.SUCCESS_CREATED:Status.SUCCESS_OK);
 				}
 			}else{
-				this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Only xnat:Subject documents can be PUT to this address.");
+				this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"Only xnat:Subject documents can be PUT to this address.");
 			}
 		} catch (InvalidValueException e) {
 			this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);

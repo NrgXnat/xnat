@@ -2,7 +2,7 @@ package org.nrg.xnat.entities;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 
 // @Entity
 // @Data

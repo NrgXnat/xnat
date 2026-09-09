@@ -10,7 +10,7 @@ package org.nrg.xdat.display.transport.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Hashtable;
 import java.util.Map;
 

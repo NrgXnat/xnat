@@ -12,8 +12,8 @@ package org.nrg.xnat.restlet.resources;
 import org.apache.log4j.Logger;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.restlet.Context;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 
 import java.util.ArrayList;
 

@@ -21,7 +21,7 @@
 		
 #foreach ($quality in $qualityLabels)
 <label>
-<input ID="value$velocityCount" type="radio"
+<input ID="value$foreach.count" type="radio"
        name="${item.getXSIType()}.validation.status value="$quality"
        #if ($!item.getProperty("validation.status")==$quality)CHECKED#end>
 &nbsp;$quality</label>

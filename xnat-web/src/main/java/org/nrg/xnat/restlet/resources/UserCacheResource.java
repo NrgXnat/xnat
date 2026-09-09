@@ -10,7 +10,9 @@
 package org.nrg.xnat.restlet.resources;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload2.core.DiskFileItem;
+import org.apache.commons.fileupload2.core.DiskFileItemFactory;
+import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
@@ -25,11 +27,12 @@ import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.StringRepresentation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 
 import java.io.File;
 import java.io.IOException;
@@ -401,18 +404,17 @@ public class UserCacheResource extends SecureResource {
 	}
 	
 
-	@SuppressWarnings("deprecation")
 	private boolean handleAttachedUserFileUpload(String dirString, String requestedName) {
-		
-		org.apache.commons.fileupload.DefaultFileItemFactory factory = new org.apache.commons.fileupload.DefaultFileItemFactory();
-		org.restlet.ext.fileupload.RestletFileUpload upload = new  org.restlet.ext.fileupload.RestletFileUpload(factory);
-	
-	    List<FileItem> fileItems;
+
+		DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
+		JakartaServletFileUpload<DiskFileItem, DiskFileItemFactory> upload = new JakartaServletFileUpload<>(factory);
+
+	    List<DiskFileItem> fileItems;
 		try {
-			
-			fileItems = upload.parseRequest(this.getRequest());
-	
-			for (FileItem fi:fileItems) {    						         
+
+			fileItems = upload.parseRequest(getHttpServletRequest());
+
+			for (DiskFileItem fi:fileItems) {
 		    	
 				if (fi.isFormField()) {
                 	// Load form field to passed parameters map
@@ -441,7 +443,7 @@ public class UserCacheResource extends SecureResource {
 		        		}
 		        	}
 		        } 
-	        	fi.write(new File(dirString + "/" + fileName));
+	        	fi.write(new File(dirString + "/" + fileName).toPath());
 			
 		    }
 			return true;
@@ -470,7 +472,7 @@ public class UserCacheResource extends SecureResource {
 	    	zipper.extract(is,dirString);
 	   } catch (Exception e) {
 		   
-			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"FILE:  " + fileName +
+			this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"FILE:  " + fileName +
 							" - Archive file is corrupt or not a valid archive archive file type.");
 			return false;
 	   }

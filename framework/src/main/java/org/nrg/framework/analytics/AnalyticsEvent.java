@@ -13,8 +13,8 @@ import org.nrg.framework.logging.RemoteEvent;
 
 import org.slf4j.event.Level;
 
-import javax.xml.bind.annotation.XmlID;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlID;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Map;

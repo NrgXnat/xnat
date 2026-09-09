@@ -11,8 +11,8 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.context.request.async.CallableProcessingInterceptor;
 
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -78,7 +78,7 @@ public class AsyncLifecycleMonitor implements CallableProcessingInterceptor {
             return "<null native request>";
         }
         final Class<?> nativeRequestClass = nativeRequest.getClass();
-        if (javax.servlet.http.HttpServletRequestWrapper.class.isAssignableFrom(nativeRequestClass)) {
+        if (jakarta.servlet.http.HttpServletRequestWrapper.class.isAssignableFrom(nativeRequestClass)) {
             final HttpServletRequestWrapper wrapper    = (HttpServletRequestWrapper) nativeRequest;
             final HttpSession               session    = wrapper.getSession();
             final String                    username   = getSessionUsername(session);

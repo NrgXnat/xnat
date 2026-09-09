@@ -6,11 +6,11 @@
 #   ./docker/entrypoint.sh          — runtime helper (timezone handling).
 #   ./docker/make-xnat-config.sh    — generates default xnat-conf.properties.
 
-# Base image is parameterised so the same Dockerfile can serve both
-# 1.10.x (java 21 / tomcat:9-jdk21-temurin) and 1.9.x (java 8 /
-# tomcat:9.0.93-jdk8). Override at build time:
-#   docker build --build-arg TOMCAT_BASE=tomcat:9.0.93-jdk8 ...
-ARG TOMCAT_BASE=tomcat:9-jdk21-temurin
+# Base image is parameterised so the same Dockerfile can serve the Jakarta
+# cutover (tomcat:10.1-jdk21-temurin, the default), the Phase-0 javax WAR
+# (tomcat:9-jdk21-temurin), and 1.9.x (tomcat:9.0.93-jdk8). Override at build time:
+#   docker build --build-arg TOMCAT_BASE=tomcat:9-jdk21-temurin ...
+ARG TOMCAT_BASE=tomcat:10.1-jdk21-temurin
 FROM ${TOMCAT_BASE}
 
 # -----------------------------------------------------------------------------

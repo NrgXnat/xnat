@@ -1,8 +1,8 @@
 <%@ page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ page import="org.nrg.xdat.security.helpers.UserHelper" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %><%@ taglib prefix="xnat" uri="http://www.xnat.org/tags" %>
 
 <%--@elvariable id="hibernateSpawnerService" type="org.nrg.xnat.spawner.services.SpawnerService"--%>
 
@@ -102,12 +102,12 @@
                             <c:set var="arrayMethod" value="unshift"/>
                         </c:if>
                         <c:if test="${fn:endsWith(namespace, 'projectSettings')}">
-                            <c:import url="/xapi/spawner/resolve/${namespace}/projectSettings" var="tabsConfig"/>
+                            <xnat:import url="/xapi/spawner/resolve/${namespace}/projectSettings" var="tabsConfig"/>
                             <c:if test="${empty tabsConfig}">
                                 <%-- originally 'projectSettings' was the expected name of
                                      the root element, but now 'root' is preferred --%>
                                 <script>console.log('(no "projectSettings" property; using "root")')</script>
-                                <c:import url="/xapi/spawner/resolve/${namespace}/root" var="tabsConfig"/>
+                                <xnat:import url="/xapi/spawner/resolve/${namespace}/root" var="tabsConfig"/>
                             </c:if>
                             <script>
                                 XNAT.app.pluginSettings.addTabConfig(returnValue(${tabsConfig}), '${arrayMethod}');

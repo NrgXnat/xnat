@@ -11,6 +11,7 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.lang3.NotImplementedException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -34,8 +35,8 @@ import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.UserUtils;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -53,7 +54,8 @@ public class DownloadImages extends SecureAction {
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     @SuppressWarnings("deprecation")
-    public void doPerform(RunData data, Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         log.info("BEGIN DownloadImages.java");
         UserI user = TurbineUtils.getUser(data);
         long startTime = Calendar.getInstance().getTimeInMillis();
@@ -188,7 +190,7 @@ public class DownloadImages extends SecureAction {
                 }
                 
 
-                Enumeration enumer = data.getParameters().keys();
+                Enumeration enumer = java.util.Collections.enumeration(java.util.Arrays.asList(data.getParameters().getKeys()));
                 while (enumer.hasMoreElements()) {
                     String key = (String)enumer.nextElement();
                     String id = null;
@@ -262,7 +264,7 @@ public class DownloadImages extends SecureAction {
                     }
                     
                     
-                    Enumeration enumer = data.getParameters().keys();
+                    Enumeration enumer = java.util.Collections.enumeration(java.util.Arrays.asList(data.getParameters().getKeys()));
                     while (enumer.hasMoreElements())
                     {
                         String key = (String)enumer.nextElement();

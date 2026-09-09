@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.utils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Detects whether a particular request is from an interactive agent&mdash;usually a browser, but possibly some other

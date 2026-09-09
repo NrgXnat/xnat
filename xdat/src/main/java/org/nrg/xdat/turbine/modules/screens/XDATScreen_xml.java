@@ -23,7 +23,7 @@ public class XDATScreen_xml extends XMLScreen
 //	* @param data Turbine information.
 //	* @return content type.
 //	*/
-//	public String getContentType(RunData data)
+//	public String getContentType(PipelineData pipelineData)
 //	{
 //		return "text/xml";
 //	};
@@ -60,7 +60,7 @@ public class XDATScreen_xml extends XMLScreen
 //	* @param data RunData
 //	* @exception Exception, any old generic exception.
 //	*/
-//	protected final void doOutput(RunData data) throws Exception
+//	protected final void doOutput(PipelineData pipelineData) throws Exception
 //	{
 //		ByteArrayOutputStream baos = buildXml(data);
 //		if (baos != null)

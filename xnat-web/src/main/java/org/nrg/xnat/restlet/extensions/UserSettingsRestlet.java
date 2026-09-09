@@ -26,10 +26,13 @@ import org.nrg.xnat.restlet.XnatRestlet;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.*;
-import org.restlet.resource.Representation;
+import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
+import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.StringRepresentation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.representation.Variant;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -95,11 +98,10 @@ public class UserSettingsRestlet extends SecureResource {
             _action = UserAction.action((String) getRequest().getAttributes().get(PARAM_ACTION));
 
             final Method method = request.getMethod();
-            try {
-                _payload = request.getEntity().getText();
-            } catch (IOException exception) {
-                throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "Error when retrieving form body", exception);
-            }
+            // Via SecureResource#getRequestBodyText(): a form-encoded PUT arrives with an empty Restlet
+            // entity under 2.6 (Servlet 6.0 3.1 — containers parse form bodies into the parameter map
+            // for POST only), which silently emptied this payload. Same defect as item 1-24.
+            _payload = getRequestBodyText();
 
             validateParameters(method);
         }

@@ -23,7 +23,7 @@ import org.nrg.xnat.task.AbstractXnatTask;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jms.core.JmsTemplate;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;

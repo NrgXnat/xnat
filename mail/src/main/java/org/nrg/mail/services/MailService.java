@@ -12,7 +12,7 @@ package org.nrg.mail.services;
 import org.nrg.framework.services.NrgService;
 import org.nrg.mail.api.MailMessage;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 import java.io.File;
 import java.util.Map;
 
@@ -46,7 +46,7 @@ public interface MailService extends NrgService {
      * Sends a {@link MailMessage mail message object}. This allows for more free-form composition of mail messages
      * without needing to deal with complicated method signatures.
      * @param message The {@link MailMessage mail message} object to send.
-     * @throws javax.mail.MessagingException When a messaging error occurs.
+     * @throws jakarta.mail.MessagingException When a messaging error occurs.
      */
 	void sendMessage(MailMessage message) throws MessagingException;
 
@@ -85,7 +85,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String[], String[], String, String)
 	 * @see #sendMessage(String, String[], String, String)
 	 * @see #sendMessage(String, String, String, String)
-     * @throws javax.mail.MessagingException When a message error occurs.
+     * @throws jakarta.mail.MessagingException When a message error occurs.
 	 */
 	void sendMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String body) throws MessagingException;
 
@@ -105,7 +105,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String[], String[], String[], String, String)
 	 * @see #sendMessage(String, String[], String, String)
 	 * @see #sendMessage(String, String, String, String)
-     * @throws javax.mail.MessagingException When a message error occurs.
+     * @throws jakarta.mail.MessagingException When a message error occurs.
 	 */
 	void sendMessage(String from, String[] to, String[] ccs, String subject, String message) throws MessagingException;
 
@@ -124,7 +124,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String[], String[], String[], String, String)
 	 * @see #sendMessage(String, String[], String[], String, String)
 	 * @see #sendMessage(String, String, String, String)
-     * @throws javax.mail.MessagingException When a message error occurs.
+     * @throws jakarta.mail.MessagingException When a message error occurs.
 	 */
 	void sendMessage(String from, String[] to, String subject, String message) throws MessagingException;
 
@@ -143,7 +143,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String[], String[], String[], String, String)
 	 * @see #sendMessage(String, String[], String[], String, String)
 	 * @see #sendMessage(String, String[], String, String)
-     * @throws javax.mail.MessagingException When a message error occurs.
+     * @throws jakarta.mail.MessagingException When a message error occurs.
 	 */
 	void sendMessage(String from, String to, String subject, String message) throws MessagingException;
 

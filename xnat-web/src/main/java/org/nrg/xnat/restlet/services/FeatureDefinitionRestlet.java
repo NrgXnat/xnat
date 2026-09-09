@@ -28,10 +28,13 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.*;
-import org.restlet.resource.Representation;
+import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
+import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.StringRepresentation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.representation.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

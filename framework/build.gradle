@@ -14,15 +14,18 @@ dependencies {
     api libs.reactor.core
     api libs.hibernate.core
     api libs.hibernate.validator
-    api libs.glassfish.javax.el
+    api libs.glassfish.jakarta.el
     api libs.annotation.javax.annotation.api
     api libs.hibernate.envers
     api libs.hibernate.jcache
     api libs.cache.api
-    api libs.ehcache.ehcache
+    // ehcache 'jakarta' classifier: the default jar parses its XML config with javax JAXB,
+    // which is no longer on the classpath after the jakarta cutover
+    api variantOf(libs.ehcache.ehcache) { classifier('jakarta') }
     api libs.redisson.redisson
     api libs.vladmihalcea.hibernate.types55
     api libs.httpcomponents.httpclient
+    api libs.httpcomponents.httpclient5
     api libs.apache.ant
     api libs.commons.beanutils
     api libs.commons.io
@@ -47,6 +50,8 @@ dependencies {
 
     testImplementation libs.h2database.h2
     testImplementation libs.servlet.javax.servlet.api
+    testImplementation libs.jakarta.validation.api
+    testImplementation libs.hibernate.validator
     testImplementation libs.junit.jupiter.api
     testRuntimeOnly libs.junit.jupiter.engine
     testImplementation libs.sbrannen.spring.test.junit5

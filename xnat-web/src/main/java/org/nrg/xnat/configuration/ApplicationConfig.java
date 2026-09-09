@@ -54,7 +54,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 import org.springframework.scheduling.config.TriggerTask;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

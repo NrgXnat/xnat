@@ -9,6 +9,7 @@
 
 
 package org.nrg.xdat.security;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -192,7 +193,7 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
         try {
             String templateName = "/screens/" + this.getId().toLowerCase() + "_search.vm";
 
-            if (Velocity.resourceExists(templateName))
+            if (TurbineUtils.GetInstance().resourceExists(templateName))
             {
                 return templateName;
             }else

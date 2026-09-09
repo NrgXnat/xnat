@@ -10,7 +10,7 @@
 package org.nrg.xnat.restlet.resources;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload2.core.FileUploadException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
@@ -31,13 +31,14 @@ import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
+import org.restlet.representation.EmptyRepresentation;
+import org.restlet.representation.Representation;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.StringRepresentation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.representation.Variant;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -209,7 +210,7 @@ public class ConfigResource extends SecureResource {
                             log.debug(message);
                             if (acceptNotFound) {
                                 getResponse().setStatus(Status.SUCCESS_NO_CONTENT);
-                                return Representation.createEmpty();
+                                return new EmptyRepresentation();
                             } else {
                                 getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND, message);
                                 throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, message);
@@ -397,12 +398,23 @@ public class ConfigResource extends SecureResource {
             }
             getResponse().setStatus(response);
         } catch (ConfigServiceException e) {
-            log.error("Configuration service error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            log.error("Configuration service error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path, e);
+            setInternalErrorWithRawMessage(e);
         } catch (Exception e) {
-            log.error("Unknown error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path);
-            getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+            log.error("Unknown error replacing config for user {} and project {} on tool [{}] path [{}]", user.getUsername(), projectId, toolName, path, e);
+            setInternalErrorWithRawMessage(e);
         }
+    }
+
+    /**
+     * Answer 500 with the raw message as a plain-text entity. Restlet 1.1's status page carried the
+     * description verbatim; 2.x HTML-escapes it (Couldn't becomes Couldn&amp;apos;t), which breaks
+     * clients matching on the body text — the REST test harness tolerates the "disable a config that
+     * was never set" failure by matching "Couldn't find the site configuration...".
+     */
+    private void setInternalErrorWithRawMessage(final Exception e) {
+        getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
+        getResponse().setEntity(new StringRepresentation(StringUtils.defaultString(e.getMessage()), MediaType.TEXT_PLAIN));
     }
 
     @Override

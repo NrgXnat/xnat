@@ -31,7 +31,7 @@ import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.XftStringUtils;
 
-import javax.xml.bind.Element;
+import jakarta.xml.bind.Element;
 import java.util.*;
 
 /**

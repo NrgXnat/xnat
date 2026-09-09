@@ -22,7 +22,7 @@ $page.setVlinkColor($ui.vlink)
     $resultsSize matching studies were found:
     <br><br>
     #foreach( $result in $results )
-        <h3>Study $velocityCount</h3>
+        <h3>Study $foreach.count</h3>
         <table clsss="">
                 <tr><th align="left">$displayManager.getSingularDisplayNameForProject():</th><td>$!result[0]</td></tr>
                 <tr><th align="left">Session:</th><td>$!result[7]</td></tr>

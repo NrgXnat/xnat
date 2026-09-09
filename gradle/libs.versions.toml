@@ -2,7 +2,7 @@
 # Auto-extracted from parent/pom.xml
 # Source: parent 1.10.0 tag (updated 2026-04-28 for Phase 2)
 
-activemq = "5.16.7"
+activemq = "6.2.7"      # jakarta.jms generation (matches the activemq-classic 6.x broker in compose)
 activemq-protobuf = "1.1"
 ant = "1.9.8"
 antlr3 = "3.5.3"
@@ -32,10 +32,10 @@ commons-dbcp2 = "2.9.0"
 commons-digester = "1.8.1"
 commons-discovery = "0.5"
 commons-email = "1.5"
-commons-fileupload = "1.6.0"
+commons-fileupload = "2.0.0-M5"
 commons-io = "2.15.1"
 commons-lang = "2.6"
-commons-lang3 = "3.11"
+commons-lang3 = "3.17.0"
 commons-logging = "1.1.1"
 commons-math = "2.2"
 commons-net = "3.10.0"
@@ -61,7 +61,15 @@ fest-swing = "1.2.1"
 findbugs-jsr305 = "3.0.2"
 graaljs = "25.0.3"
 fop = "0.20.5"
-glassfish-jakarta-el = "4.0.2"
+# Turbine 5.1 does NOT pull these Fulcrum components transitively (confirmed by the boot sandbox);
+# XNAT's YAAFI config references GlobalCacheService + UploadService, so declare them explicitly.
+fulcrum-cache = "2.0.1"
+fulcrum-intake = "4.0.0"    # Turbine 7 / jakarta generation
+fulcrum-parser = "4.0.0"    # Turbine 7 / jakarta generation
+fulcrum-yaafi = "2.0.1"
+fulcrum-security = "4.0.0"  # Turbine 7 / jakarta generation
+fulcrum-upload = "2.0.0"
+glassfish-jakarta-el = "5.0.0"     # org.glassfish.expressly (EL 5 impl — hibernate-validator 8 requires Jakarta EL 5)
 glassfish-javax-el = "3.0.1-b12"
 groovy = "2.4.20"
 gson = "2.9.0"
@@ -72,35 +80,42 @@ hamcrest2 = "2.2"
 hibernate = "5.6.15.Final"
 hibernate-commons = "5.1.2.Final"
 hibernate-jpa-api = "1.0.2.Final"
-hibernate-validator = "5.4.3.Final"
+hibernate-validator = "8.0.4.Final"  # jakarta.validation generation
 hikaricp = "4.0.3"
 hsqldb = "2.7.4"
 httpcomponents-client = "4.5.13"
+httpcomponents-client5 = "5.6.2"   # Spring 6 HttpComponentsClientHttpRequestFactory is HC5-based
 httpcomponents-core = "4.4.6"
 httpcomponents-mime = "4.5.14"
 imagej = "1.53c"
 io-projectreactor = "2.0.8.RELEASE"
 itext = "2.1.7"
-jackson = "2.13.5"
+jackson = "2.18.4"
 jacoco = "0.8.12"
 jai-imageio = "1.1"
 jakarta-annotation = "3.0.0"
-jakarta-inject = "1.0.3"
-jakarta-el = "4.0.2"
+jakarta-validation = "3.0.2"    # bean validation api (jakarta generation, matches hibernate-validator 8)
+jakarta-xml-bind = "4.0.5"
+jaxb-runtime = "4.0.9"
+
+jakarta-inject = "2.0.1"        # 1.0.x still shipped javax.inject packages; jakarta namespace starts at 2.0
+jakarta-el = "5.0.1"            # jakarta.el-api 5 (EE10)
 jargon = "1.4.25"
 java-getopt = "1.0.13"
 java-uuid-generator = "3.1.4"
-javamelody = "1.91.0"
+javamelody = "2.8.0"    # 2.x = jakarta generation (1.x registers a javax SessionListener that kills Tomcat 10 context start)
 javassist = "3.24.0-GA"
-javax-activation = "1.2.0"
+javax-activation = "2.1.3"      # jakarta.activation-api
+angus-activation = "2.0.2"
 javax-annotation = "1.3.2"
 javax-cache-api = "1.1.1"
 javax-el = "2.2.5"
 javax-inject = "1"
 javax-interceptor = "1.2.2"
 javax-j2ee-api = "1.1.1"
-javax-jms-api = "2.0.1"
-javax-mail = "1.5.6"
+javax-jms-api = "3.1.0"          # jakarta.jms (alias names kept)
+javax-mail = "2.1.5"            # jakarta.mail-api (alias names kept)
+angus-mail = "2.0.5"            # jakarta.mail impl (successor of com.sun.mail)
 jayway = "2.8.0"
 jcalendar = "1.4"
 jcs = "1.3"
@@ -110,14 +125,15 @@ jetty = "6.1.25"
 joda-time = "2.7"
 jruby = "1.7.19"
 json = "20231013"
-jstl = "1.2"
+jstl = "3.0.1"          # glassfish jakarta JSTL impl (jakarta.tags.* URIs)
+jstl-api = "3.0.0"
 junit = "4.13.2"
 junit-jupiter = "5.8.1"
 jython = "2.7.3"
 jzlib = "1.1.3"
 log4jdbc = "0.2.0"
-logback = "1.2.13"
-logstash = "5.3"
+logback = "1.5.37"     # 1.16 unification: jakarta line (1.4+), pairs with slf4j 2.0 (Tomcat 10)
+logstash = "7.4"
 lombok = "1.18.34"
 lorem = "2.1"
 metainf-services = "1.8"
@@ -135,27 +151,32 @@ pixelmed-imageio = "20200328"
 quartz = "2.3.2"
 redisson = "3.22.0"
 reflections = "0.10.2"
-restlet = "1.1.10"
+restlet = "2.6.0"                # Jakarta edition (1-6); ext.fileupload (dropped after 2.5.2) replaced by commons-fileupload2 jakarta-servlet6 (1-11)
 saxon = "9.1.0.8"
-servlet-api = "3.1.0"
-slf4j = "1.7.30"
-snakeyaml = "1.33"
+jsp-api = "3.1.1"              # jakarta.servlet.jsp-api (JSP 3.1 = Tomcat 10.1), compileOnly for custom tags
+servlet-api = "6.0.0"           # jakarta.servlet (Servlet 6.0 = Tomcat 10.1); Turbine 7 pulls 6.1 transitively
+slf4j = "2.0.17"       # 1-16 unification: slf4j 2.0 (logback 1.4+ SPI; dcm4che 5.x's slf4j 2.x now natural)
+snakeyaml = "2.3"      # matches jackson-dataformat-yaml 2.18 (no direct snakeyaml API usage in XNAT)
 spotbugs = "4.7.3.4"
-spring-framework = "5.3.39"
+spring-framework = "6.2.19"
 spring-jwt = "1.1.1.RELEASE"
 spring-ldap = "2.4.2"
+# DEPRECATED for removal in 1.12 (team decision, 2026-08-19; status doc 1-23). This is the last
+# javax-era spring-security-oauth2; it is unreachable from XNAT core and the current plugin set, but
+# stays declared `api` in 1.11 so any external OAuth/OpenID auth plugin keeps compiling through the
+# Jakarta cutover. Its javax refs are allowlisted in xnat-web's verifyNoOrphanedJavaxEE guard.
 spring-oauth2 = "2.5.2.RELEASE"
-spring-security = "5.7.14"
+spring-security = "6.5.11"
 spring-test-junit5 = "1.5.0"
+springdoc = "2.8.6"             # OpenAPI 3 / swagger-ui for Spring 6 (replaces dead springfox 2.9); wired manually (non-Boot WAR)
 springockito = "1.0.5"
-swagger = "2.9.2"
+swagger-annotations = "1.5.20"  # Swagger 1.x @Api/@ApiOperation still on 2591 legacy annotations; springdoc ignores them (docs auto-generated from MVC mappings)
 testcontainers = "1.21.4"
-tomcat-embed = "9.0.93"
-torque = "3.3"
-turbine = "2.3.3"
+tomcat-embed = "10.1.57"
+turbine = "7.0"
 user-agent-utils = "1.20"
-velocity = "1.7"
-velocity-tools = "2.0"
+velocity = "2.4.1"
+velocity-tools = "3.1"
 vladmihalcea-hibernate-types = "2.14.0"
 wiremock = "3.0.1"
 wizard = "1.2.1"
@@ -165,8 +186,8 @@ xbean = "3.17"
 [libraries]
 # Auto-extracted from parent/pom.xml dependencyManagement
 
-activation-javax-activation-api = { group = "javax.activation", name = "javax.activation-api", version.ref = "javax-activation" }
-activation-com-sun-javax-activation = { group = "com.sun.activation", name = "javax.activation", version.ref = "javax-activation" }
+activation-javax-activation-api = { group = "jakarta.activation", name = "jakarta.activation-api", version.ref = "javax-activation" }
+activation-com-sun-javax-activation = { group = "org.eclipse.angus", name = "angus-activation", version.ref = "angus-activation" }
 activemq-all = { group = "org.apache.activemq", name = "activemq-all", version.ref = "activemq" }
 activemq-broker = { group = "org.apache.activemq", name = "activemq-broker", version.ref = "activemq" }
 activemq-client = { group = "org.apache.activemq", name = "activemq-client", version.ref = "activemq" }
@@ -178,7 +199,7 @@ activemq-openwire-legacy = { group = "org.apache.activemq", name = "activemq-ope
 activemq-protobuf = { group = "org.apache.activemq.protobuf", name = "activemq-protobuf", version.ref = "activemq-protobuf" }
 activemq-spring = { group = "org.apache.activemq", name = "activemq-spring", version.ref = "activemq" }
 activemq-stomp = { group = "org.apache.activemq", name = "activemq-stomp", version.ref = "activemq" }
-annotation-javax-annotation-api = { group = "javax.annotation", name = "javax.annotation-api", version.ref = "javax-annotation" }
+annotation-javax-annotation-api = { group = "jakarta.annotation", name = "jakarta.annotation-api", version.ref = "jakarta-annotation" }  # alias name kept; JSR-305 @Nullable/@Nonnull still come from jsr305
 antlr4 = { group = "org.antlr", name = "antlr4", version.ref = "antlr4" }
 antlr4-runtime = { group = "org.antlr", name = "antlr4-runtime", version.ref = "antlr4" }
 antlr-antlr = { group = "org.antlr", name = "antlr", version.ref = "antlr3" }
@@ -190,9 +211,8 @@ apache-jena-core = { group = "org.apache.jena", name = "jena-core", version.ref 
 apache-jena-tdb = { group = "org.apache.jena", name = "jena-tdb", version.ref = "jena-tdb" }
 apache-tomcat-embed-core = { group = "org.apache.tomcat.embed", name = "tomcat-embed-core", version.ref = "tomcat-embed" }
 apache-tomcat-embed-jasper = { group = "org.apache.tomcat.embed", name = "tomcat-embed-jasper", version.ref = "tomcat-embed" }
-apache-tomcat-embed-logging-juli = { group = "org.apache.tomcat.embed", name = "tomcat-embed-logging-juli", version.ref = "tomcat-embed" }
-apache-velocity = { group = "org.apache.velocity", name = "velocity", version.ref = "velocity" }
-apache-velocity-tools = { group = "org.apache.velocity", name = "velocity-tools", version.ref = "velocity-tools" }
+apache-velocity = { group = "org.apache.velocity", name = "velocity-engine-core", version.ref = "velocity" }
+apache-velocity-tools = { group = "org.apache.velocity.tools", name = "velocity-tools-generic", version.ref = "velocity-tools" }
 apache-xbean-spring = { group = "org.apache.xbean", name = "xbean-spring", version.ref = "xbean" }
 aspectj-rt = { group = "org.aspectj", name = "aspectjrt", version.ref = "aspectj" }
 aspectj-weaver = { group = "org.aspectj", name = "aspectjweaver", version.ref = "aspectj" }
@@ -225,7 +245,8 @@ commons-dbcp2 = { group = "org.apache.commons", name = "commons-dbcp2", version.
 commons-digester = { group = "commons-digester", name = "commons-digester", version.ref = "commons-digester" }
 commons-discovery = { group = "commons-discovery", name = "commons-discovery", version.ref = "commons-discovery" }
 commons-email = { group = "org.apache.commons", name = "commons-email", version.ref = "commons-email" }
-commons-fileupload = { group = "commons-fileupload", name = "commons-fileupload", version.ref = "commons-fileupload" }
+commons-fileupload2-core = { group = "org.apache.commons", name = "commons-fileupload2-core", version.ref = "commons-fileupload" }
+commons-fileupload2-jakarta = { group = "org.apache.commons", name = "commons-fileupload2-jakarta-servlet6", version.ref = "commons-fileupload" }
 commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
 commons-lang = { group = "commons-lang", name = "commons-lang", version.ref = "commons-lang" }
 commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commons-lang3" }
@@ -273,7 +294,13 @@ graaljs-js = { group = "org.graalvm.polyglot", name = "js", version.ref = "graal
 graaljs-js-scriptengine = { group = "org.graalvm.js", name = "js-scriptengine", version.ref = "graaljs" }
 graaljs-polyglot = { group = "org.graalvm.polyglot", name = "polyglot", version.ref = "graaljs" }
 # SKIP: gitversion-gradle-git-version = { group = "com.palantir.gradle.gitversion", name = "gradle-git-version" } # unresolved version: ${gradle-git-version}
-glassfish-jakarta-el = { group = "org.glassfish", name = "jakarta.el", version.ref = "glassfish-jakarta-el" }
+fulcrum-cache = { group = "org.apache.fulcrum", name = "fulcrum-cache", version.ref = "fulcrum-cache" }
+fulcrum-intake = { group = "org.apache.fulcrum", name = "fulcrum-intake", version.ref = "fulcrum-intake" }
+fulcrum-parser = { group = "org.apache.fulcrum", name = "fulcrum-parser", version.ref = "fulcrum-parser" }
+fulcrum-yaafi = { group = "org.apache.fulcrum", name = "fulcrum-yaafi", version.ref = "fulcrum-yaafi" }
+fulcrum-security-memory = { group = "org.apache.fulcrum", name = "fulcrum-security-memory", version.ref = "fulcrum-security" }
+fulcrum-upload = { group = "org.apache.fulcrum", name = "fulcrum-upload", version.ref = "fulcrum-upload" }
+glassfish-jakarta-el = { group = "org.glassfish.expressly", name = "expressly", version.ref = "glassfish-jakarta-el" }  # alias name kept; impl moved to Expressly at EL 5
 glassfish-javax-el = { group = "org.glassfish", name = "javax.el", version.ref = "glassfish-javax-el" }
 google-auto-value = { group = "com.google.auto.value", name = "auto-value", version.ref = "auto-value" }
 google-auto-value-annotations = { group = "com.google.auto.value", name = "auto-value-annotations", version.ref = "auto-value" }
@@ -288,22 +315,26 @@ hamcrest-core = { group = "org.hamcrest", name = "hamcrest-core", version.ref = 
 hamcrest-hamcrest = { group = "org.hamcrest", name = "hamcrest", version.ref = "hamcrest2" }
 hamcrest-library = { group = "org.hamcrest", name = "hamcrest-library", version.ref = "hamcrest" }
 hibernate-commons-annotations = { group = "org.hibernate.common", name = "hibernate-commons-annotations", version.ref = "hibernate-commons" }
-hibernate-core = { group = "org.hibernate", name = "hibernate-core", version.ref = "hibernate" }
+hibernate-core = { group = "org.hibernate", name = "hibernate-core-jakarta", version.ref = "hibernate" }
 hibernate-ehcache = { group = "org.hibernate", name = "hibernate-ehcache", version.ref = "hibernate" }
-hibernate-envers = { group = "org.hibernate", name = "hibernate-envers", version.ref = "hibernate" }
+hibernate-envers = { group = "org.hibernate", name = "hibernate-envers-jakarta", version.ref = "hibernate" }
 hibernate-jcache = { group = "org.hibernate", name = "hibernate-jcache", version.ref = "hibernate" }
 hibernate-jpa-api = { group = "org.hibernate.javax.persistence", name = "hibernate-jpa-2.1-api", version.ref = "hibernate-jpa-api" }
-hibernate-validator = { group = "org.hibernate", name = "hibernate-validator", version.ref = "hibernate-validator" }
-hibernate-validator-cdi = { group = "org.hibernate", name = "hibernate-validator-cdi", version.ref = "hibernate-validator" }
+hibernate-validator = { group = "org.hibernate.validator", name = "hibernate-validator", version.ref = "hibernate-validator" }  # groupId moved at 6.0; the org.hibernate one is an empty relocation jar
+hibernate-validator-cdi = { group = "org.hibernate.validator", name = "hibernate-validator-cdi", version.ref = "hibernate-validator" }
 hsqldb-hsqldb = { group = "org.hsqldb", name = "hsqldb", version.ref = "hsqldb" }
 httpcomponents-httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "httpcomponents-client" }
+httpcomponents-httpclient5 = { group = "org.apache.httpcomponents.client5", name = "httpclient5", version.ref = "httpcomponents-client5" }
 httpcomponents-httpcore = { group = "org.apache.httpcomponents", name = "httpcore", version.ref = "httpcomponents-core" }
 httpcomponents-httpcore-nio = { group = "org.apache.httpcomponents", name = "httpcore-nio", version.ref = "httpcomponents-core" }
 httpcomponents-httpmime = { group = "org.apache.httpcomponents", name = "httpmime", version.ref = "httpcomponents-mime" }
 imagej-ij = { group = "net.imagej", name = "ij", version.ref = "imagej" }
-inject-javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javax-inject" }
+inject-javax-inject = { group = "jakarta.inject", name = "jakarta.inject-api", version.ref = "jakarta-inject" }  # alias name kept
 interceptor-javax-interceptor-api = { group = "javax.interceptor", name = "javax.interceptor-api", version.ref = "javax-interceptor" }
 jakarta-annotation-api = { group = "jakarta.annotation", name = "jakarta.annotation-api", version.ref = "jakarta-annotation" }
+jakarta-validation-api = { group = "jakarta.validation", name = "jakarta.validation-api", version.ref = "jakarta-validation" }
+jakarta-xml-bind-api = { group = "jakarta.xml.bind", name = "jakarta.xml.bind-api", version.ref = "jakarta-xml-bind" }
+glassfish-jaxb-runtime = { group = "org.glassfish.jaxb", name = "jaxb-runtime", version.ref = "jaxb-runtime" }
 jakarta-inject-api = { group = "jakarta.inject", name = "jakarta.inject-api", version.ref = "jakarta-inject" }
 j2ee-javax-management-j2ee-api = { group = "javax.management.j2ee", name = "javax.management.j2ee-api", version.ref = "javax-j2ee-api" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
@@ -314,10 +345,14 @@ jackson-dataformat-xml = { group = "com.fasterxml.jackson.dataformat", name = "j
 jackson-dataformat-yaml = { group = "com.fasterxml.jackson.dataformat", name = "jackson-dataformat-yaml", version.ref = "jackson" }
 jackson-datatype-guava = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-guava", version.ref = "jackson" }
 jackson-datatype-hibernate4 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-hibernate4", version.ref = "jackson" }
-jackson-datatype-hibernate5 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-hibernate5", version.ref = "jackson" }
+# jakarta line: the plain `jackson-datatype-hibernate5` module is compiled against javax.persistence and
+# throws NoClassDefFoundError: javax/persistence/Transient under Tomcat 10 (HibernateAnnotationIntrospector.
+# hasIgnoreMarker) whenever Jackson serializes an @Entity — e.g. saving a container-service CommandEntity's
+# JSON column. The `-jakarta` artifact is the same package/classes compiled against jakarta.persistence.
+jackson-datatype-hibernate5 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-hibernate5-jakarta", version.ref = "jackson" }
 jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jdk8", version.ref = "jackson" }
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
-jackson-module-jaxb-annotations = { group = "com.fasterxml.jackson.module", name = "jackson-module-jaxb-annotations", version.ref = "jackson" }
+jackson-module-jaxb-annotations = { group = "com.fasterxml.jackson.module", name = "jackson-module-jakarta-xmlbind-annotations", version.ref = "jackson" }
 jackson-module-parameter-names = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names", version.ref = "jackson" }
 javamelody-core = { group = "net.bull.javamelody", name = "javamelody-core", version.ref = "javamelody" }
 javassist-javassist = { group = "org.javassist", name = "javassist", version.ref = "javassist" }
@@ -325,7 +360,7 @@ jcraft-jzlib = { group = "com.jcraft", name = "jzlib", version.ref = "jzlib" }
 jcs-jcs = { group = "jcs", name = "jcs", version.ref = "jcs" }
 jetty-jetty = { group = "org.mortbay.jetty", name = "jetty", version.ref = "jetty" }
 jgit-org-eclipse-jgit = { group = "org.eclipse.jgit", name = "org.eclipse.jgit", version.ref = "eclipse-jgit" }
-jms-javax-jms-api = { group = "javax.jms", name = "javax.jms-api", version.ref = "javax-jms-api" }
+jms-javax-jms-api = { group = "jakarta.jms", name = "jakarta.jms-api", version.ref = "javax-jms-api" }
 joda-time-joda-time = { group = "joda-time", name = "joda-time", version.ref = "joda-time" }
 jruby-jruby = { group = "org.jruby", name = "jruby", version.ref = "jruby" }
 json-json = { group = "org.json", name = "json", version.ref = "json" }
@@ -341,8 +376,8 @@ logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.
 logback-core = { group = "ch.qos.logback", name = "logback-core", version.ref = "logback" }
 logback-logstash-logback-encoder = { group = "net.logstash.logback", name = "logstash-logback-encoder", version.ref = "logstash" }
 lowagie-itext = { group = "com.lowagie", name = "itext", version.ref = "itext" }
-mail-javax-mail = { group = "com.sun.mail", name = "javax.mail", version.ref = "javax-mail" }
-mail-javax-mail-api = { group = "javax.mail", name = "javax.mail-api", version.ref = "javax-mail" }
+mail-javax-mail = { group = "org.eclipse.angus", name = "jakarta.mail", version.ref = "angus-mail" }
+mail-javax-mail-api = { group = "jakarta.mail", name = "jakarta.mail-api", version.ref = "javax-mail" }
 media-jai_imageio = { group = "com.sun.media", name = "jai_imageio", version.ref = "jai-imageio" }
 metainf-services-metainf-services = { group = "org.kohsuke.metainf-services", name = "metainf-services", version.ref = "metainf-services" }
 mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
@@ -362,17 +397,19 @@ reactor-bus = { group = "io.projectreactor", name = "reactor-bus", version.ref =
 reactor-core = { group = "io.projectreactor", name = "reactor-core", version.ref = "io-projectreactor" }
 redisson-redisson = { group = "org.redisson", name = "redisson", version.ref = "redisson" }
 reflections-reflections = { group = "org.reflections", name = "reflections", version.ref = "reflections" }
-restlet-com-noelios-restlet = { group = "com.noelios.restlet", name = "com.noelios.restlet", version.ref = "restlet" }
-restlet-com-noelios-restlet-ext-servlet = { group = "com.noelios.restlet", name = "com.noelios.restlet.ext.servlet", version.ref = "restlet" }
+restlet-com-noelios-restlet = { group = "org.restlet", name = "org.restlet", version.ref = "restlet" }
+restlet-com-noelios-restlet-ext-servlet = { group = "org.restlet", name = "org.restlet.ext.servlet", version.ref = "restlet" }
 restlet-org-restlet = { group = "org.restlet", name = "org.restlet", version.ref = "restlet" }
-restlet-org-restlet-ext-fileupload = { group = "org.restlet", name = "org.restlet.ext.fileupload", version.ref = "restlet" }
 saxon-saxon = { group = "net.sourceforge.saxon", name = "saxon", version.ref = "saxon" }
 sbrannen-spring-test-junit5 = { group = "com.github.sbrannen", name = "spring-test-junit5", version.ref = "spring-test-junit5" }
-servlet-javax-servlet-api = { group = "javax.servlet", name = "javax.servlet-api", version.ref = "servlet-api" }
-servlet-jstl = { group = "javax.servlet", name = "jstl", version.ref = "jstl" }
+servlet-javax-servlet-api = { group = "jakarta.servlet", name = "jakarta.servlet-api", version.ref = "servlet-api" }  # alias name kept to avoid build.gradle churn
+servlet-jsp-api = { group = "jakarta.servlet.jsp", name = "jakarta.servlet.jsp-api", version.ref = "jsp-api" }
+servlet-jstl = { group = "org.glassfish.web", name = "jakarta.servlet.jsp.jstl", version.ref = "jstl" }  # alias name kept
+servlet-jstl-api = { group = "jakarta.servlet.jsp.jstl", name = "jakarta.servlet.jsp.jstl-api", version.ref = "jstl-api" }
 slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 slf4j-jcl-over-slf4j = { group = "org.slf4j", name = "jcl-over-slf4j", version.ref = "slf4j" }
 slf4j-jul-to-slf4j = { group = "org.slf4j", name = "jul-to-slf4j", version.ref = "slf4j" }
+slf4j-jdk-platform-logging = { group = "org.slf4j", name = "slf4j-jdk-platform-logging", version.ref = "slf4j" }  # 1-16: routes Turbine 7 java.lang.System.Logger -> slf4j -> logback
 slf4j-log4j-over-slf4j = { group = "org.slf4j", name = "log4j-over-slf4j", version.ref = "slf4j" }
 slf4j-log4j12 = { group = "org.slf4j", name = "slf4j-log4j12", version.ref = "slf4j" }
 slf4j-nop = { group = "org.slf4j", name = "slf4j-nop", version.ref = "slf4j" }
@@ -397,7 +434,6 @@ spring-security-spring-security-config = { group = "org.springframework.security
 spring-security-spring-security-core = { group = "org.springframework.security", name = "spring-security-core", version.ref = "spring-security" }
 spring-security-spring-security-jwt = { group = "org.springframework.security", name = "spring-security-jwt", version.ref = "spring-jwt" }
 spring-security-spring-security-ldap = { group = "org.springframework.security", name = "spring-security-ldap", version.ref = "spring-security" }
-spring-security-spring-security-openid = { group = "org.springframework.security", name = "spring-security-openid", version.ref = "spring-security" }
 spring-security-spring-security-taglibs = { group = "org.springframework.security", name = "spring-security-taglibs", version.ref = "spring-security" }
 spring-security-spring-security-test = { group = "org.springframework.security", name = "spring-security-test", version.ref = "spring-security" }
 spring-security-spring-security-web = { group = "org.springframework.security", name = "spring-security-web", version.ref = "spring-security" }
@@ -405,8 +441,8 @@ spring-test = { group = "org.springframework", name = "spring-test", version.ref
 spring-tx = { group = "org.springframework", name = "spring-tx", version.ref = "spring-framework" }
 spring-web = { group = "org.springframework", name = "spring-web", version.ref = "spring-framework" }
 spring-webmvc = { group = "org.springframework", name = "spring-webmvc", version.ref = "spring-framework" }
-springfox-swagger-ui = { group = "io.springfox", name = "springfox-swagger-ui", version.ref = "swagger" }
-springfox-swagger2 = { group = "io.springfox", name = "springfox-swagger2", version.ref = "swagger" }
+springdoc-openapi-starter-webmvc-ui = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+swagger-annotations = { group = "io.swagger", name = "swagger-annotations", version.ref = "swagger-annotations" }
 swinglabs-wizard = { group = "org.swinglabs", name = "wizard", version.ref = "wizard" }
 thedeanda-lorem = { group = "com.thedeanda", name = "lorem", version.ref = "lorem" }
 toedter-jcalendar = { group = "com.toedter", name = "jcalendar", version.ref = "jcalendar" }
@@ -415,10 +451,8 @@ testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql",
 testcontainers-testcontainers = { group = "org.testcontainers", name = "testcontainers", version.ref = "testcontainers" }
 tomakehurst-wiremock = { group = "com.github.tomakehurst", name = "wiremock", version.ref = "wiremock" }
 tools-checkstyle = { group = "com.puppycrawl.tools", name = "checkstyle", version.ref = "checkstyle" }
-torque-torque = { group = "torque", name = "torque", version.ref = "torque" }
-torque-village = { group = "torque", name = "village", version.ref = "torque" }
 ttddyy-datasource-proxy = { group = "net.ttddyy", name = "datasource-proxy", version.ref = "datasource-proxy" }
-turbine-turbine = { group = "turbine", name = "turbine", version.ref = "turbine" }
+turbine-turbine = { group = "org.apache.turbine", name = "turbine", version.ref = "turbine" }
 twmacinta-fast-md5 = { group = "com.twmacinta", name = "fast-md5", version.ref = "fastmd5" }
 uuid-java-uuid-generator = { group = "com.fasterxml.uuid", name = "java-uuid-generator", version.ref = "java-uuid-generator" }
 vladmihalcea-hibernate-types43 = { group = "com.vladmihalcea", name = "hibernate-types-43", version.ref = "vladmihalcea-hibernate-types" }

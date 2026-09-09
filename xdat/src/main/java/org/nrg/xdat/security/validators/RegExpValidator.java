@@ -38,7 +38,8 @@ public class RegExpValidator implements PasswordValidator {
         // bcrypt hashes only the first 72 bytes and CVE-2025-22228 means matches() ignores the rest too. Reject
         // rather than truncate, so a user is never given credentials whose tail does not count.
         if (password != null && password.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
-            return "Password must be " + MAX_PASSWORD_BYTES + " characters or fewer.";
+            return "Password must be " + MAX_PASSWORD_BYTES + " bytes or fewer. Accented and non-Latin "
+                   + "characters count as more than one byte.";
         }
 
         final String regexp = getPasswordComplexity();

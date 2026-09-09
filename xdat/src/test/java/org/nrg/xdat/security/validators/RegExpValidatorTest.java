@@ -28,16 +28,17 @@ public class RegExpValidatorTest {
 
     @Test
     public void passwordOneByteOverTheLimitIsRejected() {
-        assertThat(validator.isValid(repeat("a", 73), null)).contains("72 characters or fewer");
+        assertThat(validator.isValid(repeat("a", 73), null)).contains("72 bytes or fewer");
     }
 
     @Test
     public void multiByteCharactersCountAsBytesNotCharacters() {
         // 25 three-byte characters is 75 bytes, so this is rejected despite being well under 72 characters.
+        // The message must therefore talk in bytes, or it tells a 25-character password to shorten to 72.
         final String password = repeat("中", 25);
         assertThat(password.length()).isLessThan(72);
         assertThat(password.getBytes(StandardCharsets.UTF_8).length).isGreaterThan(72);
-        assertThat(validator.isValid(password, null)).contains("72 characters or fewer");
+        assertThat(validator.isValid(password, null)).contains("72 bytes or fewer");
     }
 
     @Test

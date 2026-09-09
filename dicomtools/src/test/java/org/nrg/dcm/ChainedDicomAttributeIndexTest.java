@@ -255,4 +255,28 @@ public class ChainedDicomAttributeIndexTest {
 
         assertArrayEquals(new String[]{}, index.getStrings(root));
     }
+
+    /**
+     * A stop tag only ever gates top-level elements: reading a sequence brings its items with it whatever the
+     * stop tag says. So the bound is where each candidate path enters the object, not the largest tag anywhere
+     * along it -- a nested tag above its own sequence would otherwise widen every read for nothing.
+     */
+    @Test
+    public void boundsAtTheTopLevelTagOfEachPath() {
+        final ChainedDicomAttributeIndex index = new ChainedDicomAttributeIndex(
+                "nested",
+                new Integer[]{0x00081140, null, 0xF2151050},   // nested tag far above its sequence
+                new Integer[]{0x00189999});                    // a higher top-level tag
+
+        assertEquals(0x00189999, index.getMaxTag());
+    }
+
+    /** A path that names nothing asks for nothing, rather than throwing. */
+    @Test
+    public void ignoresAPathWithNoTags() {
+        final ChainedDicomAttributeIndex index = new ChainedDicomAttributeIndex(
+                "degenerate", new Integer[]{}, new Integer[]{0x00080060});
+
+        assertEquals(0x00080060, index.getMaxTag());
+    }
 }

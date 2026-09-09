@@ -12,8 +12,6 @@ package org.nrg.xnat.helpers.ecat;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import org.dcm4che3.util.TagUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.xdat.model.CatCatalogI;
@@ -57,7 +55,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public final class EcatDump extends SecureResource {
 	//dump all discovered fields from all ecat files in session,scan etc
@@ -65,7 +62,6 @@ public final class EcatDump extends SecureResource {
 	private static final String SUMMARY_ATTR = "summary";
     // "src" attribute the contains the uri to the desired resources
     private static final String SRC_ATTR = "src";
-    private static final String FIELD_PARAM = "field";
     // image type supported.
     private static final String imageType = "ECAT";
     private static final int MAXFILENUMBER=10000;
@@ -85,14 +81,12 @@ public final class EcatDump extends SecureResource {
         ArchiveType a;
         ResourceType r;
         final String uri; 
-        final Map<Integer,Set<String>> fields;
 
-        Env(String uri, Map<Integer,Set<String>> fields){
+        Env(String uri){
             this.uri = uri;
             this.a = ArchiveType.UNKNOWN;
             this.h = HeaderType.UNKNOWN;
             this.r = ResourceType.UNKNOWN;
-            this.fields = fields;
             this.determineArchiveType();
             this.determineHeaderType();
             this.determineResourceType();
@@ -537,30 +531,6 @@ public final class EcatDump extends SecureResource {
                 Exception;
     }
 
-    private static ImmutableMap<Integer,Set<String>> getFields(String[] fieldVals) {
-        ImmutableMap.Builder<Integer,Set<String>> fieldsb = ImmutableMap.builder();
-        for (final String field : fieldVals) {
-            final String[] parts = field.split(":");
-            final String tag_s = parts[0];
-            final Set<String> subs = Sets.newHashSet();
-            for (int i = 1; i < parts.length; i++) {
-                subs.add(parts[i]);
-            }
-
-            int tag;
-            try {
-                tag = TagUtils.forName(tag_s);
-            } catch (IllegalArgumentException e) {
-                try {
-                    tag = Integer.parseUnsignedInt(tag_s, 16);
-                } catch (NumberFormatException e1) {
-                    throw new IllegalArgumentException("not a valid ecat attribute tag: " + tag_s, e1);
-                }
-            }
-            fieldsb.put(tag, subs);
-        }
-        return fieldsb.build();
-    }
 
     public EcatDump(Context context, Request request, Response response) {
         super(context, request, response);
@@ -571,16 +541,7 @@ public final class EcatDump extends SecureResource {
             return;
         }
 
-        final Map<Integer,Set<String>> fields;
-        try {
-            fields = getFields(getQueryVariables(FIELD_PARAM));
-        } catch (IllegalArgumentException e) {
-            this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e);
-            env = null;
-            return;
-        }
-
-        this.env = new Env(this.getQueryVariable(EcatDump.SRC_ATTR), fields);   
+        this.env = new Env(this.getQueryVariable(EcatDump.SRC_ATTR));
 
         getVariants().add(new Variant(MediaType.APPLICATION_JSON));
         getVariants().add(new Variant(MediaType.TEXT_HTML));
@@ -626,11 +587,11 @@ public final class EcatDump extends SecureResource {
         	String summary=this.getQueryVariable(EcatDump.SUMMARY_ATTR);
             if (SUMMARY_VALUE.equals(summary)){
             	Iterable<File> files = this.env.h.retrieveAll(this.env, this.getUser());
-            	EcatSummaryHeaderDump d = new EcatSummaryHeaderDump(files, env.fields);
+            	EcatSummaryHeaderDump d = new EcatSummaryHeaderDump(files);
                 t = d.render();
             }else{//default..
             	String file = this.env.h.retrieve(this.env, this.getUser());
-                EcatHeaderDump d = new EcatHeaderDump(file, env.fields);
+                EcatHeaderDump d = new EcatHeaderDump(file);
                 t = d.render();
             }
         }

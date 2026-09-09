@@ -115,6 +115,14 @@ public final class ChainedDicomAttributeIndex extends AbstractDicomAttributeInde
      * {@inheritDoc}
      */
     @Override
+    public int getMaxTag() {
+        return highestEntryTag(paths);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Integer[] getPath(final Attributes context) {
         return paths.stream()
                 .filter(path -> !getNestedContexts(context, path).isEmpty())

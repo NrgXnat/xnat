@@ -18,6 +18,7 @@ import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -38,6 +39,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -146,10 +148,16 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                         catch( MizerException e) {
                             throw new RuntimeException(e);
                         }
+                        // A script with alterPixels stages the redacted pixels in a scratch file and
+                        // points the object at it. Nothing here deletes those on its own, so they are
+                        // collected and released once the builder has finished with the objects.
+                        final List<DicomObjectI> anonymized = new ArrayList<>();
                         try (final DICOMSessionBuilder db = new DICOMSessionBuilder(fileSetDir, params,
                                 o -> {
                                     try {
-                                        AnonymizationResult anonResult = mizerService.anonymize(new DicomObjectFactory.MizerDicomObject(o), context);
+                                        final DicomObjectI dicomObject = new DicomObjectFactory.MizerDicomObject(o);
+                                        anonymized.add(dicomObject);
+                                        AnonymizationResult anonResult = mizerService.anonymize(dicomObject, context);
                                         if (anonResult instanceof AnonymizationResultError) {
                                             throw new RuntimeException(String.join(" ","Error on DICOM object when anonymizing", fileSetDir.getAbsolutePath(),":",anonResult.getMessage()));
                                         }
@@ -166,6 +174,9 @@ public class FileSystemSessionDataModifier implements SessionDataModifierI {
                                 })) {
                             doc = db.call();
                         } finally {
+                            for (final DicomObjectI dicomObject : anonymized) {
+                                dicomObject.releaseScratchFiles();
+                            }
                             mizerService.removeContext(context);
                         }
                     } else {

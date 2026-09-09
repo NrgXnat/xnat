@@ -12,7 +12,6 @@ package org.nrg.xnat.helpers.dicom;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.text.StringEscapeUtils;
 import org.dcm4che3.data.ElementDictionary;
-import org.dcm4che3.data.Tag;
 import org.dcm4che3.util.TagUtils;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.DicomElementI;
@@ -68,14 +67,15 @@ public final class DicomHeaderDump {
      * @throws FileNotFoundException When the specified file isn't found.
      */
     DicomObjectI getHeader(File file) throws MizerException {
-        final int stopTag;
         if (fields.isEmpty()) {
-            stopTag = Tag.PixelData;
-        } else {
-            // DICOM tags are unsigned, so a tag in a group >= 0x8000 is negative as an int and would win a
-            // signed max as the smallest value. dcm4che compares stop tags unsigned, so only this needs fixing.
-            stopTag = 1 + fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
+            // Read it all. The reader already excludes bulk data, so the old PixelData stop tag never
+            // skipped the pixels -- it truncated everything sorting after them.
+            return DicomObjectFactory.newInstance(file, false);
         }
+        // Tags are unsigned: a signed max would rank a group >= 0x8000 as the smallest value.
+        final int maxTag = fields.keySet().stream().max(Integer::compareUnsigned).orElse(0);
+        // Guards the public constructor, which takes any map: +1 would wrap to 0 and stop the read dead.
+        final int stopTag = AttributeTags.NOT_RESOLVED == maxTag ? -1 : maxTag + 1;
         return DicomObjectFactory.newInstance(file, stopTag);
     }
     

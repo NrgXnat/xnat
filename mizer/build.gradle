@@ -25,3 +25,9 @@ dependencies {
     testImplementation libs.junit.junit
     testImplementation libs.spring.test
 }
+
+test {
+    // LargeDicomObjectTest builds a DICOM larger than 2 GB to prove it can be anonymized, which
+    // costs several GB of scratch and a minute or two. Opt in with -PlargeObjectTests.
+    systemProperty 'test.largeObjects', project.hasProperty('largeObjectTests')
+}

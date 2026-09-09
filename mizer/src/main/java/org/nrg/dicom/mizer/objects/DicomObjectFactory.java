@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,6 +81,25 @@ public class DicomObjectFactory {
         return new MizerDicomObject(file, includeBulkData);
     }
 
+    /**
+     * Create DicomObjectI representing the DICOM object in file, controlling how bulk data
+     * (pixel data and friends) is handled.
+     * <p>
+     * Use {@link DicomInputStream.IncludeBulkData#URI URI} to keep bulk data on disk: values are
+     * represented as {@link org.dcm4che3.data.BulkData} references into <b>file</b> rather than
+     * being read onto the heap. This is the only mode that can load an object whose PixelData
+     * value exceeds 2 GB, because {@code DicomInputStream.readValue()} reads into a {@code byte[]}
+     * and throws "tag value too large" past {@link Integer#MAX_VALUE}.
+     *
+     * @param file            containing DICOM object.
+     * @param includeBulkData how to handle bulk data elements.
+     * @return {@link MizerDicomObject}.
+     * @throws MizerException on error.
+     */
+    public static DicomObjectI newInstance(final File file, final DicomInputStream.IncludeBulkData includeBulkData) throws MizerException {
+        return new MizerDicomObject(file, includeBulkData);
+    }
+
     public static DicomObjectI newInstance(final File file, int stopTag) throws MizerException {
         return new MizerDicomObject(file, stopTag);
     }
@@ -103,8 +123,19 @@ public class DicomObjectFactory {
      */
     public static class MizerDicomObject implements DicomObjectI {
 
+        /** @see #spoolDirectory() */
+        private static File spoolDirectory;
+
         private Attributes dataset;
         private final DeleteDicomObjectVisitor deleteVisitor = new DeleteDicomObjectVisitor();
+
+        /**
+         * Files holding bulk data that this object's {@link org.dcm4che3.data.BulkData} values point
+         * at, and that nothing else owns: dcm4che's spool files for gzipped sources, and the edited
+         * pixel data written by pixel edit handlers. They must outlive every {@link #write} and be
+         * deleted afterwards, which {@link #releaseScratchFiles()} does.
+         */
+        private final List<File> scratchFiles = new ArrayList<>();
 
         /**
          * Create an empty object.
@@ -134,6 +165,78 @@ public class DicomObjectFactory {
 
         public MizerDicomObject(File file) throws MizerException {
             this(file, true);
+        }
+
+        /**
+         * Create from the DICOM object in file, controlling bulk data handling.
+         * <p>
+         * With {@link DicomInputStream.IncludeBulkData#URI URI}, the stream's URI is set to
+         * <b>file</b> so that bulk data values become references into it, read on demand and never
+         * copied. That is not possible for a gzipped source, where stream offsets bear no relation
+         * to file offsets; dcm4che detects the {@code InflaterInputStream} and spools bulk data to
+         * its own temporary files instead, which we register for cleanup.
+         *
+         * @param file            DICOM object file.
+         * @param includeBulkData how to handle bulk data elements.
+         * @throws MizerException on error.
+         */
+        public MizerDicomObject(File file, DicomInputStream.IncludeBulkData includeBulkData) throws MizerException {
+            final boolean gzipped = file.getName().endsWith("gz");
+            try (final InputStream fin = getInputStream(file);
+                 final DicomInputStream dis = new DicomInputStream(fin)) {
+                dis.setIncludeBulkData(includeBulkData);
+                if (gzipped) {
+                    dis.setBulkDataDirectory(spoolDirectory());
+                } else {
+                    dis.setURI(file.toURI().toString());
+                }
+                try {
+                    final Attributes fmi = dis.readFileMetaInformation();
+                    dataset = dis.readDataset();
+                    if (fmi != null) {
+                        dataset.addAll(fmi);
+                    }
+                } catch (IOException | RuntimeException e) {
+                    // Anything dcm4che spooled before the read failed holds pixel data, and no
+                    // object is going to exist to release it: the constructor is throwing. A
+                    // truncated gzipped source would otherwise leave it in the temp directory for
+                    // good.
+                    for (final File spooled : dis.getBulkDataFiles()) {
+                        if (spooled.exists() && !spooled.delete()) {
+                            logger.warn("Unable to delete bulk data spool file {} after a failed read of {}",
+                                        spooled, file);
+                        }
+                    }
+                    throw e;
+                }
+                // Non-empty only for the gzipped case, where dcm4che had to spool.
+                scratchFiles.addAll(dis.getBulkDataFiles());
+            } catch (IOException e) {
+                throw new MizerException(e);
+            }
+        }
+
+        /**
+         * A directory for dcm4che's bulk data spool files that only this user can read.
+         * <p>
+         * Those files hold pixel data, and dcm4che creates them through the legacy
+         * {@code File.createTempFile}, which takes its mode from the umask and typically leaves them
+         * rw-r--r-- where {@code Files.createTempFile} would give rw-------. Their own mode is not
+         * ours to set, so they go somewhere nobody else can list or open: createTempDirectory gives
+         * owner-only permissions and an unguessable name, which also rules out anyone planting a
+         * directory at a predictable path first. One per JVM, since it holds nothing once the files
+         * are released.
+         * <p>
+         * It does not follow {@code dicom.pixeledit.scratch.dir}: that property belongs to
+         * dicom-edit6, which sits above this, and a spool directory an operator can size separately
+         * would want a setting of its own.
+         */
+        private static synchronized File spoolDirectory() throws IOException {
+            if (spoolDirectory == null || !spoolDirectory.isDirectory()) {
+                spoolDirectory = Files.createTempDirectory("mizer-bulkdata").toFile();
+                spoolDirectory.deleteOnExit();
+            }
+            return spoolDirectory;
         }
 
         public MizerDicomObject(File file, int stopTag) throws MizerException {
@@ -1257,6 +1360,27 @@ public class DicomObjectFactory {
         @Override
         public Attributes getAttributes() {
             return dataset;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void registerScratchFile(final File file) {
+            scratchFiles.add(file);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void releaseScratchFiles() {
+            for (final File file : scratchFiles) {
+                if (file.exists() && !file.delete()) {
+                    logger.warn("Unable to delete bulk data scratch file {}", file);
+                }
+            }
+            scratchFiles.clear();
         }
 
         @Override

@@ -9,6 +9,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
 import java.util.List;
 
 /**
@@ -60,11 +62,21 @@ public class MontageGenerator extends DicomImageRenderer {
      * @throws InitializationException When an error occurs generating the requested montage.
      */
     public BufferedImage generate(final List<String> files, final int nSlices, final int rows, final int cols) throws InitializationException {
+        return generate(files, nSlices, rows, cols, Collections.emptyMap());
+    }
+
+    /**
+     * As above, given frame counts the caller has already read off the objects.
+     *
+     * @param knownFrameCounts frames per file path; see {@link SliceCoordinateCalculator#getSliceCoordinates}.
+     */
+    public BufferedImage generate(final List<String> files, final int nSlices, final int rows, final int cols,
+                                  final Map<String, Integer> knownFrameCounts) throws InitializationException {
         try {
             int nPanels = rows * cols;
             // The slices in the files may be spread out in multiple possibly multi-frame images.
             // Select the images and frames to fill the montage panel.
-            List<SliceCoordinate> sliceCoordinates = sliceCoordinateCalculator.getSliceCoordinates(nPanels, nSlices, files);
+            List<SliceCoordinate> sliceCoordinates = sliceCoordinateCalculator.getSliceCoordinates(nPanels, nSlices, files, knownFrameCounts);
 
             // Read the selected files into BufferedImages.
             final List<BufferedImage> bis = new ArrayList<>();

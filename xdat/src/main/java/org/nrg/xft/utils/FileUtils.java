@@ -482,6 +482,20 @@ public  class FileUtils {
         return targetCanonical.equals(destinationCanonical) || targetCanonical.startsWith(destinationCanonical + File.separator);
     }
 
+    /**
+     * Clears the executable permission bit (for owner, group, and other) on the given file, if the underlying file
+     * system supports it. Intended for files extracted from an untrusted archive (zip/tar/etc.): even if the
+     * archive's own metadata marked an entry as executable, the extracted copy should never inherit that
+     * permission. Never call this on a directory -- clearing its execute bit would make it untraversable.
+     *
+     * @param file The (regular) file to strip the executable permission from.
+     */
+    public static void clearExecutable(final File file) {
+        if (!file.setExecutable(false, false)) {
+            log.debug("Unable to clear the executable permission on {} (the file system may not support permission bits, or the process may lack permission to change them).", file.getAbsolutePath());
+        }
+    }
+
 	public static File CreateTempFolder(String prefix,File directory) throws IOException
 	{
         File tempFile = File.createTempFile(prefix, "", directory);

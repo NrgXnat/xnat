@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.*;
 
 
@@ -407,13 +408,35 @@ public class ZipUtils implements ZipI {
                 setOwningTarget(new Target());
             }
         }
+        final File destinationFolder = new File(destination);
         Expander expander = new Expander();
         expander.setSrc(archive);
-        expander.setDest(new File(destination));
+        expander.setDest(destinationFolder);
         expander.execute();
+
+        // Ant's Expand task doesn't give us a per-entry hook, and doesn't apply the archive's own permission bits
+        // itself, but the underlying file system's default file-creation mode could still leave a freshly extracted
+        // file executable (e.g. a permissive umask) -- so sweep the destination afterward.
+        clearExecutableRecursively(destinationFolder);
 
         if (deleteOnExtract) {
             archive.deleteOnExit();
+        }
+    }
+
+    /**
+     * Recursively clears the executable permission bit on every regular file under <b>dir</b> (directories are left
+     * alone, since clearing a directory's execute bit would make it untraversable). Used after an extraction method
+     * that doesn't offer a per-entry hook to do this as each file is written.
+     *
+     * @param dir The directory to sweep.
+     */
+    private static void clearExecutableRecursively(final File dir) throws IOException {
+        if (!dir.isDirectory()) {
+            return;
+        }
+        try (final Stream<Path> paths = Files.walk(dir.toPath())) {
+            paths.filter(Files::isRegularFile).forEach(path -> FileUtils.clearExecutable(path.toFile()));
         }
     }
 
@@ -513,6 +536,7 @@ public class ZipUtils implements ZipI {
                             File absolute = f.getAbsoluteFile();
                             Path filePath = absolute.toPath();
                             Files.copy(zis, filePath, StandardCopyOption.REPLACE_EXISTING);
+                            FileUtils.clearExecutable(absolute);
 
                             extractedFiles.put(name, absolute);
                         }
@@ -553,11 +577,15 @@ public class ZipUtils implements ZipI {
                 setOwningTarget(new Target());
             }
         }
+        final File destinationFolder = new File(dir);
         Expander expander = new Expander();
         expander.setSrc(new File(s));
-        expander.setDest(new File(dir));
+        expander.setDest(destinationFolder);
         expander.execute();
 
+        // Same rationale as the sweep in extract(File, String, boolean): Ant's Expand task offers no per-entry hook
+        // to clear the executable bit as each file is written, so sweep the destination afterward.
+        clearExecutableRecursively(destinationFolder);
     }
 
     @Override

@@ -12,6 +12,7 @@ package org.nrg.xft.utils;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.springframework.core.io.Resource;
@@ -239,6 +240,17 @@ public class FileUtilsTest {
         Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "../evil.txt"));
         Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "../../etc/passwd"));
         Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "subdir/../../evil.txt"));
+    }
+
+    @Test
+    public void testClearExecutable() throws Exception {
+        final File file = createFile(src, f[0], c[0]);
+        Assume.assumeTrue("test requires a file system that supports the executable permission bit", file.setExecutable(true, false));
+        Assert.assertTrue(file.canExecute());
+
+        FileUtils.clearExecutable(file);
+
+        Assert.assertFalse(file.canExecute());
     }
 
     private static List<List<String>> getUntranslatedCsvFileToList(final File file) throws IOException {

@@ -128,6 +128,9 @@ public class TarUtils implements ZipI {
                             try (final FileOutputStream output = new FileOutputStream(destPath)) {
                                 tis.copyEntryContents(output);
                             }
+                            // A tar entry can carry a Unix mode (e.g. from `chmod +x` on the machine that built the
+                            // archive) marking it executable; never let an extracted file inherit that.
+                            FileUtils.clearExecutable(destPath);
                             extractedFiles.add(destPath);
                         } else {
                             log.warn("File {} was rejected by the provided filter and will not be extracted.", name);

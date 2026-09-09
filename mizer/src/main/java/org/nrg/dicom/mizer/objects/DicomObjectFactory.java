@@ -134,26 +134,13 @@ public class DicomObjectFactory {
 
     /**
      * What dcm4che does for a bulk data value when the stream has a URI -- record where the value
-     * sits in the file and skip past it -- except that the reference reads ahead when opened, since
-     * dcm4che would otherwise read it back from a bare {@code FileInputStream} in 2 KB pieces.
-     * See {@link #BULK_DATA_BUFFER_SIZE}.
+     * sits in the file and skip past it -- except that the reference is a {@link ReadAheadBulkData}.
      */
     private static BulkData referenceIntoFile(final DicomInputStream in) throws IOException {
         final long length = in.unsignedLength();
         final BulkData reference = new ReadAheadBulkData(in.getURI(), in.getPosition(), length, in.bigEndian());
         in.skipFully(length);
         return reference;
-    }
-
-    private static final class ReadAheadBulkData extends BulkData {
-        ReadAheadBulkData(final String uri, final long offset, final long length, final boolean bigEndian) {
-            super(uri, offset, length, bigEndian);
-        }
-
-        @Override
-        public InputStream openStream() throws IOException {
-            return new BufferedInputStream(super.openStream(), BULK_DATA_BUFFER_SIZE);
-        }
     }
 
     /**

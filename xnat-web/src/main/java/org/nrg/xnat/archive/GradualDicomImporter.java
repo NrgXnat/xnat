@@ -11,17 +11,13 @@ package org.nrg.xnat.archive;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
-import com.google.common.io.ByteStreams;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
-import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.util.TagUtils;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
@@ -29,13 +25,13 @@ import org.nrg.action.ServerException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.Decompress;
 import org.nrg.dcm.Restructurer;
-import org.nrg.dcm.io.ResumableDicomInputStream;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
-import org.nrg.dicom.mizer.objects.Dcm4cheConvert;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
+import org.nrg.dicom.mizer.service.MizerContext;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.XDAT;
@@ -65,13 +61,10 @@ import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.services.cache.UserProjectCache;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.restlet.data.Status;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -143,31 +136,20 @@ public class GradualDicomImporter extends ImporterHandlerA {
         final int lastTag = Integer.compareUnsigned(maxIdentifierTag, Tag.SeriesDescription) > 0
                             ? maxIdentifierTag
                             : Tag.SeriesDescription;
-        // Populated only when the window above reaches the pixel data, so empty for an ordinary import.
-        // See ResumableDicomInputStream.openWithBulkDataOffHeap for why they exist and who owns them.
-        final List<File> bulkDataFiles = new ArrayList<>();
         // A processor running a script with alterPixels stages the redacted pixels in a scratch
         // file of its own and points the dataset at that instead. It is not one of the spool files
-        // above -- those come from the read, this is written afterwards by the edit -- so deleting
-        // them does not delete it. Each round below wraps the dataset afresh, so a registration can
-        // be left on any of the wrappers and every one of them has to be released.
+        // the read may leave -- those belong to the received object and go when it closes -- so
+        // closing it does not delete this. Each round below wraps the dataset afresh, so a
+        // registration can be left on any of the wrappers and every one of them has to be released.
         final List<DicomObjectI> processedObjects = new ArrayList<>();
-        try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
-             final DicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis)) {
-            Attributes fmi = dis.readFileMetaInformation();
-            final String transferSyntaxUID = null == _transferSyntax ? dis.getTransferSyntax() : _transferSyntax;
-            Attributes dataset = new Attributes();
-            dis.readAttributes(dataset, -1, lastTag + 1);
-            bulkDataFiles.addAll(dis.getBulkDataFiles());
-            dis.reset();
-
-            // CStore (DIMSE) has no FMI preamble, so fmi is null; generate complete FMI for file output.
-            if (null == fmi || !fmi.contains(Tag.TransferSyntaxUID)) {
-                fmi = dataset.createFileMetaInformation(transferSyntaxUID);
-            }
-            // Merge FMI into dataset so processors see a complete DICOM object.
-            // FMI will be split out before writing to file.
-            dataset.addAll(fmi);
+        // Whether a script is going to run on this object decides how much of it to read: everything,
+        // so the scripts can run in memory and the object be written once, or only the identifying
+        // header, after which the rest of the stream is copied through as it always was.
+        final boolean anonymizeOnReceive = anonymizesOnReceive();
+        try (final ReceivedDicomObject received = ReceivedDicomObject.read(_fileWriter.getInputStream(), _transferSyntax, lastTag, anonymizeOnReceive)) {
+            log.debug("Read {} of {}", received.isWhole() ? "the whole object, to anonymize before writing" : "the identifying header", name);
+            final String transferSyntaxUID = received.getTransferSyntax();
+            Attributes dataset = received.getDataset();
 
             DicomObjectI dicomObject = new DicomObjectFactory.MizerDicomObject(dataset);
             processedObjects.add(dicomObject);
@@ -359,13 +341,19 @@ public class GradualDicomImporter extends ImporterHandlerA {
             }
 
             try {
+                // With the whole object in hand the scripts run against the dataset and the object is
+                // written once. After a partial read the header and the rest of the stream are written
+                // first and the scripts run against the file, as every import used to.
+                final DicomObjectI toAnonymize = received.isWhole() ? new DicomObjectFactory.MizerDicomObject(dataset) : null;
+                if (toAnonymize != null) {
+                    processedObjects.add(toAnonymize);
+                    if (!applyScripts(context -> _mizer.anonymize(toAnonymize, context), session, isNew, outputFile)) {
+                        return returnEmptyList();
+                    }
+                }
+
                 try {
-                    // Split FMI from dataset before writing (dcm4che5 requires them separate for i/o)
-                    final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(dataset);
-                    write(split.fmi, split.onlyDataset, transferSyntaxUID, _parameters.get(SENDER_AE_TITLE_PARAM), bis, outputFile, source);
-                    // Re-merge FMI back into dataset for any subsequent processing
-                    //https://radiologics.atlassian.net/browse/XNAT-8719
-                    dataset.addAll(split.fmi);
+                    received.write(dataset, _parameters.get(SENDER_AE_TITLE_PARAM), outputFile, source);
                 } catch (IOException e) {
                     throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
                 }
@@ -374,63 +362,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     NativeDicomPreCompressor.preCompressIfNeeded(outputFile, transferSyntaxUID);
                 }
 
-                // check to see of this session came in through an application that may have performed anonymization
-                // prior to transfer, e.g. the XNAT Upload Assistant.
-                if (!session.getPreventAnon() && DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
-                    try {
-                        Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
-                        if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
-                            final MizerService service = XDAT.getContextService().getBeanSafely(MizerService.class);
-                            final AnonymizationResult anonResult = service.anonymize(outputFile, session.getProject(), session.getSubject(),
-                                    session.getFolderName(), true, false, c.getId(), c.getContents());
-                            if (anonResult instanceof AnonymizationResultReject) {
-                                FileUtils.deleteQuietly(outputFile);
-                                return returnEmptyList();
-                            }
-                            else if (anonResult instanceof AnonymizationResultError) {
-                                // Errors of this type are script evaluation problems.
-                                handleAnonymizationError(isNew, session, outputFile, new ServerException(String.join("\n",anonResult.getMessages())));
-                            }
-                        } else {
-                            log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without " +
-                                    "anonymization.", session.getProject(), session.getSubject(), session.getName());
-                        }
-                    } catch(Throwable e){
-                        // Errors of this type are deeper system errors.
-                        handleAnonymizationError(isNew, session, outputFile, e);
-                    }
-                } else if (session.getPreventAnon()) {
-                    log.debug("The session {} {} {} has already been anonymized by the uploader, proceeding without " +
-                            "further anonymization.", session.getProject(), session.getSubject(), session.getName());
+                if (toAnonymize == null && !applyScripts(context -> _mizer.anonymize(outputFile, context), session, isNew, outputFile)) {
+                    return returnEmptyList();
                 }
-
-                // Apply a one-off inline anonymization script supplied with the import request (the "Anon-Script"
-                // parameter). This runs after, and in addition to, the site-wide script.
-                final String inlineAnonScript = (String) TurbineUtils.unescapeParam(_parameters.get(ANON_SCRIPT_PARAM));
-                if (StringUtils.isNotBlank(inlineAnonScript)) {
-                    try {
-                        final AnonymizationResult inlineResult = _mizer.anonymize(outputFile, session.getProject(),
-                                session.getSubject(), session.getFolderName(), false, false,
-                                new ByteArrayInputStream(inlineAnonScript.getBytes(StandardCharsets.UTF_8)));
-                        if (inlineResult instanceof AnonymizationResultReject) {
-                            FileUtils.deleteQuietly(outputFile);
-                            return returnEmptyList();
-                        } else if (inlineResult instanceof AnonymizationResultError) {
-                            // A valid script that errors on this data (e.g. an absent tag) returns an error
-                            // result: a 400, cleaned up like the site-wide path. A parse failure instead throws
-                            // MizerException, which the catch below maps to a 500 (mizer can't tell it from a real fault).
-                            final ClientException error = new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
-                                    "The supplied inline anonymization script could not be applied: " +
-                                            String.join("\n", inlineResult.getMessages()));
-                            handleAnonymizationError(isNew, session, outputFile, error, error);
-                        }
-                    } catch (ClientException e) {
-                        throw e;
-                    } catch (Throwable e) {
-                        handleAnonymizationError(isNew, session, outputFile, e);
-                    }
-                }
-
             } finally {
                 //release the file lock
                 lock.release();
@@ -450,13 +384,11 @@ public class GradualDicomImporter extends ImporterHandlerA {
         } catch (Throwable t) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);
         } finally {
-            // Only safe here, and for the same reason as the spool files below: the dataset holds
-            // references into the staged pixels and write() reads them.
+            // Only safe here: the dataset holds references into the staged pixels and write() reads
+            // them. The received object's own spool files went with it when it closed, above.
             for (final DicomObjectI processed : processedObjects) {
                 processed.releaseScratchFiles();
             }
-            // Only safe here: the dataset holds references into these files, and write() reads them.
-            ResumableDicomInputStream.deleteBulkDataFiles(bulkDataFiles);
         }
     }
 
@@ -502,6 +434,96 @@ public class GradualDicomImporter extends ImporterHandlerA {
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, t);
         }
         throw toThrow;
+    }
+
+    /**
+     * Whether a script is expected to run on this object, decided from what is known before it is read:
+     * the request's own anonymization flag, the site-wide setting, and any inline script. The session row
+     * looked up later has the final say on the site-wide script, so this can be wrong in either direction
+     * without harm. A whole read that turns out to need no script is written as it is; a partial read
+     * that turns out to need one is anonymized on the file, as every import used to be.
+     */
+    private boolean anonymizesOnReceive() {
+        if (StringUtils.isNotBlank((String) TurbineUtils.unescapeParam(_parameters.get(ANON_SCRIPT_PARAM)))) {
+            return true;
+        }
+        final boolean preventAnon = Boolean.parseBoolean((String) _parameters.get(URIManager.PREVENT_ANON));
+        return !preventAnon && DefaultAnonUtils.getService().isSiteWideScriptEnabled();
+    }
+
+    /** Runs one script, in memory or against the written file. */
+    @FunctionalInterface
+    private interface ScriptApplication {
+        AnonymizationResult apply(final MizerContext context) throws MizerException;
+    }
+
+    /**
+     * Runs the site-wide script, if it applies to this session, and then any inline script supplied with the
+     * import request (the "Anon-Script" parameter), in that order.
+     *
+     * @param apply      Applies one script: to the object still in memory, or to the file already written.
+     * @param session    The session being ingested.
+     * @param isNew      Whether this import created the session row.
+     * @param outputFile Where the object is, or is about to be, written.
+     *
+     * @return false if a script rejected the object, in which case nothing of it is kept.
+     */
+    private boolean applyScripts(final ScriptApplication apply, final SessionData session, final AtomicBoolean isNew, final File outputFile) throws ServerException, ClientException {
+        // check to see of this session came in through an application that may have performed anonymization
+        // prior to transfer, e.g. the XNAT Upload Assistant.
+        if (!session.getPreventAnon() && DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
+            try {
+                Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
+                if (c != null && c.getStatus().equals(Configuration.ENABLED_STRING)) {
+                    final AnonymizationResult anonResult = apply.apply(_mizer.createContext(session.getProject(), session.getSubject(),
+                            session.getFolderName(), c.getId(), c.getContents(), true, false));
+                    if (anonResult instanceof AnonymizationResultReject) {
+                        FileUtils.deleteQuietly(outputFile);
+                        return false;
+                    }
+                    else if (anonResult instanceof AnonymizationResultError) {
+                        // Errors of this type are script evaluation problems.
+                        handleAnonymizationError(isNew, session, outputFile, new ServerException(String.join("\n",anonResult.getMessages())));
+                    }
+                } else {
+                    log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without " +
+                            "anonymization.", session.getProject(), session.getSubject(), session.getName());
+                }
+            } catch(Throwable e){
+                // Errors of this type are deeper system errors.
+                handleAnonymizationError(isNew, session, outputFile, e);
+            }
+        } else if (session.getPreventAnon()) {
+            log.debug("The session {} {} {} has already been anonymized by the uploader, proceeding without " +
+                    "further anonymization.", session.getProject(), session.getSubject(), session.getName());
+        }
+
+        // Apply a one-off inline anonymization script supplied with the import request (the "Anon-Script"
+        // parameter). This runs after, and in addition to, the site-wide script.
+        final String inlineAnonScript = (String) TurbineUtils.unescapeParam(_parameters.get(ANON_SCRIPT_PARAM));
+        if (StringUtils.isNotBlank(inlineAnonScript)) {
+            try {
+                final AnonymizationResult inlineResult = apply.apply(_mizer.createContext(session.getProject(), session.getSubject(),
+                        session.getFolderName(), 0L, new ByteArrayInputStream(inlineAnonScript.getBytes(StandardCharsets.UTF_8)), false, false));
+                if (inlineResult instanceof AnonymizationResultReject) {
+                    FileUtils.deleteQuietly(outputFile);
+                    return false;
+                } else if (inlineResult instanceof AnonymizationResultError) {
+                    // A valid script that errors on this data (e.g. an absent tag) returns an error
+                    // result: a 400, cleaned up like the site-wide path. A parse failure instead throws
+                    // MizerException, which the catch below maps to a 500 (mizer can't tell it from a real fault).
+                    final ClientException error = new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
+                            "The supplied inline anonymization script could not be applied: " +
+                                    String.join("\n", inlineResult.getMessages()));
+                    handleAnonymizationError(isNew, session, outputFile, error, error);
+                }
+            } catch (ClientException e) {
+                throw e;
+            } catch (Throwable e) {
+                handleAnonymizationError(isNew, session, outputFile, e);
+            }
+        }
+        return true;
     }
 
     private void deleteSessionFromDb(SessionData session) throws Exception {
@@ -761,34 +783,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
             return o;
         } catch (Exception e) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to parse or close DICOM object", e);
-        }
-    }
-
-    private static void write(final Attributes originalFmi, final Attributes dataset,
-                              final String transferSyntaxUid, final Object sourceAeTitle,
-                              final InputStream remainder,
-                              final File outputFile, final String source)
-            throws ClientException, IOException {
-        // Preserve the FMI from the received file, if present.
-        final Attributes fmi = null == originalFmi ? dataset.createFileMetaInformation(transferSyntaxUid) : originalFmi;
-        if (null != sourceAeTitle) {
-            fmi.setString(Tag.SourceApplicationEntityTitle, VR.AE, (String) sourceAeTitle);
-        }
-        try (final FileOutputStream fos = new FileOutputStream(outputFile);
-             final BufferedOutputStream bos = new BufferedOutputStream(fos, DicomObjectFactory.BULK_DATA_BUFFER_SIZE);
-             final DicomOutputStream dos = new DicomOutputStream(bos, UID.ExplicitVRLittleEndian)) {
-                // open stream with Explicit VR Little Endian because that's the required TS for FMI.
-                // stream object will switch to our provided TS after writing FMI.
-                dos.writeDataset(fmi, dataset);
-                dos.flush();
-
-                // If there's remaining data (like pixel data), append it
-                if (null != remainder) {
-                    final long copied = ByteStreams.copy(remainder, bos);
-                    log.trace("copied {} additional bytes to {}", copied, outputFile);
-                }
-
-                LoggerFactory.getLogger("org.nrg.xnat.received").info("{}:{}", source, outputFile);
         }
     }
 

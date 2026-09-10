@@ -24,6 +24,7 @@ import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.nrg.xapi.exceptions.NoContentException;
 import org.nrg.xapi.exceptions.NotAuthenticatedException;
 import org.nrg.xapi.exceptions.NotFoundException;
+import org.nrg.xapi.exceptions.XapiException;
 import org.nrg.xapi.exceptions.ResourceAlreadyExistsException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -213,7 +214,18 @@ public class XapiRestControllerAdvice {
 
     private HttpStatus getExceptionResponseStatus(final Throwable throwable) {
         final ResponseStatus annotation = AnnotationUtils.findAnnotation(throwable.getClass(), ResponseStatus.class);
-        return annotation != null ? annotation.value() : DEFAULT_ERROR_STATUS;
+        if (annotation != null) {
+            return annotation.value();
+        }
+        // XapiException carries its intended status as a field rather than an annotation. Without this, every
+        // `throw new XapiException(BAD_REQUEST, ...)` silently became a 500.
+        if (throwable instanceof XapiException) {
+            final HttpStatus status = ((XapiException) throwable).getStatus();
+            if (status != null) {
+                return status;
+            }
+        }
+        return DEFAULT_ERROR_STATUS;
     }
 
     private static final HttpStatus DEFAULT_ERROR_STATUS = INTERNAL_SERVER_ERROR;

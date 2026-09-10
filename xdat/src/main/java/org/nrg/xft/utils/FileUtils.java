@@ -459,20 +459,19 @@ public  class FileUtils {
     }
 
     /**
-     * Determines whether the given (untrusted) relative path, once resolved against <b>destinationDir</b>, remains a
-     * canonical descendant of that directory. This guards against path traversal ("zip-slip") attacks where a
-     * maliciously crafted relative path -- e.g. one containing {@code ../} segments or an absolute path -- is used to
-     * escape the intended destination directory and read or write files elsewhere on the file system.
+     * Determines whether the given relative path, once resolved against <b>destinationDir</b>, remains a canonical
+     * descendant of that directory -- e.g. a path containing {@code ../} segments or that is itself absolute may
+     * resolve outside of <b>destinationDir</b> entirely.
      *
      * <p>This is typically used to validate the entry names found in an uploaded archive (zip, tar, etc.) before any
      * of the archive's contents are extracted to disk.</p>
      *
      * @param destinationDir The directory the relative path is expected to resolve within.
-     * @param relativePath   The untrusted relative path to validate, e.g. an entry name taken from an archive.
+     * @param relativePath   The relative path to validate, e.g. an entry name taken from an archive.
      *
      * @return {@code true} if the canonical path of <b>relativePath</b>, resolved against <b>destinationDir</b>, is
-     *         located within the canonical path of <b>destinationDir</b> (i.e. it is safe); {@code false} if it
-     *         escapes the destination directory.
+     *         located within the canonical path of <b>destinationDir</b>; {@code false} if it resolves outside of
+     *         the destination directory.
      *
      * @throws IOException When an error occurs resolving the canonical path of either file.
      */
@@ -484,15 +483,15 @@ public  class FileUtils {
 
     /**
      * Clears the executable permission bit (for owner, group, and other) on the given file, if the underlying file
-     * system supports it. Intended for files extracted from an untrusted archive (zip/tar/etc.): even if the
-     * archive's own metadata marked an entry as executable, the extracted copy should never inherit that
-     * permission. Never call this on a directory -- clearing its execute bit would make it untraversable.
+     * system supports it. Intended for files extracted from an archive (zip/tar/etc.): the extracted copy should not
+     * carry over any executable permission recorded in the archive's own metadata. Never call this on a directory --
+     * clearing its execute bit would make it untraversable.
      *
      * @param file The (regular) file to strip the executable permission from.
      */
     public static void clearExecutable(final File file) {
         if (!file.setExecutable(false, false)) {
-            log.debug("Unable to clear the executable permission on {} (the file system may not support permission bits, or the process may lack permission to change them).", file.getAbsolutePath());
+            log.warning("Unable to clear the executable permission on {} (the file system may not support permission bits, or the process may lack permission to change them).", file.getAbsolutePath());
         }
     }
 

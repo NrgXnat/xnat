@@ -632,6 +632,23 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   pull the javax one, so both can land on the classpath (the exclusion is the consuming module's job, not the
   BOM's).
 
+### Logging (SLF4J 2 / logback 1.5)
+- **A hand-built `LoggerContext` now NPEs when something encodes an event.** 1.11 moves logback
+  1.2 → **1.5** (the jakarta line, pairing with SLF4J 2.0). Through 1.2,
+  `LoggingEvent.getMDCPropertyMap()` read the **static** `MDC.getMDCAdapter()`, which SLF4J always
+  initialises, so `new LoggerContext()` worked anywhere. Logback 1.4+ moved the adapter **onto the context**
+  (`LoggerContext.mdcAdapter`, settable only via `setMDCAdapter()` — the constructor never sets one), and
+  `getMDCPropertyMap()` dereferences it **with no null check**. Logback wires it itself when it initialises
+  as the SLF4J provider, so only code that builds a context *by hand* — in practice, **test** code — can
+  reach the null. The symptom names neither logback nor its version:
+  `NullPointerException: Cannot invoke "org.slf4j.spi.MDCAdapter.getCopyOfContextMap()" because "mdcAdapter" is null`,
+  typically surfacing inside an encoder (`net.logstash.logback…MdcJsonProvider.writeTo`) rather than in your
+  code. → in tests, mirror what logback does: `context.setMDCAdapter(new LogbackMDCAdapter())`
+  (`ch.qos.logback.classic.util.LogbackMDCAdapter`) right after constructing the context. Only tests that
+  *encode* an event fail, so a context built for appender wiring alone can sit latent until someone adds an
+  encode. **No runtime exposure** — production logging goes through the SLF4J provider, which sets the
+  adapter. *(core: tracker 1-41)*
+
 ### Build / dependency‑resolution gotchas
 - **Lombok vs the JDK — and old jars vs the JDK.** Lombok 1.18.34 throws `NoSuchFieldException
   com.sun.tools.javac.code.TypeTag.UNKNOWN` on a too‑new JDK. *Separately*, JDK 22+ tightened zip64 CEN

@@ -5,7 +5,7 @@ Status tracker for the staged real port (see the full plan and
 [`tomcat9-deploy-stack.md`](tomcat9-deploy-stack.md) for detail). Branch: `feature/jakarta-cutover`
 (the Phase-0 baseline lives on `feature/turbine-5x`).
 
-**Last updated:** 2026-07-23 (Restlet 2.6 www-form double-read regression fixed; tracker refreshed)
+**Last updated:** 2026-09-10 (1-41: logback 1.5 MDC-adapter NPE in a hand-built `LoggerContext`; `:xnat-web:test` green)
 
 **Legend:** 🟢 Complete · 🟡 In progress · ⚪ Open
 
@@ -893,3 +893,57 @@ comments across a ~780-file diff and forces reviewers to restart; and every furt
 citations. Merge commits are unremarkable in this repo — **238 of develop's last 400 commits are merges**.
 **One caveat that would undo all of it:** if the PR is ultimately *squash-merged* into develop, every SHA
 dies regardless. The PR description should ask for a merge commit, consistent with 1-39.
+
+**1-41 🟢 — logback 1.5 moved the MDC adapter onto the `LoggerContext`; a hand-built context now NPEs when it
+encodes** (2026-09-10).
+
+**Found by** `./gradlew :xnat-web:test` failing on `DefaultLoggingServiceRedirectTest` — 2 of its 13 tests,
+`jsonFormatEmitsParseableJson` and `jsonFormatEscapesAwkwardAppenderNames`, the only two that actually *encode*
+an event. Symptom is a bare NPE raised inside logstash, naming neither logback nor its version:
+`Cannot invoke "org.slf4j.spi.MDCAdapter.getCopyOfContextMap()" because "mdcAdapter" is null`, at
+`ch.qos.logback.classic.spi.LoggingEvent.getMDCPropertyMap` ← `net.logstash.logback.composite.loggingevent.MdcJsonProvider.writeTo`.
+
+**Mechanism (read from the sources jars for both exact versions, not inferred).** Through logback **1.2.13** —
+the version on `develop` — `LoggingEvent.getMDCPropertyMap()` read the **static** adapter,
+`MDC.getMDCAdapter()` (`LoggingEvent.java:304`), which SLF4J always initialises, so any `LoggerContext` worked.
+Logback **1.4+** moved the adapter onto the context: `LoggerContext` holds `MDCAdapter mdcAdapter`
+(`LoggerContext.java:68`), exposed by `getMDCAdapter()` (`:424`) and settable only via `setMDCAdapter()`
+(`:428`) — **the `LoggerContext()` constructor never sets one**. In 1.5.37,
+`LoggingEvent.getMDCPropertyMap()` reads `loggerContext.getMDCAdapter()` (`LoggingEvent.java:456`) and
+dereferences it at `:460` **with no null guard** (the method guards the resulting *map* for null, but not the
+adapter). Logback wires this itself when it initialises as the SLF4J provider —
+`LogbackServiceProvider.java:57`, `defaultLoggerContext.setMDCAdapter(mdcAdapter)`, commented "set the
+MDCAdapter for the defaultLoggerContext immediately" — so only code that builds a context **by hand**, which
+is to say test code, can reach the null. **Exposed by item 1-16** (`d58c61711`), which took logback
+1.2.13 → 1.5.37 for the jakarta line; nothing in this repo's own code changed.
+
+**Fix.** A `newLoggerContext()` helper in the test that mirrors what `LogbackServiceProvider` does —
+`context.setMDCAdapter(new LogbackMDCAdapter())` — with the seven call sites routed through it.
+Deliberately fixed at helper altitude rather than patching the two failing methods, so the five latent sites
+cannot fail the same way when someone later adds an encode to one of them.
+
+**Audit (bug class = "hand-built `LoggerContext` that later encodes an event").** Swept `new LoggerContext(`
+across **main and test, repo-wide**: **7 sites, all in `DefaultLoggingServiceRedirectTest`**. **No production
+code builds a `LoggerContext` by hand** — XNAT's own logging goes through the SLF4J provider, which sets the
+adapter, so the class is confined to tests and there is no runtime exposure. Of the 7, only the 2 that encode
+were failing; the other 5 were latent. All 7 now go through the helper.
+**Result: `:xnat-web:test` green — 455 tests, 0 failures, 0 errors, 19 skipped.**
+
+**Two adjacent findings from the same session, recorded because each cost real diagnosis time:**
+
+- **The EventService tests require Docker.** `EventServiceTest` (5) and `EventServiceIntegrationTest` (24)
+  failed with `ApplicationContext failure threshold (1) exceeded` — a *cached symptom*, not the cause; Spring
+  records the first context-load failure and skips retries, so the real error only appears five `Caused by`
+  levels down: `BeanCreationException: 'sessionFactory' … Unable to open JDBC Connection` →
+  `PSQLException` → `EOFException at ConnectionFactoryImpl.enableSSL`. `OrmTestConfiguration` no longer uses
+  in-memory H2 (those defaults are commented out): it starts a **`postgres:12` container via Testcontainers**,
+  falling back to `localhost:5432` when Docker is unavailable. **Pre-existing on `develop`** (`b1d3fb7d1`,
+  1.10.0-rc) — *not* a cutover change. With Docker running, all 29 pass. Anyone seeing a wall of
+  "failure threshold exceeded" should check Docker before reading the stack.
+- **⚪ Open — three DICOM builder test classes are order-dependent.** `CatalogBuilderTest` (2),
+  `DICOMScanBuilderTest` (3) and `DICOMSessionBuilderTest` (1) failed in one full-suite run with
+  `NoSuchBeanDefinitionException: SiteConfigPreferences` (via `XDAT.getSiteConfigPreferences`,
+  `ContextService.getBean`) and empty-collection errors (`Index 0 out of bounds for length 0`,
+  `NoSuchElementException`). **They pass in isolation and in a clean full run**, and they did *not* fail in the
+  run where the EventService context blew up first — so the trigger is shared state / execution order, not a
+  defect in the builders. Not chased; recorded so the next person to see it does not re-derive it.

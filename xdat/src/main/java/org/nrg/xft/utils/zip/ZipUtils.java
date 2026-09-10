@@ -80,9 +80,9 @@ public class ZipUtils implements ZipI {
     }
 
     public static void extractFile(final InputStream input, final Path destination, final String compression) throws IOException {
-        // Path-traversal protection lives inside ZipUtils/TarUtils' own extract(InputStream, ...) implementations
-        // (see ZipUtils#extractMap and TarUtils#extract), so every caller of the ZipI interface is protected the
-        // same way, not just this convenience wrapper.
+        // Entry-name validation lives inside ZipUtils/TarUtils' own extract(InputStream, ...) implementations (see
+        // ZipUtils#extractMap and TarUtils#extract), so every caller of the ZipI interface gets it the same way,
+        // not just this convenience wrapper.
         createZipper(compression).extract(input, destination.toString());
     }
 
@@ -100,25 +100,27 @@ public class ZipUtils implements ZipI {
     }
 
     /**
-     * Scans every entry of the specified zip file and returns the names of any entries whose relative path, once
-     * resolved against <b>destinationDir</b>, escapes that directory (a path traversal / "zip-slip" attempt). Reads
-     * the archive's central directory (via {@link ZipFile}) rather than streaming and discarding every entry's
-     * compressed content, so scanning cost is proportional to the entry count, not the archive's total size.
+     * Scans every entry of the specified zip file and returns the names of any entries whose relative path does not
+     * resolve within <b>destinationDir</b> once resolved against it. Reads the archive's central directory (via
+     * {@link ZipFile}) rather than streaming and discarding every entry's compressed content, so scanning cost is
+     * proportional to the entry count, not the archive's total size.
      *
      * @param zipFile        The zip file to scan.
      * @param destinationDir The directory the archive is intended to be extracted into.
      *
-     * @return The (possibly empty) list of unsafe entry names found in the archive.
+     * @return The (possibly empty) list of entry names found in the archive that do not resolve within the
+     *         destination directory.
      *
      * @throws IOException When an error occurs reading the archive.
      */
     private static List<String> findPathTraversalEntries(final File zipFile, final File destinationDir) throws IOException {
         if (zipFile.length() == 0) {
-            // A genuinely empty file has no entries to scan, and zero entries is trivially safe from path traversal.
-            // Opening it as a ZipFile would throw "zip file is empty" here -- before extraction even gets a chance
-            // to run -- even though the actual extraction step (ZipInputStream, or Ant's Expand for the File-based
-            // extract) is either fine with an empty archive or fails with its own, more appropriate error. Let
-            // extraction handle it the way it always has instead of failing early in the scan.
+            // A genuinely empty file has no entries to scan, and zero entries trivially resolve within the
+            // destination directory. Opening it as a ZipFile would throw "zip file is empty" here -- before
+            // extraction even gets a chance to run -- even though the actual extraction step (ZipInputStream, or
+            // Ant's Expand for the File-based extract) is either fine with an empty archive or fails with its own,
+            // more appropriate error. Let extraction handle it the way it always has instead of failing early in
+            // the scan.
             return Collections.emptyList();
         }
         final List<String> unsafeEntries = new ArrayList<>();
@@ -135,16 +137,17 @@ public class ZipUtils implements ZipI {
     }
 
     /**
-     * Rejects an archive upload (zip, tar, or tgz) that was found to contain one or more path-traversal entries. The
-     * rejected archive is preserved in the XNAT cache folder along with an {@code upload_report.txt} file describing
-     * why the upload was rejected, then an {@link IOException} is thrown so the caller knows the upload did not
-     * succeed. Package-visible so both {@link ZipUtils} and {@link TarUtils} can share it.
+     * Rejects an archive upload (zip, tar, or tgz) that was found to contain one or more entries whose relative path
+     * does not resolve within the intended destination directory. The rejected archive is preserved in the XNAT
+     * cache folder along with an {@code upload_report.txt} file describing why the upload was rejected, then an
+     * {@link IOException} is thrown so the caller knows the upload did not succeed. Package-visible so both
+     * {@link ZipUtils} and {@link TarUtils} can share it.
      *
      * @param archiveFile     The (buffered) archive file that was rejected.
      * @param archiveFileName The file name to give the archive when it's copied into the cache folder, e.g.
      *                        {@code upload.zip} or {@code upload.tar}.
      * @param destination     The destination the archive was going to be extracted into.
-     * @param unsafeEntries   The unsafe entry names found in the archive.
+     * @param unsafeEntries   The offending entry names found in the archive.
      *
      * @throws IOException Always thrown to indicate the upload was rejected.
      */
@@ -184,8 +187,7 @@ public class ZipUtils implements ZipI {
         // in its own try/catch because AdminUtils.sendAdminEmail can itself throw (e.g. it calls
         // XDAT.getNotificationsPreferences() without a null-check of its own, which throws an uncaught NPE if
         // Spring isn't fully up) -- a notification failure must never replace, or prevent, the rejection below. The
-        // report is HTML-escaped before being embedded, since it includes the archive's own entry names verbatim,
-        // and those come from the untrusted upload itself.
+        // report is HTML-escaped before being embedded, since it includes the archive's own entry names verbatim.
         try {
             AdminUtils.sendAdminEmail("XNAT Archive Upload Rejected",
                                        "<pre>" + StringEscapeUtils.escapeHtml4(report.toString()) + "</pre>");
@@ -390,9 +392,9 @@ public class ZipUtils implements ZipI {
 
     @Override
     public void extract(File archive, String destination, boolean deleteOnExtract) throws IOException {
-        // Ant's Expand task has no built-in path-traversal protection at the version this project resolves, so scan
-        // for unsafe entries ourselves before handing the archive to it. If any entry is unsafe, the whole upload is
-        // rejected and Expand never runs.
+        // Ant's Expand task doesn't validate entry names against the destination directory at the version this
+        // project resolves, so scan the archive ourselves before handing it off. If any entry doesn't resolve
+        // within the destination, the whole upload is rejected and Expand never runs.
         final List<String> unsafeEntries = findPathTraversalEntries(archive, new File(destination));
         if (!unsafeEntries.isEmpty()) {
             rejectArchiveUpload(archive, "upload.zip", Path.of(destination), unsafeEntries);
@@ -486,10 +488,10 @@ public class ZipUtils implements ZipI {
     }
 
     /**
-     * Scans the given zip file for path-traversal entries and, if it's clean, extracts it directly -- avoiding any
-     * redundant buffering copy when the caller already has a materialized, seekable file. If any entry is unsafe,
-     * the entire upload is rejected via {@link #rejectArchiveUpload(File, String, Path, List)} and nothing is
-     * extracted.
+     * Scans the given zip file to confirm every entry resolves within the destination directory and, if so,
+     * extracts it directly -- avoiding any redundant buffering copy when the caller already has a materialized,
+     * seekable file. If any entry does not, the entire upload is rejected via
+     * {@link #rejectArchiveUpload(File, String, Path, List)} and nothing is extracted.
      *
      * @param zipFile     The zip file to scan and extract.
      * @param destination The destination folder to extract into.

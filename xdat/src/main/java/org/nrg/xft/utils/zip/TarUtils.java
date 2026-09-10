@@ -81,10 +81,10 @@ public class TarUtils implements ZipI {
     }
 
     /**
-     * Scans the given archive file for path-traversal entries and, if it's clean, extracts it directly -- avoiding
-     * any redundant buffering copy when the caller already has a materialized, seekable file. If any entry is
-     * unsafe, the entire upload is rejected via {@link ZipUtils#rejectArchiveUpload(File, String, Path, List)} and
-     * nothing is extracted.
+     * Scans the given archive file to confirm every entry resolves within the destination directory and, if so,
+     * extracts it directly -- avoiding any redundant buffering copy when the caller already has a materialized,
+     * seekable file. If any entry does not, the entire upload is rejected via
+     * {@link ZipUtils#rejectArchiveUpload(File, String, Path, List)} and nothing is extracted.
      *
      * @param archiveFile The tar (optionally gzipped, per {@link #_compressionMethod}) file to scan and extract.
      * @param dir         The destination folder to extract into.
@@ -128,8 +128,8 @@ public class TarUtils implements ZipI {
                             try (final FileOutputStream output = new FileOutputStream(destPath)) {
                                 tis.copyEntryContents(output);
                             }
-                            // A tar entry can carry a Unix mode (e.g. from `chmod +x` on the machine that built the
-                            // archive) marking it executable; never let an extracted file inherit that.
+                            // A tar entry can carry a Unix mode (e.g. from a permission change on the machine that
+                            // built the archive) marking it executable; never let an extracted file inherit that.
                             FileUtils.clearExecutable(destPath);
                             extractedFiles.add(destPath);
                         } else {
@@ -145,13 +145,14 @@ public class TarUtils implements ZipI {
 
     /**
      * Scans every entry of the specified tar (optionally gzipped, per {@link #_compressionMethod}) file and returns
-     * the names of any entries whose relative path, once resolved against <b>destinationDir</b>, escapes that
-     * directory (a path traversal / "zip-slip" attempt).
+     * the names of any entries whose relative path does not resolve within <b>destinationDir</b> once resolved
+     * against it.
      *
      * @param archiveFile    The tar file to scan.
      * @param destinationDir The directory the archive is intended to be extracted into.
      *
-     * @return The (possibly empty) list of unsafe entry names found in the archive.
+     * @return The (possibly empty) list of entry names found in the archive that do not resolve within the
+     *         destination directory.
      *
      * @throws IOException When an error occurs reading the archive.
      */
@@ -175,8 +176,8 @@ public class TarUtils implements ZipI {
     }
 
     public void extract(File f, String dir, boolean deleteZip) throws IOException {
-        // Route through extractFromFile so this direct File-based entry point gets the same path-traversal scan as
-        // extract(InputStream, ...) -- this method used to write entries straight out with no validation at all.
+        // Route through extractFromFile so this direct File-based entry point gets the same entry-name validation as
+        // extract(InputStream, ...).
         extractFromFile(f, dir, true, null, null);
 
         f.deleteOnExit();

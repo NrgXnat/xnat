@@ -243,6 +243,14 @@ public class FileUtilsTest {
     }
 
     @Test
+    public void testBuildRootHistoryPathDoesNotThrowOutsideSpringContext() {
+        // XDAT.getSiteConfigPreferences() throws outside of a Spring context (as in this test), which this method
+        // must fall back from rather than propagate -- see FileUtils#BuildRootHistoryPath.
+        final String path = FileUtils.BuildRootHistoryPath();
+        assertThat(path).isNotBlank().endsWith(".history/");
+    }
+
+    @Test
     public void testClearExecutable() throws Exception {
         final File file = createFile(src, f[0], c[0]);
         Assume.assumeTrue("test requires a file system that supports the executable permission bit", file.setExecutable(true, false));

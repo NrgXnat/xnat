@@ -97,6 +97,16 @@ public class TarUtils implements ZipI {
      * @throws IOException When an error occurs reading the archive, or when the upload is rejected.
      */
     List<File> extractFromFile(final File archiveFile, final String dir, final boolean overwrite, final EventMetaI ci, final IOFileFilter filter) throws IOException {
+        return extractFromFile(archiveFile, dir, overwrite, ci, filter, true);
+    }
+
+    /**
+     * @param moveExistingToHistory Whether an existing file at the destination should be moved into archive history
+     *                              before being overwritten, or simply overwritten in place.
+     *
+     * @see #extractFromFile(File, String, boolean, EventMetaI, IOFileFilter)
+     */
+    private List<File> extractFromFile(final File archiveFile, final String dir, final boolean overwrite, final EventMetaI ci, final IOFileFilter filter, final boolean moveExistingToHistory) throws IOException {
         final File dest = new File(dir);
         dest.mkdirs();
 
@@ -120,7 +130,7 @@ public class TarUtils implements ZipI {
                         _duplicates.add(name);
                     } else {
                         if (filter == null || filter.accept(destPath)) {
-                            if (destPath.exists()) {
+                            if (destPath.exists() && moveExistingToHistory) {
                                 FileUtils.MoveToHistory(destPath, EventUtils.getTimestamp(ci));
                             }
                             destPath.getParentFile().mkdirs();
@@ -177,8 +187,10 @@ public class TarUtils implements ZipI {
 
     public void extract(File f, String dir, boolean deleteZip) throws IOException {
         // Route through extractFromFile so this direct File-based entry point gets the same entry-name validation as
-        // extract(InputStream, ...).
-        extractFromFile(f, dir, true, null, null);
+        // extract(InputStream, ...) -- but, unlike that InputStream path, preserve this method's original
+        // plain-overwrite semantics (moveExistingToHistory=false): before path-traversal validation was added, this
+        // method wrote each entry directly over any existing file, without ever moving it into archive history.
+        extractFromFile(f, dir, true, null, null, false);
 
         f.deleteOnExit();
     }

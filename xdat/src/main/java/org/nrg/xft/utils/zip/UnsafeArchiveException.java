@@ -13,8 +13,7 @@ import java.io.IOException;
 
 /**
  * Thrown when an archive (zip, tar, or tgz) upload is rejected because it contains one or more entries whose
- * relative path would resolve outside of the intended extraction destination -- a path traversal / "zip-slip"
- * attempt.
+ * relative path would resolve outside of the intended extraction destination.
  *
  * <p>This is deliberately a distinct type from the plain {@link IOException} extraction otherwise throws on a
  * genuine I/O failure. Code that generically catches {@code IOException} around an extraction call -- for example

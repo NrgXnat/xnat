@@ -491,7 +491,7 @@ public  class FileUtils {
      */
     public static void clearExecutable(final File file) {
         if (!file.setExecutable(false, false)) {
-            log.warning("Unable to clear the executable permission on {} (the file system may not support permission bits, or the process may lack permission to change them).", file.getAbsolutePath());
+            log.warn("Unable to clear the executable permission on {} (the file system may not support permission bits, or the process may lack permission to change them).", file.getAbsolutePath());
         }
     }
 
@@ -964,8 +964,20 @@ public  class FileUtils {
     }
 
     public static String BuildRootHistoryPath() {
-        final String cache = XDAT.getSiteConfigPreferences().getCachePath();
-		return (StringUtils.isNotBlank(cache) ? StringUtils.appendIfMissing(cache, File.separator) : "/") + ".history/";
+        // XDAT.getSiteConfigPreferences() throws an uncaught NullPointerException if Spring isn't fully up (e.g.
+        // running outside the web application entirely, as in unit tests, or during startup) -- fall back to the
+        // JVM's default temp directory in that case, the same way ZipUtils#getXnatCachePath does, rather than
+        // letting a routine overwrite-during-extraction call blow up with an unrelated NPE.
+        String cache = null;
+        try {
+            cache = XDAT.getSiteConfigPreferences().getCachePath();
+        } catch (final Exception e) {
+            log.debug("Unable to determine the XNAT cache path (the site configuration may not be available yet); falling back to the default temp directory for the history root.", e);
+        }
+        if (StringUtils.isBlank(cache)) {
+            cache = System.getProperty("java.io.tmpdir", "/tmp");
+        }
+        return StringUtils.appendIfMissing(cache, File.separator) + ".history/";
     }
 
     public static File BuildHistoryParentFile(File f) {

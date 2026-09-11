@@ -127,7 +127,7 @@ public abstract class ResourceModifierA implements Serializable {
         try {
             return new ArrayList<>(CatalogUtils.storeCatalogEntry(writers, filepath, (XnatResourcecatalog) abst, getProject(), extract, info, overwrite, ci));
         } catch (final UnsafeArchiveException e) {
-            // The upload was deliberately rejected (a path-traversal / "zip-slip" entry in an archive), not a
+            // The upload was deliberately rejected, not a
             // genuine storage failure -- nothing was actually stored, so persisting/creating the resource below
             // would leave behind an empty catalog entry for an upload that never happened.
             rejected = true;

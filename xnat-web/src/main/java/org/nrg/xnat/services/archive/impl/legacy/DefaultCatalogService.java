@@ -67,6 +67,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
+import org.nrg.xft.utils.zip.UnsafeArchiveException;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.archive.ResourceData;
 import org.nrg.xnat.exceptions.UnsupportedRemoteFilesOperationException;
@@ -1154,6 +1155,12 @@ public class DefaultCatalogService implements CatalogService {
                     } else {
                         FileUtils.copyFileToDirectory(file, destination);
                     }
+                } catch (UnsafeArchiveException e) {
+                    // The archive was deliberately rejected (a path-traversal / "zip-slip" entry), not a genuine
+                    // extraction failure -- never fall back to copying it in verbatim below, or the rejection is
+                    // pointless: the (still fully intact, unextracted) archive would land in the archive tree anyway
+                    // and the caller would see success.
+                    throw e;
                 } catch (IOException e) {
                     log.error("Error copying {} to {}, attempting to copy as input stream", resource.getFilename(),
                             destination, e);

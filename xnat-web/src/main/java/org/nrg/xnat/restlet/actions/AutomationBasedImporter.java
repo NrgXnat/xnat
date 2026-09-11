@@ -46,6 +46,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.zip.TarUtils;
+import org.nrg.xft.utils.zip.UnsafeArchiveException;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.event.listeners.AutomationCompletionEventListener;
@@ -414,6 +415,10 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 			final ZipI zipper = getZipper(fileName);
 			try {
 				zipper.extract(fw.getInputStream(), cacheLoc.getAbsolutePath());
+			} catch (UnsafeArchiveException e) {
+				// Surface the rejection reason specifically -- lumping it into the generic message below would
+				// hide a deliberate path-traversal rejection behind what looks like an ordinary corrupt-file error.
+				throw new ClientException(e.getMessage());
 			} catch (Exception e) {
 				throw new ClientException("Archive file is corrupt or not a valid archive file type.");
 			}

@@ -6,7 +6,6 @@
  *
  * Released under the Simplified BSD.
  */
-
 package org.nrg.xft.utils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -457,6 +456,43 @@ public  class FileUtils {
         }
 
         return p;
+    }
+
+    /**
+     * Determines whether the given relative path, once resolved against <b>destinationDir</b>, remains a canonical
+     * descendant of that directory -- e.g. a path containing {@code ../} segments or that is itself absolute may
+     * resolve outside of <b>destinationDir</b> entirely.
+     *
+     * <p>This is typically used to validate the entry names found in an uploaded archive (zip, tar, etc.) before any
+     * of the archive's contents are extracted to disk.</p>
+     *
+     * @param destinationDir The directory the relative path is expected to resolve within.
+     * @param relativePath   The relative path to validate, e.g. an entry name taken from an archive.
+     *
+     * @return {@code true} if the canonical path of <b>relativePath</b>, resolved against <b>destinationDir</b>, is
+     *         located within the canonical path of <b>destinationDir</b>; {@code false} if it resolves outside of
+     *         the destination directory.
+     *
+     * @throws IOException When an error occurs resolving the canonical path of either file.
+     */
+    public static boolean isCanonicalPath(final File destinationDir, final String relativePath) throws IOException {
+        final String destinationCanonical = destinationDir.getCanonicalPath();
+        final String targetCanonical      = new File(destinationDir, relativePath).getCanonicalPath();
+        return targetCanonical.equals(destinationCanonical) || targetCanonical.startsWith(destinationCanonical + File.separator);
+    }
+
+    /**
+     * Clears the executable permission bit (for owner, group, and other) on the given file, if the underlying file
+     * system supports it. Intended for files extracted from an archive (zip/tar/etc.): the extracted copy should not
+     * carry over any executable permission recorded in the archive's own metadata. Never call this on a directory --
+     * clearing its execute bit would make it untraversable.
+     *
+     * @param file The (regular) file to strip the executable permission from.
+     */
+    public static void clearExecutable(final File file) {
+        if (!file.setExecutable(false, false)) {
+            log.warn("Unable to clear the executable permission on {} (the file system may not support permission bits, or the process may lack permission to change them).", file.getAbsolutePath());
+        }
     }
 
 	public static File CreateTempFolder(String prefix,File directory) throws IOException
@@ -928,8 +964,20 @@ public  class FileUtils {
     }
 
     public static String BuildRootHistoryPath() {
-        final String cache = XDAT.getSiteConfigPreferences().getCachePath();
-		return (StringUtils.isNotBlank(cache) ? StringUtils.appendIfMissing(cache, File.separator) : "/") + ".history/";
+        // XDAT.getSiteConfigPreferences() throws an uncaught NullPointerException if Spring isn't fully up (e.g.
+        // running outside the web application entirely, as in unit tests, or during startup) -- fall back to the
+        // JVM's default temp directory in that case, the same way ZipUtils#getXnatCachePath does, rather than
+        // letting a routine overwrite-during-extraction call blow up with an unrelated NPE.
+        String cache = null;
+        try {
+            cache = XDAT.getSiteConfigPreferences().getCachePath();
+        } catch (final Exception e) {
+            log.debug("Unable to determine the XNAT cache path (the site configuration may not be available yet); falling back to the default temp directory for the history root.", e);
+        }
+        if (StringUtils.isBlank(cache)) {
+            cache = System.getProperty("java.io.tmpdir", "/tmp");
+        }
+        return StringUtils.appendIfMissing(cache, File.separator) + ".history/";
     }
 
     public static File BuildHistoryParentFile(File f) {

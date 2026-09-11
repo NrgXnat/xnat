@@ -25,6 +25,7 @@ import org.json.JSONObject;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.xft.utils.zip.UnsafeArchiveException;
 import org.nrg.dcm.Dcm2Jpg;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatCatalogBean;
@@ -390,6 +391,12 @@ public class FileList extends XNATCatalogTemplate {
             } catch (IllegalArgumentException e) { // XNAT-2989
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e.getMessage());
                 log.error("", e);
+            } catch (UnsafeArchiveException e) {
+                // The uploaded archive was rejected because it contains a path-traversal ("zip-slip") entry -- this
+                // is a bad request from the client, not a server error, and must not fall through to the generic
+                // 500 handler below (which would also hide the rejection reason from the client).
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, e.getMessage());
+                log.warn("Archive upload rejected", e);
             } catch (Exception e) {
                 getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e.getMessage());
                 log.error("", e);

@@ -15,9 +15,10 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nullable;
 import javax.transaction.Transactional;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -50,19 +51,19 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
-    public List<SessionData> findByLocation(String location) {
+    public boolean hasActiveSessionAtLocation(String location, @Nullable Long excludingId) {
         List<DirectArchiveSession> sessions = getDao().findByLocation(location);
-        return sessions == null ? Collections.emptyList() :
-                sessions.stream().map(DirectArchiveSession::toSessionData).collect(Collectors.toList());
+        return sessions != null && sessions.stream()
+                .filter(session -> excludingId == null || session.getId() != excludingId)
+                .anyMatch(session -> session.getStatus() != PrearcUtils.PrearcStatus.ERROR);
     }
 
     @Override
     public SessionData create(SessionData initialize) throws ArchivingException {
         String location = initialize.getUrl();
-        List<DirectArchiveSession> das = getDao().findByLocation(location);
         // Direct archive sessions are removed from db after successful archive, so only in-progress or error cases remain
         // We allow re-archive if a prior attempt errored out
-        if (das != null && das.stream().anyMatch(s -> s.getStatus() != PrearcUtils.PrearcStatus.ERROR)) {
+        if (hasActiveSessionAtLocation(location, null)) {
             throw new ArchivingException("Cannot direct archive " + initialize + " due to one or more " +
                     "direct archive sessions with location=\"" + location + "\" in a non-ERROR status");
         }
@@ -88,14 +89,20 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public SessionData setStatusToBuildingAndReturn(long id) throws NotFoundException, ArchivingException {
-        return setStatusAndReturn(id, PrearcUtils.PrearcStatus.QUEUED_BUILDING, PrearcUtils.PrearcStatus.BUILDING,
-                "buildable");
+        return setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.QUEUED_BUILDING),
+                PrearcUtils.PrearcStatus.BUILDING, "buildable");
     }
 
     @Override
     public SessionData setStatusToArchivingAndReturn(long id) throws NotFoundException, ArchivingException {
-        return setStatusAndReturn(id, PrearcUtils.PrearcStatus.QUEUED_ARCHIVING, PrearcUtils.PrearcStatus.ARCHIVING,
-                "archivable");
+        return setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.QUEUED_ARCHIVING),
+                PrearcUtils.PrearcStatus.ARCHIVING, "archivable");
+    }
+
+    @Override
+    public SessionData setStatusToDeletingAndReturn(long id) throws NotFoundException, ArchivingException {
+        return setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.RECEIVING, PrearcUtils.PrearcStatus.ERROR),
+                PrearcUtils.PrearcStatus.DELETING, "deletable");
     }
 
     @Override
@@ -158,11 +165,11 @@ public class DirectArchiveSessionHibernateServiceImpl
         update(das);
     }
 
-    private SessionData setStatusAndReturn(long id, PrearcUtils.PrearcStatus initStatus,
+    private SessionData setStatusAndReturn(long id, Set<PrearcUtils.PrearcStatus> initStatuses,
                                            PrearcUtils.PrearcStatus newStatus, String action)
             throws NotFoundException, ArchivingException {
         DirectArchiveSession das = get(id);
-        if (das.getStatus() != initStatus) {
+        if (!initStatuses.contains(das.getStatus())) {
             throw new ArchivingException("DirectArchiveSession id=" + id + " has status " + das.getStatus() +
                     ", which is not " + action + ".");
         }

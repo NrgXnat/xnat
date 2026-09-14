@@ -1,13 +1,9 @@
 package org.nrg.xnat.archive.services.impl;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -18,12 +14,14 @@ import org.mockito.Mockito;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -32,6 +30,7 @@ import org.springframework.jms.core.JmsTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -41,8 +40,9 @@ import static org.mockito.Mockito.when;
 
 /**
  * XNAT-7944: deleting a direct archive session through the user-facing API must remove the session's files from the
- * archive directory, not just the tracking row. The delete must also refuse to touch a session the archiver is working
- * on, and must leave the directory alone when it belongs to something other than the session being deleted.
+ * archive directory, not just the tracking row. The session is claimed (moved to DELETING) before any file is touched,
+ * so a session the archiver is working on is refused, and the directory is left alone when it belongs to something
+ * other than the session being deleted.
  */
 public class DirectArchiveSessionServiceImplDeleteTest {
     private static final long   SESSION_ID = 42L;
@@ -55,6 +55,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     private DirectArchiveSessionServiceImpl      service;
     private UserI                                user;
     private MockedStatic<Permissions>            mockedPermissions;
+    private MockedStatic<XDAT>                   mockedXDAT;
 
     private File arc;
     private File sessionDirectory;
@@ -70,35 +71,36 @@ public class DirectArchiveSessionServiceImplDeleteTest {
                                                                mock(GroupsAndPermissionsCache.class),
                                                                mock(PermissionsServiceI.class));
 
-        arc = temporaryFolder.newFolder("archive", PROJECT, "arc001");
-        sessionDirectory = new File(arc, "SESSION_01");
-        assertThat(sessionDirectory.mkdir()).isTrue();
-        Files.write(new File(sessionDirectory, "1.dcm").toPath(), "dicom".getBytes(StandardCharsets.UTF_8));
-        sessionXml = new File(arc, "SESSION_01.xml");
-        Files.write(sessionXml.toPath(), "<xml/>".getBytes(StandardCharsets.UTF_8));
+        sessionDirectory = temporaryFolder.newFolder("archive", PROJECT, "arc001", "SESSION_01");
+        arc              = sessionDirectory.getParentFile();
+        sessionXml       = new File(arc, "SESSION_01.xml");
+        Files.writeString(new File(sessionDirectory, "1.dcm").toPath(), "dicom");
+        Files.writeString(sessionXml.toPath(), "<xml/>");
 
         mockedPermissions = Mockito.mockStatic(Permissions.class);
         mockedPermissions.when(() -> Permissions.canDeleteProject(user, PROJECT)).thenReturn(true);
+        // No backup-to-cache: MoveToCache deletes outright.
+        mockedXDAT = Mockito.mockStatic(XDAT.class);
+        mockedXDAT.when(() -> XDAT.getBoolSiteConfigurationProperty("backupDeletedToCache", false)).thenReturn(false);
     }
 
     @After
     public void tearDown() {
+        mockedXDAT.closeOnDemand();
         mockedPermissions.closeOnDemand();
-        assertThat(arc.setWritable(true)).isTrue();
+        arc.setWritable(true);
     }
 
     private SessionData sessionIn(final PrearcStatus status) {
-        return new SessionData().setProject(PROJECT).setTag("1.2.3").setName("SESSION_01").setFolderName("SESSION_01")
-                                .setUrl(sessionDirectory.getAbsolutePath()).setStatus(status);
+        final SessionData session = new SessionData().setProject(PROJECT).setTag("1.2.3").setName("SESSION_01")
+                                                     .setFolderName("SESSION_01").setUrl(sessionDirectory.getAbsolutePath()).setStatus(status);
+        session.setId(SESSION_ID);
+        return session;
     }
 
-    private SessionData stubSession(final PrearcStatus status) throws NotFoundException {
-        final SessionData session = sessionIn(status);
-        session.setId(SESSION_ID);
-        when(hibernateService.getSessionData(SESSION_ID)).thenReturn(session);
-        when(hibernateService.getOverwriteMode(SESSION_ID)).thenReturn(null);
-        when(hibernateService.findByLocation(sessionDirectory.getAbsolutePath())).thenReturn(Collections.singletonList(session));
-        return session;
+    private void stubDeletableSession() throws Exception {
+        when(hibernateService.getSessionData(SESSION_ID)).thenReturn(sessionIn(PrearcStatus.ERROR));
+        when(hibernateService.setStatusToDeletingAndReturn(SESSION_ID)).thenReturn(sessionIn(PrearcStatus.DELETING));
     }
 
     private void assertFilesIntact() {
@@ -113,8 +115,8 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     }
 
     @Test
-    public void deletingAnErrorSessionRemovesDirectoryXmlAndRow() throws Exception {
-        stubSession(PrearcStatus.ERROR);
+    public void deletingAClaimedSessionRemovesDirectoryXmlAndRow() throws Exception {
+        stubDeletableSession();
 
         service.delete(SESSION_ID, user);
 
@@ -123,49 +125,34 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     }
 
     @Test
-    public void deletingAReceivingSessionRemovesDirectoryXmlAndRow() throws Exception {
-        stubSession(PrearcStatus.RECEIVING);
+    public void aSessionThatCannotBeClaimedIsRefusedWithConflict() throws Exception {
+        when(hibernateService.getSessionData(SESSION_ID)).thenReturn(sessionIn(PrearcStatus.ARCHIVING));
+        when(hibernateService.setStatusToDeletingAndReturn(SESSION_ID)).thenThrow(new ArchivingException("not deletable"));
 
-        service.delete(SESSION_ID, user);
-
-        assertFilesGone();
-        verify(hibernateService).delete(SESSION_ID);
-    }
-
-    @Test
-    public void deletingASessionTheArchiverIsWorkingOnIsRefusedWithConflict() throws Exception {
-        final List<PrearcStatus> inFlight = Arrays.asList(PrearcStatus.BUILDING, PrearcStatus.ARCHIVING,
-                                                          PrearcStatus.QUEUED_BUILDING, PrearcStatus.QUEUED_ARCHIVING);
-        for (final PrearcStatus status : inFlight) {
-            stubSession(status);
-
-            assertThatThrownBy(() -> service.delete(SESSION_ID, user))
-                    .as("status %s", status)
-                    .isInstanceOf(ClientException.class)
-                    .extracting(e -> ((ClientException) e).getStatus())
-                    .isEqualTo(Status.CLIENT_ERROR_CONFLICT);
-
-            assertFilesIntact();
-        }
-        verify(hibernateService, never()).delete(anyLong());
-    }
-
-    @Test
-    public void deletingWithoutProjectDeletePermissionLeavesFilesAndRow() throws Exception {
-        stubSession(PrearcStatus.ERROR);
-        mockedPermissions.when(() -> Permissions.canDeleteProject(user, PROJECT)).thenReturn(false);
-
-        assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(InvalidPermissionException.class);
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user))
+                .isInstanceOfSatisfying(ClientException.class,
+                                        e -> assertThat(e.getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
 
         assertFilesIntact();
         verify(hibernateService, never()).delete(anyLong());
     }
 
     @Test
-    public void deletingAMergeSessionKeepsTheArchivedDirectory() throws Exception {
-        // With an overwrite mode set, the "location" is an already-archived session that this direct archive
-        // session was appending to. Those files are not ours to delete.
-        stubSession(PrearcStatus.ERROR);
+    public void deletingWithoutProjectDeletePermissionClaimsNothingAndLeavesFilesAndRow() throws Exception {
+        stubDeletableSession();
+        mockedPermissions.when(() -> Permissions.canDeleteProject(user, PROJECT)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(InvalidPermissionException.class);
+
+        assertFilesIntact();
+        verify(hibernateService, never()).setStatusToDeletingAndReturn(anyLong());
+        verify(hibernateService, never()).delete(anyLong());
+    }
+
+    @Test
+    public void deletingASessionReceivedWithOverwriteModeKeepsTheDirectory() throws Exception {
+        // Overwrite mode means the session may have been appending into an already-archived session's directory.
+        stubDeletableSession();
         when(hibernateService.getOverwriteMode(SESSION_ID)).thenReturn("append");
 
         service.delete(SESSION_ID, user);
@@ -175,13 +162,11 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     }
 
     @Test
-    public void deletingAnErrorSessionKeepsFilesWhenAnotherActiveSessionSharesTheLocation() throws Exception {
+    public void deletingKeepsFilesWhenAnotherActiveSessionSharesTheLocation() throws Exception {
         // create() allows a new session at the same location once the old one has errored, so the directory may
         // now belong to a newer session that is still receiving.
-        final SessionData stale = stubSession(PrearcStatus.ERROR);
-        final SessionData newer = sessionIn(PrearcStatus.RECEIVING);
-        newer.setId(43L);
-        when(hibernateService.findByLocation(sessionDirectory.getAbsolutePath())).thenReturn(Arrays.asList(stale, newer));
+        stubDeletableSession();
+        when(hibernateService.hasActiveSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenReturn(true);
 
         service.delete(SESSION_ID, user);
 
@@ -191,8 +176,8 @@ public class DirectArchiveSessionServiceImplDeleteTest {
 
     @Test
     public void deletingWhenTheDirectoryIsAlreadyGoneStillRemovesTheRow() throws Exception {
-        stubSession(PrearcStatus.ERROR);
-        FileUtils.deleteDirectory(sessionDirectory);
+        stubDeletableSession();
+        org.apache.commons.io.FileUtils.deleteDirectory(sessionDirectory);
         assertThat(sessionXml.delete()).isTrue();
 
         service.delete(SESSION_ID, user);
@@ -210,13 +195,14 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     }
 
     @Test
-    public void aFailedFileDeleteLeavesTheRowSoTheUserCanRetry() throws Exception {
-        stubSession(PrearcStatus.ERROR);
+    public void aFailedFileDeleteMarksTheSessionErrorAndKeepsTheRowForRetry() throws Exception {
+        stubDeletableSession();
         // A read-only parent makes removing the session directory fail.
         assertThat(arc.setWritable(false)).isTrue();
 
         assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(ServerException.class);
 
-        verify(hibernateService, never()).delete(eq(SESSION_ID));
+        verify(hibernateService).setStatusToError(eq(SESSION_ID), any(IOException.class));
+        verify(hibernateService, never()).delete(anyLong());
     }
 }

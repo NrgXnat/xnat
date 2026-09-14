@@ -62,7 +62,8 @@ public class DirectArchiveSessionApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(path="{id}", method = DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation(value = "Delete direct archive session")
-    public ResponseEntity<Void> delete(@PathVariable long id) throws InvalidPermissionException, NotFoundException {
+    public ResponseEntity<Void> delete(@PathVariable long id)
+            throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
         directArchiveSessionService.delete(id, getSessionUser());
         return new ResponseEntity<>(HttpStatus.OK);
     }

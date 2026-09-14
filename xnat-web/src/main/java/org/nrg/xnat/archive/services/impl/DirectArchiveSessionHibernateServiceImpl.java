@@ -4,9 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.daos.DirectArchiveSessionDao;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
@@ -18,6 +15,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nullable;
 import javax.transaction.Transactional;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,15 +35,6 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
-    public void delete(long id, UserI user) throws InvalidPermissionException, NotFoundException {
-        DirectArchiveSession das = get(id);
-        if (!Permissions.canDeleteProject(user, das.getProject())) {
-            throw new InvalidPermissionException(das.getProject());
-        }
-        delete(das);
-    }
-
-    @Override
     public SessionData findBySessionData(SessionData incoming) {
         DirectArchiveSession das = getDao().findBySessionData(incoming);
         return das == null ? null : das.toSessionData();
@@ -58,6 +47,13 @@ public class DirectArchiveSessionHibernateServiceImpl
             throw new NotFoundException("No matching direct archive session");
         }
         return das.toSessionData();
+    }
+
+    @Override
+    public List<SessionData> findByLocation(String location) {
+        List<DirectArchiveSession> sessions = getDao().findByLocation(location);
+        return sessions == null ? Collections.emptyList() :
+                sessions.stream().map(DirectArchiveSession::toSessionData).collect(Collectors.toList());
     }
 
     @Override

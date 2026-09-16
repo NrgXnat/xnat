@@ -148,7 +148,7 @@ spring-oauth2 = "2.5.2.RELEASE"
 spring-security = "5.7.14"
 spring-test-junit5 = "1.5.0"
 springockito = "1.0.5"
-swagger = "2.9.2"
+swagger = "2.10.5"
 testcontainers = "1.21.4"
 tomcat-embed = "9.0.93"
 torque = "3.3"
@@ -405,6 +405,7 @@ spring-test = { group = "org.springframework", name = "spring-test", version.ref
 spring-tx = { group = "org.springframework", name = "spring-tx", version.ref = "spring-framework" }
 spring-web = { group = "org.springframework", name = "spring-web", version.ref = "spring-framework" }
 spring-webmvc = { group = "org.springframework", name = "spring-webmvc", version.ref = "spring-framework" }
+springfox-spring-webmvc = { group = "io.springfox", name = "springfox-spring-webmvc", version.ref = "swagger" }
 springfox-swagger-ui = { group = "io.springfox", name = "springfox-swagger-ui", version.ref = "swagger" }
 springfox-swagger2 = { group = "io.springfox", name = "springfox-swagger2", version.ref = "swagger" }
 swinglabs-wizard = { group = "org.swinglabs", name = "wizard", version.ref = "wizard" }

@@ -185,8 +185,11 @@ via `activemq-openwire-legacy-5.19.0`) — a broker the Tomcat 10 work never exe
   `context.xml` left stock (the `<Manager>` diff vs 9 is commentary — both commented out, Tomcat inverted the default
   wording). `bin/setenv.sh` copied verbatim from the 9 tree; it pins `CATALINA_HOME="/home/xnat/tomcat"`, the symlink,
   so it is version-portable.
-- **WAR:** `xnat-web-1.11.0-SNAPSHOT.war`, 254,596,031 bytes, clean-built from **`f35c55964d`** — the commit named in
-  the manifest of the `1.11.0-SNAPSHOT` jar on jfrog (tracker 1-38), so `buildInfo` matches the published artifact.
+- **WAR:** `xnat-web-1.11.0-SNAPSHOT.war`, 254,596,031 bytes, clean-built from **`f35c55964d`**. *Correction, same
+  day:* the published WAR **does** exist on jfrog — `org/nrg/xnat/web/xnat-web/1.11.0-SNAPSHOT/`, 254,596,153 bytes,
+  manifest `Implementation-Sha: f35c55964d`, `Build-Number: Manual` — and was missed by a probe that only checked the
+  `web` library-jar path (tracker 1-38). What is deployed is therefore a same-commit rebuild, 122 bytes apart from
+  the published bytes; `buildInfo` reports the same sha and branch either way.
 - **Plugins:** the 22 jakarta jars. The 9 javax jars moved aside to `plugins.bak-javax-<stamp>` (moved, never overlaid).
 
 **Cutover.** This box uses the newer CI layout — `tomcat-{9,10,11}` side by side and `/home/xnat/tomcat` a **symlink**

@@ -817,9 +817,14 @@ carries snapshot `1.11.0-20260910.185426-1` (timestamp `20260910.185426`, buildN
   here.
 - **It is a point-in-time snapshot, not a CI feed.** `Build-Number: Manual` means 1-13 (CI flip) is still open;
   the artifact will lag the branch until CI publishes on push. Anyone resolving it gets `f35c55964d`'s API.
-- **It is the library jar, not a WAR** — jfrog has never hosted XNAT WARs (the 1.10.1 *release* is jar-only
-  too: `web-1.10.1.jar` 200, `web-1.10.1.war` 404). "Deploy the published 1.11.0-SNAPSHOT" therefore means
-  *build the WAR from the manifest's commit*; done that way for dave-tc11 (see `tomcat11-upgrade-plan.md`).
+- **The WAR is published too** — *corrected 2026-09-16, same session:* this bullet first read "it is the library
+  jar, not a WAR; jfrog has never hosted XNAT WARs", concluded from probes of `org/nrg/xnat/web/` (the `web`
+  library jar) and two guessed paths. The WAR lives under a path none of them checked:
+  `org/nrg/xnat/web/xnat-web/1.11.0-SNAPSHOT/xnat-web-1.11.0-20260910.185426-1.war` (group
+  `org.nrg.xnat.web`, artifactId `xnat-web`; 254,596,153 bytes; manifest `Implementation-Sha: f35c55964d`,
+  `Build-Number: Manual` — same commit and build as the jar). The probe was never capable of finding it, so
+  its negative was not a finding. dave-tc11 was consequently deployed with a *rebuild* of `f35c55964d` rather
+  than the published bytes — source-identical, 122 bytes apart (see `tomcat11-upgrade-plan.md`).
 **Method note.** Artifactory's `api/search/artifact` returns `{"results":[]}` anonymously **even for artifacts
 that exist** (positive control: `container-service*` → 0 hits, while its `maven-metadata.xml` fetches fine).
 Its empties are inconclusive; the capable probe is a direct `maven-metadata.xml` GET plus a `HEAD` on the

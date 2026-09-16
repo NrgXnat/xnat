@@ -60,10 +60,47 @@ touches any of those needs source changes too, typically a day, most of it mecha
 
 ## Before you start: getting 1.11 on your machine
 
-**1.11 is not released, and `1.11.0-SNAPSHOT` is not published to the XNAT Artifactory** — the snapshot
-repository currently carries nothing newer than `1.10.1-SNAPSHOT`. Your plugin therefore cannot resolve
-1.11 from any remote repository. You have to build core yourself and publish it to your own local Maven
-repository first:
+**`1.11.0-SNAPSHOT` is published to the XNAT Artifactory** (since 2026-09-10 — snapshot
+`1.11.0-20260910.185426-1`, built from `feature/jakarta-cutover` at `f35c55964d`, `Build-Number: Manual`). 1.11
+itself is unreleased: what exists is a timestamped snapshot, and it moves when someone publishes again. Which of
+the two routes below you want depends on what you are doing, not on which is "proper".
+
+### Route 1 — resolve it from the Artifactory (nothing to build)
+
+Most plugins already list the XNAT repositories, in which case bumping `vXnat` is the whole change:
+
+```groovy
+repositories {
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
+    mavenCentral()
+}
+```
+
+Every coordinate a plugin build reaches for is published at that version — verified 2026-09-16, all at
+timestamp `20260910.185426`: `org.nrg:parent` (the BOM), `org.nrg.xnat:web`, `org.nrg.xdat:core`,
+`org.nrg:framework`, `org.nrg:prefs`, `org.nrg:notify`, `org.nrg:config`, `org.nrg:automation`, and
+`xnat-data-builder` (both the artifact and its Gradle plugin-marker coordinate). The deployable WAR is there
+too, as `org.nrg.xnat.web:xnat-web`. To see which snapshot you are about to build against, ask the repository:
+
+```bash
+curl -s https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.11.0-SNAPSHOT/maven-metadata.xml \
+  | grep -E '<timestamp>|<buildNumber>'
+```
+
+> **The one trap on this route: a stale local publish silently wins.** `mavenLocal()` is listed first in most
+> plugin builds, so an older `1.11.0-SNAPSHOT` sitting in `~/.m2` from a previous session shadows the
+> Artifactory copy — and because the version string is identical, nothing tells you which one you got. If you
+> are switching to this route, clear it: `rm -rf ~/.m2/repository/org/nrg`.
+
+Because the publish is manual (not a CI feed — tracker 1-13 is still open), the snapshot can lag the branch:
+what you resolve is `f35c55964d`'s API until someone publishes again.
+
+### Route 2 — build core yourself
+
+Still the right move in three cases: you are **changing core** alongside your plugin; you need a **cutover
+commit newer** than the published snapshot; or you want the **Docker test stack**, which lives in the same
+clone (next section). Clone core next to your plugin and publish it locally:
 
 ```bash
 git clone https://github.com/NrgXnat/xnat.git
@@ -95,22 +132,26 @@ dependency resolution happens, with an error about the plugin rather than about 
 | | |
 |---|---|
 | Build against | `vXnat = "1.11.0-SNAPSHOT"` |
-| Resolves from | `~/.m2` — your local publish. Keep `mavenLocal` scoped to `org.nrg.*` (see J1) |
-| Once 1.11 releases | `1.11.0` from the release repository, and this step goes away |
+| Resolves from | the Artifactory snapshot repo by default; `~/.m2` only if you published locally — and then keep `mavenLocal` scoped to `org.nrg.*` (see J1) so it cannot shadow third-party artifacts |
+| Once 1.11 releases | `1.11.0` from the release repository, and the snapshot question goes away |
 
-**Why this matters more than it looks:** skipping it produces a dependency-resolution failure that names
-*your plugin's* dependency rather than the missing artifact. The tempting fix — dropping `vXnat` back to a
-version that does resolve — silently puts you back on the javax line, where everything builds and nothing
-works on 1.11.
+**Why the version matters more than it looks:** a resolution failure names *your plugin's* dependency rather
+than the missing artifact. The tempting fix — dropping `vXnat` back to a version that does resolve — silently
+puts you back on the javax line, where everything builds and nothing works on 1.11. If `1.11.0-SNAPSHOT` will
+not resolve, the causes are (in order) a missing `libs-snapshot` repository entry, a stale `~/.m2` copy, or an
+unscoped `mavenLocal()` — never the version.
 
-That clone is also where this guide and the agent handoff live, so keep it around.
+This guide and the agent handoff live in the clone; if you took Route 1 and have no clone, read them on the
+branch: [`plugin-migration-guide.md`](https://github.com/NrgXnat/xnat/blob/feature/jakarta-cutover/docs/plugin-migration-guide.md)
+and [`jakarta-plugin-port-handoff.md`](https://github.com/NrgXnat/xnat/blob/feature/jakarta-cutover/docs/ai/jakarta-plugin-port-handoff.md).
 
 ### The same clone is your test instance
 
 You need a running 1.11 instance to finish a port — a plugin that compiles can still fail at load, and
 that failure is invisible until you boot it (see *Compile‑clean is not boot‑clean*). You do **not** need a
-server from anyone: the clone you just made ships a Docker stack that boots the cutover WAR on Tomcat
-10.1 / JDK 21, with PostgreSQL and ActiveMQ alongside.
+server from anyone: the core clone ships a Docker stack that boots the cutover WAR on Tomcat 10.1 / JDK 21,
+with PostgreSQL and ActiveMQ alongside. You need the clone for this even on Route 1 — for
+`docker-compose.yml` and the scripts — but not a core build (see below).
 
 ```bash
 ./docker/stage-war.sh                      # builds :xnat-web:war into the docker context
@@ -121,6 +162,16 @@ docker compose up --build                  # first boot runs schema creation; gi
 ```
 
 Then read the log — `docker compose logs -f xnat` — and confirm your plugin is named as loaded.
+
+> **Skip the core build on Route 1.** `stage-war.sh` runs `./gradlew :xnat-web:war` and copies the result to
+> `docker-context/xnat.war`, the only thing the Dockerfile reads. If you resolved core from the Artifactory,
+> fetch the published WAR into that path instead and skip the 20-minute Gradle run:
+> ```bash
+> curl -L -o docker-context/xnat.war \
+>   https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/xnat/web/xnat-web/1.11.0-SNAPSHOT/xnat-web-1.11.0-20260910.185426-1.war
+> ```
+> That URL names one specific build; for whatever is newest, read `maven-metadata.xml` in the same directory
+> and substitute the timestamp it reports.
 
 Four things about this that bite people:
 

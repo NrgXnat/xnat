@@ -75,6 +75,12 @@ a cycle and, worse, invites you to "fix" code that was never broken.
 Watch for: coordinate renames (`turbine:turbine`, `velocity-engine-core`), the `-jakarta` Hibernate
 artifacts, `mavenLocal` scoping, and the JDK 21 toolchain with `fork = true`.
 
+**If `1.11.0-SNAPSHOT` itself will not resolve, do not downgrade `vXnat`.** It is published to the XNAT
+Artifactory (`libs-snapshot`, since 2026-09-10), so the causes are, in order: the `libs-snapshot` repository
+missing from the build, a stale `~/.m2` copy shadowing it, or an unscoped `mavenLocal()`. Check those three,
+then stop and report — a lower version that *does* resolve is the javax line, which builds and then kills the
+webapp at load.
+
 ---
 
 ## Phase 2 — Mechanical source sweep (guide §J2)
@@ -133,8 +139,11 @@ Then **deploy to a real 1.11 instance and read the startup log.** This is not op
 
 ### Where the instance comes from — you create it
 
-Do not wait to be given a server, and do not treat this step as the human's job. The XNAT clone the human
-already made for `publishToMavenLocal` ships the stack: Tomcat 10.1 / JDK 21 + PostgreSQL + ActiveMQ.
+Do not wait to be given a server, and do not treat this step as the human's job. The XNAT core clone ships
+the stack — Tomcat 10.1 / JDK 21 + PostgreSQL + ActiveMQ — and is needed for it even when core was resolved
+from the Artifactory rather than built (the guide's *Before you start* explains both routes; on the
+Artifactory route, fetch the published WAR into `docker-context/xnat.war` instead of running `stage-war.sh`'s
+Gradle build).
 
 ```bash
 cd <xnat-clone>

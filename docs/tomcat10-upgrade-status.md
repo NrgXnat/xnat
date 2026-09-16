@@ -823,8 +823,8 @@ carries snapshot `1.11.0-20260910.185426-1` (timestamp `20260910.185426`, buildN
   `org/nrg/xnat/web/xnat-web/1.11.0-SNAPSHOT/xnat-web-1.11.0-20260910.185426-1.war` (group
   `org.nrg.xnat.web`, artifactId `xnat-web`; 254,596,153 bytes; manifest `Implementation-Sha: f35c55964d`,
   `Build-Number: Manual` — same commit and build as the jar). The probe was never capable of finding it, so
-  its negative was not a finding. dave-tc11 was consequently deployed with a *rebuild* of `f35c55964d` rather
-  than the published bytes — source-identical, 122 bytes apart (see `tomcat11-upgrade-plan.md`).
+  its negative was not a finding. dave-tc11 was consequently first deployed with a *rebuild* of `f35c55964d`, then swapped for the
+  published bytes the same afternoon (sha1-verified; see `tomcat11-upgrade-plan.md`).
 **Method note.** Artifactory's `api/search/artifact` returns `{"results":[]}` anonymously **even for artifacts
 that exist** (positive control: `container-service*` → 0 hits, while its `maven-metadata.xml` fetches fine).
 Its empties are inconclusive; the capable probe is a direct `maven-metadata.xml` GET plus a `HEAD` on the

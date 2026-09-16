@@ -5,7 +5,7 @@ Status tracker for the staged real port (see the full plan and
 [`tomcat9-deploy-stack.md`](tomcat9-deploy-stack.md) for detail). Branch: `feature/jakarta-cutover`
 (the Phase-0 baseline lives on `feature/turbine-5x`).
 
-**Last updated:** 2026-09-10 (1-41: logback 1.5 MDC-adapter NPE in a hand-built `LoggerContext`; `:xnat-web:test` green)
+**Last updated:** 2026-09-16 (1-38 resolved: `1.11.0-SNAPSHOT` published to jfrog, manually; Tomcat 11.0.26 deployed to a real box — see `tomcat11-upgrade-plan.md`)
 
 **Legend:** 🟢 Complete · 🟡 In progress · ⚪ Open
 
@@ -781,7 +781,7 @@ be a separate commit either before or after the cutover merges — with the reno
 `git add --renormalize .` so reviewers can skip it wholesale. D1 tells reviewers to use `-w` and asks them
 not to request a line-ending fix in the cutover PR, pointing here.
 
-**1-38 ⚪ — [open, needs a decision] no 1.11 snapshot is published, so every plugin author must build core
+**1-38 🟢 — [decided: (a), published 2026-09-10] no 1.11 snapshot is published, so every plugin author must build core
 themselves** (2026-08-25). Surfaced while writing the plugin-porting docs, from the question "what version
 does a plugin actually build against?" **Measured:** `nrgxnat.jfrog.io/nrgxnat/libs-snapshot`'s
 `org/nrg/parent/maven-metadata.xml` lists nothing newer than **`1.10.1-SNAPSHOT`**. There is **no published
@@ -805,6 +805,25 @@ them to build core is a large tax and an easy place to go wrong.
 step in `docs/plugin-migration-guide.md` and on the published porting page, and the agent prompt tells the
 agent to **stop and report** rather than downgrade `vXnat` if resolution fails. Those instructions should be
 simplified once (a) lands.
+
+**RESOLVED 2026-09-16 — (a) happened, manually.** `1.11.0-SNAPSHOT` is now on
+`nrgxnat.jfrog.io/nrgxnat/libs-snapshot`. **Measured:** `org/nrg/xnat/web/1.11.0-SNAPSHOT/maven-metadata.xml`
+carries snapshot `1.11.0-20260910.185426-1` (timestamp `20260910.185426`, buildNumber 1); the jar is 8 MB and its
+`META-INF/MANIFEST.MF` reads `Implementation-Sha: f35c55964d`, `Implementation-Branch: feature/jakarta-cutover`,
+`Build-Date: Thu Sep 10 18:54:27 UTC 2026`, **`Build-Number: Manual`**. Three consequences:
+- **Plugin authors no longer need to build core.** The `mavenLocal` prerequisite in `plugin-migration-guide.md`
+  ("Before you start"), `ai/jakarta-plugin-port-handoff.md` and the published porting page is now *optional*,
+  not required — those three still say the opposite and need the simplification this item promised. Not done
+  here.
+- **It is a point-in-time snapshot, not a CI feed.** `Build-Number: Manual` means 1-13 (CI flip) is still open;
+  the artifact will lag the branch until CI publishes on push. Anyone resolving it gets `f35c55964d`'s API.
+- **It is the library jar, not a WAR** — jfrog has never hosted XNAT WARs (the 1.10.1 *release* is jar-only
+  too: `web-1.10.1.jar` 200, `web-1.10.1.war` 404). "Deploy the published 1.11.0-SNAPSHOT" therefore means
+  *build the WAR from the manifest's commit*; done that way for dave-tc11 (see `tomcat11-upgrade-plan.md`).
+**Method note.** Artifactory's `api/search/artifact` returns `{"results":[]}` anonymously **even for artifacts
+that exist** (positive control: `container-service*` → 0 hits, while its `maven-metadata.xml` fetches fine).
+Its empties are inconclusive; the capable probe is a direct `maven-metadata.xml` GET plus a `HEAD` on the
+artifact URL.
 
 **1-39 🟢 — [decided: do NOT squash `feature/jakarta-cutover`] whether to squash before opening the core
 PR** (2026-08-26). Recorded here because it had been analysed twice from scratch, in conversation only, and

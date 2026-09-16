@@ -8,6 +8,12 @@ Tomcat 10 branch (`feature/jakarta-cutover`) has merged; sequencing assumes it l
 the scout found is **A-5's parameter-parsing throw**, and it is sharper and more specific than
 the migration guide implied — see the A-1/A-5 rows below. Rest of Track A not started.
 
+**Update 2026-09-16: first real-box deployment.** The jakarta WAR (`f35c55964d`) + the 22-plugin set is running on
+**Apache Tomcat 11.0.26** on `dave-tc11` (Ubuntu 24.04, Java 21, ActiveMQ **Artemis** 2.40 broker), against the
+box's existing 1.10 database. Boots clean; the A-4 connector setting is in place and verified. Details in the
+[deployment log](#dave-tc11-deployment-log-2026-09-16) at the end. This is a bare-metal/CI-box path — A-7's
+compose/Dockerfile flip is still to do.
+
 ---
 
 ## Evidence base
@@ -64,10 +70,10 @@ Spring 6.2 runs on Tomcat 11 as a runtime (Servlet 6.1 is backward-compatible wi
 | A-1 | **Scout** (analog of 1-14): run the current jakarta WAR unmodified on `tomcat:11.0-jdk21-temurin` via `--build-arg TOMCAT_BASE=...`, disposable DB copy, full harness (health, goldens, S1600, Playwright) | 🟢 **Done 2026-07-20.** Boots clean (0 SEVERE/ERROR beyond the expected empty-archive notice), Apache Tomcat/11.0.24 confirmed in-container. Health 8/8, goldens 10/11 (the 1 diff is the same empty-archive 404 every fresh scratch instance shows — not a T11 regression), S1600 24/24, `xnat-web` Playwright 15/15 — all byte-for-byte matching the Tomcat 10.1 baseline. **Surfaced the real finding: see A-5.** Container change itself is a non-event for XNAT |
 | A-2 | Catalog bumps: `servlet-api` 6.0.0 → 6.1.0; `jsp-api` 3.1.1 → 4.0.0; `jakarta-el` 5.0.1 → 6.0.1; `expressly` 5.0.0 → 6.0.0; `tomcat-embed` 10.1.x → 11.0.x | All verified available. Turbine 7 already targets servlet-api 6.1 |
 | A-3 | JSTL on JSP 4.0: glassfish JSTL has no 4.0 line (3.0.1 latest) — verify runtime compat in the scout | Our `<xnat:import>` tag already replaces the broken `c:import var=` capture, which reduces JSTL surface |
-| A-4 | **`maxParameterCount` 10,000 → 1,000**: measure XNAT's largest form posts (site-config save, user edit, search forms) and set the connector value explicitly in `server.xml`/Dockerfile if any exceed ~800 | 🟡 **Scouted 2026-07-20 — real, but easy.** POST-body probe (500/1500 form fields) confirmed: T10.1 accepts 1,500 params (200), T11 rejects (500) at the documented 1,000 default. Fix is a one-line connector attribute (`maxParameterCount="10000"` or whatever XNAT's largest real form needs) — no code change. Still need the actual max-fields measurement across site-config/user-edit/search forms before setting the number |
+| A-4 | **`maxParameterCount` 10,000 → 1,000**: measure XNAT's largest form posts (site-config save, user edit, search forms) and set the connector value explicitly in `server.xml`/Dockerfile if any exceed ~800 | 🟡 **Scouted 2026-07-20 — real, but easy.** POST-body probe (500/1500 form fields) confirmed: T10.1 accepts 1,500 params (200), T11 rejects (500) at the documented 1,000 default. Fix is a one-line connector attribute (`maxParameterCount="10000"` or whatever XNAT's largest real form needs) — no code change. Still need the actual max-fields measurement across site-config/user-edit/search forms before setting the number. **Deployed 2026-09-16 on dave-tc11 with `maxParameterCount="10000"`** on the 8080 connector; re-ran the probe on the real box: **1,500-param POST → 200** (500-param control → 200). Two facts from that box worth knowing: the CI-templated Tomcat **9** `server.xml` already sets `maxParameterCount="1000"` explicitly — so CI has been running at T11's limit all along and nothing exceeded it in practice; and stock 11.0.26 `server.xml` does not set it, so a bare install silently gets 1,000 |
 | A-5 | **`getParameter()` now throws on parse failure**: audit Turbine parameter parsing (fulcrum-parser), Restlet form handling, and `XDATAjaxServlet` for paths that previously tolerated malformed bodies; add a malformed-body probe to S1600 | 🟡 **Scouted 2026-07-20 — sharper than the guide implied, and it's the same mechanism as A-4.** Both the malformed-percent-encoding probe and the too-many-params probe throw the identical `org.apache.tomcat.util.http.InvalidParameterException` from `Parameters.processParameters` (`Parameters.java:433` decode / `:425` count) — confirmed via the container's `localhost.<date>.log` stack traces (not in `docker logs`; Restlet/servlet exceptions there log via JUL). **The trigger path is Restlet's own bridge code**, not XNAT's: `org.restlet.ext.servlet.internal.ServletCall.getRequestEntity()` calls `HttpServletRequest.getParameterMap()` while building the request `Entity` for *every* request through `XNATRestletServlet` (i.e. all of `/data/*` and `/REST/*`), which is what turns a previously-tolerated malformed or oversized query string/body into an unhandled 500 for the entire REST surface, not just isolated form posts. (The call passes through Spring Security's `StrictHttpFirewall$StrictFirewalledRequest.getParameterMap()` on the way, but that's a passthrough wrapper — not the source.) Because both failure modes share one root cause, A-4's connector fix (raise `maxParameterCount`) closes the count case for free; the decode-failure case still needs either a Restlet-layer error handler that maps this exception to a clean 4xx, or upstream Tomcat/Restlet guidance — evaluate both before committing. Add both probes (malformed encoding, oversized param count) to S1600 as permanent regression guards once the fix lands |
 | A-6 | Cookie quote-handling and byte→char strictness: covered by the harness; watch login/session cookies in the scout | |
-| A-7 | Flip compose/Dockerfile default to `tomcat:11.0-jdk21-temurin`; goldens re-baseline if headers shift | Same mechanics as the 10.1 flip (1-13) |
+| A-7 | Flip compose/Dockerfile default to `tomcat:11.0-jdk21-temurin`; goldens re-baseline if headers shift | Same mechanics as the 10.1 flip (1-13). **Real-box path done first (2026-09-16):** dave-tc11 runs 11.0.26 from a verified Apache tarball, not the container image — see the deployment log. Compose flip still open |
 | A-8 | Verification: boot test, goldens, S1600 24/24, Playwright 15/15, cross-version diff (t10 vs t11 on same DB — reuse the WAR-swap + pg_dump bracket procedure) | The harness is the asset; all of it transfers unchanged |
 
 Estimated shape: comparable to the 1-14 + 1-13 work — days, not weeks, if the scout is clean.
@@ -119,6 +125,8 @@ Ordered by dependency; B-1 is the long pole and is prerequisite to B-2.
 3. Ship Track A as the "Tomcat 11 migration": A-2 (catalog bumps) → A-3 (re-verify JSTL against
    the real JSP 4.0 API) → the A-4/A-5 fix (raise `maxParameterCount` after measuring XNAT's
    largest form; decide the Restlet-layer handling for the decode-failure case) → A-6/A-7/A-8.
+   *(2026-09-16: the A-4 connector setting and a full boot on 11.0.26 are proven on a real box — dave-tc11 —
+   ahead of the catalog bumps; A-2/A-3 remain the gating code changes.)*
 4. Kick off B-1 (Hibernate 6 on Spring 6.2) as its own tracked phase with a compile-picture
    spike; B-2..B-7 follow as one coordinated platform phase, mirroring the Phase-0/Phase-1
    staging that worked for Tomcat 10.
@@ -160,3 +168,57 @@ port 8081, alongside the untouched Tomcat 10.1 stack on 8080:
   just XNAT's own form-handling code.
 - Teardown: scout container, image, and `xnat_t11` database all removed; confirmed the Tomcat
   10.1 stack on :8080 unaffected throughout (`data/projects?format=json` → 200 after teardown).
+
+---
+
+## dave-tc11 deployment log (2026-09-16)
+
+First XNAT-on-Tomcat-11 outside a container. Box: `dave-tc11`, Ubuntu 24.04.5, Java 21.0.12, Postgres with an
+existing **1.10.0** `xnat` DB (reused, not wiped), **ActiveMQ Artemis 2.40.0** on 61616 (`artemis.service`, OpenWire
+via `activemq-openwire-legacy-5.19.0`) — a broker the Tomcat 10 work never exercised.
+
+**What went in.**
+- **Tomcat 11.0.26**, fresh from `dlcdn.apache.org`, SHA-512 verified against Apache's digest locally *and* on the box.
+  Installed as `/home/xnat/tomcat-11`; the pre-staged 11.0.25 kept as `tomcat-11.0.25.bak`. Stock `webapps/`
+  (ROOT, docs, examples, manager, host-manager) removed. `conf/server.xml`: only the 8080 connector edited —
+  `connectionTimeout="20000" redirectPort="8443"` (as the CI 9 template) plus **`maxParameterCount="10000"`** (A-4).
+  `context.xml` left stock (the `<Manager>` diff vs 9 is commentary — both commented out, Tomcat inverted the default
+  wording). `bin/setenv.sh` copied verbatim from the 9 tree; it pins `CATALINA_HOME="/home/xnat/tomcat"`, the symlink,
+  so it is version-portable.
+- **WAR:** `xnat-web-1.11.0-SNAPSHOT.war`, 254,596,031 bytes, clean-built from **`f35c55964d`** — the commit named in
+  the manifest of the `1.11.0-SNAPSHOT` jar on jfrog (tracker 1-38), so `buildInfo` matches the published artifact.
+- **Plugins:** the 22 jakarta jars. The 9 javax jars moved aside to `plugins.bak-javax-<stamp>` (moved, never overlaid).
+
+**Cutover.** This box uses the newer CI layout — `tomcat-{9,10,11}` side by side and `/home/xnat/tomcat` a **symlink**
+that `tomcat.service` follows (`ExecStart=/home/xnat/tomcat/bin/startup.sh`). Cutover was `systemctl stop tomcat`,
+`ln -sfn /home/xnat/tomcat-11 /home/xnat/tomcat`, start. **Rollback is the same `ln -sfn` back to `tomcat-9`** plus
+restoring the plugins backup; the 9 tree and its `ROOT.war` are untouched.
+
+**Result.**
+| check | result |
+|---|---|
+| `org.apache.catalina.util.ServerInfo` on the tree | Apache Tomcat/11.0.26 |
+| `ps` | `catalina.home=/home/xnat/tomcat`, `--add-opens` flags present |
+| `Deployment of … ROOT.war has finished` | **30,800 ms** (the healthy ~30 s figure; ~6.5 s means the context died) |
+| `AbstractMethodError` / `SEVERE` / `FATAL` / `NoClassDefFoundError` / `ClassNotFoundException` / `BeanCreationException` / `startup failed` | **0** each |
+| XNAT init tasks | **35** completed, incl. **`Update the user authentication table`** — the 1-20 tell, i.e. the Artemis broker acks the jakarta 6.2.7 client's sends |
+| `GET /` · `/app/template/Login.vm` · `/xapi/siteConfig/buildInfo` | 302 · **200** · **200** (`1.11.0-SNAPSHOT`, `f35c55964d`, `feature/jakarta-cutover`) |
+| A-4 probe: 1,500 `x-www-form-urlencoded` params → `/data/JSESSION` | **200** (500-param control 200); on the 1,000 default this is a 500 |
+
+**Residual errors, attributed by timestamp against the 16:29:59 cutover** (`/home/xnat/logs/*.log` is shared with the
+previous app, so raw counts mislead): `xft.db.DBAction` ×84 — **all pre-cutover**, the old 1.10 app's; JupyterHub cull
+×4 post-cutover (403 from the hub — was failing every ~2.5 min before cutover too; box-local token/auth, not
+migration); `ElementSecurity` ×3 post-cutover — the same three `xsync:xsync*Data/project` paths seen on every fresh
+boot on dave-alldev. Nothing Tomcat 11 introduced.
+
+**Lessons that cost time** (also in the ops runbook memory):
+- `bin/version.sh` on a non-live tree reports the **live** version, because `setenv.sh` pins `CATALINA_HOME` to the
+  symlink. Verify a tree with `java -cp <tree>/lib/catalina.jar org.apache.catalina.util.ServerInfo`.
+- Truncating `catalina.out` as root leaves a root-owned file; `catalina.sh:417` `touch`es it as `xnat` → `Permission
+  denied` → exit 2 → systemd rate-limits after 5 attempts. `rm` it, `daemon-reload`, `reset-failed`, start.
+- The `strings | grep javax/servlet` jar check **over-reports**: `pipeline_engine_ui` carries 81 refs in unregistered
+  legacy `plexiviewer/servlet/*` classes and `xsync` 3 in shaded commons-logging — byte-identical class sets to what
+  boots clean on dave-alldev. The fatal case is a class Tomcat/Spring will *instantiate* (a `WebApplicationInitializer`
+  or a registered servlet), not any javax string. Discriminate by searching the jar for initializers/`META-INF/services`
+  and diffing the sorted `unzip -Z1` class list against a known-good box.
+

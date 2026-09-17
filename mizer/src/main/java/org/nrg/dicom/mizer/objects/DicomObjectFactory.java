@@ -1147,7 +1147,7 @@ public class DicomObjectFactory {
                     if (sopInstanceUID == null) {
                         dataset.setString(org.dcm4che3.data.Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
                     }
-                    Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(dataset);
+                    Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.extractFmiFromDataset(dataset);
                     out.writeDataset(split.fmi, split.onlyDataset);
                     dataset.addAll(split.fmi);
                 }

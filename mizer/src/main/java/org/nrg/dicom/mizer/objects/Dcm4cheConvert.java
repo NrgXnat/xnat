@@ -114,6 +114,10 @@ public class Dcm4cheConvert {
         return current;
     }
 
+    /**
+     * The two halves produced by {@link #extractFmiFromDataset(Attributes)}: the file meta information and the
+     * dataset it was taken out of. {@link #onlyDataset} is the very instance that was passed in, not a copy.
+     */
     public static class SplitAttributes {
         public final Attributes fmi;
         public final Attributes onlyDataset;
@@ -124,7 +128,25 @@ public class Dcm4cheConvert {
         }
     }
 
-    public static SplitAttributes splitFmiAndDataset(Attributes dataset) {
+    /**
+     * Moves the file meta information (every group 0002 element) out of {@code dataset} into a separate
+     * {@link Attributes} so the two can be handed to
+     * {@link org.dcm4che3.io.DicomOutputStream#writeDataset(Attributes, Attributes)}, which requires them apart.
+     *
+     * <p><strong>This method mutates its argument.</strong> On return, {@code dataset} no longer contains any
+     * group 0002 element, and {@link SplitAttributes#onlyDataset} is that same instance rather than a copy.
+     * Callers that need the FMI in the dataset afterwards must restore it themselves, typically with
+     * {@code dataset.addAll(split.fmi)} once the write has finished. The dataset is not copied on purpose:
+     * this runs once per received instance on the DICOM ingest path and pixel data would otherwise be duplicated.
+     *
+     * <p>If {@code dataset} carries no group 0002 elements, an Explicit VR Little Endian FMI is created for it.
+     * In both cases Media Storage SOP Class UID (0002,0002) and Media Storage SOP Instance UID (0002,0003) are
+     * set from the dataset's SOP Class UID and SOP Instance UID.
+     *
+     * @param dataset the dataset to strip; modified in place
+     * @return the extracted FMI together with the (now FMI-free) input dataset
+     */
+    public static SplitAttributes extractFmiFromDataset(Attributes dataset) {
         Attributes fmi = new Attributes();
         Attributes onlyDataset = dataset;
 
@@ -145,6 +167,16 @@ public class Dcm4cheConvert {
         fmi.setString(0x00020003, VR.UI, dataset.getString(0x00080018));
 
         return new SplitAttributes(fmi, onlyDataset);
+    }
+
+    /**
+     * @deprecated The name hid the fact that the input is modified in place. Use
+     * {@link #extractFmiFromDataset(Attributes)}, which does exactly the same thing and documents it.
+     * Scheduled for removal after 1.10.2.
+     */
+    @Deprecated
+    public static SplitAttributes splitFmiAndDataset(Attributes dataset) {
+        return extractFmiFromDataset(dataset);
     }
 
 }

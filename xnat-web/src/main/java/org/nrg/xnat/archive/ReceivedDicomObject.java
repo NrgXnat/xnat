@@ -63,7 +63,9 @@ final class ReceivedDicomObject implements Closeable {
      *                                 stream's own.
      * @param lastTag                  for a partial read, the last tag the caller needs. Ignored for
      *                                 a whole read.
-     * @param whole                    whether to read the whole object.
+     * @param whole                    whether to read the whole object. A Deflated source is read whole
+     *                                 regardless, because its dataset cannot be split across a partial
+     *                                 read and a raw copy of the remainder.
      */
     static ReceivedDicomObject read(final InputStream source, final String transferSyntaxFromCaller,
                                     final int lastTag, final boolean whole) throws IOException {
@@ -72,8 +74,14 @@ final class ReceivedDicomObject implements Closeable {
         try {
             Attributes fmi = dis.readFileMetaInformation();
             final String     transferSyntax = null == transferSyntaxFromCaller ? dis.getTransferSyntax() : transferSyntaxFromCaller;
+            // A Deflated source is one continuous zlib stream past the file meta group. The partial read
+            // stops mid-stream and lets write() copy the raw remainder through, but a fresh header
+            // followed by the leftover compressed bytes does not re-read -- the object comes back
+            // malformed. So a Deflated object is always read whole, whether or not a script applies;
+            // write() then re-deflates the parsed dataset into a valid object.
+            final boolean    readWhole      = whole || UID.DeflatedExplicitVRLittleEndian.equals(transferSyntax);
             final Attributes dataset        = new Attributes();
-            if (whole) {
+            if (readWhole) {
                 dis.readAttributes(dataset, -1, WHOLE_OBJECT);
             } else {
                 // The last tag the caller needs, not a stop tag: dcm4che's stop tag is exclusive, so
@@ -90,7 +98,7 @@ final class ReceivedDicomObject implements Closeable {
             // Merge FMI into dataset so processors see a complete DICOM object.
             // FMI will be split out before writing to file.
             dataset.addAll(fmi);
-            return new ReceivedDicomObject(in, dis, dataset, transferSyntax, whole);
+            return new ReceivedDicomObject(in, dis, dataset, transferSyntax, readWhole);
         } catch (IOException | RuntimeException e) {
             // Nothing is going to own the spool files if the read fails.
             discard(dis);

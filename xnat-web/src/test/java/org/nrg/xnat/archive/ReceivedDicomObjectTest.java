@@ -195,6 +195,30 @@ public class ReceivedDicomObjectTest {
         assertArrayEquals(Files.readAllBytes(fromPartial.toPath()), Files.readAllBytes(fromWhole.toPath()));
     }
 
+    /**
+     * A Deflated source is one continuous zlib stream past the file meta group, so the partial read's
+     * copy-the-remainder trick cannot reassemble it. It must be read whole even when no script asks for
+     * one, and the object it writes must re-read cleanly. Regression: the partial path wrote a fresh
+     * header followed by the raw compressed remainder, which came back malformed and failed re-read.
+     */
+    @Test
+    public void deflatedIsAlwaysReadWholeAndRoundTrips() throws Exception {
+        final File deflated = deflate(MR_FIXTURE);
+        // Ask for a partial read, as an import with no script would; the Deflated source overrides it.
+        try (ReceivedDicomObject received = ReceivedDicomObject.read(open(deflated), null, ORDINARY_LAST_TAG, false)) {
+            assertEquals(UID.DeflatedExplicitVRLittleEndian, received.getTransferSyntax());
+            assertTrue("a Deflated source must be read whole regardless of the caller's request", received.isWhole());
+        }
+
+        final File written = write(deflated, null, false, "deflated-out.dcm");
+        try (DicomInputStream in = new DicomInputStream(written)) {
+            assertEquals("the written object must still be Deflated",
+                         UID.DeflatedExplicitVRLittleEndian, in.readFileMetaInformation().getString(Tag.TransferSyntaxUID));
+        }
+        assertArrayEquals("pixels must survive the deflate round-trip", pixelData(deflated), pixelData(written));
+        assertTrue("nothing should be left in the spool", filesUnder(scratch).isEmpty());
+    }
+
     @Test
     public void rejectionInMemoryWritesNothing() throws Exception {
         final File output = new File(folder.getRoot(), "rejected.dcm");
@@ -239,6 +263,22 @@ public class ReceivedDicomObjectTest {
             received.write(received.getDataset(), AE_TITLE, output, "test");
         }
         return output;
+    }
+
+    /** Re-encode a fixture as Deflated Explicit VR Little Endian, the way write() does: FMI carries the TS and the dataset is deflated after it. */
+    private File deflate(final File source) throws IOException {
+        final File deflated = folder.newFile("deflated.dcm");
+        final Attributes fmi;
+        final Attributes dataset;
+        try (DicomInputStream in = new DicomInputStream(source)) {
+            in.readFileMetaInformation();
+            dataset = in.readDataset();
+            fmi = dataset.createFileMetaInformation(UID.DeflatedExplicitVRLittleEndian);
+        }
+        try (DicomOutputStream out = new DicomOutputStream(new FileOutputStream(deflated), UID.ExplicitVRLittleEndian)) {
+            out.writeDataset(fmi, dataset);
+        }
+        return deflated;
     }
 
     private MizerContext context(final String script) throws Exception {

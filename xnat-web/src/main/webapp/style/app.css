@@ -1505,6 +1505,19 @@ body.xnat .chosen-container {
     vertical-align: middle;
 }
 
+/* The container has no padding of its own -- the heading above supplies its own side margins --
+   so a paragraph placed directly in it would otherwise sit flush against the border. */
+.login-box-container-fixed > p {
+    margin: 10px 20px;
+}
+
+/* Opt-in divider between a box's explanatory text and its form. A class rather than a rule on
+   `#login_box_container > div.clear`, because Login.vm reuses that id and has two such divs of
+   its own -- keying on it would draw rules on the main login page too. */
+.login-box-container-fixed > div.section-divider {
+    border-top: 1px solid var(--border-color);
+}
+
 .login-box-container-fixed > h3 > span {
     float: left;
 }

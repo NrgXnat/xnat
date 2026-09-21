@@ -32,12 +32,12 @@ $!template.setLayoutTemplate("Login.vm")
     <div id="register_box_container" class="login-box-container-fixed">
         <h3><span>Register A New Account</span></h3>
         <p>If you do not have an account on $siteConfig.siteId, register a new account with the form below and click <b>Submit</b>.</p>
-        <div class="clear" style="margin:2em 0;"></div>
+        <div class="clear" style="margin:2em 0 0 0;"></div>
         <div id="register_box">
             #if($message.startsWith("Registration error"))
-                <div class="warning" style="padding:15px;border-bottom:0">
+                <div class="warning" style="border-bottom:0">
                     <strong>Note:</strong>
-                    <p style="margin:5px 3px 0;">$message</p>
+                    <p style="margin:5px 0 0;">$message</p>
                 </div>
             #end
 
@@ -49,7 +49,7 @@ $!template.setLayoutTemplate("Login.vm")
     <div id="login_box_container" class="hidden login-box-container-fixed">
         <h3><span>Login To An Existing Account</span></h3>
         <p>If you already have an account on $siteConfig.siteId, enter your login credentials below and click <b>Submit</b>.</p>
-        <div class="clear" style="margin:2em 0;"></div>
+        <div class="clear section-divider" style="margin:2em 0 0 0;"></div>
 
         <div id="login_box">
             #if($message.startsWith("Authentication failed"))
@@ -138,7 +138,7 @@ $!template.setLayoutTemplate("Login.vm")
                     .prepend(
                         spawn(
                             'div.message',
-                            'XNAT usernames cannot contain punctuation. You will still be able to log in using your ${authMethod} credentials upon account creation and verification.'
+                            'XNAT usernames must start with a letter and may contain only letters, numbers, hyphens, underscores, and periods. Other special characters will be replaced with underscores. XNAT usernames are an internal identifier: You will still sign in with your ${authMethod} credentials when the account is created and verified.'
                     ));
     });
 

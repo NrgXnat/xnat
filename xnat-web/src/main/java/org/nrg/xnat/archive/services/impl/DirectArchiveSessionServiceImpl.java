@@ -73,6 +73,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -134,13 +135,18 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     @Override
     public void delete(long id, UserI user)
             throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
-        final String project = directArchiveSessionHibernateService.getSessionData(id).getProject();
-        if (!Permissions.canDeleteProject(user, project)) {
-            throw new InvalidPermissionException(project);
+        final SessionData current = directArchiveSessionHibernateService.getSessionData(id);
+        if (!Permissions.canDeleteProject(user, current.getProject())) {
+            throw new InvalidPermissionException(current.getProject());
+        }
+        // Same guard as triggerArchive: files still landing in the directory would recreate it behind the delete
+        if (PrearcUtils.isSessionReceiving(current.getSessionDataTriple())) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Cannot delete direct archive session " +
+                    current.getSessionDataTriple() + " while it is still receiving files");
         }
 
         // Claim the session before touching the filesystem: the importer stops appending to a session that is no
-        // longer RECEIVING and the archive trigger only picks up RECEIVING sessions, and a session the archiver is
+        // longer RECEIVING, the archive trigger only queues RECEIVING sessions, and a session the archiver is
         // already working on cannot be claimed at all.
         final SessionData session;
         try {
@@ -149,45 +155,60 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             throw new ClientException(Status.CLIENT_ERROR_CONFLICT, e.getMessage(), e);
         }
 
-        if (ownsSessionDirectory(session)) {
-            try {
+        try {
+            if (ownsSessionDirectory(session)) {
                 deleteSessionFiles(session);
-            } catch (IOException e) {
-                directArchiveSessionHibernateService.setStatusToError(id, e);
-                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Unable to delete files for direct archive session id=" +
-                        id + " at " + session.getUrl(), e);
+            } else {
+                log.info("Deleting DirectArchiveSession id={} {} without removing {} because the directory is not owned by this session alone",
+                        id, session.getSessionDataTriple(), session.getUrl());
             }
-        } else {
-            log.info("Deleting DirectArchiveSession id={} {} without removing {} because the directory is not owned by this session alone",
-                    id, session.getSessionDataTriple(), session.getUrl());
+        } catch (Exception e) {
+            // Leave the row behind in ERROR (which is deletable) rather than stuck in DELETING
+            directArchiveSessionHibernateService.setStatusToError(id, e);
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Unable to delete files for direct archive session id=" +
+                    id + " at " + session.getUrl(), e);
         }
         directArchiveSessionHibernateService.delete(id);
     }
 
     /**
      * The session directory can only be removed when it holds nothing but this session's files. That is not the case
-     * when a newer session has been created at the same location after this one errored out, or when the session was
-     * received with an overwrite mode. The latter is deliberately conservative: overwrite mode means the session may
-     * have been appending to an already-archived session's directory, so its files are left alone even when it turned
-     * out to be a fresh directory.
+     * when the directory already belongs to an archived experiment, or when a newer session has been created at the
+     * same location after this one errored out.
      */
-    private boolean ownsSessionDirectory(SessionData session) throws NotFoundException {
-        return StringUtils.isBlank(directArchiveSessionHibernateService.getOverwriteMode(session.getId()))
+    private boolean ownsSessionDirectory(SessionData session) {
+        return !isArchivedExperimentDirectory(session)
                && !directArchiveSessionHibernateService.hasActiveSessionAtLocation(session.getUrl(), session.getId());
     }
 
     /**
-     * Removes the session directory and its session XML the same way a prearchive delete does, honoring the
-     * backupDeletedToCache site preference.
+     * A session's directory can belong to a saved experiment even though the session never completed: archive() saves
+     * the experiment before its final cleanup and a failed move to the prearchive leaves the errored row pointing at
+     * the archive directory, and a session received with an overwrite mode may have been appending to an archived
+     * experiment all along. The experiment label is the session name, or the folder name when the two differ.
+     */
+    private boolean isArchivedExperimentDirectory(SessionData session) {
+        final UserI user = receivedFileUserProvider.get();
+        return Stream.of(session.getName(), session.getFolderName())
+                     .filter(StringUtils::isNotBlank)
+                     .distinct()
+                     .anyMatch(label -> BaseXnatExperimentdata.GetExptByProjectIdentifier(session.getProject(), label, user, false) != null);
+    }
+
+    /**
+     * Removes the session XML and the session directory the same way a prearchive delete does, honoring the
+     * backupDeletedToCache site preference. Both land under the same backup timestamp so a backed-up session can be
+     * restored as one unit.
      */
     private void deleteSessionFiles(SessionData session) throws IOException {
-        final File directory = new File(session.getUrl());
-        final File xml       = sessionXmlPath(session.getUrl()).toFile();
-        if (xml.exists()) {
-            org.nrg.xft.utils.FileUtils.MoveToCache(xml);
-        }
-        if (directory.exists()) {
-            org.nrg.xft.utils.FileUtils.MoveToCache(directory);
+        final String timestamp = org.nrg.xft.utils.FileUtils.getMsTimestamp();
+        for (final File file : Arrays.asList(sessionXmlPath(session.getUrl()).toFile(), new File(session.getUrl()))) {
+            if (file.exists()) {
+                org.nrg.xft.utils.FileUtils.MoveToCache(file, timestamp);
+                if (file.exists()) {
+                    throw new IOException("Unable to remove " + file);
+                }
+            }
         }
         log.info("Deleted files for DirectArchiveSession id={} {} at {}", session.getId(), session.getSessionDataTriple(), session.getUrl());
     }

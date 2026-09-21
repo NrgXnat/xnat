@@ -101,8 +101,21 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public SessionData setStatusToDeletingAndReturn(long id) throws NotFoundException, ArchivingException {
-        return setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.RECEIVING, PrearcUtils.PrearcStatus.ERROR),
+        // DELETING is re-claimable so a delete that died after claiming the session can be retried
+        return setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.RECEIVING, PrearcUtils.PrearcStatus.ERROR,
+                        PrearcUtils.PrearcStatus.DELETING),
                 PrearcUtils.PrearcStatus.DELETING, "deletable");
+    }
+
+    @Override
+    public void delete(long id) {
+        // Idempotent: the row may already have been removed by a concurrent delete or by the importer
+        DirectArchiveSession das = retrieve(id);
+        if (das == null) {
+            log.debug("DirectArchiveSession id={} already deleted", id);
+            return;
+        }
+        delete(das);
     }
 
     @Override
@@ -112,7 +125,13 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public void setStatusToQueuedBuilding(long id) throws NotFoundException {
-        setStatus(id, PrearcUtils.PrearcStatus.QUEUED_BUILDING);
+        // Only a RECEIVING session can be queued: this must not overwrite a session that was claimed for deletion
+        try {
+            setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.RECEIVING), PrearcUtils.PrearcStatus.QUEUED_BUILDING,
+                    "queueable for building");
+        } catch (ArchivingException e) {
+            log.warn("Not queueing DirectArchiveSession id={} for building: {}", id, e.getMessage());
+        }
     }
 
     @Override
@@ -124,9 +143,11 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public void setStatusBackToReceiving(long id) {
+        // Only undo a queued-for-building transition; never revive a session that was claimed for deletion
         try {
-            setStatus(id, PrearcUtils.PrearcStatus.RECEIVING);
-        } catch (NotFoundException e) {
+            setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.QUEUED_BUILDING), PrearcUtils.PrearcStatus.RECEIVING,
+                    "queued for building");
+        } catch (NotFoundException | ArchivingException e) {
             log.error("Unable to reset status for DirectArchiveSession id={}", id, e);
         }
     }

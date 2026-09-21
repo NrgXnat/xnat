@@ -8,7 +8,35 @@
   ~ Released under the Simplified BSD.
   -->
 
-<Context>
+<!--
+  suspendWrappedResponseAfterForward="false"
+
+  Tomcat 11 defaults this Context attribute to true (Tomcat 9 and 10.1 default to false). With it
+  true, once a RequestDispatcher.forward() returns through a wrapped response, Tomcat unwraps to its
+  own ResponseFacade and SUSPENDS it instead of calling close() on the outer wrapper (Tomcat bug 68634,
+  added for session-replication ordering in clusters). Any filter wrapper that still holds buffered
+  output at that point then flushes into a suspended response, and Tomcat silently discards the bytes.
+
+  JavaMelody's MonitoringFilter is such a wrapper (an 8 KiB OutputStreamWriter drained after the
+  chain returns; javamelody/javamelody#1306). XNAT serves every /pages/view/** admin page by a Spring
+  MVC forward to a JSP, so on Tomcat 11 those pages arrived truncated at the last 8 KiB boundary and
+  pages under 8 KiB arrived empty, with HTTP 200 and nothing logged. Manage Users and Site
+  Administration rendered as a blank body with a spinner.
+
+  Setting the attribute to false restores the pre-11 behavior: the outer wrapper is closed, which
+  flushes it.  In a clustered deployment with session replication, the reply can reach the client before
+  the session has been replicated, and a follow-up request routed to another node may not find it.
+  It only matters if you run Tomcat clustering with replicated sessions and a load balancer without sticky sessions.
+  When not running with clustered session replication, the ordering the true setting was
+  introduced for does not apply. Advice is to use session pinning rather than rely on this ordering anyway.
+
+  Remove this once XNAT ships a JavaMelody release containing the
+  #1306 fix (not in 2.8.0).
+
+  The attribute exists from Tomcat 9.0.87 / 10.1.20 onward, where false is already the default. An
+  older Tomcat logs a "did not find a matching property" warning at startup and ignores it.
+-->
+<Context suspendWrappedResponseAfterForward="false">
     <!--
     For Tomcat 7 compatibility, uncomment the <Loader> element and comment out the <Resources>
     and <CookieProcessor> elements under that.

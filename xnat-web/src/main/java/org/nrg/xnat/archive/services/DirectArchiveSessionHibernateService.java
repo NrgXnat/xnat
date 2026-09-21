@@ -37,13 +37,9 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
     SessionData setStatusToArchivingAndReturn(long id) throws NotFoundException, ArchivingException;
 
     /**
-     * Claims a session for deletion by moving it from a resting status (RECEIVING or ERROR) to DELETING. A session
-     * that is queued, building or archiving cannot be claimed. Once claimed, the importer no longer appends files to
-     * the session and the archive trigger no longer picks it up.
-     *
-     * @param id The session id
-     * @return The claimed session
-     * @throws ArchivingException If the session is not in a status from which it can be deleted
+     * Claims a session for deletion: allowed from RECEIVING, ERROR and DELETING (so an interrupted delete can be
+     * retried), refused with {@link ArchivingException} while the session is queued, building or archiving. Once
+     * claimed, the importer no longer appends files to it and the archive trigger no longer queues it.
      */
     SessionData setStatusToDeletingAndReturn(long id) throws NotFoundException, ArchivingException;
 

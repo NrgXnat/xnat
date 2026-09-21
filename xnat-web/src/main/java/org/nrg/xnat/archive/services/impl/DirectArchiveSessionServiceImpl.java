@@ -79,6 +79,8 @@ import javax.annotation.Nullable;
 
 import static org.nrg.xft.event.XftItemEventI.CREATE;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
+import static org.nrg.xft.utils.FileUtils.MoveToCache;
+import static org.nrg.xft.utils.FileUtils.getMsTimestamp;
 import static org.nrg.xnat.archive.Operation.Rebuild;
 
 @Slf4j
@@ -145,16 +147,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                     current.getSessionDataTriple() + " while it is still receiving files");
         }
 
-        // Claim the session before touching the filesystem: the importer stops appending to a session that is no
-        // longer RECEIVING, the archive trigger only queues RECEIVING sessions, and a session the archiver is
-        // already working on cannot be claimed at all.
-        final SessionData session;
-        try {
-            session = directArchiveSessionHibernateService.setStatusToDeletingAndReturn(id);
-        } catch (ArchivingException e) {
-            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, e.getMessage(), e);
-        }
-
+        final SessionData session = claimForDeletion(id);
         try {
             if (ownsSessionDirectory(session)) {
                 deleteSessionFiles(session);
@@ -172,13 +165,25 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     /**
-     * The session directory can only be removed when it holds nothing but this session's files. That is not the case
-     * when the directory already belongs to an archived experiment, or when a newer session has been created at the
-     * same location after this one errored out.
+     * Claims the session before anything on the filesystem is touched: the importer stops appending to a session that
+     * is no longer RECEIVING, the archive trigger only queues RECEIVING sessions, and a session the archiver is already
+     * working on cannot be claimed at all.
+     */
+    private SessionData claimForDeletion(long id) throws NotFoundException, ClientException {
+        try {
+            return directArchiveSessionHibernateService.setStatusToDeletingAndReturn(id);
+        } catch (ArchivingException e) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * The directory is this session's to remove only when no newer session at the same location is still alive and
+     * no archived experiment already owns it. The cheap row check runs first.
      */
     private boolean ownsSessionDirectory(SessionData session) {
-        return !isArchivedExperimentDirectory(session)
-               && !directArchiveSessionHibernateService.hasActiveSessionAtLocation(session.getUrl(), session.getId());
+        return !directArchiveSessionHibernateService.hasActiveSessionAtLocation(session.getUrl(), session.getId())
+               && !isArchivedExperimentDirectory(session);
     }
 
     /**
@@ -198,24 +203,23 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     /**
      * Removes the session XML and the session directory the same way a prearchive delete does, honoring the
      * backupDeletedToCache site preference. Both land under the same backup timestamp so a backed-up session can be
-     * restored as one unit.
+     * restored as one unit. MoveToCache reports nothing, so each file is checked afterwards.
      */
     private void deleteSessionFiles(SessionData session) throws IOException {
-        final String timestamp = org.nrg.xft.utils.FileUtils.getMsTimestamp();
+        final String timestamp = getMsTimestamp();
         for (final File file : Arrays.asList(sessionXmlPath(session.getUrl()).toFile(), new File(session.getUrl()))) {
+            if (!file.exists()) {
+                continue;
+            }
+            MoveToCache(file, timestamp);
             if (file.exists()) {
-                org.nrg.xft.utils.FileUtils.MoveToCache(file, timestamp);
-                if (file.exists()) {
-                    throw new IOException("Unable to remove " + file);
-                }
+                throw new IOException("Unable to remove " + file);
             }
         }
         log.info("Deleted files for DirectArchiveSession id={} {} at {}", session.getId(), session.getSessionDataTriple(), session.getUrl());
     }
 
-    /**
-     * The session XML sits next to the session directory as {@code <directory>.xml}.
-     */
+    // The session XML sits next to the session directory as <directory>.xml
     private static Path sessionXmlPath(String location) {
         return Path.of(StringUtils.removeEnd(location, File.separator) + ".xml");
     }

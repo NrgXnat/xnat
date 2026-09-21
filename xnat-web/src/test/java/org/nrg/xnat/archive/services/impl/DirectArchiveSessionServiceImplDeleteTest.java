@@ -4,10 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Collection;
 
+import org.apache.commons.io.filefilter.NameFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -140,6 +140,14 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         assertThat(sessionXml).doesNotExist();
     }
 
+    /** The row goes but the directory is not this session's to remove. */
+    private void assertDeleteKeepsFilesAndRemovesRow() throws Exception {
+        service.delete(SESSION_ID, user);
+
+        assertFilesIntact();
+        verify(hibernateService).delete(SESSION_ID);
+    }
+
     @Test
     public void deletingAClaimedSessionRemovesDirectoryXmlAndRow() throws Exception {
         stubDeletableSession();
@@ -199,10 +207,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         mockedExperiments.when(() -> BaseXnatExperimentdata.GetExptByProjectIdentifier(eq(PROJECT), eq(SESSION), any(), anyBoolean()))
                          .thenReturn(mock(XnatExperimentdata.class));
 
-        service.delete(SESSION_ID, user);
-
-        assertFilesIntact();
-        verify(hibernateService).delete(SESSION_ID);
+        assertDeleteKeepsFilesAndRemovesRow();
     }
 
     @Test
@@ -212,10 +217,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         mockedExperiments.when(() -> BaseXnatExperimentdata.GetExptByProjectIdentifier(eq(PROJECT), eq("SESSION_01_RENAMED"), any(), anyBoolean()))
                          .thenReturn(mock(XnatExperimentdata.class));
 
-        service.delete(SESSION_ID, user);
-
-        assertFilesIntact();
-        verify(hibernateService).delete(SESSION_ID);
+        assertDeleteKeepsFilesAndRemovesRow();
     }
 
     @Test
@@ -225,10 +227,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         stubDeletableSession();
         when(hibernateService.hasActiveSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenReturn(true);
 
-        service.delete(SESSION_ID, user);
-
-        assertFilesIntact();
-        verify(hibernateService).delete(SESSION_ID);
+        assertDeleteKeepsFilesAndRemovesRow();
     }
 
     @Test
@@ -286,26 +285,23 @@ public class DirectArchiveSessionServiceImplDeleteTest {
 
         assertFilesGone();
         final Path deleted = cacheRoot.toPath().resolve("DELETED");
-        final Path backedUpDicom = findOnly(deleted, "1.dcm");
-        final Path backedUpXml   = findOnly(deleted, SESSION + ".xml");
-        // Each backup is <cache>/DELETED/<timestamp dirs>/<original absolute path>; strip the original path to
-        // compare the timestamp part.
-        final Path dicomStamp = deleted.relativize(backedUpDicom).subpath(0, timestampDepth(deleted, backedUpDicom, new File(sessionDirectory, "1.dcm")));
-        final Path xmlStamp   = deleted.relativize(backedUpXml).subpath(0, timestampDepth(deleted, backedUpXml, sessionXml));
-        assertThat(xmlStamp).isEqualTo(dicomStamp);
+        assertThat(backupStamp(deleted, findOnly(deleted, SESSION + ".xml"), sessionXml))
+                .isEqualTo(backupStamp(deleted, findOnly(deleted, "1.dcm"), new File(sessionDirectory, "1.dcm")));
         verify(hibernateService).delete(SESSION_ID);
     }
 
-    private static Path findOnly(final Path root, final String fileName) throws IOException {
-        try (Stream<Path> paths = Files.walk(root)) {
-            final List<Path> matches = paths.filter(p -> p.getFileName().toString().equals(fileName)).collect(Collectors.toList());
-            assertThat(matches).as("backups of %s under %s", fileName, root).hasSize(1);
-            return matches.get(0);
-        }
+    private static Path findOnly(final Path root, final String fileName) {
+        final Collection<File> matches = org.apache.commons.io.FileUtils.listFiles(root.toFile(), new NameFileFilter(fileName), TrueFileFilter.INSTANCE);
+        assertThat(matches).as("backups of %s under %s", fileName, root).hasSize(1);
+        return matches.iterator().next().toPath();
     }
 
-    private static int timestampDepth(final Path deleted, final Path backup, final File original) {
-        final int originalDepth = Path.of(original.getAbsolutePath()).getNameCount();
-        return deleted.relativize(backup).getNameCount() - originalDepth;
+    /**
+     * MoveToCache lays a backup out as {@code <cache>/DELETED/<timestamp dirs>/<original absolute path>}; strip the
+     * original path to get the timestamp part.
+     */
+    private static Path backupStamp(final Path deleted, final Path backup, final File original) {
+        final Path relative = deleted.relativize(backup);
+        return relative.subpath(0, relative.getNameCount() - Path.of(original.getAbsolutePath()).getNameCount());
     }
 }

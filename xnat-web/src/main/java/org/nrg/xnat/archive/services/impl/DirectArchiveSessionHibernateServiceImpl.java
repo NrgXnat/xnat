@@ -8,7 +8,7 @@ import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.daos.DirectArchiveSessionDao;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +18,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,6 +29,19 @@ import java.util.stream.Collectors;
 public class DirectArchiveSessionHibernateServiceImpl
         extends AbstractHibernateEntityService<DirectArchiveSession, DirectArchiveSessionDao>
         implements DirectArchiveSessionHibernateService {
+
+    /**
+     * The guarded edges of the direct archive state machine: the statuses a session must be in to move to the key
+     * status. ERROR and QUEUED_ARCHIVING are reachable from any status and are not listed. DELETING is re-claimable
+     * so a delete that died after claiming the session can be retried; RECEIVING is only reachable by undoing a
+     * queued build, so a session a delete has claimed is never revived.
+     */
+    private static final Map<PrearcStatus, Set<PrearcStatus>> GUARDED_TRANSITIONS = Map.of(
+            PrearcStatus.QUEUED_BUILDING, EnumSet.of(PrearcStatus.RECEIVING),
+            PrearcStatus.BUILDING, EnumSet.of(PrearcStatus.QUEUED_BUILDING),
+            PrearcStatus.ARCHIVING, EnumSet.of(PrearcStatus.QUEUED_ARCHIVING),
+            PrearcStatus.RECEIVING, EnumSet.of(PrearcStatus.QUEUED_BUILDING),
+            PrearcStatus.DELETING, EnumSet.of(PrearcStatus.RECEIVING, PrearcStatus.ERROR, PrearcStatus.DELETING));
 
     @Override
     public void touch(long id) throws NotFoundException {
@@ -52,10 +67,9 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public boolean hasActiveSessionAtLocation(String location, @Nullable Long excludingId) {
-        List<DirectArchiveSession> sessions = getDao().findByLocation(location);
-        return sessions != null && sessions.stream()
-                .filter(session -> excludingId == null || session.getId() != excludingId)
-                .anyMatch(session -> session.getStatus() != PrearcUtils.PrearcStatus.ERROR);
+        final List<DirectArchiveSession> sessions = getDao().findByLocation(location);
+        return sessions != null && sessions.stream().anyMatch(session -> session.getStatus() != PrearcStatus.ERROR
+                                                                        && !Objects.equals(session.getId(), excludingId));
     }
 
     @Override
@@ -89,65 +103,50 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public SessionData setStatusToBuildingAndReturn(long id) throws NotFoundException, ArchivingException {
-        return setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.QUEUED_BUILDING),
-                PrearcUtils.PrearcStatus.BUILDING, "buildable");
+        return transition(id, PrearcStatus.BUILDING).toSessionData();
     }
 
     @Override
     public SessionData setStatusToArchivingAndReturn(long id) throws NotFoundException, ArchivingException {
-        return setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.QUEUED_ARCHIVING),
-                PrearcUtils.PrearcStatus.ARCHIVING, "archivable");
+        return transition(id, PrearcStatus.ARCHIVING).toSessionData();
     }
 
     @Override
     public SessionData setStatusToDeletingAndReturn(long id) throws NotFoundException, ArchivingException {
-        // DELETING is re-claimable so a delete that died after claiming the session can be retried
-        return setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.RECEIVING, PrearcUtils.PrearcStatus.ERROR,
-                        PrearcUtils.PrearcStatus.DELETING),
-                PrearcUtils.PrearcStatus.DELETING, "deletable");
+        return transition(id, PrearcStatus.DELETING).toSessionData();
     }
 
     @Override
     public void delete(long id) {
         // Idempotent: the row may already have been removed by a concurrent delete or by the importer
-        DirectArchiveSession das = retrieve(id);
-        if (das == null) {
-            log.debug("DirectArchiveSession id={} already deleted", id);
-            return;
+        final DirectArchiveSession das = retrieve(id);
+        if (das != null) {
+            delete(das);
         }
-        delete(das);
     }
 
     @Override
     public void setStatusToError(long id, Exception e) throws NotFoundException {
-        setStatus(id, PrearcUtils.PrearcStatus.ERROR, e.getMessage());
+        setStatus(get(id), PrearcStatus.ERROR, e.getMessage());
     }
 
     @Override
     public void setStatusToQueuedBuilding(long id) throws NotFoundException {
-        // Only a RECEIVING session can be queued: this must not overwrite a session that was claimed for deletion
-        try {
-            setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.RECEIVING), PrearcUtils.PrearcStatus.QUEUED_BUILDING,
-                    "queueable for building");
-        } catch (ArchivingException e) {
-            log.warn("Not queueing DirectArchiveSession id={} for building: {}", id, e.getMessage());
-        }
+        transitionIfAllowed(id, PrearcStatus.QUEUED_BUILDING);
     }
 
     @Override
     public void setStatusToQueuedArchiving(long id) throws NotFoundException {
         DirectArchiveSession das = get(id);
         das.setUploadDate(new Date());
-        setStatus(das, PrearcUtils.PrearcStatus.QUEUED_ARCHIVING, null);
+        setStatus(das, PrearcStatus.QUEUED_ARCHIVING, null);
     }
 
     @Override
     public void setStatusBackToReceiving(long id) {
-        // Only undo a queued-for-building transition; never revive a session that was claimed for deletion
         try {
-            setStatusAndReturn(id, EnumSet.of(PrearcUtils.PrearcStatus.QUEUED_BUILDING), PrearcUtils.PrearcStatus.RECEIVING,
-                    "queued for building");
-        } catch (NotFoundException | ArchivingException e) {
+            transitionIfAllowed(id, PrearcStatus.RECEIVING);
+        } catch (NotFoundException e) {
             log.error("Unable to reset status for DirectArchiveSession id={}", id, e);
         }
     }
@@ -164,38 +163,36 @@ public class DirectArchiveSessionHibernateServiceImpl
         return get(id).toSessionData();
     }
 
-
-    private void setStatus(long id, PrearcUtils.PrearcStatus status) throws NotFoundException {
-        setStatus(id, status, null);
-    }
-
-    private void setStatus(long id, PrearcUtils.PrearcStatus status, @Nullable String message) throws NotFoundException {
-        DirectArchiveSession das = get(id);
-        das.setStatus(status);
-        if (StringUtils.isNotBlank(message)) {
-            das.setMessage(message);
-        }
-        update(das);
-    }
-
-    private void setStatus(DirectArchiveSession das, PrearcUtils.PrearcStatus status, @Nullable String message) {
-        das.setStatus(status);
-        if (StringUtils.isNotBlank(message)) {
-            das.setMessage(message);
-        }
-        update(das);
-    }
-
-    private SessionData setStatusAndReturn(long id, Set<PrearcUtils.PrearcStatus> initStatuses,
-                                           PrearcUtils.PrearcStatus newStatus, String action)
-            throws NotFoundException, ArchivingException {
-        DirectArchiveSession das = get(id);
-        if (!initStatuses.contains(das.getStatus())) {
+    /**
+     * Moves the session to {@code target} if its current status is one {@link #GUARDED_TRANSITIONS} allows for it.
+     */
+    private DirectArchiveSession transition(long id, PrearcStatus target) throws NotFoundException, ArchivingException {
+        final DirectArchiveSession das = get(id);
+        if (!GUARDED_TRANSITIONS.get(target).contains(das.getStatus())) {
             throw new ArchivingException("DirectArchiveSession id=" + id + " has status " + das.getStatus() +
-                    ", which is not " + action + ".");
+                    ", from which it cannot move to " + target + ".");
         }
-        das.setStatus(newStatus);
+        setStatus(das, target, null);
+        return das;
+    }
+
+    /**
+     * For transitions the importer and the archive trigger make on their own schedule: when the session is no longer
+     * in a status the transition applies to, typically because a delete has claimed it, leave it alone.
+     */
+    private void transitionIfAllowed(long id, PrearcStatus target) throws NotFoundException {
+        try {
+            transition(id, target);
+        } catch (ArchivingException e) {
+            log.warn("Leaving DirectArchiveSession id={} as is: {}", id, e.getMessage());
+        }
+    }
+
+    private void setStatus(DirectArchiveSession das, PrearcStatus status, @Nullable String message) {
+        das.setStatus(status);
+        if (StringUtils.isNotBlank(message)) {
+            das.setMessage(message);
+        }
         update(das);
-        return das.toSessionData();
     }
 }

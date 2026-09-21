@@ -90,28 +90,29 @@ public class DirectArchiveSessionHibernateServiceImplTest {
 
     @Test
     public void queueingForBuildOnlyMovesAReceivingSession() throws Exception {
-        final DirectArchiveSession receiving = stubSessionIn(PrearcStatus.RECEIVING);
-        service.setStatusToQueuedBuilding(SESSION_ID);
-        assertThat(receiving.getStatus()).isEqualTo(PrearcStatus.QUEUED_BUILDING);
-
         // The archive trigger must not overwrite a session that a delete has just claimed.
+        assertOnlyMovesFrom(PrearcStatus.RECEIVING, PrearcStatus.QUEUED_BUILDING, () -> service.setStatusToQueuedBuilding(SESSION_ID));
+    }
+
+    @Test
+    public void settingBackToReceivingOnlyUndoesAQueuedForBuildingTransition() throws Exception {
+        // A claimed session must not be revived by the build path giving up on it.
+        assertOnlyMovesFrom(PrearcStatus.QUEUED_BUILDING, PrearcStatus.RECEIVING, () -> service.setStatusBackToReceiving(SESSION_ID));
+    }
+
+    private void assertOnlyMovesFrom(final PrearcStatus from, final PrearcStatus to, final Transition transition) throws Exception {
+        final DirectArchiveSession allowed = stubSessionIn(from);
+        transition.run();
+        assertThat(allowed.getStatus()).isEqualTo(to);
+
         final DirectArchiveSession claimed = stubSessionIn(PrearcStatus.DELETING);
-        service.setStatusToQueuedBuilding(SESSION_ID);
+        transition.run();
         assertThat(claimed.getStatus()).isEqualTo(PrearcStatus.DELETING);
         verify(dao, times(1)).update(any(DirectArchiveSession.class));
     }
 
-    @Test
-    public void settingBackToReceivingOnlyUndoesAQueuedForBuildingTransition() {
-        final DirectArchiveSession queued = stubSessionIn(PrearcStatus.QUEUED_BUILDING);
-        service.setStatusBackToReceiving(SESSION_ID);
-        assertThat(queued.getStatus()).isEqualTo(PrearcStatus.RECEIVING);
-
-        // A claimed session must not be revived by the build path giving up on it.
-        final DirectArchiveSession claimed = stubSessionIn(PrearcStatus.DELETING);
-        service.setStatusBackToReceiving(SESSION_ID);
-        assertThat(claimed.getStatus()).isEqualTo(PrearcStatus.DELETING);
-        verify(dao, times(1)).update(any(DirectArchiveSession.class));
+    private interface Transition {
+        void run() throws Exception;
     }
 
     @Test

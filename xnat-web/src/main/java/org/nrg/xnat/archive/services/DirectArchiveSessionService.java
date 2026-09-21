@@ -18,16 +18,9 @@ public interface DirectArchiveSessionService {
 
     /**
      * Deletes a direct archive session on behalf of a user: the tracking row and, when the session directory belongs
-     * to this session alone, the files received into it along with the session XML. Sessions the archiver is
-     * building or archiving cannot be deleted.
-     *
-     * @param id          The direct archive session id
-     * @param sessionUser The user requesting the delete; must be able to delete from the session's project
-     *
-     * @throws InvalidPermissionException If the user cannot delete from the project
-     * @throws NotFoundException          If no session has the given id
-     * @throws ClientException            If the session is currently being built or archived (409)
-     * @throws ServerException            If the session files could not be removed; the row is left in place
+     * to this session alone, the files received into it along with the session XML. Refused with a 409
+     * {@link ClientException} while the session is still receiving files or the archiver is working on it; if the
+     * files cannot be removed the row is left in ERROR and a {@link ServerException} is thrown.
      */
     void delete(long id, UserI sessionUser) throws InvalidPermissionException, NotFoundException, ClientException, ServerException;
 

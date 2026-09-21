@@ -41,10 +41,15 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
      * retried), refused with {@link ArchivingException} while the session is queued, building or archiving. Once
      * claimed, the importer no longer appends files to it and the archive trigger no longer queues it.
      */
-    SessionData setStatusToDeletingAndReturn(long id) throws NotFoundException, ArchivingException;
+    void setStatusToDeleting(long id) throws NotFoundException, ArchivingException;
 
     void setStatusToError(long id, Exception e) throws NotFoundException;
-    void setStatusToQueuedBuilding(long id) throws NotFoundException;
+    /**
+     * Queues a session for building. Allowed from RECEIVING and, so a failed archive can be retried, from ERROR.
+     *
+     * @return false, with the session left untouched, when it is in any other status, e.g. claimed by a delete
+     */
+    boolean setStatusToQueuedBuilding(long id) throws NotFoundException;
     void setStatusToQueuedArchiving(long id) throws NotFoundException;
     void setStatusBackToReceiving(long id);
 

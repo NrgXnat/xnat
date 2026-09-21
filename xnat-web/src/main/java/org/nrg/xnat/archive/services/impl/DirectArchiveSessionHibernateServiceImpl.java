@@ -32,12 +32,13 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     /**
      * The guarded edges of the direct archive state machine: the statuses a session must be in to move to the key
-     * status. ERROR and QUEUED_ARCHIVING are reachable from any status and are not listed. DELETING is re-claimable
-     * so a delete that died after claiming the session can be retried; RECEIVING is only reachable by undoing a
-     * queued build, so a session a delete has claimed is never revived.
+     * status. ERROR and QUEUED_ARCHIVING are reachable from any status and are not listed. QUEUED_BUILDING accepts
+     * ERROR so a user can retry a failed archive; DELETING is re-claimable so a delete that died after claiming the
+     * session can be retried; RECEIVING is only reachable by undoing a queued build, so a session a delete has
+     * claimed is never revived.
      */
     private static final Map<PrearcStatus, Set<PrearcStatus>> GUARDED_TRANSITIONS = Map.of(
-            PrearcStatus.QUEUED_BUILDING, EnumSet.of(PrearcStatus.RECEIVING),
+            PrearcStatus.QUEUED_BUILDING, EnumSet.of(PrearcStatus.RECEIVING, PrearcStatus.ERROR),
             PrearcStatus.BUILDING, EnumSet.of(PrearcStatus.QUEUED_BUILDING),
             PrearcStatus.ARCHIVING, EnumSet.of(PrearcStatus.QUEUED_ARCHIVING),
             PrearcStatus.RECEIVING, EnumSet.of(PrearcStatus.QUEUED_BUILDING),
@@ -112,8 +113,8 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
-    public SessionData setStatusToDeletingAndReturn(long id) throws NotFoundException, ArchivingException {
-        return transition(id, PrearcStatus.DELETING).toSessionData();
+    public void setStatusToDeleting(long id) throws NotFoundException, ArchivingException {
+        transition(id, PrearcStatus.DELETING);
     }
 
     @Override
@@ -131,8 +132,8 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
-    public void setStatusToQueuedBuilding(long id) throws NotFoundException {
-        transitionIfAllowed(id, PrearcStatus.QUEUED_BUILDING);
+    public boolean setStatusToQueuedBuilding(long id) throws NotFoundException {
+        return transitionIfAllowed(id, PrearcStatus.QUEUED_BUILDING);
     }
 
     @Override
@@ -163,12 +164,13 @@ public class DirectArchiveSessionHibernateServiceImpl
         return get(id).toSessionData();
     }
 
-    /**
-     * Moves the session to {@code target} if its current status is one {@link #GUARDED_TRANSITIONS} allows for it.
-     */
+    private static boolean allows(PrearcStatus target, PrearcStatus from) {
+        return GUARDED_TRANSITIONS.get(target).contains(from);
+    }
+
     private DirectArchiveSession transition(long id, PrearcStatus target) throws NotFoundException, ArchivingException {
         final DirectArchiveSession das = get(id);
-        if (!GUARDED_TRANSITIONS.get(target).contains(das.getStatus())) {
+        if (!allows(target, das.getStatus())) {
             throw new ArchivingException("DirectArchiveSession id=" + id + " has status " + das.getStatus() +
                     ", from which it cannot move to " + target + ".");
         }
@@ -177,15 +179,17 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     /**
-     * For transitions the importer and the archive trigger make on their own schedule: when the session is no longer
-     * in a status the transition applies to, typically because a delete has claimed it, leave it alone.
+     * For transitions the archive trigger makes on its own schedule: when the session is no longer in a status the
+     * transition applies to, typically because a delete has claimed it, leave it alone and say so.
      */
-    private void transitionIfAllowed(long id, PrearcStatus target) throws NotFoundException {
-        try {
-            transition(id, target);
-        } catch (ArchivingException e) {
-            log.warn("Leaving DirectArchiveSession id={} as is: {}", id, e.getMessage());
+    private boolean transitionIfAllowed(long id, PrearcStatus target) throws NotFoundException {
+        final DirectArchiveSession das = get(id);
+        if (!allows(target, das.getStatus())) {
+            log.warn("Leaving DirectArchiveSession id={} in status {}: it cannot move to {}", id, das.getStatus(), target);
+            return false;
         }
+        setStatus(das, target, null);
+        return true;
     }
 
     private void setStatus(DirectArchiveSession das, PrearcStatus status, @Nullable String message) {

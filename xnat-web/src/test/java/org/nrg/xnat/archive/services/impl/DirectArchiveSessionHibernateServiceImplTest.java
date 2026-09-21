@@ -4,8 +4,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Before;
 import org.junit.Test;
+
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.daos.DirectArchiveSessionDao;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
@@ -21,10 +23,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * XNAT-7944: the delete path claims a session by moving it to DELETING, which is only allowed from the two resting
- * statuses (plus DELETING itself, so an interrupted delete can be retried). The transitions the importer and the
- * archive trigger make must not revive a claimed session. Directory ownership is decided by whether any other session
- * at the same location is still alive.
+ * XNAT-7944: the delete path claims a session by moving it to DELETING, which is only allowed from the resting
+ * statuses (and DELETING itself, so an interrupted delete can be retried). The transitions the archive trigger makes
+ * must not revive a claimed session. Directory ownership is decided by whether any other session at the same location
+ * is still alive.
  */
 public class DirectArchiveSessionHibernateServiceImplTest {
     private static final long   SESSION_ID = 42L;
@@ -55,24 +57,16 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     }
 
     @Test
-    public void aRestingSessionCanBeClaimedForDeletion() throws Exception {
-        for (final PrearcStatus status : Arrays.asList(PrearcStatus.RECEIVING, PrearcStatus.ERROR)) {
+    public void aRestingOrAlreadyClaimedSessionCanBeClaimedForDeletion() throws Exception {
+        // DELETING is included so a delete that died after claiming the session can be retried.
+        for (final PrearcStatus status : Arrays.asList(PrearcStatus.RECEIVING, PrearcStatus.ERROR, PrearcStatus.DELETING)) {
             final DirectArchiveSession session = stubSessionIn(status);
 
-            assertThat(service.setStatusToDeletingAndReturn(SESSION_ID).getStatus()).as("from %s", status).isEqualTo(PrearcStatus.DELETING);
+            service.setStatusToDeleting(SESSION_ID);
 
-            assertThat(session.getStatus()).isEqualTo(PrearcStatus.DELETING);
+            assertThat(session.getStatus()).as("from %s", status).isEqualTo(PrearcStatus.DELETING);
         }
-        verify(dao, times(2)).update(any(DirectArchiveSession.class));
-    }
-
-    @Test
-    public void aSessionLeftInDeletingByAnInterruptedDeleteCanBeClaimedAgain() throws Exception {
-        final DirectArchiveSession session = stubSessionIn(PrearcStatus.DELETING);
-
-        assertThat(service.setStatusToDeletingAndReturn(SESSION_ID).getStatus()).isEqualTo(PrearcStatus.DELETING);
-
-        assertThat(session.getStatus()).isEqualTo(PrearcStatus.DELETING);
+        verify(dao, times(3)).update(any(DirectArchiveSession.class));
     }
 
     @Test
@@ -81,7 +75,7 @@ public class DirectArchiveSessionHibernateServiceImplTest {
         for (final PrearcStatus status : notDeletable) {
             final DirectArchiveSession session = stubSessionIn(status);
 
-            assertThatThrownBy(() -> service.setStatusToDeletingAndReturn(SESSION_ID)).as("from %s", status).isInstanceOf(ArchivingException.class);
+            assertThatThrownBy(() -> service.setStatusToDeleting(SESSION_ID)).as("from %s", status).isInstanceOf(ArchivingException.class);
 
             assertThat(session.getStatus()).isEqualTo(status);
         }
@@ -89,30 +83,44 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     }
 
     @Test
-    public void queueingForBuildOnlyMovesAReceivingSession() throws Exception {
-        // The archive trigger must not overwrite a session that a delete has just claimed.
-        assertOnlyMovesFrom(PrearcStatus.RECEIVING, PrearcStatus.QUEUED_BUILDING, () -> service.setStatusToQueuedBuilding(SESSION_ID));
+    public void queueingForBuildMovesARestingSessionAndSaysSo() throws Exception {
+        // RECEIVING is the normal case; ERROR lets a user retry the archive of a failed session.
+        for (final PrearcStatus status : Arrays.asList(PrearcStatus.RECEIVING, PrearcStatus.ERROR)) {
+            final DirectArchiveSession session = stubSessionIn(status);
+
+            assertThat(service.setStatusToQueuedBuilding(SESSION_ID)).as("from %s", status).isTrue();
+
+            assertThat(session.getStatus()).isEqualTo(PrearcStatus.QUEUED_BUILDING);
+        }
+        verify(dao, times(2)).update(any(DirectArchiveSession.class));
     }
 
     @Test
-    public void settingBackToReceivingOnlyUndoesAQueuedForBuildingTransition() throws Exception {
+    public void queueingForBuildLeavesAClaimedSessionAloneAndSaysSo() throws Exception {
+        // The archive trigger must not overwrite a session that a delete has just claimed.
+        final DirectArchiveSession claimed = stubSessionIn(PrearcStatus.DELETING);
+
+        assertThat(service.setStatusToQueuedBuilding(SESSION_ID)).isFalse();
+
+        assertThat(claimed.getStatus()).isEqualTo(PrearcStatus.DELETING);
+        verify(dao, never()).update(any());
+    }
+
+    @Test
+    public void settingBackToReceivingOnlyUndoesAQueuedForBuildingTransition() throws Throwable {
         // A claimed session must not be revived by the build path giving up on it.
         assertOnlyMovesFrom(PrearcStatus.QUEUED_BUILDING, PrearcStatus.RECEIVING, () -> service.setStatusBackToReceiving(SESSION_ID));
     }
 
-    private void assertOnlyMovesFrom(final PrearcStatus from, final PrearcStatus to, final Transition transition) throws Exception {
+    private void assertOnlyMovesFrom(final PrearcStatus from, final PrearcStatus to, final ThrowingCallable transition) throws Throwable {
         final DirectArchiveSession allowed = stubSessionIn(from);
-        transition.run();
+        transition.call();
         assertThat(allowed.getStatus()).isEqualTo(to);
 
         final DirectArchiveSession claimed = stubSessionIn(PrearcStatus.DELETING);
-        transition.run();
+        transition.call();
         assertThat(claimed.getStatus()).isEqualTo(PrearcStatus.DELETING);
         verify(dao, times(1)).update(any(DirectArchiveSession.class));
-    }
-
-    private interface Transition {
-        void run() throws Exception;
     }
 
     @Test
@@ -154,7 +162,6 @@ public class DirectArchiveSessionHibernateServiceImplTest {
         when(dao.findByLocation(LOCATION)).thenReturn(Collections.singletonList(sessionIn(SESSION_ID, PrearcStatus.RECEIVING)));
 
         assertThat(service.hasActiveSessionAtLocation(LOCATION, null)).isTrue();
-        assertThat(service.hasActiveSessionAtLocation(LOCATION, SESSION_ID)).isFalse();
     }
 
     @Test

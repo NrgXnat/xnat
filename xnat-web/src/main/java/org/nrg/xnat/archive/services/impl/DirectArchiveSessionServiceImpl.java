@@ -137,17 +137,17 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     @Override
     public void delete(long id, UserI user)
             throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
-        final SessionData current = directArchiveSessionHibernateService.getSessionData(id);
-        if (!Permissions.canDeleteProject(user, current.getProject())) {
-            throw new InvalidPermissionException(current.getProject());
+        final SessionData session = directArchiveSessionHibernateService.getSessionData(id);
+        if (!Permissions.canDeleteProject(user, session.getProject())) {
+            throw new InvalidPermissionException(session.getProject());
         }
         // Same guard as triggerArchive: files still landing in the directory would recreate it behind the delete
-        if (PrearcUtils.isSessionReceiving(current.getSessionDataTriple())) {
+        if (PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
             throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Cannot delete direct archive session " +
-                    current.getSessionDataTriple() + " while it is still receiving files");
+                    session.getSessionDataTriple() + " while it is still receiving files");
         }
 
-        final SessionData session = claimForDeletion(id);
+        claimForDeletion(id);
         try {
             if (ownsSessionDirectory(session)) {
                 deleteSessionFiles(session);
@@ -166,12 +166,12 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
     /**
      * Claims the session before anything on the filesystem is touched: the importer stops appending to a session that
-     * is no longer RECEIVING, the archive trigger only queues RECEIVING sessions, and a session the archiver is already
-     * working on cannot be claimed at all.
+     * is no longer RECEIVING, the archive trigger only queues RECEIVING and ERROR sessions, and a session the archiver
+     * is already working on cannot be claimed at all.
      */
-    private SessionData claimForDeletion(long id) throws NotFoundException, ClientException {
+    private void claimForDeletion(long id) throws NotFoundException, ClientException {
         try {
-            return directArchiveSessionHibernateService.setStatusToDeletingAndReturn(id);
+            directArchiveSessionHibernateService.setStatusToDeleting(id);
         } catch (ArchivingException e) {
             throw new ClientException(Status.CLIENT_ERROR_CONFLICT, e.getMessage(), e);
         }
@@ -197,31 +197,40 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         return Stream.of(session.getName(), session.getFolderName())
                      .filter(StringUtils::isNotBlank)
                      .distinct()
-                     .anyMatch(label -> BaseXnatExperimentdata.GetExptByProjectIdentifier(session.getProject(), label, user, false) != null);
+                     .anyMatch(label -> findArchivedExperiment(session.getProject(), label, user) != null);
+    }
+
+    @Nullable
+    private static XnatExperimentdata findArchivedExperiment(String project, String label, UserI user) {
+        return BaseXnatExperimentdata.GetExptByProjectIdentifier(project, label, user, false);
     }
 
     /**
-     * Removes the session XML and the session directory the same way a prearchive delete does, honoring the
+     * Removes the session XML and then the session directory the same way a prearchive delete does, honoring the
      * backupDeletedToCache site preference. Both land under the same backup timestamp so a backed-up session can be
-     * restored as one unit. MoveToCache reports nothing, so each file is checked afterwards.
+     * restored as one unit.
      */
     private void deleteSessionFiles(SessionData session) throws IOException {
         final String timestamp = getMsTimestamp();
-        for (final File file : Arrays.asList(sessionXmlPath(session.getUrl()).toFile(), new File(session.getUrl()))) {
-            if (!file.exists()) {
-                continue;
-            }
-            MoveToCache(file, timestamp);
-            if (file.exists()) {
-                throw new IOException("Unable to remove " + file);
-            }
-        }
+        removeIfPresent(sessionXmlPath(session.getUrl()).toFile(), timestamp);
+        removeIfPresent(new File(session.getUrl()), timestamp);
         log.info("Deleted files for DirectArchiveSession id={} {} at {}", session.getId(), session.getSessionDataTriple(), session.getUrl());
+    }
+
+    /** MoveToCache reports nothing, so the file is checked afterwards. */
+    private static void removeIfPresent(File file, String timestamp) throws IOException {
+        if (!file.exists()) {
+            return;
+        }
+        MoveToCache(file, timestamp);
+        if (file.exists()) {
+            throw new IOException("Unable to remove " + file);
+        }
     }
 
     // The session XML sits next to the session directory as <directory>.xml
     private static Path sessionXmlPath(String location) {
-        return Path.of(StringUtils.removeEnd(location, File.separator) + ".xml");
+        return Path.of(Path.of(location) + ".xml");
     }
 
     @Override
@@ -408,10 +417,15 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             throw new ClientException("Refusing to trigger archive on DirectArchiveSession id=" + id +
                                       " because it is still receiving new files or doesn't have an id");
         }
+        final boolean queued;
         try {
-            directArchiveSessionHibernateService.setStatusToQueuedBuilding(id);
+            queued = directArchiveSessionHibernateService.setStatusToQueuedBuilding(id);
         } catch (Exception e) {
             throw new ServerException("Issue setting status to queued building for DirectArchiveSession id=" + id, e);
+        }
+        if (!queued) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Refusing to trigger archive on DirectArchiveSession id=" + id +
+                                      " because it is not in a status that can be queued for building");
         }
         try {
             XDAT.sendJmsRequest(jmsTemplate, new DirectArchiveRequest(id));
@@ -607,8 +621,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                               UserI user, String location,
                               String overwriteMode) throws Exception {
         // Look up the existing archived session from XNAT DB
-        XnatExperimentdata existing = BaseXnatExperimentdata
-                .GetExptByProjectIdentifier(target.getProject(), incomingSession.getLabel(), user, false);
+        XnatExperimentdata existing = findArchivedExperiment(target.getProject(), incomingSession.getLabel(), user);
 
         if (existing == null || !(existing instanceof XnatImagesessiondata existingSession)) {
             // Session was deleted between receive and archive -- treat as fresh archive

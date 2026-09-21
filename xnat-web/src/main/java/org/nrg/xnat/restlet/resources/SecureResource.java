@@ -532,10 +532,19 @@ public abstract class SecureResource extends ServerResource {
             return "";
         }
 
-        // 1. The Restlet entity — correct for every non-form content type, and for POST forms.
+        // 1. The Restlet entity -- the raw body for any NON-form content type (text/plain,
+        //    application/json, ...). For application/x-www-form-urlencoded the servlet connector
+        //    rebuilds the entity from the merged parameter map, so the entity text is "k=v&..."
+        //    (query+body), NOT the raw body. Skip it and recover the body from the parameter map in
+        //    step 3 -- this is what a JSON body posted under a form content type (the Manage Features
+        //    UI) needs.
+        final Representation entity = request.getEntity();
+        final MediaType mediaType = entity == null ? null : entity.getMediaType();
+        final boolean formEncoded = mediaType != null
+                && MediaType.APPLICATION_WWW_FORM.getName().equalsIgnoreCase(mediaType.getName());
         try {
-            if (request.isEntityAvailable() && request.getEntity() != null) {
-                final String text = request.getEntity().getText();
+            if (!formEncoded && request.isEntityAvailable() && entity != null) {
+                final String text = entity.getText();
                 if (StringUtils.isNotEmpty(text)) {
                     return text;
                 }
@@ -559,15 +568,34 @@ public abstract class SecureResource extends ServerResource {
             logger.debug("Servlet body stream unavailable, falling back to the parameter map", e);
         }
 
-        // 3. The parameter map — the container already drained a POST form body into it.
+        // 3. The parameter map — the container already drained a POST form body into it (Servlet 6.0
+        //    3.1). getParameterMap() merges the query string with the body, so reduce to body-only
+        //    parameters (merged - query) before reconstructing, exactly as getBodyAsForm() does.
         final Map<String, String[]> parameters = servletRequest.getParameterMap();
         if (parameters == null || parameters.isEmpty()) {
             return "";
         }
-        return parameters.entrySet().stream()
-                         .flatMap(entry -> Arrays.stream(entry.getValue())
-                                                 .map(value -> encodeParameter(entry.getKey()) + "=" + encodeParameter(value)))
-                         .collect(Collectors.joining("&"));
+        final Form merged = new Form();
+        for (final Map.Entry<String, String[]> entry : parameters.entrySet()) {
+            for (final String value : entry.getValue()) {
+                merged.add(entry.getKey(), value);
+            }
+        }
+        final Form body = bodyOnlyForm(merged);
+        if (body == null || body.isEmpty()) {
+            return "";
+        }
+        // A raw (non-form) body -- e.g. a JSON object carrying no '=' or '&', as the Manage Features
+        // UI posts under an x-www-form-urlencoded content type -- is parsed by the container into a
+        // single parameter whose NAME is the entire body and whose value is empty. Recover it as the
+        // body text rather than re-encoding it to "name=", which is not valid JSON.
+        if (body.size() == 1 && StringUtils.isEmpty(body.get(0).getValue())) {
+            return body.get(0).getName();
+        }
+        // A genuine form body: reconstruct its k=v pairs.
+        return body.stream()
+                   .map(parameter -> encodeParameter(parameter.getName()) + "=" + encodeParameter(parameter.getValue()))
+                   .collect(Collectors.joining("&"));
     }
 
     private static String encodeParameter(final String value) {

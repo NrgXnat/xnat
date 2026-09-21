@@ -10,7 +10,6 @@
 package org.nrg.xnat.restlet.services;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
@@ -39,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
@@ -178,9 +176,12 @@ public class FeatureDefinitionRestlet extends SecureResource {
     @Override
     public void handlePost() {
     	try {
-			InputStream is = this.getRequest().getEntity().getStream();
-			
-			String body= IOUtils.toString(is);
+			// Read via SecureResource#getRequestBodyText(): the Manage Features UI posts this JSON with
+			// Content-Type application/x-www-form-urlencoded, which the Restlet 2.6 servlet connector
+			// parses into the servlet parameter map (Servlet 6.0 3.1), draining the entity stream. So
+			// getEntity().getStream() returned empty here and JSONObject rejected it as "Invalid JSON
+			// content" (400). The helper recovers the raw body from the parameter map. See item 1-24.
+			String body = getRequestBodyText();
 			
 			JSONObject json=new JSONObject(body);
 			

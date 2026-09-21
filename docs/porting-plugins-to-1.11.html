@@ -1,0 +1,688 @@
+<title>Porting Plugins to XNAT 1.11</title>
+<style>
+  :root {
+    --ground:#f7f7f5; --surface:#ffffff; --surface-2:#eeeeeb; --ink:#17181a; --ink-2:#4f5257;
+    --ink-3:#797d84; --rule:#e0e0dc; --rule-strong:#c6c7c1;
+    --accent:#0f6157; --accent-ink:#0a4840; --accent-soft:#e4f0ed;
+    --agent:#4a3a86; --agent-soft:#eeeaf7;
+    --danger:#9c3320; --danger-soft:#fbeae6; --safe:#3f6b3a; --safe-soft:#eaf2e8;
+    --shadow:0 1px 2px rgba(23,24,26,.05), 0 10px 28px -14px rgba(23,24,26,.16);
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#101211; --surface:#181b1a; --surface-2:#1f2321; --ink:#e8eae8; --ink-2:#a6aba7;
+      --ink-3:#7e837f; --rule:#2a2f2d; --rule-strong:#3c423f;
+      --accent:#4bbfa9; --accent-ink:#7fd6c4; --accent-soft:#132926;
+      --agent:#a99adf; --agent-soft:#1e1a2e;
+      --danger:#e0806c; --danger-soft:#2b1713; --safe:#8fbf87; --safe-soft:#182316;
+      --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#101211; --surface:#181b1a; --surface-2:#1f2321; --ink:#e8eae8; --ink-2:#a6aba7;
+    --ink-3:#7e837f; --rule:#2a2f2d; --rule-strong:#3c423f;
+    --accent:#4bbfa9; --accent-ink:#7fd6c4; --accent-soft:#132926;
+    --agent:#a99adf; --agent-soft:#1e1a2e;
+    --danger:#e0806c; --danger-soft:#2b1713; --safe:#8fbf87; --safe-soft:#182316;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:var(--sans);
+         font-size:16px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1160px; margin:0 auto; padding:clamp(26px,5vw,60px) clamp(18px,4vw,40px) 96px;
+          display:grid; grid-template-columns:1fr; gap:38px; }
+  @media (min-width:1040px){ .wrap{ grid-template-columns:190px minmax(0,1fr); gap:52px; } }
+  main { min-width:0; display:flex; flex-direction:column; gap:44px; }
+
+  nav.rail{ display:none; }
+  @media (min-width:1040px){
+    nav.rail{ display:block; position:sticky; top:30px; align-self:start; font-family:var(--mono); font-size:12.5px; }
+    nav.rail ol{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px; }
+    nav.rail a{ color:var(--ink-3); text-decoration:none; display:block; padding-left:11px; border-left:2px solid var(--rule); }
+    nav.rail a:hover, nav.rail a:focus-visible{ color:var(--accent); border-left-color:var(--accent); }
+    nav.rail a.ag:hover{ color:var(--agent); border-left-color:var(--agent); }
+    nav.rail .lbl{ color:var(--ink-3); text-transform:uppercase; letter-spacing:.1em; font-size:11px; margin-bottom:13px; }
+    nav.rail .grp{ color:var(--ink-3); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; margin:14px 0 4px; }
+  }
+
+  header.mast{ display:flex; flex-direction:column; gap:13px; }
+  .eyebrow{ font-family:var(--mono); font-size:11.5px; letter-spacing:.13em; text-transform:uppercase;
+            color:var(--accent); display:flex; gap:9px; flex-wrap:wrap; }
+  .eyebrow .sep{ color:var(--rule-strong); }
+  h1{ font-size:clamp(27px,4.3vw,38px); line-height:1.13; letter-spacing:-.022em; margin:0; text-wrap:balance; font-weight:640; }
+  .standfirst{ margin:0; color:var(--ink-2); font-size:17.5px; max-width:62ch; text-wrap:pretty; }
+
+  section{ display:flex; flex-direction:column; gap:15px; scroll-margin-top:22px; }
+  h2.sec{ margin:0; font-size:22px; letter-spacing:-.018em; font-weight:640; text-wrap:balance; }
+  h3{ margin:0; font-size:16.5px; font-weight:640; letter-spacing:-.012em; }
+  h4{ margin:0; font-size:14.5px; font-weight:650; letter-spacing:-.006em; color:var(--ink-2); }
+  p{ margin:0; text-wrap:pretty; }
+  code{ font-family:var(--mono); font-size:.86em; background:var(--surface-2); padding:.12em .38em; border-radius:4px; }
+  strong{ font-weight:650; }
+  a{ color:var(--accent); text-underline-offset:2px; }
+  a:focus-visible, input:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+
+  .danger{ background:var(--danger-soft); border:1px solid var(--danger); border-left-width:4px;
+           border-radius:9px; padding:20px 22px; display:flex; flex-direction:column; gap:10px; }
+  .danger .tag{ font-family:var(--mono); font-size:11px; letter-spacing:.11em; text-transform:uppercase;
+                color:var(--danger); font-weight:600; }
+  .danger p{ color:var(--ink); }
+
+  .facts{ display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:12px; }
+  .fact{ background:var(--surface); border:1px solid var(--rule); border-radius:9px; padding:15px 17px;
+         display:flex; flex-direction:column; gap:3px; }
+  .fact .k{ font-family:var(--mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); }
+  .fact .v{ font-size:19px; font-weight:650; letter-spacing:-.015em; }
+  .fact .n{ font-size:13.5px; color:var(--ink-2); }
+
+  .tw{ overflow-x:auto; border:1px solid var(--rule); border-radius:9px; background:var(--surface); }
+  table{ border-collapse:collapse; width:100%; font-size:14.5px; }
+  th,td{ text-align:left; padding:11px 14px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  thead th{ font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.09em;
+            color:var(--ink-3); font-weight:500; background:var(--surface-2); }
+  tbody tr:last-child td{ border-bottom:0; }
+  tr.safe-row{ background:var(--safe-soft); }
+  tr.silent-row{ background:var(--accent-soft); }
+
+  .searchbar{ display:flex; flex-direction:column; gap:6px; }
+  .searchbar label{ font-family:var(--mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); }
+  .searchrow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .searchrow input{ flex:1; min-width:240px; font-family:var(--mono); font-size:14px; padding:9px 12px;
+                    border:1px solid var(--rule-strong); border-radius:7px; background:var(--surface); color:var(--ink); }
+  .searchrow .count{ font-family:var(--mono); font-size:12.5px; color:var(--ink-3); white-space:nowrap; }
+
+  /* two tracks */
+  .chooser{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+  .track-card{ border-radius:10px; padding:20px 22px; display:flex; flex-direction:column; gap:9px;
+               border:1px solid var(--rule); background:var(--surface); box-shadow:var(--shadow); }
+  .track-card.a{ border-top:3px solid var(--agent); }
+  .track-card.b{ border-top:3px solid var(--accent); }
+  .track-card .who{ font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+  .track-card h3 a{ text-decoration:none; }
+  .track-card.a h3 a{ color:var(--agent); }
+  .track-card p{ font-size:14.5px; color:var(--ink-2); }
+
+  .band{ border-radius:10px; padding:22px 24px; display:flex; flex-direction:column; gap:16px; }
+  .band.a{ background:var(--agent-soft); border:1px solid var(--agent); }
+  .band.b{ background:var(--accent-soft); border:1px solid var(--accent); }
+  .band .badge{ font-family:var(--mono); font-size:11px; letter-spacing:.11em; text-transform:uppercase;
+                font-weight:650; align-self:flex-start; padding:3px 9px; border-radius:5px; }
+  .band.a .badge{ color:#fff; background:var(--agent); }
+  .band.b .badge{ color:#fff; background:var(--accent); }
+  :root[data-theme="dark"] .band.a .badge, :root[data-theme="dark"] .band.b .badge{ color:#101211; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .band.a .badge,
+    :root:not([data-theme="light"]) .band.b .badge{ color:#101211; } }
+  .band h2{ margin:0; font-size:23px; font-weight:645; letter-spacing:-.02em; }
+
+  .step{ background:var(--surface); border:1px solid var(--rule); border-radius:9px; padding:17px 19px;
+         display:flex; flex-direction:column; gap:10px; }
+  .step .n{ font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; color:var(--ink-3); }
+  .step h3{ font-size:16px; }
+  .step p{ font-size:14.5px; color:var(--ink-2); }
+  .step p.lead{ color:var(--ink); font-size:15px; }
+  .step .why{ font-size:13.5px; color:var(--ink-3); border-left:2px solid var(--rule-strong); padding-left:11px; }
+
+  pre{ margin:0; background:var(--surface-2); border:1px solid var(--rule); border-radius:8px;
+       padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.55; color:var(--ink-2); }
+  pre.prompt{ background:var(--surface); border-style:dashed; color:var(--ink); white-space:pre-wrap; }
+  ul.tight{ margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:6px; font-size:14.5px; color:var(--ink-2); }
+  .card{ background:var(--surface); border:1px solid var(--rule); border-left:3px solid var(--accent);
+         border-radius:9px; padding:17px 19px; display:flex; flex-direction:column; gap:9px; }
+  .card .tag{ font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+              color:var(--accent-ink); background:var(--accent-soft); padding:2px 7px; border-radius:4px; align-self:flex-start; }
+  .card p{ font-size:15px; color:var(--ink-2); }
+  .card p.lead{ color:var(--ink); }
+  footer{ border-top:1px solid var(--rule); padding-top:17px; color:var(--ink-3); font-size:13.5px; }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+
+<div class="wrap">
+  <nav class="rail" aria-label="Sections">
+    <div class="lbl">Contents</div>
+    <ol>
+      <li><a href="#stop">Read first</a></li>
+      <li><a href="#requires">1.11 requires</a></li>
+      <li><a href="#prereq">Before you start</a></li>
+      <li><a href="#matrix">API matrix</a></li>
+      <li><a href="#choose">Choose a path</a></li>
+    </ol>
+    <div class="grp">Track A</div>
+    <ol><li><a class="ag" href="#agent">With an agent</a></li></ol>
+    <div class="grp">Track B</div>
+    <ol><li><a href="#manual">By hand</a></li></ol>
+    <div class="grp">Both</div>
+    <ol><li><a href="#traps">Silent traps</a></li>
+      <li><a href="#docs">The other docs</a></li></ol>
+  </nav>
+
+  <main>
+    <header class="mast">
+      <div class="eyebrow"><span>Plugin authors</span><span class="sep">/</span><span>XNAT 1.11</span>
+        <span class="sep">/</span><span>Jakarta · Tomcat 10</span></div>
+      <h1>Porting your plugin to XNAT 1.11</h1>
+      <p class="standfirst">1.11 moves XNAT to Jakarta EE and Tomcat 10.1. Your plugin needs at minimum a
+        rebuild, and — if it touches Restlet, Turbine or Hibernate — source changes. Read the first three
+        sections whichever way you work, then pick a track.</p>
+    </header>
+
+    <section id="stop" class="danger">
+      <span class="tag">Read this first</span>
+      <p><strong>A javax-compiled plugin doesn't "mostly work" on 1.11 — it takes the whole site down.</strong></p>
+      <p>If your jar implements Spring's <code>WebApplicationInitializer</code> (most plugins with a REST API
+        do, indirectly), XNAT throws <code>AbstractMethodError</code> during context startup, the entire web
+        application fails to start, and <strong>every URL returns 404</strong> — with no database error and
+        nothing in the logs naming your plugin. Diagnosing that from the symptom alone is close to impossible
+        unless you already suspect it.</p>
+      <p>Every plugin on a 1.11 site must be rebuilt for Jakarta. <strong>There is no mixed mode.</strong></p>
+    </section>
+
+    <section id="requires">
+      <h2 class="sec">What 1.11 requires</h2>
+      <div class="facts">
+        <div class="fact"><span class="k">Tomcat</span><span class="v">10.1</span></div>
+        <div class="fact"><span class="k">Java</span><span class="v">21</span></div>
+        <div class="fact"><span class="k">ActiveMQ broker</span><span class="v">6.x</span>
+          <span class="n">A 5.x broker fails to boot the Jakarta client <em>silently</em> — the app hangs
+            rather than logging a clear error.</span></div>
+        <div class="fact"><span class="k">Plugins</span><span class="v">All rebuilt</span>
+          <span class="n">One javax plugin fails the whole context.</span></div>
+      </div>
+    </section>
+
+    <section id="prereq">
+      <h2 class="sec">Before you start: get 1.11 on your machine</h2>
+      <div class="card" style="border-left-color:var(--safe);">
+        <span class="tag" style="color:var(--safe);background:var(--safe-soft);">Changed 2026-09-10</span>
+        <p class="lead"><strong><code>1.11.0-SNAPSHOT</code> is now published to the XNAT Artifactory.</strong>
+          A build landed on 2026-09-10 (<code>1.11.0-20260910.185426-1</code>), so a plugin can resolve 1.11
+          from a remote repository. Building core yourself is no longer the only way in.</p>
+        <p>1.11 itself is still unreleased — what exists is a timestamped snapshot, and it moves when someone
+          publishes again. Which of the two routes below you want depends on what you are doing, not on which
+          is "proper".</p>
+      </div>
+
+      <h3>Resolve it from the Artifactory</h3>
+      <p>Nothing to build. Add the XNAT repositories to your plugin — most plugins already list them, in which
+        case bumping <code>vXnat</code> to <code>1.11.0-SNAPSHOT</code> is the whole change:</p>
+      <pre>repositories {
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
+    maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
+    mavenCentral()
+}</pre>
+      <p>Every coordinate a plugin build reaches for is published at that version:</p>
+      <ul class="tight">
+        <li><code>org.nrg:parent</code> — the BOM your <code>dependencyManagement</code> imports</li>
+        <li><code>org.nrg.xnat:web</code>, <code>org.nrg.xdat:core</code>, <code>org.nrg:framework</code></li>
+        <li><code>org.nrg:prefs</code>, <code>org.nrg:notify</code>, <code>org.nrg:config</code>,
+          <code>org.nrg:automation</code></li>
+        <li><code>xnat-data-builder</code> — the Gradle plugin your <code>plugins {}</code> block applies</li>
+      </ul>
+      <p>To see which snapshot you are about to build against, ask the repository rather than guessing:</p>
+      <pre>curl -s https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.11.0-SNAPSHOT/maven-metadata.xml \
+  | grep -E '&lt;timestamp&gt;|&lt;buildNumber&gt;'</pre>
+      <div class="card" style="border-left-color:var(--danger);">
+        <span class="tag" style="color:var(--danger);background:var(--danger-soft);">The one trap on this route</span>
+        <p><strong>A stale local publish silently wins.</strong> <code>mavenLocal()</code> is listed first in
+          most plugin builds, so an older <code>1.11.0-SNAPSHOT</code> sitting in <code>~/.m2</code> from a
+          previous session shadows the Artifactory copy — and because the version string is identical, nothing
+          tells you which one you got. If you are switching to this route, clear the old one:</p>
+        <pre>rm -rf ~/.m2/repository/org/nrg</pre>
+      </div>
+
+      <h3>Or build core yourself</h3>
+      <p>Still the right move in three cases: you are <strong>changing core</strong> alongside your plugin; you
+        need a <strong>cutover commit newer</strong> than the published snapshot; or you want the
+        <strong>Docker test stack</strong>, which lives in the same clone and is the subject of the next
+        section. Clone the XNAT core repository next to your plugin and publish it locally:</p>
+      <pre>git clone https://github.com/NrgXnat/xnat.git
+cd xnat
+git checkout feature/jakarta-cutover     # until 1.11 is merged and released
+./gradlew publishToMavenLocal            # installs 1.11.0-SNAPSHOT into ~/.m2</pre>
+      <p>One root invocation is enough — <code>publishToMavenLocal</code> runs in all 21 modules, and the
+        satellite projects were merged into this repository, so there is nothing else to build first.</p>
+      <h4>Confirm it worked before moving on</h4>
+      <p>Two seconds here saves an hour debugging a resolution error that names the wrong thing:</p>
+      <pre>ls ~/.m2/repository/org/nrg/parent/1.11.0-SNAPSHOT         # the BOM
+ls ~/.m2/repository/org/nrg/xnat/build/xnat-data-builder   # the Gradle plugin
+ls ~/.m2/repository/org/nrg/xnat/web/1.11.0-SNAPSHOT       # xnat-web</pre>
+      <p>All three must exist. <strong>The middle one matters most and is the easiest to overlook:</strong>
+        plugins apply <code>xnat-data-builder</code> in their <code>plugins {}</code> block, so if it's
+        missing the build fails <em>before</em> any dependency resolution — with an error about the plugin
+        rather than about XNAT.</p>
+      <div class="card">
+        <span class="tag">Look wrong, aren't</span>
+        <p><code>xnat-data-builder</code> publishes under a Gradle plugin-marker coordinate
+          (<code>org/nrg/xnat/build/…</code>) rather than the usual artifact path, and
+          <code>dicom-edit6</code> carries its own version line — <code>6.9.0</code>, not
+          <code>1.11.0-SNAPSHOT</code>. Neither indicates a failed publish.</p>
+      </div>
+
+      <h3>The two reference documents</h3>
+      <p>They live in that clone, which is why the agent prompt below points at a local path. If you took the
+        Artifactory route and have no clone, read them on the branch instead —
+        <a href="https://github.com/NrgXnat/xnat/blob/feature/jakarta-cutover/docs/plugin-migration-guide.md">plugin-migration-guide.md</a>
+        and
+        <a href="https://github.com/NrgXnat/xnat/blob/feature/jakarta-cutover/docs/ai/jakarta-plugin-port-handoff.md">jakarta-plugin-port-handoff.md</a>
+        — and point your agent at the URL:</p>
+      <pre>xnat/docs/ai/jakarta-plugin-port-handoff.md   # the procedure, for an agent
+xnat/docs/plugin-migration-guide.md          # the reference catalog</pre>
+
+      <h3>And it is your test instance — you don't need a server from anyone</h3>
+      <p>Finishing a port takes a <em>running</em> 1.11 instance: a plugin that compiles can still fail at
+        load, and that failure stays invisible until you boot it. The same clone ships a Docker stack that
+        boots the cutover WAR on Tomcat 10.1 / JDK 21, with PostgreSQL and ActiveMQ alongside. An agent with
+        Docker access can stand this up itself.</p>
+      <pre>./docker/stage-war.sh
+echo 'file  /path/to/your-plugin/build/libs/your-plugin-…-xpl.jar' &gt;&gt; docker/plugins.manifest
+./docker/stage-plugins.sh
+docker compose up --build
+docker compose logs -f xnat        # confirm your plugin is named as loaded</pre>
+      <div class="card">
+        <span class="tag">Skip the core build</span>
+        <p><code>stage-war.sh</code> runs <code>./gradlew :xnat-web:war</code> and copies the result to
+          <code>docker-context/xnat.war</code>, which is the only thing the Dockerfile reads. If you took the
+          Artifactory route, put the published WAR there yourself and skip the build — you still need the clone
+          for <code>docker-compose.yml</code> and the scripts, but not for a 20-minute Gradle run:</p>
+        <pre>curl -L -o docker-context/xnat.war \
+  https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/xnat/web/xnat-web/1.11.0-SNAPSHOT/xnat-web-1.11.0-20260910.185426-1.war</pre>
+        <p>That URL names one specific build. For whatever is newest, read
+          <code>maven-metadata.xml</code> in the same directory and substitute the timestamp it reports.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Four things that bite people</span>
+        <p><strong>Register the jar in <code>docker/plugins.manifest</code> — never hand-copy it into
+          <code>docker/plugins/</code>.</strong> The staging script clears that directory first, so a copied
+          jar silently disappears and you conclude the plugin "didn't load" when it was never staged.</p>
+        <p><strong>Use the <code>file</code> entry form while iterating.</strong> The <code>source</code> form
+          rebuilds from a repo checkout and refuses to run if that repo has uncommitted changes — the normal
+          state of a port in progress.</p>
+        <p><strong>XNAT scans the plugin directory once, at boot.</strong> After re-staging,
+          <code>docker compose restart xnat</code>; re-running the staging script alone changes nothing in
+          the running container.</p>
+        <p><strong>A javax plugin fails here without naming itself.</strong> Every URL 404s and the webapp is
+          dead. That's a successful reproduction of the bug, not a broken stack.</p>
+      </div>
+      <p>First boot runs schema creation and takes a few minutes — read the log rather than polling the port.
+        For a genuinely clean slate, <code>docker compose down -v</code> before bringing it up again.</p>
+      <div class="facts">
+        <div class="fact"><span class="k">Build against</span><span class="v">1.11.0-SNAPSHOT</span>
+          <span class="n">In your plugin: <code>vXnat = "1.11.0-SNAPSHOT"</code></span></div>
+        <div class="fact"><span class="k">Resolves from</span><span class="v">Artifactory</span>
+          <span class="n"><code>libs-snapshot</code> by default; <code>~/.m2</code> only if you built core
+            yourself — then keep <code>mavenLocal</code> scoped to <code>org.nrg.*</code>, see step B3.</span></div>
+        <div class="fact"><span class="k">After 1.11 releases</span><span class="v">1.11.0</span>
+          <span class="n">Then it resolves from the release repository and this whole step goes away.</span></div>
+      </div>
+    </section>
+
+    <section id="matrix">
+      <h2 class="sec">Breaking-API matrix</h2>
+      <p>Search your plugin's source for the items in the first column. Every hit is work; a row you have no
+        hits for doesn't apply to you. Do this <strong>before</strong> you start — it tells you whether this is
+        an hour (build file only) or a day (source changes too).</p>
+      <div class="searchbar">
+        <label for="q">Filter the table below</label>
+        <div class="searchrow">
+          <input id="q" type="search" placeholder="Type an API name, e.g. RunData or javax.servlet"
+                 aria-describedby="qhelp" autocomplete="off">
+          <span class="count" id="count"></span>
+        </div>
+        <span id="qhelp" style="font-size:13px;color:var(--ink-3);">Hides rows that don't match, so you can
+          narrow the table to the APIs your plugin actually uses.</span>
+      </div>
+      <div class="tw">
+        <table id="matrix">
+          <thead><tr><th>If your plugin uses…</th><th>It breaks because</th><th>Change it to</th></tr></thead>
+          <tbody>
+            <tr class="safe-row">
+              <td><code>javax.annotation.Nonnull</code> / <code>Nullable</code>, <code>javax.cache.*</code>,
+                  <code>javax.xml.parsers.*</code>, <code>javax.xml.XMLConstants</code>,
+                  <code>javax.sql.*</code>, <code>javax.naming.*</code></td>
+              <td><strong>Nothing — these never moved.</strong> JSR-305, JCache, JAXP, JDK</td>
+              <td><strong>Leave them alone.</strong> A blanket <code>javax</code>→<code>jakarta</code> replace
+                  breaks your build here</td>
+            </tr>
+            <tr>
+              <td><code>javax.servlet.*</code>, <code>javax.persistence.*</code>, <code>javax.validation.*</code>,
+                  <code>javax.mail.*</code>, <code>javax.jms.*</code>, <code>javax.xml.bind.*</code>,
+                  jsr250 <code>javax.annotation.PostConstruct</code></td>
+              <td>Jakarta EE renamed the packages</td>
+              <td>the <code>jakarta.*</code> equivalents</td>
+            </tr>
+            <tr class="silent-row">
+              <td>Turbine <code>doBuildTemplate(RunData, …)</code>, <code>doPerform(RunData, …)</code>,
+                  <code>isAuthorized(RunData)</code></td>
+              <td><strong>Turbine 7 dispatches on <code>PipelineData</code> — a missed conversion fails
+                  SILENTLY</strong></td>
+              <td><code>(PipelineData, Context)</code> plus
+                  <code>RunData data = pipelineData.getRunData();</code></td>
+            </tr>
+            <tr><td><code>eventSubmit_doXxx</code> handlers</td><td>resolved by exact signature</td>
+                <td>the same <code>(PipelineData, Context)</code> change</td></tr>
+            <tr><td><code>org.apache.turbine.util.parser.ParameterParser</code></td><td>moved to Fulcrum</td>
+                <td><code>org.apache.fulcrum.parser.ParameterParser</code> + two <code>compileOnly</code> deps</td></tr>
+            <tr><td><code>ParameterParser.getFileItem(…)</code> — file uploads</td>
+                <td>commons-fileupload <code>FileItem</code> is gone</td>
+                <td><code>getPart(…)</code> → <code>jakarta.servlet.http.Part</code>; copy
+                    <code>getInputStream()</code> rather than <code>FileItem.write(File)</code></td></tr>
+            <tr><td><code>org.restlet.resource.Representation</code>, <code>…resource.Variant</code>,
+                    <code>com.noelios.*</code></td>
+                <td>Restlet 2.x moved or removed the types</td>
+                <td><code>org.restlet.representation.*</code>; <code>com.noelios</code> is gone</td></tr>
+            <tr><td>Restlet WebDAV statuses — 207 / 422 / 423 / 424 / 507</td><td>removed in 2.6</td>
+                <td>define them locally</td></tr>
+            <tr><td><code>Representation.createEmpty()</code></td><td>a 1.1 static factory</td>
+                <td><code>new EmptyRepresentation()</code></td></tr>
+            <tr><td><code>HttpMethod.resolve(String)</code>, or <code>switch</code> on <code>HttpMethod</code></td>
+                <td>Spring 6 made it a final class, not an enum</td>
+                <td><code>HttpMethod.valueOf(…)</code> + <code>if/else</code> on <code>HttpMethod.GET.equals(m)</code></td></tr>
+            <tr><td>a <code>HttpStatus</code> from <code>getStatusCode()</code></td>
+                <td>Spring 6 returns <code>HttpStatusCode</code></td>
+                <td>keep <code>HttpStatusCode</code>, or <code>HttpStatus.valueOf(code.value())</code></td></tr>
+            <tr><td><code>WebMvcConfigurerAdapter</code>, <code>WebSecurityConfigurerAdapter</code></td>
+                <td>removed in Spring 6 / Security 6</td><td>the interface, or component style</td></tr>
+            <tr><td><code>io.springfox:springfox-*</code></td><td>dead on Spring 6</td>
+                <td>drop it; add <code>io.swagger:swagger-annotations:1.5.20</code> so legacy
+                    <code>@Api</code>/<code>@ApiOperation</code> still compile</td></tr>
+            <tr><td><code>org.hibernate:hibernate-core</code> / <code>hibernate-envers</code></td>
+                <td>the Jakarta build is a <em>differently named</em> artifact</td>
+                <td><code>hibernate-core-jakarta</code> / <code>hibernate-envers-jakarta</code></td></tr>
+            <tr><td><code>turbine:turbine</code>, <code>org.apache.velocity:velocity</code></td>
+                <td>coordinates changed</td>
+                <td><code>org.apache.turbine:turbine</code>, <code>…:velocity-engine-core</code></td></tr>
+            <tr><td>JSP / tag files with <code>uri="http://java.sun.com/jsp/jstl/…"</code></td>
+                <td>JSTL changed namespace</td><td><code>uri="jakarta.tags.…"</code></td></tr>
+            <tr><td>a Java 8/11 toolchain</td><td>core is on 21</td>
+                <td>pin a Java 21 toolchain, <code>fork = true</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:14.5px;color:var(--ink-2);">The
+        <span style="background:var(--accent-soft);padding:1px 5px;border-radius:3px;">highlighted</span> row
+        fails with no error at all; the
+        <span style="background:var(--safe-soft);padding:1px 5px;border-radius:3px;">green</span> row is the
+        one people break by over-applying find-and-replace.</p>
+    </section>
+
+    <section id="choose">
+      <h2 class="sec">Choose a path</h2>
+      <div class="chooser">
+        <div class="track-card a">
+          <span class="who">Track A</span>
+          <h3><a href="#agent">Port it with an AI coding agent →</a></h3>
+          <p>You supervise. The agent does the mechanical work; you check its evidence. Fastest for a plugin
+            with a large namespace sweep — and the sweep is usually ~80% of the diff.</p>
+        </div>
+        <div class="track-card b">
+          <span class="who">Track B</span>
+          <h3><a href="#manual">Port it by hand →</a></h3>
+          <p>Eleven steps, in the order that works. Each step surfaces the next set of errors; doing them out
+            of order produces noise you'll chase for an hour.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────────── TRACK A ─────────────── -->
+    <section id="agent" class="band a">
+      <span class="badge">Track A</span>
+      <h2>Porting with an AI coding agent</h2>
+      <p style="color:var(--ink-2);">The agent needs the procedure and the reference; without both it will
+        improvise, and improvised ports look correct while being wrong in specific, known ways.</p>
+
+      <div class="step">
+        <span class="n">Step 1</span>
+        <h3>Paste this, with the repository name filled in</h3>
+        <p>Start the session <strong>in your plugin's clone</strong>, with the XNAT clone from the previous
+          section nearby. Fill in the one path and paste:</p>
+        <pre class="prompt">Port this plugin (the repository in the current directory) to XNAT 1.11
+(Jakarta / Tomcat 10).
+
+The XNAT core clone is at &lt;path-to-xnat-clone&gt;. Before editing anything, read
+both of these from it, and follow the handoff's phases in order:
+  &lt;path-to-xnat-clone&gt;/docs/ai/jakarta-plugin-port-handoff.md   (procedure)
+  &lt;path-to-xnat-clone&gt;/docs/plugin-migration-guide.md           (reference)
+
+Build against vXnat = "1.11.0-SNAPSHOT". It is published to the XNAT
+Artifactory (libs-snapshot, since 2026-09-10), so it should resolve from
+there; I may also have a local publish in ~/.m2. If dependency resolution
+cannot find org.nrg:parent:1.11.0-SNAPSHOT, check in order that the
+libs-snapshot repository is declared, that a stale ~/.m2 copy is not shadowing
+it, and that mavenLocal() is scoped to org.nrg.* -- then stop and tell me
+rather than downgrading the version to something that does resolve.
+
+Branch feature/tomcat10 off this plugin's develop, or main if it has no develop.
+
+First, before any edit, report the framework surface so we both know the size of
+the job: Restlet resources, Turbine modules, RunData overrides, and javax EE
+references, each with the command you used.
+
+Constraints:
+  - Migrate javax -> jakarta BY PACKAGE, never by prefix. javax.annotation.Nonnull
+    and Nullable (JSR-305), javax.cache, javax.xml.parsers, javax.sql and
+    javax.naming do NOT move. Note that jsr250 javax.annotation.PostConstruct
+    DOES move while jsr305 javax.annotation.Nonnull does not.
+  - After converting Turbine overrides, run the Phase 3 verification grep from the
+    handoff (the one that finds any doBuildTemplate / doPerform / isAuthorized
+    still taking RunData) and paste its output. Do not simply assert the
+    conversion is complete: a missed one still compiles and is silently never
+    called, so the grep is the only evidence that counts.
+  - Back every count, every "this is safe", and every bug-class definition with
+    the command that proves it. If you cannot prove something, say it is
+    unverified rather than asserting it.
+  - A grep that returns nothing is a hypothesis, not a finding. If you expected
+    matches and got none, widen the pattern before concluding.
+
+Report these as three separate claims, not one:
+  1. it compiles
+  2. the tests pass
+  3. the jar loads into a running 1.11 instance and it boots clean
+Only (3) means done. Include the startup log line that shows the plugin loading,
+and confirm no AbstractMethodError and no SEVERE.
+
+For (3), stand the instance up yourself from the XNAT clone above — it ships a
+Docker stack (stage-war.sh, plugins.manifest, stage-plugins.sh, docker compose
+up --build); the handoff document has the exact sequence. If you have no Docker
+access, say so and report (3) as unverified rather than implying it passed.
+
+Finally: if you fixed a bug, sweep its class and state the class definition, the
+audit scope and the result. And tell me explicitly what you did NOT do —
+deferred items, unverified assumptions, anything you were unsure about.</pre>
+      </div>
+
+      <div class="step">
+        <span class="n">Step 2</span>
+        <h3>Check two things yourself when it reports back</h3>
+        <p class="lead">These stay on your side of the line deliberately.</p>
+        <p>The prompt asks the agent to verify its own work, which helps — but the failure mode being guarded
+          against is an agent that reports confidently without having checked. Asking it to promise it checked
+          doesn't fix that. Two spot-checks cost a minute and don't depend on its cooperation:</p>
+        <ul class="tight">
+          <li><strong>Did the namespace sweep go too far?</strong> Search the diff for
+            <code>jakarta.annotation.Nonnull</code>, <code>jakarta.cache</code> or
+            <code>jakarta.xml.parsers</code>. Any hit means a blanket replace ran and broke things that never
+            moved.</li>
+          <li><strong>Is claim 3 actually claim 3?</strong> "Builds successfully" and "tests pass" get
+            reported in language that sounds like done. If there's no startup log line quoted, the plugin was
+            never loaded into a running instance.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ─────────────── TRACK B ─────────────── -->
+    <section id="manual" class="band b">
+      <span class="badge">Track B</span>
+      <h2>Porting by hand — eleven steps</h2>
+      <p style="color:var(--ink-2);">The order matters. Each step surfaces the next set of errors, and an
+        unresolved dependency generates dozens of misleading <code>cannot find symbol</code> errors that vanish
+        once resolution is fixed.</p>
+
+      <div class="step"><span class="n">B1</span><h3>Branch — after the prerequisite above</h3>
+        <pre>git checkout -b feature/tomcat10 develop   # or main, if there is no develop</pre>
+        <p class="why">Branch off your plugin's own mainline — not off an older migration branch.</p></div>
+
+      <div class="step"><span class="n">B2</span><h3>Size the job before editing</h3>
+        <pre>grep -rl 'import org.restlet' src/main/java | wc -l
+find src -path '*turbine/modules*' -name '*.java' | wc -l
+grep -rl 'RunData' src/main/java | wc -l
+grep -rlE 'javax\.(persistence|servlet|validation|mail|jms|xml\.bind)' src/main/java | wc -l</pre>
+        <p>All zero on the framework rows means this is a <strong>build-file-only</strong> port. Non-zero means
+          source changes too.</p></div>
+
+      <div class="step"><span class="n">B3</span><h3>Update the build file</h3>
+        <pre>buildscript { ext { vXnat = "1.11.0-SNAPSHOT" } }
+dependencyManagement.imports { mavenBom "org.nrg:parent:${vXnat}" }
+
+repositories {
+    // scope mavenLocal, or it shadows partial third-party artifacts
+    mavenLocal { content { includeGroupByRegex 'org\\.nrg.*' } }
+}
+
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+compileJava { options.fork = true }   // a cross-JDK toolchain must fork
+
+// only if a screen calls data.getParameters()
+compileOnly "org.apache.fulcrum:fulcrum-parser:4.0.0"
+compileOnly "org.apache.fulcrum:fulcrum-pool:1.0.5"</pre>
+        <p>Also rename the coordinates flagged in the matrix: <code>turbine:turbine</code>,
+          <code>velocity-engine-core</code>, and the <code>-jakarta</code> Hibernate artifacts.</p></div>
+
+      <div class="step"><span class="n">B4</span><h3>Fix dependency resolution — and only that</h3>
+        <pre>./gradlew dependencies --configuration compileClasspath 2>&amp;1 | grep -E "null|FAILED|Could not find"</pre>
+        <p class="why">Do not compile yet. A dependency that can't resolve produces "cannot find symbol" errors
+          all over your source, and you will waste a cycle "fixing" code that was never broken. A common one:
+          <code>hibernate-core</code> fails with an <em>empty</em> version rather than a helpful message,
+          because the javax coordinate isn't managed by the 1.11 BOM.</p></div>
+
+      <div class="step"><span class="n">B5</span><h3>Sweep the namespace — by package, never by prefix</h3>
+        <pre>find src -name '*.java' -exec sed -i '' -E \
+  's/javax\.(persistence|servlet|validation|mail|jms|transaction)/jakarta.\1/g' {} +</pre>
+        <p><strong>Never</strong> run a blanket <code>javax</code>→<code>jakarta</code> replacement. Note the
+          trap: jsr250 <code>javax.annotation.PostConstruct</code> <em>does</em> move, while jsr305
+          <code>javax.annotation.Nonnull</code> does <em>not</em> — same package prefix, opposite answers.</p>
+        <pre>grep -rhoE 'javax\.[a-zA-Z.]+' src/main/java | sort | uniq -c | sort -rn</pre>
+        <p class="why">What remains should be only JSR-305, JCache, JAXP, <code>javax.sql</code> and
+          <code>javax.naming</code>.</p></div>
+
+      <div class="step"><span class="n">B6</span><h3>Remap Restlet imports, if you have Restlet resources</h3>
+        <p><code>org.restlet.resource.Representation</code> → <code>org.restlet.representation.Representation</code>,
+          and the same for <code>Variant</code>. <code>com.noelios.*</code> is gone entirely. Replace dropped
+          WebDAV status constants with local definitions.</p></div>
+
+      <div class="step"><span class="n">B7</span><h3>Convert Turbine overrides — then prove none were missed</h3>
+        <pre>// before
+protected void doBuildTemplate(RunData data, Context context) throws Exception { … }
+
+// after
+protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+    RunData data = pipelineData.getRunData();   // inserted; body unchanged
+    …
+}</pre>
+        <p>Import <code>org.apache.turbine.pipeline.PipelineData</code>. Your own helper methods stay on
+          <code>RunData</code> — only framework overrides change. Then:</p>
+        <pre>grep -rnE '(protected|public)[^(]*(doBuildTemplate|doPerform|isAuthorized)[^(]*\([^)]*RunData' src/main/java</pre>
+        <p class="why">Any hit that is a framework override is a dead method: it compiles, and Turbine never
+          calls it. This is the only change in the whole port that fails with no error at all, so verify it
+          rather than trusting the edit.</p></div>
+
+      <div class="step"><span class="n">B8</span><h3>Compile, and expect two or three novel breaks</h3>
+        <pre>./gradlew compileJava</pre>
+        <p>Match each error against the matrix and the guide's catalog. Expect a small number that aren't in
+          either — that's normal; every plugin has some.</p></div>
+
+      <div class="step"><span class="n">B9</span><h3>Test-compile, then test-runtime</h3>
+        <pre>./gradlew compileTestJava
+./gradlew test</pre>
+        <p class="why"><code>compileOnly</code> dependencies are absent from both, and each pass finds a
+          different class of missing dependency.</p></div>
+
+      <div class="step"><span class="n">B10</span><h3>Build the plugin jar</h3>
+        <pre>./gradlew clean &lt;pluginJarTask&gt;    # e.g. xnatPluginJar, or fatJar</pre>
+        <p class="why">Use <code>clean</code>. If your plugin's version changed, a stale jar from the old
+          version will sit alongside the new one and both may get deployed.</p></div>
+
+      <div class="step" style="border-left:3px solid var(--danger);"><span class="n">B11</span>
+        <h3>Deploy to a real 1.11 instance and read the startup log</h3>
+        <p class="lead">This step is not optional, and it is the one most often skipped.</p>
+        <p>If you don't have a 1.11 instance, make one — the XNAT clone from the prerequisite ships the Docker
+          stack, and <a href="#prereq">the commands are up there</a>. Register the jar in
+          <code>docker/plugins.manifest</code>, stage it, boot, and watch the log. You are looking for your
+          plugin's "Found plugin" line, and for the absence of <code>AbstractMethodError</code> and
+          <code>SEVERE</code>. A plugin that compiles perfectly can still fail the entire web context at load.</p></div>
+    </section>
+
+    <section id="traps">
+      <h2 class="sec">Traps worth knowing before you hit them</h2>
+      <div class="card" style="border-left-color:var(--danger);">
+        <span class="tag" style="color:var(--danger);background:var(--danger-soft);">Fails silently</span>
+        <p class="lead">A missed <code>RunData</code> → <code>PipelineData</code> conversion compiles fine.</p>
+        <p><code>RunData</code> <em>extends</em> <code>PipelineData</code>, so your old method is simply a
+          more-specific overload Turbine never calls. The screen renders nothing, or the action never runs, and
+          nothing is logged.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Compile-clean is not boot-clean</span>
+        <p class="lead">A plugin can build perfectly and still fail at runtime.</p>
+        <p><code>compileOnly</code> dependencies are absent at deploy time, and unqualified bean injections that
+          resolve inside your own tests can go ambiguous in the host context. Step B11 is what catches this.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Version changes leave stale jars</span>
+        <p class="lead">If your plugin's version string changes, the old jar doesn't disappear.</p>
+        <p>Both versions can end up deployed side by side, and XNAT will load both. Build with
+          <code>clean</code>, and clear the target's plugin directory before copying.</p>
+      </div>
+    </section>
+
+    <section id="docs">
+      <h2 class="sec">Where the rest of it lives</h2>
+      <p>Three documents, three jobs. They are deliberately <em>not</em> kept identical — this page stays
+        higher-level on purpose. Depth differs between them; facts don't.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Document</th><th>Who it's for</th><th>What it carries</th></tr></thead>
+          <tbody>
+            <tr><td><strong>This page</strong></td><td>You — doing or commissioning the port</td>
+                <td>Orientation, the two tracks, step-by-step</td></tr>
+            <tr><td><code>docs/plugin-migration-guide.md</code></td>
+                <td>Whoever hits a specific error — human or agent</td>
+                <td><strong>The reference.</strong> Every behavior change and gotcha in detail: Spring Security 6,
+                    Spring 6, Restlet 2.6, Turbine 7 / Velocity 2, Hibernate, build and dependency-resolution
+                    gotchas, and the runtime section. <strong>Canonical for the matrix above.</strong></td></tr>
+            <tr><td><code>docs/ai/jakarta-plugin-port-handoff.md</code></td><td>An AI agent doing the port</td>
+                <td>Procedure and discipline — Track A hands it this</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:14.5px;color:var(--ink-2);">If this page and the guide ever disagree, <strong>the
+        guide is right</strong> — it's the canonical copy, and this one is a rendering of it. Both live in
+        the XNAT repository.</p>
+    </section>
+
+    <footer>
+      Drawn from porting roughly twenty production plugins. Canonical source:
+      <code>docs/plugin-migration-guide.md</code> in the XNAT repository.
+    </footer>
+  </main>
+</div>
+
+<script>
+  (function () {
+    var q = document.getElementById('q');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('#matrix tbody tr'));
+    var count = document.getElementById('count');
+    function update() {
+      var t = q.value.trim().toLowerCase(), shown = 0;
+      rows.forEach(function (r) {
+        var hit = !t || r.textContent.toLowerCase().indexOf(t) !== -1;
+        r.style.display = hit ? '' : 'none';
+        if (hit) shown++;
+      });
+      count.textContent = t ? shown + ' of ' + rows.length + ' rows' : rows.length + ' rows';
+    }
+    q.addEventListener('input', update);
+    update();
+  })();
+</script>

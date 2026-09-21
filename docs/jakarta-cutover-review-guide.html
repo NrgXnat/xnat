@@ -1,0 +1,713 @@
+<title>Jakarta Cutover Review</title>
+<style>
+  /* ---- tokens: complete light palette on bare :root ---- */
+  :root {
+    --ground:      #f6f7f9;
+    --surface:     #ffffff;
+    --surface-2:   #f0f2f6;
+    --ink:         #14171d;
+    --ink-2:       #4c5563;
+    --ink-3:       #737d8c;
+    --rule:        #dde2ea;
+    --rule-strong: #c3ccd8;
+    --accent:      #a3560d;   /* amber-brown: reserved for "needs judgment" */
+    --accent-ink:  #7a3f08;
+    --accent-soft: #fdf1e0;
+    --calm:        #38607f;   /* informational, never decorative */
+    --calm-soft:   #eaf1f7;
+    --shadow:      0 1px 2px rgba(20,23,29,.05), 0 8px 24px -12px rgba(20,23,29,.14);
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0e1116;
+      --surface:     #151a21;
+      --surface-2:   #1b212a;
+      --ink:         #e7eaef;
+      --ink-2:       #a3adbb;
+      --ink-3:       #7d8797;
+      --rule:        #262d38;
+      --rule-strong: #38414f;
+      --accent:      #e0973f;
+      --accent-ink:  #f2b366;
+      --accent-soft: #2a1f12;
+      --calm:        #7fb0d4;
+      --calm-soft:   #16222c;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #0e1116;
+    --surface:     #151a21;
+    --surface-2:   #1b212a;
+    --ink:         #e7eaef;
+    --ink-2:       #a3adbb;
+    --ink-3:       #7d8797;
+    --rule:        #262d38;
+    --rule-strong: #38414f;
+    --accent:      #e0973f;
+    --accent-ink:  #f2b366;
+    --accent-soft: #2a1f12;
+    --calm:        #7fb0d4;
+    --calm-soft:   #16222c;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(28px, 5vw, 64px) clamp(18px, 4vw, 40px) 96px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  @media (min-width: 1040px) {
+    .wrap { grid-template-columns: 210px minmax(0, 1fr); gap: 56px; }
+  }
+  main { min-width: 0; max-width: 72ch; display: flex; flex-direction: column; gap: 44px; }
+
+  /* ---- rail ---- */
+  nav.rail { display: none; }
+  @media (min-width: 1040px) {
+    nav.rail {
+      display: block; position: sticky; top: 32px; align-self: start;
+      font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
+    }
+    nav.rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    nav.rail a { color: var(--ink-3); text-decoration: none; display: block; padding-left: 12px; border-left: 2px solid var(--rule); }
+    nav.rail a:hover, nav.rail a:focus-visible { color: var(--accent); border-left-color: var(--accent); }
+    nav.rail .rail-label { color: var(--ink-3); text-transform: uppercase; letter-spacing: .10em; font-size: 11px; margin-bottom: 14px; }
+  }
+
+  /* ---- masthead ---- */
+  header.mast { display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--accent); display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  }
+  .eyebrow .sep { color: var(--rule-strong); }
+  h1 {
+    font-size: clamp(28px, 4.4vw, 40px); line-height: 1.12; letter-spacing: -.022em;
+    margin: 0; text-wrap: balance; font-weight: 640;
+  }
+  .standfirst { margin: 0; color: var(--ink-2); font-size: 17.5px; max-width: 60ch; text-wrap: pretty; }
+
+  /* ---- budget panel: the thesis ---- */
+  .budget {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 24px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 18px;
+  }
+  .budget-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .budget-head h2 { margin: 0; font-size: 15px; letter-spacing: -.01em; font-weight: 640; }
+  .budget-head .total { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+  .bar { display: flex; height: 40px; border-radius: 6px; overflow: hidden; border: 1px solid var(--rule); }
+  .bar span { display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .seg-skim  { background: var(--surface-2); color: var(--ink-3); flex: 342; }
+  .seg-triv  { background: var(--rule); color: var(--ink-2); flex: 183; }
+  .seg-read  { background: var(--accent); color: #fff; flex: 124; font-weight: 600; }
+  :root[data-theme="dark"] .seg-read { color: #14171d; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg-read { color: #14171d; } }
+  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .legend div { display: flex; flex-direction: column; gap: 3px; }
+  .legend .n { font-family: var(--mono); font-size: 21px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .legend .k { font-size: 13.5px; color: var(--ink-2); }
+  .legend .read .n { color: var(--accent); font-weight: 650; }
+
+  /* ---- roadmap: the order, stated before the detail ---- */
+  .roadmap {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 24px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 16px;
+  }
+  .roadmap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .roadmap-head h2 { margin: 0; font-size: 15px; letter-spacing: -.01em; font-weight: 640; }
+  .roadmap-head .hint { font-family: var(--mono); font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+  ol.steps { list-style: none; margin: 0; padding: 0; counter-reset: step; display: flex; flex-direction: column; gap: 11px; }
+  ol.steps li {
+    display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 13px;
+    font-size: 15px; color: var(--ink-2);
+  }
+  ol.steps li::before {
+    counter-increment: step; content: counter(step);
+    font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums;
+    color: var(--accent); text-align: right; padding-top: .18em;
+  }
+  ol.steps li strong { color: var(--ink); }
+  .roadmap .note { font-size: 14.5px; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 14px; }
+
+  /* ---- sections ---- */
+  section { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 24px; }
+  h2.sec {
+    margin: 0; font-size: 21px; letter-spacing: -.018em; font-weight: 640; text-wrap: balance;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  h2.sec .num { font-family: var(--mono); font-size: 12.5px; color: var(--accent); letter-spacing: .06em; }
+  h3 { margin: 0; font-size: 16.5px; font-weight: 640; letter-spacing: -.012em; }
+  p { margin: 0; text-wrap: pretty; }
+  a { color: var(--calm); text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  code { font-family: var(--mono); font-size: .875em; background: var(--surface-2); padding: .12em .38em; border-radius: 4px; }
+  strong { font-weight: 650; }
+
+  /* ---- tables ---- */
+  .tw { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th { font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: .09em; color: var(--ink-3); font-weight: 500; background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, th.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+  /* ---- judgment cards: the payload ---- */
+  .cards { display: flex; flex-direction: column; gap: 14px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 18px 20px; display: flex; flex-direction: column; gap: 9px;
+  }
+  .card .tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-ink);
+    background: var(--accent-soft); padding: 2px 7px; border-radius: 4px; align-self: flex-start;
+  }
+  .card p { font-size: 15px; color: var(--ink-2); }
+  .card p.lead { color: var(--ink); }
+
+  /* ---- callout ---- */
+  .callout {
+    background: var(--calm-soft); border: 1px solid var(--rule); border-left: 3px solid var(--calm);
+    border-radius: 8px; padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px;
+  }
+  .callout .tag { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--calm); }
+
+  pre {
+    margin: 0; background: var(--surface-2); border: 1px solid var(--rule); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.55; color: var(--ink-2);
+  }
+  ul, ol { margin: 0; padding-left: 1.25em; display: flex; flex-direction: column; gap: 8px; }
+  li { text-wrap: pretty; }
+  footer { border-top: 1px solid var(--rule); padding-top: 18px; color: var(--ink-3); font-size: 13.5px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <nav class="rail" aria-label="Sections">
+    <div class="rail-label">Contents</div>
+    <ol>
+      <li><a href="#budget">Review budget</a></li>
+      <li><a href="#order">Suggested order</a></li>
+      <li><a href="#stack">The stack</a></li>
+      <li><a href="#mechanical">Mechanical</a></li>
+      <li><a href="#judgment">Judgment calls</a></li>
+      <li><a href="#verify">Build &amp; verify</a></li>
+      <li><a href="#intentional">Intentional changes</a></li>
+      <li><a href="#deferred">Not in this PR</a></li>
+      <li><a href="#docs">The documentation</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="mast">
+      <div class="eyebrow">
+        <span>Reviewer's guide</span><span class="sep">/</span><span>feature/jakarta-cutover</span>
+        <span class="sep">/</span><span>164 commits</span>
+      </div>
+      <h1>Jakarta &amp; Tomcat 10 cutover</h1>
+      <p class="standfirst">
+        The PR touches <strong>~780 files</strong> — but only about <strong>124</strong> need human judgment.
+        The rest is a scripted namespace migration whose correctness the build and test suites establish
+        better than reading ever will. This page tells you which is which, and what the non-mechanical
+        changes are <em>for</em>.
+      </p>
+    </header>
+
+    <section id="whitespace" class="card" style="border-left-color:var(--calm);">
+      <span class="tag" style="color:var(--calm);background:var(--calm-soft);">Do this first</span>
+      <p class="lead"><strong>Review this diff with whitespace ignored.</strong>
+        <code>git diff -w origin/develop...HEAD</code> — on GitHub, append <code>?w=1</code> to the
+        Files-changed URL.</p>
+      <p><strong>Why:</strong> the repo has <strong>mixed line endings and no <code>.gitattributes</code></strong>.
+        <code>origin/develop</code> carries <strong>268</strong> CRLF <code>.java</code> files; this branch still
+        carries <strong>188</strong>. The 83 that changed did so <em>incidentally</em> — the migration's tooling
+        rewrote every file it touched as LF. Nobody decided to normalize anything.</p>
+      <p>The consequence for you: a raw diff reports <strong>every line</strong> of those 83 files as modified.
+        That is not a rounding error — it is most of the diff:</p>
+      <div class="tw" style="max-width:420px;">
+        <table>
+          <thead><tr><th></th><th class="num">raw</th><th class="num">with <code>-w</code></th></tr></thead>
+          <tbody>
+            <tr><td>insertions</td><td class="num">23,160</td><td class="num"><strong>12,112</strong></td></tr>
+            <tr><td>deletions</td><td class="num">13,461</td><td class="num"><strong>2,413</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Roughly 11,000 insertions and 11,000 deletions are line-ending churn. Every count on this page is
+        whitespace-insensitive — if your numbers are about twice as large, you are reading the raw diff.</p>
+      <p><strong>Please don't ask for a line-ending fix in this PR.</strong> Normalizing the remaining 188 files
+        would add a large whitespace-only change on top of an already-large review. Whether to adopt a
+        <code>.gitattributes</code> is tracked separately as item 1-37.</p>
+    </section>
+
+    <section id="budget" class="budget" aria-labelledby="budget-h">
+      <div class="budget-head">
+        <h2 id="budget-h">Where to spend your review budget</h2>
+        <span class="total">649 changed .java files</span>
+      </div>
+      <div class="bar" role="img" aria-label="342 files import-only, 183 trivial, 124 substantial">
+        <span class="seg-skim">342</span>
+        <span class="seg-triv">183</span>
+        <span class="seg-read">124</span>
+      </div>
+      <div class="legend">
+        <div><span class="n">342</span><span class="k"><strong>Import-only.</strong> Nothing changed but <code>import</code> lines. Confirm the mapping, don't read bodies.</span></div>
+        <div><span class="n">183</span><span class="k"><strong>Trivial.</strong> ≤ 8 real diff lines — usually one call or annotation.</span></div>
+        <div class="read"><span class="n">124</span><span class="k"><strong>Substantial.</strong> Real logic, signatures or config. <em>This is the review.</em></span></div>
+      </div>
+      <p style="font-size:14.5px;color:var(--ink-3);">Measured with <code>-w</code>. On a raw diff these
+        read 292 / 159 / 198 — 74 files look "substantial" purely because of the CRLF→LF conversion.</p>
+      <p style="font-size:15px;color:var(--ink-2);border-top:1px solid var(--rule);padding-top:16px;">
+        The diff also carries <strong>19 files under <code>docs/</code></strong>, and they are not
+        incidental — three of them are the reason this PR is reviewable at all. <a href="#docs">§08</a>
+        says what each one is, which are worth opening during review, and which are dated records you
+        should <em>not</em> read as descriptions of the shipped state.</p>
+    </section>
+
+    <section id="order" class="roadmap" aria-labelledby="order-h">
+      <div class="roadmap-head">
+        <h2 id="order-h">Suggested order</h2>
+        <span class="hint">Start here</span>
+      </div>
+      <ol class="steps">
+        <li><span><strong>The <a href="#judgment">judgment calls</a> first</strong> — 4.2 (security), 4.1 (Restlet
+          shim), 4.3, 4.6. <strong>If your time is short, these four are the review.</strong></span></li>
+        <li><span><strong>Build files</strong> — <code>libs.versions.toml</code>, <code>parent/build.gradle</code>,
+          <code>xnat-web/build.gradle</code>. Small, high-leverage, and where the allowlist lives.</span></li>
+        <li><span><strong>Templates</strong> — 31 <code>.vm</code>, 29 <code>.jsp</code>, 9 <code>.tag</code>.</span></li>
+        <li><span><strong>The 124 substantial Java files</strong>, <a href="#outlier">largest first</a>.</span></li>
+        <li><span><strong>Skim</strong> the 342 import-only and 183 trivial files.</span></li>
+      </ol>
+      <p class="note"><strong>Split by expertise:</strong> security/auth → 4.2 and the SS6 config ·
+        REST/Restlet → 4.1, 4.3, 4.7 · build/release → 4.6 and <a href="#verify">§05</a> ·
+        UI/templates → 4.4 and the <code>.vm</code>/<code>.jsp</code>/<code>.tag</code> set.<br>
+        Throughout: when something looks surprising, the tracker probably already explains it, and says what was
+        measured — <a href="#docs">§08</a> is how to search it.</p>
+    </section>
+
+    <section id="outlier">
+      <h2 class="sec"><span class="num">01</span>The largest substantial files</h2>
+      <p>Read these first — they are where the real work is. Sizes ignore whitespace
+        (<code>+added / −deleted</code>). Note what the list contains: <strong>five of the twelve are new
+        tests</strong>, and three are new infrastructure.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th class="num">Δ</th><th>File</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr style="background:var(--accent-soft);"><td class="num">+386/−52</td><td><code>xnat-web/…/xnat/restlet/resources/SecureResource.java</code></td><td>Restlet 1.1 → 2.x shim for the <strong>59</strong> classes extending it — §04.1</td></tr>
+            <tr><td class="num">+253/−0</td><td><code>xnat-web/src/test/…/xnat/customforms/daos/CustomVariableFormAppliesToRepositoryTest.java</code></td><td>new test</td></tr>
+            <tr><td class="num">+151/−0</td><td><code>xnat-web/…/xnat/web/tags/ImportTag.java</code></td><td><strong>new</strong> — XNAT-owned <code>&lt;xnat:import&gt;</code>, replacing the defective glassfish JSTL 3 <code>c:import var=</code> capture</td></tr>
+            <tr><td class="num">+142/−0</td><td><code>xnat-web/src/test/…/xnat/turbine/TurbineBootTest.java</code></td><td>new test — boots the Turbine service container</td></tr>
+            <tr><td class="num">+137/−0</td><td><code>xnat-web/src/test/…/dcm/xnat/daos/DicomMappingEntityDaoTest.java</code></td><td>new test</td></tr>
+            <tr style="background:var(--accent-soft);"><td class="num">+116/−27</td><td><code>xnat-web/…/xnat/initialization/SecurityConfig.java</code></td><td><strong>the SS6 config — §04.2</strong></td></tr>
+            <tr><td class="num">+115/−0</td><td><code>xnat-web/…/xapi/configuration/OpenApiConfig.java</code></td><td><strong>new</strong> — springdoc replaces dead springfox</td></tr>
+            <tr><td class="num">+85/−0</td><td><code>xnat-web/…/xnat/restlet/XnatServerResourceFinder.java</code></td><td><strong>new</strong> — instantiates resources via the legacy constructor</td></tr>
+            <tr><td class="num">+83/−19</td><td><code>xnat-web/…/xnat/restlet/resources/search/SearchResource.java</code></td><td></td></tr>
+            <tr><td class="num">+61/−0</td><td><code>xnat-web/src/test/…/xnat/restlet/resources/SecureResourceOkParityTest.java</code></td><td>new test — pins the 200/204 parity behavior</td></tr>
+            <tr><td class="num">+2/−74</td><td><code>mail/…/mail/api/MailMessage.java</code></td><td>mostly deletion</td></tr>
+            <tr><td class="num">+2/−60</td><td><code>xnat-web/…/xnat/customforms/daos/CustomVariableFormAppliesToRepository.java</code></td><td>mostly deletion</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:14.5px;color:var(--ink-3);">All paths elide
+        <code>src/main/java/org/nrg</code> (or <code>src/test/java/org/nrg</code>) at the <code>…</code>.</p>
+    </section>
+
+    <section id="stack">
+      <h2 class="sec"><span class="num">02</span>The stack</h2>
+      <p>One atomic cutover. No intermediate commit compiles against a half-migrated stack, so this
+        cannot be split into independently mergeable PRs.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th></th><th>Before</th><th>After</th></tr></thead>
+          <tbody>
+            <tr><td>Servlet</td><td>javax.servlet 3.1</td><td><strong>jakarta.servlet-api 6.0.0</strong></td></tr>
+            <tr><td>Container</td><td>Tomcat 9</td><td><strong>Tomcat 10.1</strong> (embed 10.1.57)</td></tr>
+            <tr><td>Java</td><td>8/11 line</td><td><strong>21</strong></td></tr>
+            <tr><td>Spring / Security</td><td>5.3 / 5.7</td><td><strong>6.2.19 / 6.5.11</strong></td></tr>
+            <tr><td>Hibernate</td><td>5.6 javax artifacts</td><td><strong>5.6.15 <code>-jakarta</code> transformed</strong> — <em>not</em> a Hibernate 6 upgrade</td></tr>
+            <tr><td>Restlet</td><td>1.1 (<code>com.noelios</code>)</td><td><strong>2.6.0</strong></td></tr>
+            <tr><td>Turbine / Velocity</td><td>2.3.3 / 1.7</td><td><strong>7.0 / 2.4.1</strong></td></tr>
+            <tr><td>JMS</td><td>ActiveMQ 5.x</td><td><strong>6.2.7</strong> client — broker must be 6.x</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <span class="tag">Note</span>
+        <p>The Hibernate row matters: the artifact names differ (<code>hibernate-core-jakarta</code>), and
+          <code>hibernate-ehcache</code>/<code>hibernate-jcache</code> still pull the javax
+          <code>hibernate-core</code>. Excluding it is the consuming module's job, which
+          <code>xnat-web/build.gradle</code> does.</p>
+      </div>
+      <p>The diff has <strong>164 commits</strong>, of which <strong>62 touch only <code>docs/</code></strong>
+        — filtering those out leaves <strong>102</strong> commits that touch code. A further 34 touch both,
+        because this repo requires a fix to record its mechanism and audit in the tracker as part of being
+        done. Two of those are worth knowing about if you filter the log by <em>subject</em> rather than by
+        <em>path</em>: <code>5d6861db0</code> and <code>9b37e9922</code> are titled <code>docs:</code> but also
+        carry <code>gradle/libs.versions.toml</code>, <code>parent/build.gradle</code>,
+        <code>xnat-web/build.gradle</code> and <code>.gitignore</code> — filtering on the subject line alone
+        would hide real build changes.</p>
+
+      <div class="card">
+        <span class="tag">Why it wasn't squashed</span>
+        <p>A deliberate decision, not an oversight — so please don't open the review by asking for one.</p>
+        <p>This migration's regressions are almost entirely <strong>runtime-only</strong>: the ones in the
+          tracker were found by Playwright and REST runs, not by the compiler. If something escapes review
+          and surfaces after merge, <code>git bisect</code> over these commits is what finds it, and a single
+          779-file commit would throw that away. The tracker also cites <strong>21 commit SHAs</strong> as
+          evidence for individual findings; squashing orphans every one.</p>
+        <p>Collapsing just the <code>docs:</code> commits was considered and rejected too. They aren't one
+          kind of thing — some narrate an adjacent code change, but others are verification milestones
+          spanning many commits, or standalone reference documents. Only about ten have anywhere to go,
+          <strong>32 of them touch the same tracker file</strong>, and at least one commit titled
+          <code>docs:</code> also carries real build changes. The tidying isn't worth the reordering.</p>
+        <p><strong>Read the change through this guide rather than through the log</strong> — that's what it's
+          for. Full reasoning is in <code>docs/tomcat10-upgrade-status.md</code>, item <strong>1-39</strong>.</p>
+      </div>
+    </section>
+
+    <section id="mechanical">
+      <h2 class="sec"><span class="num">03</span>Mechanical changes — spot-check, don't read</h2>
+      <p>These account for the 525 skimmable files. Each is a rule applied uniformly; the risk is a
+        <em>missed</em> site — which the build or the javax guard catches — not a wrong one.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Change</th><th class="num">Added lines</th></tr></thead>
+          <tbody>
+            <tr><td><code>org.restlet.*</code> imports (1.1 → 2.6)</td><td class="num">513</td></tr>
+            <tr><td><code>RunData</code> → <code>PipelineData</code> in framework overrides</td><td class="num">481</td></tr>
+            <tr><td><code>javax.persistence</code> → <code>jakarta.persistence</code></td><td class="num">367</td></tr>
+            <tr><td><code>javax.servlet</code> → <code>jakarta.servlet</code></td><td class="num">267</td></tr>
+            <tr><td><code>javax.{mail,jms,validation,xml.bind,inject,el,annotation}</code></td><td class="num">136</td></tr>
+            <tr><td>Restlet WebDAV status constants → <code>XnatWebDavStatus</code></td><td class="num">102</td></tr>
+            <tr><td>JSTL sun URIs → <code>jakarta.tags.*</code></td><td class="num">45</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <span class="tag">Silent failure mode</span>
+        <p class="lead"><strong><code>RunData</code> → <code>PipelineData</code> is the one mechanical change that can fail quietly.</strong></p>
+        <p>Turbine 7 dispatches to the two-arg <code>(PipelineData, Context)</code> method. Because
+          <code>RunData extends PipelineData</code>, a leftover <code>(RunData, Context)</code> override still
+          <em>compiles</em> — it is simply a more-specific overload the framework never calls, so the screen
+          renders nothing and the action never runs, with no error. Every converted method bridges with
+          <code>RunData data = pipelineData.getRunData();</code>, and XNAT's own <code>RunData</code> helper
+          methods are deliberately left alone. <strong>If you see a <code>(RunData, Context)</code> method that
+          looks like a framework override, flag it.</strong></p>
+      </div>
+      <h3 style="margin-top:6px;">Representative files — verify each rule once, then trust it</h3>
+      <p>Rather than skim 525 files, read these eight. Each changes one to three real lines and demonstrates exactly one
+        rule. If the rule is right here, it is right everywhere it was applied.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Rule</th><th>File</th><th class="num">Δ</th><th>What you'll see</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Restlet 1.1 → 2.6 package move</td>
+              <td><code>restlet/representations/BeanRepresentation.java</code></td><td class="num">+1/−1</td>
+              <td><code>org.restlet.resource.OutputRepresentation</code> → <code>org.restlet.representation.…</code></td>
+            </tr>
+            <tr style="background:var(--accent-soft);">
+              <td><strong><code>RunData</code> → <code>PipelineData</code></strong><br><span style="color:var(--ink-3);font-size:13px;">two-arg</span></td>
+              <td><code>xdat/…/turbine/modules/actions/ActivateAction.java</code></td><td class="num">+3/−1</td>
+              <td><code>doPerform(PipelineData, Context)</code> + the <code>getRunData()</code> bridge — note the helper
+                calls below it <em>stay</em> on <code>RunData</code></td>
+            </tr>
+            <tr style="background:var(--accent-soft);">
+              <td><strong><code>RunData</code> → <code>PipelineData</code></strong><br><span style="color:var(--ink-3);font-size:13px;"><code>isAuthorized</code></span></td>
+              <td><code>xdat/…/turbine/modules/actions/AdminAction.java</code></td><td class="num">+3/−1</td>
+              <td>The single-arg flavor; <code>super.isAuthorized(data)</code> still compiles because
+                <code>RunData</code> <em>is-a</em> <code>PipelineData</code></td>
+            </tr>
+            <tr>
+              <td><code>javax.persistence</code> → <code>jakarta</code></td>
+              <td><code>automation/…/daos/PersistentEventDAO.java</code></td><td class="num">+1/−1</td>
+              <td>One import line</td>
+            </tr>
+            <tr>
+              <td><code>javax.servlet</code> → <code>jakarta</code></td>
+              <td><code>xdat/…/xapi/authorization/AbstractXapiAuthorization.java</code></td><td class="num">+1/−1</td>
+              <td>One import line</td>
+            </tr>
+            <tr>
+              <td>Other EE <span style="color:var(--ink-3);">(validation shown)</span></td>
+              <td><code>automation/…/impl/DefaultScriptRunnerService.java</code></td><td class="num">+1/−1</td>
+              <td><code>javax.validation.constraints.NotNull</code> → <code>jakarta.…</code></td>
+            </tr>
+            <tr>
+              <td>Restlet WebDAV status constants</td>
+              <td><code>xnat-web/…/archive/GradualDicomImporter.java</code></td><td class="num">+2/−1</td>
+              <td><code>Status.SERVER_ERROR_INSUFFICIENT_STORAGE</code> → <code>XnatWebDavStatus.…</code></td>
+            </tr>
+            <tr>
+              <td>JSTL → <code>jakarta.tags</code></td>
+              <td><code>webapp/page/admin/index.jsp</code></td><td class="num">+1/−1</td>
+              <td><code>uri="http://java.sun.com/jsp/jstl/core"</code> → <code>uri="jakarta.tags.core"</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="color:var(--ink-2);font-size:15px;">The two highlighted <code>PipelineData</code> rows are the ones
+        worth actually reading — they are the pattern whose <em>absence</em> is invisible.</p>
+      <p><strong>Deliberately still <code>javax</code>, and correct:</strong> JSR-305
+        (<code>javax.annotation.Nonnull</code>), JDK-owned JAXP (<code>javax.xml.parsers</code>,
+        <code>javax.xml.XMLConstants</code>), <code>javax.sql</code>, <code>javax.naming</code>, JCache. These
+        did not move to Jakarta. Verified: every <code>javax.*</code> EE reference in the diff's added lines sits
+        in <code>docs/</code> prose describing the migration — <strong>zero in source</strong>.</p>
+    </section>
+
+    <section id="judgment">
+      <h2 class="sec"><span class="num">04</span>Judgment calls — this is the review</h2>
+      <p>Each item below is a decision, not a rename, and each has a rationale that is easy to mistake for a
+        mistake. If your time is short, the first four are the review.</p>
+      <div class="cards">
+        <div class="card">
+          <span class="tag">4.1 · Restlet shim</span>
+          <p class="lead"><code>SecureResource</code> → <code>ServerResource</code> — +386/−52, the largest single file</p>
+          <p>Restlet 1.1's <code>Resource</code> and 2.x's <code>ServerResource</code> have different lifecycles.
+            Rather than rewrite all 59 resource classes, the 1.1 contract is preserved on top of 2.x:
+            <code>get/post/put(Variant)</code> bridge to the legacy <code>represent</code>/<code>handleX</code>
+            methods, and <code>XnatServerResourceFinder</code> instantiates through the legacy
+            <code>(Context, Request, Response)</code> constructor that 2.x's default <code>Finder</code> no longer
+            supports. <strong>Look for:</strong> whether the bridge preserves method-allowed semantics (405 vs 404)
+            and content negotiation.</p>
+        </div>
+        <div class="card">
+          <span class="tag">4.2 · Security — read this one</span>
+          <p class="lead">Spring Security 6 deliberately keeps the <em>deprecated</em> <code>authorizeRequests</code></p>
+          <p>You will see <code>authorizeRequests</code> where SS6 wants <code>authorizeHttpRequests</code>.
+            <strong>This is intentional, and reverting it breaks login.</strong> XNAT's real authorization rules are
+            installed at runtime by <code>UpdateSecurityFilterHandlerMethod</code>, a <code>BeanPostProcessor</code>
+            that swaps the <code>FilterSecurityInterceptor</code>'s metadata source so site config — open URLs, admin
+            URLs, require-login — stays live-updatable. <code>authorizeHttpRequests</code> builds an
+            <code>AuthorizationFilter</code> the post-processor never sees, producing a login redirect loop. It was
+            tried and reverted. Porting to <code>AuthorizationManager</code> is a Spring Security <strong>7</strong> task.</p>
+        </div>
+        <div class="card">
+          <span class="tag">4.3 · Framework seam</span>
+          <p class="lead">The Restlet → Turbine <code>RunData</code> bridge</p>
+          <p>Legacy <code>/app</code> screens served through Restlet need a Turbine <code>RunData</code>.
+            <code>TurbineScreenRepresentation</code> builds one via
+            <code>RunDataService.getRunData("restlet", …)</code> using <code>ServletUtils</code> and
+            <code>Response.getCurrent()</code>. Read it for thread-safety and for assumptions about a current
+            response being bound.</p>
+        </div>
+        <div class="card">
+          <span class="tag">4.4 · Templates</span>
+          <p class="lead">Velocity 2: <code>directive.if.empty_check=false</code></p>
+          <p>Velocity 2 changed <code>#if($x)</code> semantics — empty string, empty collection and zero became
+            <em>falsy</em>, where 1.7 treated any non-null object as truthy. There are ~2,000 bare-reference
+            <code>#if($x)</code> sites across ~600 templates; a per-site audit was rejected as unreviewable. The 1.7
+            semantic is restored globally in <code>TurbineResources.properties</code>, and a boot test pins it by
+            evaluating a probe through the live engine.</p>
+        </div>
+        <div class="card">
+          <span class="tag">4.5 · Logging</span>
+          <p class="lead">log4j2 ↔ Logback coexistence</p>
+          <p>Turbine 7 requires <code>log4j-core</code>; XNAT logs via Logback/SLF4J. Both are on the classpath.
+            Turbine 7 logs through <code>System.Logger</code> — no hard cast to a log4j2 <code>LoggerContext</code>,
+            unlike 5.1 — so <code>log4j-core</code> is a swappable backend. Watch for SLF4J multiple-binding
+            warnings on local boot.</p>
+        </div>
+        <div class="card">
+          <span class="tag">4.6 · Build gate</span>
+          <p class="lead">The build-time javax-EE guard</p>
+          <p><code>verifyNoOrphanedJavaxEE</code> is wired into <code>check</code>. It fails the build when a runtime
+            jar references a <code>javax.*</code> EE package that <strong>nothing on the classpath provides</strong> —
+            the exact trap that silently broke container command-save. It is precise by construction: a javax
+            reference that still resolves is not failed. Unreachable library features are <strong>allowlisted with a
+            stated reason</strong> — review those entries as claims to check, not as noise.</p>
+        </div>
+        <div class="card">
+          <span class="tag">4.7 · Turbine dispatch</span>
+          <p class="lead"><code>eventSubmit_</code> handler signatures</p>
+          <p>Turbine 7 resolves <code>eventSubmit_doXxx</code> handlers by exact
+            <code>(PipelineData, Context)</code> signature. A handler left on the old signature is silently never
+            dispatched — the same failure class as §03.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="verify">
+      <h2 class="sec"><span class="num">05</span>Build &amp; verify</h2>
+      <pre>./gradlew compileJava compileTestJava verifyNoOrphanedJavaxEE</pre>
+      <div class="card">
+        <span class="tag">Gotcha</span>
+        <p class="lead">The Gradle <em>daemon</em> must be Java 21 — a toolchain is not enough.</p>
+        <p>It is pinned by <code>gradle/gradle-daemon-jvm.properties</code>, so this should be automatic. Why it
+          matters: task actions that open jars run in the <em>daemon</em> JVM, and JDK 22+ zip64 CEN validation
+          refuses to read <code>aspectjweaver-1.8.10</code>, killing the guard with a <code>ZipException</code> that
+          names no file. A JDK-21 <em>toolchain</em> governs forked compile/test JVMs, not the daemon.</p>
+      </div>
+      <p><strong>Deployment requirements:</strong> Tomcat 10.1, Java 21, and an ActiveMQ broker on the 6.x line —
+        a 5.x broker fails to boot the jakarta client <em>silently</em>. <strong>Every plugin must also be a jakarta
+        rebuild</strong>: one javax-compiled plugin implementing <code>WebApplicationInitializer</code> throws
+        <code>AbstractMethodError</code> at context start, and <em>every</em> URL then returns 404 with no database
+        error to point at.</p>
+    </section>
+
+    <section id="intentional">
+      <h2 class="sec"><span class="num">06</span>Intentional behavior changes</h2>
+      <p>Flag these only if you disagree with the decision — they are not oversights.</p>
+      <ul>
+        <li><strong>Restlet 2.6 default success status.</strong> A handler finishing with a bodyless entity returns
+          <strong>204</strong> where 1.1 returned 200. Clients hard-checking <code>== 200</code> are affected.</li>
+        <li><strong>Form-body parameters on <code>SecureResource</code> POST/PUT.</strong> Restlet 2.6 derives the
+          entity from the servlet parameter map. Four <code>getBodyVariable</code> sites now honor a form
+          <em>body</em> parameter that <code>develop</code> silently dropped. Low risk, but a genuine semantic change.</li>
+        <li><strong><code>UserFavoriteResource</code></strong> rejects an apostrophe in a path parameter with
+          <strong>400</strong> instead of a misleading 404.</li>
+        <li><strong><code>spring-security-oauth2</code> 2.5.2 retained but deprecated.</strong> javax-era and
+          unreachable from core, but exported <code>api</code> to plugins — removing it in 1.11 risks breaking an
+          external OAuth/OpenID auth plugin. Scheduled for 1.12.</li>
+      </ul>
+    </section>
+
+    <section id="deferred">
+      <h2 class="sec"><span class="num">07</span>Deliberately not in this PR</h2>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Item</th><th>Why deferred</th></tr></thead>
+          <tbody>
+            <tr><td>Collapse <code>SecureResource</code>'s body/query double-read</td><td>The bug is fixed; the cleaner model is a deliberate refactor for the Restlet-cleanup era</td></tr>
+            <tr><td><code>framework</code> off <code>hibernate-types-55</code> (javax)</td><td>Latent, not broken; used paths verified; needs a type migration, not a dependency yank</td></tr>
+            <tr><td><code>spring-security-oauth2</code> removal</td><td>See §06</td></tr>
+            <tr><td>Finder's <code>null → 404</code> fallback → 500</td><td>Externally observable; belongs with test updates</td></tr>
+            <tr><td>Upstream Turbine log4j-decoupling PR</td><td>XNAT does not depend on it merging</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="docs">
+      <h2 class="sec"><span class="num">08</span>The documentation, and how to use it</h2>
+      <p>The diff carries <strong>19 files under <code>docs/</code></strong> — 18 new, plus
+        <code>plugin-migration-guide.md</code> rewritten from 187 lines to 773. That weight is deliberate. The
+        hard parts of this migration were <strong>runtime</strong> behaviors no diff shows: a Turbine override
+        that compiles and is never called, a form-encoded <code>PUT</code> whose body disappears, an ActiveMQ
+        send that parks forever and silently starves the boot task that creates login credentials. None of it is
+        recoverable from the code, so it was written down as it was found.</p>
+      <p>Don't review these as code. Do use the first group — it answers most of the questions the diff will raise.</p>
+
+      <h3 style="margin-top:6px;">Worth opening during the review</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>File</th><th class="num">Lines</th><th>Reach for it when</th></tr></thead>
+          <tbody>
+            <tr style="background:var(--accent-soft);">
+              <td><code>tomcat10-upgrade-status.md</code><br><span style="color:var(--ink-3);font-size:13px;">the tracker — ~40 findings numbered <code>1-NN</code>, each stating mechanism, audit scope and audit result</span></td>
+              <td class="num">895</td>
+              <td>A change looks wrong, or you want to know whether a bug's whole <em>class</em> was swept</td>
+            </tr>
+            <tr>
+              <td><code>xnat-web-framework-architecture.md</code><br><span style="color:var(--ink-3);font-size:13px;">which of the four coexisting web frameworks serves which URL, and what is load-bearing vs vestigial; cites <code>file:line</code></span></td>
+              <td class="num">95</td>
+              <td>You need to know what <code>/app</code> vs <code>/data</code> vs <code>/xapi</code> vs <code>/xdat</code> actually runs through — §04.1 and §04.3 assume it</td>
+            </tr>
+            <tr>
+              <td><code>data-rest-endpoint-reference.md</code> <span style="color:var(--ink-3);">(+ <code>.json</code>)</span><br><span style="color:var(--ink-3);font-size:13px;">static-analysis reconstruction of the <code>/data</code> + <code>/REST</code> surface; a best-effort <em>lower bound</em>, since that API is not self-describing</span></td>
+              <td class="num">242</td>
+              <td>Judging the blast radius of a <code>SecureResource</code> change — §04.1, §06</td>
+            </tr>
+            <tr>
+              <td><code>turbine-service-container.md</code><br><span style="color:var(--ink-3);font-size:13px;">Turbine's 13 configured services and the 2.3.3 → 4.0 config-format rewrite</span></td>
+              <td class="num">74</td>
+              <td>Reviewing <code>TurbineResources.properties</code> / <code>componentConfiguration.xml</code> / <code>roleConfiguration.xml</code></td>
+            </tr>
+            <tr>
+              <td><code>playwright-migration-test-status.md</code><br><span style="color:var(--ink-3);font-size:13px;">per-spec status of the 393-spec suite run against this branch</span></td>
+              <td class="num">210</td>
+              <td>You want to know what runtime verification actually covered. The suite is the <strong>develop-calibrated reference and was not modified</strong> — fixes landed in this repo instead</td>
+            </tr>
+            <tr>
+              <td><code>migration-test-coverage-analysis.md</code><br><span style="color:var(--ink-3);font-size:13px;">that suite measured against the changed surface: 181 route attachments, 91 resource classes, 619 call-sites</span></td>
+              <td class="num">97</td>
+              <td>You want the coverage <em>gaps</em> rather than the passes</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:6px;">For after the merge — not part of this review</h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>File</th><th class="num">Lines</th><th>What it is</th></tr></thead>
+          <tbody>
+            <tr><td><code>plugin-migration-guide.md</code></td><td class="num">773</td><td><strong>The reference</strong> for plugin authors, and canonical for the Breaking-API matrix and the Behavior-Change Catalog</td></tr>
+            <tr><td><code>ai/jakarta-plugin-port-handoff.md</code></td><td class="num">280</td><td>Procedure and discipline for porting a plugin with an AI agent — distilled from ~20 production ports</td></tr>
+            <tr><td><code>tomcat11-upgrade-plan.md</code></td><td class="num">162</td><td>What comes next, and the one real risk its scout found</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="tag">Record — do not read as current state</span>
+        <p><code>phase0-compile-migration-summary.md</code> · <code>tomcat10-jakarta-upgrade-plan.md</code> ·
+          <code>tomcat9-deploy-stack.md</code> · <code>turbine5-config-draft/</code> ·
+          <code>tools/pipelinedata_codemod.py</code> — the codemod that performed §03's
+          <code>RunData</code> → <code>PipelineData</code> conversion.</p>
+        <p>These describe the <strong>javax / Tomcat 9 Phase-0 stack</strong>, or a planned approach, at a dated
+          point on the way here. They will disagree with what shipped, on purpose — flagging that as an
+          inconsistency is a false positive. (<code>email-verification-setup.md</code> is operational setup for
+          the test fixture's SMTP path, not migration content.)</p>
+      </div>
+
+      <h3 style="margin-top:6px;">Three ways to use the tracker</h3>
+      <ol>
+        <li><strong>"This looks wrong."</strong> Search it for the symptom, the class name, or the status code
+          before writing the comment. Most of the choices that look like mistakes are one of the numbered items,
+          recorded with the measurement that produced them — §04.2's deprecated <code>authorizeRequests</code>
+          and §06's 200 → 204 are both there. <strong>If it isn't there, that's a real finding</strong> — raise
+          it loudly.</li>
+        <li><strong>"Was the rest of this class checked?"</strong> This repo's <code>CLAUDE.md</code> requires
+          every fix to name its bug class, sweep for it, and record the result — <em>"swept N sites, all
+          benign"</em> included. So a missing audit line is itself reviewable. Items <strong>1-24 → 1-35 →
+          1-36</strong> are the worked example: a bug class defined by symptom, then measured, found wrong, and
+          corrected on paper.</li>
+        <li><strong>"What will this cost plugin authors?"</strong> The Behavior-Change Catalog in
+          <code>plugin-migration-guide.md</code>. This is the most valuable thing you can correct: an error a
+          plugin author will hit that is <strong>not</strong> in the catalog is a gap that costs someone a day.</li>
+      </ol>
+
+      <div class="card" style="border-left-color:var(--calm);">
+        <span class="tag" style="color:var(--calm);background:var(--calm-soft);">Not defects</span>
+        <p><strong>The three porting documents overlap on purpose.</strong> A published porting page is
+          orientation for a human; <code>plugin-migration-guide.md</code> is the dense reference and is
+          <strong>canonical for the Breaking-API matrix</strong>; <code>ai/jakarta-plugin-port-handoff.md</code>
+          is the agent procedure. Depth is meant to differ; facts are not. A <strong>contradiction</strong>
+          between them is a bug worth reporting — duplication isn't.</p>
+        <p><strong>The tracker is a log, not a document.</strong> Reading it front to back is a poor use of your
+          budget; the item numbers are its index. It is also cited <strong>by commit SHA in 21 places</strong>,
+          which is why the history isn't squashed — and why the PR asks to be merged with a <strong>merge commit
+          rather than a squash-merge</strong>, which would kill every one of those citations.</p>
+      </div>
+
+      <p style="color:var(--ink-2);font-size:15px;">Two documentation decisions are deliberately left open rather
+        than settled here: the <code>.gitattributes</code> line-ending question (<strong>1-37</strong>, above), and
+        whether a <code>1.11.0-SNAPSHOT</code> gets published so plugin authors don't each have to build core
+        first (<strong>1-38</strong>).</p>
+    </section>
+
+    <footer>
+      Numbers measured against <code>origin/develop</code>; the commands that produce them are in Appendix A of
+      <code>docs/jakarta-cutover-review-guide.md</code>. Per-item history — mechanism, audit scope, audit result —
+      is indexed <code>1-NN</code> in <code>docs/tomcat10-upgrade-status.md</code>. Plugin authors porting their own
+      code should start from <code>docs/plugin-migration-guide.md</code>.
+    </footer>
+  </main>
+</div>

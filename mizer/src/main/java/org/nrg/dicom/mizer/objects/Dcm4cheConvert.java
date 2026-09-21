@@ -142,9 +142,6 @@ public class Dcm4cheConvert {
      * <p>If {@code dataset} carries no group 0002 elements, an Explicit VR Little Endian FMI is created for it.
      * In both cases Media Storage SOP Class UID (0002,0002) and Media Storage SOP Instance UID (0002,0003) are
      * set from the dataset's SOP Class UID and SOP Instance UID.
-     *
-     * @param dataset the dataset to strip; modified in place
-     * @return the extracted FMI together with the (now FMI-free) input dataset
      */
     public static SplitAttributes extractFmiFromDataset(Attributes dataset) {
         Attributes fmi = new Attributes();

@@ -67,10 +67,9 @@ public class LoggingApi extends AbstractXapiRestController {
     private static final Set<String> VALID_LEVELS = Stream.of("ALL", "DEBUG", "ERROR", "FATAL", "INFO", "OFF", "TRACE", "WARN").collect(java.util.stream.Collectors.toSet());
 
     @Autowired
-    public LoggingApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final LoggingService logging, final Path xnatHome) {
+    public LoggingApi(final UserManagementServiceI userManagementService, final RoleHolder roleHolder, final LoggingService logging) {
         super(userManagementService, roleHolder);
-        _logging  = logging;
-        _xnatHome = xnatHome;
+        _logging = logging;
     }
 
     @ApiOperation(value = "Resets and reloads logging configuration from all logging configuration files located either in XNAT itself or in plugins.", responseContainer = "List", response = String.class)
@@ -224,7 +223,7 @@ public class LoggingApi extends AbstractXapiRestController {
     @ApiOperation(value = "Downloads the XNAT log files as a zip archive.",
                   notes = "This call takes a string map as JSON. PUT and POST are the same operation. Acceptable values in the map include: \"logFileSpec\" is a glob-style  wild card, e.g. '*.log', " +
                           "'application.*', etc. This defaults to '*'. \"path\" specifies the path to the folder containing the log files you want to access. The default value is the logs folder in " +
-                          "your XNAT home directory, but you can specify other paths to which the XNAT application server user has access, e.g. \"/var/log/tomcat\" to retrieve the Tomcat logs. " +
+                          "your XNAT home directory. For security reasons the path is restricted to locations within that logs directory; paths that resolve outside of it are rejected. " +
                           "The \"asZip\" parameter indicates whether the log file(s) should be downloaded as a zip. By default, a single file is downloaded as plain text unless asZip is explicitly " +
                           "set to true, while multiple files are always downloaded as a zip. Finally \"includeEmptyFiles\" indicates whether empty files should be included. By default only files " +
                           "that contain data are included.",
@@ -281,10 +280,31 @@ public class LoggingApi extends AbstractXapiRestController {
     }
 
     private FileVisitorPathResourceMap getFileVisitorPathResourceMap(String pathSpec, String logFileSpec) {
-        final Path path = StringUtils.isBlank(pathSpec) ? _xnatHome.resolve("logs") : Paths.get(pathSpec);
+        final Path path = resolveLogPathWithinLogsFolder(_logging.getLogsFolder(), pathSpec);
         return StringUtils.isBlank(logFileSpec) ? new FileVisitorPathResourceMap(path) : (new FileVisitorPathResourceMap(path, logFileSpec));
     }
 
+    /**
+     * Confines log downloads to the XNAT logs directory: any {@code pathSpec} that resolves to a location
+     * outside of it is rejected. A blank {@code pathSpec} defaults to the logs directory itself. Containment is
+     * checked against the symlink-resolved real path so a link inside the logs directory cannot point outside it;
+     * a path that does not yet exist is checked lexically, preserving downstream handling.
+     */
+    static Path resolveLogPathWithinLogsFolder(final Path logsFolder, final String pathSpec) {
+        try {
+            final Path base      = logsFolder.toRealPath();
+            final Path requested = (StringUtils.isBlank(pathSpec) ? base : Paths.get(pathSpec)).toAbsolutePath().normalize();
+            // Resolve symlinks when the target exists so a link inside the logs directory cannot point outside it;
+            // a non-existent path has no symlink to follow, so fall back to its lexical form.
+            final Path real = Files.exists(requested) ? requested.toRealPath() : requested;
+            if (!real.startsWith(base)) {
+                throw new IllegalArgumentException("Requested log path is outside the XNAT logs directory: " + pathSpec);
+            }
+            return requested;
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Unable to resolve requested log path: " + pathSpec, e);
+        }
+    }
+
     private final LoggingService _logging;
-    private final Path           _xnatHome;
 }

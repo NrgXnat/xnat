@@ -44,6 +44,7 @@ import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.Files;
 import org.nrg.xnat.archive.services.DirectArchiveSessionService;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
+import org.nrg.xnat.helpers.file.StoredFile;
 import org.nrg.xnat.helpers.merge.anonymize.DefaultAnonUtils;
 import org.nrg.xnat.helpers.prearchive.DatabaseSession;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
@@ -146,7 +147,12 @@ public class GradualDicomImporter extends ImporterHandlerA {
         // so the scripts can run in memory and the object be written once, or only the identifying
         // header, after which the rest of the stream is copied through as it always was.
         final boolean anonymizeOnReceive = anonymizesOnReceive();
-        try (final ReceivedDicomObject received = ReceivedDicomObject.read(_fileWriter.getInputStream(), _transferSyntax, lastTag, anonymizeOnReceive)) {
+        // A file-backed source -- the inbox hands the importer StoredFiles -- has its pixel data
+        // referenced in place instead of copied to the spool. The file outlives the write (inbox
+        // cleanup runs after the whole import), and the read still spools when the transfer syntax
+        // demands it.
+        final File sourceFile = _fileWriter instanceof StoredFile ? ((StoredFile) _fileWriter).getStored() : null;
+        try (final ReceivedDicomObject received = ReceivedDicomObject.read(_fileWriter.getInputStream(), _transferSyntax, lastTag, anonymizeOnReceive, sourceFile)) {
             log.debug("Read {} of {}", received.isWhole() ? "the whole object, to anonymize before writing" : "the identifying header", name);
             final String transferSyntaxUID = received.getTransferSyntax();
             Attributes dataset = received.getDataset();

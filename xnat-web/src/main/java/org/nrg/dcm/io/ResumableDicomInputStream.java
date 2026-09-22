@@ -103,8 +103,9 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      *
      * @return a resumable stream that references bulk data rather than loading it.
      *
-     * @throws IOException if the stream cannot be opened, or the configured scratch directory does not exist
-     *                     and cannot be created.
+     * @throws IOException if the stream cannot be opened. A configured scratch directory that does not exist
+     *                     and cannot be created fails the read instead, at the first value that has to be
+     *                     spooled.
      */
     public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in) throws IOException {
         return openWithBulkDataOffHeap(in, null);
@@ -124,8 +125,9 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      *
      * @return a resumable stream that references bulk data rather than loading it.
      *
-     * @throws IOException if the stream cannot be opened, or the configured scratch directory does
-     *                     not exist and cannot be created.
+     * @throws IOException if the stream cannot be opened. A configured scratch directory that does
+     *                     not exist and cannot be created fails the read instead, at the first value
+     *                     that has to be spooled.
      */
     public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in, final File sourceFile) throws IOException {
         final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);

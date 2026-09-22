@@ -29,13 +29,14 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * The parity matrix for the two off-heap bulk data paths: whatever the transfer syntax, reading an
+ * The parity matrix for the off-heap bulk data paths: whatever the transfer syntax, reading an
  * object through the file path ({@code DicomObjectFactory.newInstance(file, IncludeBulkData.URI)},
- * how file anonymization reads) or through the stream path ({@link ReceivedDicomObject}, how the
- * importer reads) and writing it back must reproduce the pixel data exactly -- and the file path
- * must never damage its source. Both paths share one bulk data creator and one serializer; this
- * matrix is what proves the sharing preserves every syntax, and what catches the next
- * fast-path-with-a-precondition bug before it ships.
+ * how file anonymization reads), through the stream path ({@link ReceivedDicomObject}, how the
+ * importer reads a socket or zip entry) or through the file-backed stream path (how it reads an
+ * inbox file, referencing pixels in place) and writing it back must reproduce the pixel data
+ * exactly -- and no path that reads a file may damage it. All three share one bulk data creator
+ * and one serializer; this matrix is what proves the sharing preserves every syntax, and what
+ * catches the next fast-path-with-a-precondition bug before it ships.
  */
 public class BulkDataPathParityTest {
 
@@ -46,23 +47,37 @@ public class BulkDataPathParityTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
-    public void explicitLittleEndianReadsTheSameThroughBothPaths() throws Exception {
-        assertPixelParityBothPaths(transcode(UID.ExplicitVRLittleEndian));
+    public void explicitLittleEndianReadsTheSameThroughEveryPath() throws Exception {
+        assertPixelParityEveryPath(transcode(UID.ExplicitVRLittleEndian));
     }
 
     @Test
-    public void implicitLittleEndianReadsTheSameThroughBothPaths() throws Exception {
-        assertPixelParityBothPaths(transcode(UID.ImplicitVRLittleEndian));
+    public void implicitLittleEndianReadsTheSameThroughEveryPath() throws Exception {
+        assertPixelParityEveryPath(transcode(UID.ImplicitVRLittleEndian));
     }
 
     @Test
-    public void explicitBigEndianReadsTheSameThroughBothPaths() throws Exception {
-        assertPixelParityBothPaths(transcode(UID.ExplicitVRBigEndian));
+    public void explicitBigEndianReadsTheSameThroughEveryPath() throws Exception {
+        assertPixelParityEveryPath(transcode(UID.ExplicitVRBigEndian));
     }
 
     @Test
-    public void deflatedReadsTheSameThroughBothPaths() throws Exception {
-        assertPixelParityBothPaths(transcode(UID.DeflatedExplicitVRLittleEndian));
+    public void deflatedReadsTheSameThroughEveryPath() throws Exception {
+        assertPixelParityEveryPath(transcode(UID.DeflatedExplicitVRLittleEndian));
+    }
+
+    /**
+     * dcm4che inflates three syntaxes, not one: the two JPIP Referenced Deflate syntaxes have the
+     * same dishonest file offsets as Deflated Explicit VR LE and must spool the same way.
+     */
+    @Test
+    public void jpipReferencedDeflateReadsTheSameThroughEveryPath() throws Exception {
+        assertPixelParityEveryPath(transcode(UID.JPIPReferencedDeflate));
+    }
+
+    @Test
+    public void jpipHtj2kReferencedDeflateReadsTheSameThroughEveryPath() throws Exception {
+        assertPixelParityEveryPath(transcode(UID.JPIPHTJ2KReferencedDeflate));
     }
 
     /**
@@ -79,7 +94,11 @@ public class BulkDataPathParityTest {
         assertArrayEquals("the file path must not change its source",
                           bytes, Files.readAllBytes(source.toPath()));
         assertArrayEquals("the stream path must reproduce an encapsulated object exactly",
-                          bytes, writeThroughStreamPath(source));
+                          bytes, writeThroughStreamPath(source, false));
+        assertArrayEquals("the file-backed stream path must reproduce an encapsulated object exactly, fragment by fragment",
+                          bytes, writeThroughStreamPath(source, true));
+        assertArrayEquals("the file-backed stream path must not change its source",
+                          bytes, Files.readAllBytes(source.toPath()));
     }
 
     /** A gzipped source has no honest file offsets, so the file path must spool -- and still agree. */
@@ -98,7 +117,7 @@ public class BulkDataPathParityTest {
                           reference, pixels(readWhole(new ByteArrayInputStream(writeThroughFilePath(gzipped)))));
     }
 
-    private void assertPixelParityBothPaths(final File source) throws Exception {
+    private void assertPixelParityEveryPath(final File source) throws Exception {
         final byte[] sourceBytes = Files.readAllBytes(source.toPath());
         final byte[] reference   = pixels(readWhole(new ByteArrayInputStream(sourceBytes)));
 
@@ -106,8 +125,12 @@ public class BulkDataPathParityTest {
                           reference, pixels(readWhole(new ByteArrayInputStream(writeThroughFilePath(source)))));
         assertArrayEquals("the file path must not change its source",
                           sourceBytes, Files.readAllBytes(source.toPath()));
-        assertArrayEquals("pixels must survive the stream path (how the importer reads)",
-                          reference, pixels(readWhole(new ByteArrayInputStream(writeThroughStreamPath(source)))));
+        assertArrayEquals("pixels must survive the stream path (how the importer reads a socket or zip entry)",
+                          reference, pixels(readWhole(new ByteArrayInputStream(writeThroughStreamPath(source, false)))));
+        assertArrayEquals("pixels must survive the file-backed stream path (how the importer reads an inbox file)",
+                          reference, pixels(readWhole(new ByteArrayInputStream(writeThroughStreamPath(source, true)))));
+        assertArrayEquals("the file-backed stream path must not change its source",
+                          sourceBytes, Files.readAllBytes(source.toPath()));
     }
 
     /** Reads through {@code newInstance(file, URI)} and writes back, as file anonymization does. */
@@ -122,11 +145,14 @@ public class BulkDataPathParityTest {
         return written.toByteArray();
     }
 
-    /** Reads through {@link ReceivedDicomObject} whole and writes back, as an anonymizing import does. */
-    private byte[] writeThroughStreamPath(final File source) throws Exception {
-        final File output = folder.newFile(source.getName() + ".out");
+    /**
+     * Reads through {@link ReceivedDicomObject} whole and writes back, as an anonymizing import does:
+     * as a bare stream, or as a file-backed one that references pixels straight into the source.
+     */
+    private byte[] writeThroughStreamPath(final File source, final boolean fileBacked) throws Exception {
+        final File output = folder.newFile(source.getName() + (fileBacked ? ".filebacked.out" : ".out"));
         try (final ReceivedDicomObject received = ReceivedDicomObject.read(
-                new FileInputStream(source), null, Tag.SeriesDescription, true)) {
+                new FileInputStream(source), null, Tag.SeriesDescription, true, fileBacked ? source : null)) {
             received.write(received.getDataset(), null, output, "parity-test");
         }
         return Files.readAllBytes(output.toPath());

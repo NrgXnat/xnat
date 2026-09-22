@@ -206,7 +206,10 @@ public class DicomObjectFactory {
                     // detects and spools.
                     dis.setURI(file.toURI().toString());
                 }
-                final BufferedBulkDataCreator creator = new BufferedBulkDataCreator(spoolDirectory());
+                // The directory is resolved only if something is actually spooled -- a method
+                // reference, not a call: spoolDirectory() takes a class-level lock to stat the
+                // directory, and an ordinary read references its values in place and never needs it.
+                final BufferedBulkDataCreator creator = new BufferedBulkDataCreator(MizerDicomObject::spoolDirectory);
                 dis.setBulkDataCreator(creator);
                 try {
                     final Attributes fmi = dis.readFileMetaInformation();

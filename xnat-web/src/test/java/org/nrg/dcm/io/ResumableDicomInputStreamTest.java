@@ -166,7 +166,8 @@ public class ResumableDicomInputStreamTest {
 
     /**
      * Falling back to java.io.tmpdir would defeat the reason for configuring a directory, which may be that
-     * the pixel data must not go there.
+     * the pixel data must not go there. The failure comes when a value actually has to be spooled: the
+     * directory is resolved then, and not on the ordinary read that never reaches the pixel data.
      */
     @Test
     public void failsRatherThanFallingBackWhenTheDirectoryCannotBeCreated() throws Exception {
@@ -174,13 +175,32 @@ public class ResumableDicomInputStreamTest {
         System.setProperty(ResumableDicomInputStream.SCRATCH_DIR_PROPERTY,
                            new File(blocker, "scratch").getAbsolutePath());
 
-        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(FIXTURE))) {
-            ResumableDicomInputStream.openWithBulkDataOffHeap(bis);
+        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(FIXTURE));
+             final ResumableDicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis)) {
+            dis.readFileMetaInformation();
+            dis.readAttributes(new Attributes(), -1, -1);
             fail("expected an IOException naming the directory it could not create");
         } catch (IOException expected) {
             assertTrue("the message should name the directory, but was: " + expected.getMessage(),
                        expected.getMessage().contains("scratch"));
         }
+    }
+
+    /**
+     * The spool directory is resolved under a class-level lock, so an ordinary import -- which stops short
+     * of the pixel data and spools nothing -- must not touch it at all.
+     */
+    @Test
+    public void ordinaryReadNeverResolvesTheSpoolDirectory() throws Exception {
+        final File unusable = folder.newFile("would-fail-if-resolved");
+        System.setProperty(ResumableDicomInputStream.SCRATCH_DIR_PROPERTY,
+                           new File(unusable, "scratch").getAbsolutePath());
+
+        final List<File> spooled = new ArrayList<>();
+        final Attributes dataset = read(Tag.SeriesInstanceUID + 1, spooled);
+
+        assertTrue("the ordinary window should read identifying tags", dataset.contains(Tag.SeriesInstanceUID));
+        assertTrue("an ordinary read must spool nothing", spooled.isEmpty());
     }
 
     /**

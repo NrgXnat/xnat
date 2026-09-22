@@ -249,15 +249,14 @@ public class DicomObjectFactory {
         }
 
         /**
-         * A directory for dcm4che's bulk data spool files that only this user can read.
+         * A directory for the bulk data spool files that only this user can read.
          * <p>
-         * Those files hold pixel data, and dcm4che creates them through the legacy
-         * {@code File.createTempFile}, which takes its mode from the umask and typically leaves them
-         * rw-r--r-- where {@code Files.createTempFile} would give rw-------. Their own mode is not
-         * ours to set, so they go somewhere nobody else can list or open: createTempDirectory gives
-         * owner-only permissions and an unguessable name, which also rules out anyone planting a
-         * directory at a predictable path first. One per JVM, since it holds nothing once the files
-         * are released.
+         * Those files hold pixel data. {@link BufferedBulkDataCreator} makes them owner-only, and
+         * they also go somewhere nobody else can list: createTempDirectory gives owner-only
+         * permissions and an unguessable name, which rules out anyone planting a directory at a
+         * predictable path first. One per JVM, since it holds nothing once the files are released.
+         * Resolved only when a read actually spools: this method stats the directory under the
+         * class lock, which no per-object path should pay for a directory it will not use.
          * <p>
          * It does not follow {@code dicom.pixeledit.scratch.dir}: that property belongs to
          * dicom-edit6, which sits above this, and a spool directory an operator can size separately

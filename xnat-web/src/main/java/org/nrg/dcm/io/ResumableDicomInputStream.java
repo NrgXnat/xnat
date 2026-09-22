@@ -107,9 +107,33 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      *                     and cannot be created.
      */
     public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in) throws IOException {
+        return openWithBulkDataOffHeap(in, null);
+    }
+
+    /**
+     * As {@link #openWithBulkDataOffHeap(BufferedInputStream)}, for a stream that reads
+     * <b>sourceFile</b> from its first byte: bulk data is referenced straight into the file
+     * instead of copied to the spool, except under a Deflated transfer syntax, where stream
+     * positions are not file positions and the creator spools as it must. The references are
+     * followed when the object is written, so the file must outlive that write; nothing here
+     * alters or deletes it -- {@link #getSpoolFiles()} never includes it.
+     *
+     * @param in         the object's bytes.
+     * @param sourceFile the file the stream reads from its beginning, or null when the source is
+     *                   not a file.
+     *
+     * @return a resumable stream that references bulk data rather than loading it.
+     *
+     * @throws IOException if the stream cannot be opened, or the configured scratch directory does
+     *                     not exist and cannot be created.
+     */
+    public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in, final File sourceFile) throws IOException {
         final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);
         dis.setIncludeBulkData(IncludeBulkData.URI);
         dis.setBulkDataDescriptor(PIXEL_DATA_OF_ANY_FORM);
+        if (sourceFile != null) {
+            dis.setURI(sourceFile.toURI().toString());
+        }
         dis._creator = new BufferedBulkDataCreator(scratchDirectory());
         dis.setBulkDataCreator(dis._creator);
         return dis;

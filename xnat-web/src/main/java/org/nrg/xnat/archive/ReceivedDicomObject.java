@@ -66,8 +66,22 @@ final class ReceivedDicomObject implements Closeable {
      */
     static ReceivedDicomObject read(final InputStream source, final String transferSyntaxFromCaller,
                                     final int lastTag, final boolean whole) throws IOException {
+        return read(source, transferSyntaxFromCaller, lastTag, whole, null);
+    }
+
+    /**
+     * As {@link #read(InputStream, String, int, boolean)}, for a source that is a file the stream
+     * reads from its first byte: a whole read then references pixel data straight into the file
+     * instead of copying it to the spool -- the inbox hands the importer exactly such sources --
+     * except under a Deflated transfer syntax, where the spool is still used because file offsets
+     * would be dishonest. The file must outlive {@link #write}; nothing here alters or deletes it.
+     *
+     * @param sourceFile the file the stream reads, or null when the source is not a file.
+     */
+    static ReceivedDicomObject read(final InputStream source, final String transferSyntaxFromCaller,
+                                    final int lastTag, final boolean whole, final File sourceFile) throws IOException {
         final BufferedInputStream       in  = new BufferedInputStream(source);
-        final ResumableDicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(in);
+        final ResumableDicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(in, sourceFile);
         try {
             Attributes fmi = dis.readFileMetaInformation();
             final String     transferSyntax = null == transferSyntaxFromCaller ? dis.getTransferSyntax() : transferSyntaxFromCaller;

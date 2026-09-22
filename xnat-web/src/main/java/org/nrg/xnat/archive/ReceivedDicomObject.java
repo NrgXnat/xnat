@@ -12,10 +12,10 @@ package org.nrg.xnat.archive;
 import lombok.extern.slf4j.Slf4j;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
 import org.nrg.dcm.io.ResumableDicomInputStream;
+import org.nrg.dicom.mizer.objects.BufferedBulkDataCreator;
 import org.nrg.dicom.mizer.objects.Dcm4cheConvert;
 import org.nrg.dicom.mizer.objects.DicomObjectWriter;
 import org.slf4j.LoggerFactory;
@@ -85,12 +85,13 @@ final class ReceivedDicomObject implements Closeable {
         try {
             Attributes fmi = dis.readFileMetaInformation();
             final String     transferSyntax = null == transferSyntaxFromCaller ? dis.getTransferSyntax() : transferSyntaxFromCaller;
-            // A Deflated source is one continuous zlib stream past the file meta group. The partial read
-            // stops mid-stream and lets write() copy the raw remainder through, but a fresh header
-            // followed by the leftover compressed bytes does not re-read -- the object comes back
-            // malformed. So a Deflated object is always read whole, whether or not a script applies;
-            // write() then re-deflates the parsed dataset into a valid object.
-            final boolean    readWhole      = whole || UID.DeflatedExplicitVRLittleEndian.equals(transferSyntax);
+            // A deflated source -- Deflated Explicit VR LE or either JPIP Referenced Deflate syntax,
+            // the three dcm4che inflates -- is one continuous zlib stream past the file meta group.
+            // The partial read stops mid-stream and lets write() copy the raw remainder through, but
+            // a fresh header followed by the leftover compressed bytes does not re-read -- the object
+            // comes back malformed. So a deflated object is always read whole, whether or not a
+            // script applies; write() then re-deflates the parsed dataset into a valid object.
+            final boolean    readWhole      = whole || BufferedBulkDataCreator.isDeflated(transferSyntax);
             final Attributes dataset        = new Attributes();
             if (readWhole) {
                 dis.readAttributes(dataset, -1, WHOLE_OBJECT);

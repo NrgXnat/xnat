@@ -281,6 +281,24 @@ public class ReceivedDicomObjectTest {
     }
 
     /**
+     * dcm4che inflates three transfer syntaxes, not one. Each must force the whole read: a partial read of
+     * any of them would copy leftover compressed bytes after a fresh header and write a malformed object.
+     */
+    @Test
+    public void everyInflatedSyntaxIsReadWholeAndRoundTrips() throws Exception {
+        for (final String transferSyntax : new String[] {
+                UID.DeflatedExplicitVRLittleEndian, UID.JPIPReferencedDeflate, UID.JPIPHTJ2KReferencedDeflate}) {
+            final File deflated = deflate(MR_FIXTURE, transferSyntax);
+            final File output   = new File(folder.getRoot(), "whole-" + transferSyntax + ".dcm");
+            try (ReceivedDicomObject received = ReceivedDicomObject.read(open(deflated), null, ORDINARY_LAST_TAG, false)) {
+                assertTrue(transferSyntax + " must force the whole read even when a partial one was asked for", received.isWhole());
+                received.write(received.getDataset(), AE_TITLE, output, "test");
+            }
+            assertArrayEquals(transferSyntax + ": pixels must survive the round trip", pixelData(MR_FIXTURE), pixelData(output));
+        }
+    }
+
+    /**
      * Old way: partial read, write, anonymize the file in place. New way: whole read, anonymize in memory,
      * write. Same script, same variables, same recorded script id.
      */
@@ -316,13 +334,18 @@ public class ReceivedDicomObjectTest {
 
     /** Re-encode a fixture as Deflated Explicit VR Little Endian, the way write() does: FMI carries the TS and the dataset is deflated after it. */
     private File deflate(final File source) throws IOException {
-        final File deflated = folder.newFile("deflated.dcm");
+        return deflate(source, UID.DeflatedExplicitVRLittleEndian);
+    }
+
+    /** Re-encode a fixture in any of the deflating syntaxes: FMI carries the TS and the dataset is deflated after it. */
+    private File deflate(final File source, final String transferSyntax) throws IOException {
+        final File deflated = folder.newFile("deflated-" + transferSyntax + ".dcm");
         final Attributes fmi;
         final Attributes dataset;
         try (DicomInputStream in = new DicomInputStream(source)) {
             in.readFileMetaInformation();
             dataset = in.readDataset();
-            fmi = dataset.createFileMetaInformation(UID.DeflatedExplicitVRLittleEndian);
+            fmi = dataset.createFileMetaInformation(transferSyntax);
         }
         try (DicomOutputStream out = new DicomOutputStream(new FileOutputStream(deflated), UID.ExplicitVRLittleEndian)) {
             out.writeDataset(fmi, dataset);

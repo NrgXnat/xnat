@@ -100,5 +100,5 @@ manifest) plus the A/B `report.md`.
 - Requires `kubectl` access to the pod and (for `cstore`) permission to run a short-lived sender pod.
 - The `cstore` and `huge` cells install pydicom/pynetdicom into the sender pod **offline**, from a
   local wheel directory: `--wheels DIR` (default `~/QA/ingest-io/wheels`). Populate it once with
-  `uv run pip download pydicom pynetdicom -d ~/QA/ingest-io/wheels`. Other routes don't need it.
+  `uvx pip download pydicom pynetdicom -d ~/QA/ingest-io/wheels`. Other routes don't need it.
 - Async-phase wall-clock has ±1 s poll granularity (stated in the report footer).

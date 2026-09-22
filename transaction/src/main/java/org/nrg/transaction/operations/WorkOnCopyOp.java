@@ -49,24 +49,23 @@ public final class WorkOnCopyOp<T> extends Transaction<T> {
 
     @Override
     public T run() throws TransactionException {
+        final T result;
         try {
             _callOnFile.setFile(new File(_tempDir, "staged-" + UUID.randomUUID() + "-" + _source.getName()));
-            final T result = _callOnFile.call();
-            try {
-                replace(_callOnFile.getFile().toPath(), _source.toPath());
-            } catch (IOException e) {
-                // The non-atomic fallback deletes the source before copying over it, so a failure
-                // here can leave the staged file as the only intact copy: rollback must keep it.
-                _keepStagedOnRollback = true;
-                throw new TransactionException("Unable to replace " + _source + " with the staged version,"
-                                               + " which is preserved at " + _callOnFile.getFile(), e);
-            }
-            return result;
-        } catch (TransactionException e) {
-            throw e;
+            result = _callOnFile.call();
         } catch (Throwable e) {
             throw new TransactionException(e);
         }
+        try {
+            replace(_callOnFile.getFile().toPath(), _source.toPath());
+        } catch (IOException e) {
+            // The non-atomic fallback deletes the source before copying over it, so a failure here
+            // can leave the staged file as the only intact copy: rollback must keep it.
+            _keepStagedOnRollback = true;
+            throw new TransactionException("Unable to replace " + _source + " with the staged version,"
+                                           + " which is preserved at " + _callOnFile.getFile(), e);
+        }
+        return result;
     }
 
     private static void replace(final Path staged, final Path source) throws IOException {

@@ -35,6 +35,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * <p>
  * Staging names carry a random component. Files worked on concurrently often share a name -- every
  * scan has a 1.dcm -- and a tempDir shared between them has to keep them apart.
+ * <p>
+ * When the replacement itself fails -- possible only on the non-atomic cross-filesystem fallback --
+ * the source may already be damaged, so the staged file may be the only intact copy: rollback
+ * leaves it in place, and the exception names where it is.
  */
 public final class WorkOnCopyOp<T> extends Transaction<T> {
     public WorkOnCopyOp(File source, File tempDir, CallOnFile<T> callOnFile) {
@@ -48,8 +52,18 @@ public final class WorkOnCopyOp<T> extends Transaction<T> {
         try {
             _callOnFile.setFile(new File(_tempDir, "staged-" + UUID.randomUUID() + "-" + _source.getName()));
             final T result = _callOnFile.call();
-            replace(_callOnFile.getFile().toPath(), _source.toPath());
+            try {
+                replace(_callOnFile.getFile().toPath(), _source.toPath());
+            } catch (IOException e) {
+                // The non-atomic fallback deletes the source before copying over it, so a failure
+                // here can leave the staged file as the only intact copy: rollback must keep it.
+                _keepStagedOnRollback = true;
+                throw new TransactionException("Unable to replace " + _source + " with the staged version,"
+                                               + " which is preserved at " + _callOnFile.getFile(), e);
+            }
             return result;
+        } catch (TransactionException e) {
+            throw e;
         } catch (Throwable e) {
             throw new TransactionException(e);
         }
@@ -68,7 +82,7 @@ public final class WorkOnCopyOp<T> extends Transaction<T> {
     @Override
     public void rollback() throws RollbackException {
         final File staged = _callOnFile.getFile();
-        if (staged == null || !staged.exists()) {
+        if (staged == null || !staged.exists() || _keepStagedOnRollback) {
             return;
         }
         try {
@@ -85,4 +99,7 @@ public final class WorkOnCopyOp<T> extends Transaction<T> {
     private final File             _source;
     private final File             _tempDir;
     private final CallOnFile<T> _callOnFile;
+
+    /** Set when {@link #replace} failed: the source may be damaged, so the staged file stays. */
+    private boolean _keepStagedOnRollback;
 }

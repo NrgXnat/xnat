@@ -9,19 +9,34 @@ $!template.setLayoutTemplate("Login.vm")
 $page.setTitle("Register A New User Account")
 $page.setBgColor($ui.bgcolor)
 
-## Dependency for markdown parsing
+## Dependency for markdown parsing (provides the global marked() function)
 <script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
+## DOMPurify sanitizes the HTML that marked() produces. The bundled marked is from 2013 and does no
+## URI scheme filtering, so a link like [text](javascript:alert(1)) renders as a live javascript: href.
+## Every marked() result MUST be passed through DOMPurify.sanitize() before being inserted into the DOM.
+<script src="$content.getURI("scripts/lib/dompurify/purify.min.js")"></script>
+## $!esc.html() is required here: Velocity does not escape references by default and no
+## reference-insertion event handler is configured, so these admin-settable preferences would
+## otherwise be written to the page as raw HTML. It would be better to register a global
+## EscapeHtmlReference eventhandler.referenceinsertion handler in TurbineResources.properties
+## so that every reference is escaped by default, but that requires auditing the templates that
+## intentionally emit HTML, so escape at the reference for now.
 #if($siteConfig.siteWideAlertStatus != "0" && $siteConfig.siteWideAlertStatus != "off")
-    <div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;"><strong>$siteConfig.siteWideAlertMessage</strong></div>
+    <div class="$!esc.html($siteConfig.siteWideAlertType)" style="margin-bottom: 2em;"><strong>$!esc.html($siteConfig.siteWideAlertMessage)</strong></div>
 #end
 <div id="login_area">
     <div id="login_welcome" class="login-box-container-flex">
         #if($siteConfig.siteDescriptionType == "Text")
             <div id="siteDescription"></div>
-            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
+            ## $!esc.html() prevents the description from closing this textarea and injecting markup
+            ## (e.g. "</textarea><img src=x onerror=...>"). See the note above on the global handler.
+            <textarea id="siteDescriptionMd" style="display: none;">$!esc.html($siteConfig.siteDescriptionText)</textarea>
             <script>
                 var mdtext = jq('#siteDescriptionMd').text();
-                var markedText = marked(mdtext);
+                // marked() does not filter URI schemes, so its output must be sanitized before it
+                // reaches the DOM. Without this, a site description of "[text](javascript:alert(1))"
+                // renders a clickable link that executes script on the unauthenticated register page.
+                var markedText = DOMPurify.sanitize(marked(mdtext));
                 jq('#siteDescription').html(markedText);
             </script>
         #else

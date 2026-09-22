@@ -221,6 +221,7 @@ dependencies {
 
     // --- Springfox / Swagger ---
     implementation libs.springfox.swagger2
+    implementation libs.springfox.spring.webmvc
     implementation libs.springfox.swagger.ui
 
     // --- Jakarta ORO (transitive from restlet in Maven) ---

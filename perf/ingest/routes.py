@@ -56,11 +56,18 @@ def _build_and_archive(cluster: Cluster, project: str) -> list[dict]:
     def build() -> float:
         ts, folder = _one_session(cluster, project)
         ts_folder["ts"], ts_folder["folder"] = ts, folder
-        return cluster.build_session(project, ts, folder).secs
+        r = cluster.build_session(project, ts, folder)
+        # Unchecked, a failed build records its own error-response time as the build wall-clock and
+        # only surfaces 900 s later as an archive timeout, blamed on the wrong phase.
+        if r.http not in (200, 201):
+            raise RuntimeError(f"build failed HTTP {r.http}: {r.body[:200]}")
+        return r.secs
 
     def archive() -> float:
         t0 = time.monotonic()
-        cluster.archive_session(project, ts_folder["ts"], ts_folder["folder"])
+        r = cluster.archive_session(project, ts_folder["ts"], ts_folder["folder"])
+        if r.http not in (200, 201):
+            raise RuntimeError(f"archive failed HTTP {r.http}: {r.body[:200]}")
         cluster.wait_prearchive_empty(project)
         return time.monotonic() - t0
 
@@ -161,12 +168,16 @@ def route_inbox(cluster: Cluster, project: str, s: Staged) -> list[dict]:
                          query=f"import-handler=inbox&path={s.inbox_pod_dir}&PROJECT_ID={project}&cleanupAfterImport=true")
         if r.http not in (200, 201):
             raise RuntimeError(f"inbox import failed HTTP {r.http}: {r.body[:200]}")
-        # async JMS: wait until the session appears in the prearchive
+        # async JMS: wait until the session appears AND every object has landed. The row appears
+        # after the first file, so building on that alone builds and archives a fraction of the
+        # workload -- a different, nondeterministic amount of work per rep.
         while time.monotonic() - t0 < 1800:
-            if cluster.prearchive_rows(project):
-                break
+            rows = cluster.prearchive_rows(project)
+            if rows and cluster.prearchive_file_count(
+                    project, rows[0]["timestamp"], rows[0]["folderName"]) >= s.files:
+                return time.monotonic() - t0
             time.sleep(1.0)
-        return time.monotonic() - t0
+        raise RuntimeError(f"inbox import did not deliver {s.files} files within 1800s")
     return [_phase(cluster, "receive", receive), *_build_and_archive(cluster, project)]
 
 

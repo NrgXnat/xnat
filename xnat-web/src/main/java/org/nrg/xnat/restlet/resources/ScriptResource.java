@@ -194,18 +194,23 @@ public class ScriptResource extends AutomationResource {
     private void putScript() throws ClientException, ServerException {
         // TODO: this needs to properly handle a PUT to an existing script as well as an existing but disabled script.
         final Representation entity = getRequest().getEntity();
-        if (entity.getSize() == 0) {
+        final MediaType mediaType = entity == null ? null : entity.getMediaType();
+        if (mediaType == null || (!mediaType.equals(MediaType.APPLICATION_WWW_FORM) && !mediaType.equals(MediaType.APPLICATION_JSON))) {
+            throw new ClientException(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, "This function currently only supports " + MediaType.APPLICATION_WWW_FORM + " and " + MediaType.APPLICATION_JSON);
+        }
+
+        // Read the body through the shared helper rather than entity.getSize()/getText(): under Restlet
+        // 2.6 a www-form body is drained into the servlet parameter map (POST) or the raw reader (PUT)
+        // and the entity reports size 0, so the old `entity.getSize() == 0` guard rejected every
+        // www-form submit as "no data sent". See item 1-24.
+        final String body = getRequestBodyText();
+        if (StringUtils.isBlank(body)) {
             logger.warn("Unable to find script parameters: no data sent?");
             getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to find script parameters: no data sent?");
             return;
         }
 
-        MediaType mediaType = entity.getMediaType();
-        if (!mediaType.equals(MediaType.APPLICATION_WWW_FORM) && !mediaType.equals(MediaType.APPLICATION_JSON)) {
-            throw new ClientException(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, "This function currently only supports " + MediaType.APPLICATION_WWW_FORM + " and " + MediaType.APPLICATION_JSON);
-        }
-
-        final Properties properties = decodeProperties(entity, mediaType);
+        final Properties properties = decodeProperties(body, mediaType);
         properties.remove("scriptId");
 
         try {

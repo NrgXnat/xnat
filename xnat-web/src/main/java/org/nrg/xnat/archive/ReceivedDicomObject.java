@@ -9,21 +9,18 @@
 
 package org.nrg.xnat.archive;
 
-import com.google.common.io.ByteStreams;
 import lombok.extern.slf4j.Slf4j;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.io.DicomOutputStream;
 import org.nrg.dcm.io.ResumableDicomInputStream;
 import org.nrg.dicom.mizer.objects.Dcm4cheConvert;
-import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.objects.DicomObjectWriter;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -91,13 +88,10 @@ final class ReceivedDicomObject implements Closeable {
                 // rest of the stream through untouched.
                 dis.reset();
             }
-            // CStore (DIMSE) has no FMI preamble, so fmi is null; generate complete FMI for file output.
-            if (null == fmi || !fmi.contains(Tag.TransferSyntaxUID)) {
-                fmi = dataset.createFileMetaInformation(transferSyntax);
-            }
-            // Merge FMI into dataset so processors see a complete DICOM object.
-            // FMI will be split out before writing to file.
-            dataset.addAll(fmi);
+            // CStore (DIMSE) has no FMI preamble, so the meta group is synthesized from the
+            // dataset; either way it is merged in so processors see a complete DICOM object, and
+            // split back out at write time.
+            Dcm4cheConvert.mergeFileMetaInformation(dataset, fmi, transferSyntax);
             return new ReceivedDicomObject(in, dis, dataset, transferSyntax, readWhole);
         } catch (IOException | RuntimeException e) {
             // Nothing is going to own the spool files if the read fails.
@@ -145,31 +139,21 @@ final class ReceivedDicomObject implements Closeable {
      * @param source        who sent the object, for the receipt log.
      */
     void write(final Attributes dataset, final Object sourceAeTitle, final File outputFile, final String source) throws IOException {
-        // Split FMI from dataset before writing (dcm4che5 requires them separate for i/o)
-        final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(dataset);
-        if (null != sourceAeTitle) {
-            split.fmi.setString(Tag.SourceApplicationEntityTitle, VR.AE, (String) sourceAeTitle);
-        }
-        try (final FileOutputStream fos = new FileOutputStream(outputFile);
-             final BufferedOutputStream bos = new BufferedOutputStream(fos, DicomObjectFactory.BULK_DATA_BUFFER_SIZE);
-             final DicomOutputStream dos = new DicomOutputStream(bos, UID.ExplicitVRLittleEndian)) {
-            // open stream with Explicit VR Little Endian because that's the required TS for FMI.
-            // stream object will switch to our provided TS after writing FMI.
-            dos.writeDataset(split.fmi, split.onlyDataset);
-            dos.flush();
-
-            // After a partial read the rest of the stream, pixel data included, has not been parsed
-            // and is copied through as it arrived.
+        try (final FileOutputStream fos = new FileOutputStream(outputFile)) {
+            // After a partial read the rest of the stream, pixel data included, has not been
+            // parsed and is copied through as it arrived.
+            final long copied = DicomObjectWriter.write(dataset, fos,
+                    fmi -> {
+                        if (null != sourceAeTitle) {
+                            fmi.setString(Tag.SourceApplicationEntityTitle, VR.AE, (String) sourceAeTitle);
+                        }
+                    },
+                    _whole ? null : _in);
             if (!_whole) {
-                final long copied = ByteStreams.copy(_in, bos);
                 log.trace("copied {} additional bytes to {}", copied, outputFile);
             }
-
-            LoggerFactory.getLogger("org.nrg.xnat.received").info("{}:{}", source, outputFile);
         }
-        // Re-merge FMI back into dataset for any subsequent processing
-        //https://radiologics.atlassian.net/browse/XNAT-8719
-        dataset.addAll(split.fmi);
+        LoggerFactory.getLogger("org.nrg.xnat.received").info("{}:{}", source, outputFile);
     }
 
     /**

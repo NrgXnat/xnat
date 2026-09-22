@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -229,6 +230,54 @@ public class ReceivedDicomObjectTest {
         }
         assertFalse(output.exists());
         assertTrue(filesUnder(scratch).isEmpty());
+    }
+
+    /**
+     * A file-backed source -- the inbox hands the importer exactly these -- needs no spool: pixel
+     * data is referenced straight into the source file, which must come through the read, the write
+     * and the close untouched.
+     */
+    @Test
+    public void fileBackedWholeReadReferencesPixelsIntoTheSourceWithoutSpooling() throws Exception {
+        final File source = folder.newFile("inbox.dcm");
+        Files.copy(MR_FIXTURE.toPath(), source.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        final byte[] sourceBytes = Files.readAllBytes(source.toPath());
+
+        final File output = new File(folder.getRoot(), "inbox-out.dcm");
+        try (ReceivedDicomObject received = ReceivedDicomObject.read(open(source), null, ORDINARY_LAST_TAG, true, source)) {
+            final Object pixelData = received.getDataset().getValue(Tag.PixelData);
+            assertTrue("pixel data should be a reference, not a heap byte[]", pixelData instanceof BulkData);
+            assertTrue("the reference should point into the source file, not at a spool copy",
+                       ((BulkData) pixelData).getURI().startsWith(source.toURI().toString()));
+            assertTrue("nothing should be spooled for a file-backed read", filesUnder(scratch).isEmpty());
+            received.write(received.getDataset(), AE_TITLE, output, "test");
+        }
+        assertArrayEquals("the source must come through the read, write and close untouched",
+                          sourceBytes, Files.readAllBytes(source.toPath()));
+        assertArrayEquals("the written object must carry the source's pixels",
+                          pixelData(source), pixelData(output));
+    }
+
+    /**
+     * A Deflated file's stream positions are inflated offsets, not file offsets, so a file-backed
+     * Deflated read must ignore the file and spool as the stream case does.
+     */
+    @Test
+    public void fileBackedDeflatedReadStillSpoolsAndRoundTrips() throws Exception {
+        final File   deflated    = deflate(MR_FIXTURE);
+        final byte[] sourceBytes = Files.readAllBytes(deflated.toPath());
+
+        final File output = new File(folder.getRoot(), "deflated-filebacked-out.dcm");
+        try (ReceivedDicomObject received = ReceivedDicomObject.read(open(deflated), null, ORDINARY_LAST_TAG, true, deflated)) {
+            final Object pixelData = received.getDataset().getValue(Tag.PixelData);
+            assertTrue("pixel data should be a reference, not a heap byte[]", pixelData instanceof BulkData);
+            assertFalse("a Deflated file's offsets are not file offsets, so the reference must not point into it",
+                        ((BulkData) pixelData).getURI().startsWith(deflated.toURI().toString()));
+            received.write(received.getDataset(), AE_TITLE, output, "test");
+        }
+        assertArrayEquals("the source must be untouched", sourceBytes, Files.readAllBytes(deflated.toPath()));
+        assertArrayEquals("pixels must survive the spooled read", pixelData(MR_FIXTURE), pixelData(output));
+        assertTrue("the spool must be cleaned up on close", filesUnder(scratch).isEmpty());
     }
 
     /**

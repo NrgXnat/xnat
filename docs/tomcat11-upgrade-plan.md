@@ -228,3 +228,38 @@ boot on dave-alldev. Nothing Tomcat 11 introduced.
   or a registered servlet), not any javax string. Discriminate by searching the jar for initializers/`META-INF/services`
   and diffing the sorted `unzip -Z1` class list against a known-good box.
 
+
+## dave-tc11 full Playwright regression (2026-09-21/22) — first 399-spec run on Tomcat 11
+
+A-8 signed off on the 15-spec `s1600` smoke set. The **full 399-spec** Playwright suite was first run
+end-to-end against dave-tc11 on 2026-09-21 (branch `feature/tomcat11`, off `feature/jakarta-cutover`).
+Result: **309 passed, 13 failed, 77 skipped**. The 13 fell into four causes; none was the Tomcat 11 change.
+
+### 🟢 Tomcat 11 only — JSP admin pages truncated at 8 KiB (`suspendWrappedResponseAfterForward`)
+Every `/pages/view/**` admin page (Manage Users, Site Administration, Plugin Settings, …) rendered blank
+with a spinner. **Tomcat 11 flipped the `Context` attribute `suspendWrappedResponseAfterForward` default
+false→true** (BZ 68634; 10.1/9.0 keep false). After Spring MVC forwards to the page JSP, Tomcat 11 *suspends*
+the wrapped response instead of closing it, so **JavaMelody's `MonitoringFilter`** (an 8 KiB
+`OutputStreamWriter` drained after the chain — javamelody#1306, unfixed in the shipped 2.8.0) writes its tail
+into a suspended response and Tomcat discards it → every page an exact 8 KiB multiple, sub-8 KiB pages empty,
+HTTP 200, nothing logged. Direct `/page/...` (no forward) and `.vm` pages were fine. Reproduces on
+bin-tomcat10 (10.1.56), i.e. driven by the attribute default, not the Tomcat version. **Fix
+(`feature/tomcat11`):** ship `suspendWrappedResponseAfterForward="false"` in
+`xnat-web/src/main/webapp/META-INF/context.xml` (the WAR carries it to every Tomcat 11 deploy). Validated on
+dave-tc11: pages/view sizes match the direct JSP byte-for-byte; S1003 8/8. Remove once a JavaMelody with the
+#1306 fix is adopted.
+
+### The other 12 failures (NOT Tomcat 11)
+- **6 form-body-loss (Restlet 2.6)** — the class of 1-24/1-34/1-35, extended to POST-with-JSON/form payload.
+  Root-caused and swept under **item 1-42** (`tomcat10-upgrade-status.md`). Fixed T1016.5/T1023.9/T1413.1/
+  T1413.2 (features UI), PrearcSessionResource, ScriptResource; MailRestlet/SearchResource confirmed covered/NA.
+- **1 XFT `IS ?` SQL** — project Pipelines tab blank (T1301.1). **Open item 1-43.**
+- **2 e-sign `$velocityCount`** (T1021.7/T1027.2) — Velocity 2 removed the variable; e-sign `Versions.vm`
+  never marks the current row. **esign_plugin** fix, not this repo.
+- **3 load/timing flakes** (T1112.5 import-teardown race, T1112.7 known parked, T1113.13/T1118.1 timeouts).
+
+### ⚪ Ops note — `/home/xnat/tomcat` symlink replaced by a real dir
+Mid-run `/home/xnat/tomcat` (symlink → `tomcat-11`) became a real directory holding only `temp/`, so a
+`systemctl daemon-reload` then start failed **203/EXEC** (`startup.sh` not found). Restore: move the stray dir
+aside, `ln -sfn /home/xnat/tomcat-11 /home/xnat/tomcat`, `reset-failed`, start. Cause of the replacement not
+determined; verify the symlink before every deploy.

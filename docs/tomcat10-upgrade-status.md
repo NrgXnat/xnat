@@ -971,3 +971,61 @@ were failing; the other 5 were latent. All 7 now go through the helper.
   `NoSuchElementException`). **They pass in isolation and in a clean full run**, and they did *not* fail in the
   run where the EventService context blew up first — so the trigger is shared state / execution order, not a
   defect in the builders. Not chased; recorded so the next person to see it does not re-derive it.
+
+
+## 1-42 🟢 — form-body-loss root cause (`getBodyAsForm`) + completed class sweep (2026-09-22)
+
+Continuation of the 1-24/1-34/1-35 class ("a resource reads the request body itself", framed by the Restlet
+2.6 servlet-connector mechanism, not a symptom). Surfaced by the full dave-tc11 Playwright run: the Manage
+Features UI (S1413; feature toggles in S1016/S1023) posts JSON `{'key':...,'banned':true}` under
+`application/x-www-form-urlencoded` (YUI Connect default), which `FeatureDefinitionRestlet.handlePost` read via
+`getEntity().getStream()` → `new JSONObject("")` → **400 "Invalid JSON content"**; every UI feature toggle
+silently failed.
+
+**Root cause (shared).** `SecureResource.getBodyAsForm()` gated body reading on
+`RequestUtil.isMultiPartFormData(entity) && entity.getSize() > 0`. That predicate returns true for www-form
+too, but the drained/reconstructed www-form entity reports **size 0**, so www-form fell through to **null** —
+silently dropping every www-form body from `getBodyVariable*`, `loadBodyVariables`, `createObjectFromFormData`.
+Fix: `getBodyAsForm()` recovers body-only params for www-form (parameter map on POST, raw reader on PUT;
+`bodyOnlyForm` so query is not double-counted) via new `formUrlEncodedBody()`; all five callers already
+null-guard, so additive. `getRequestBodyText()` also skips the entity for form content (its reconstructed text
+is the merged `k=v&…`, not the raw body) and returns a single valueless param's NAME (a raw JSON blob).
+
+**Sweep (mechanism-framed, 14 sites + helpers).** Fixed: `FeatureDefinitionRestlet` (`69b98fad1`),
+`PrearcSessionResource` + shared `getBodyAsForm` (`5ec6c9019`), `ScriptResource`/`AutomationResource.
+decodeProperties` — both its `entity.getSize()==0` reject and its `entity.getText()` read now via
+`getRequestBodyText()` (`81f529762`). No change needed: **MailRestlet** (www-form branch already calls
+`loadBodyVariables()`, now fed by the fix); **SearchResource** (real clients send text/xml or multipart,
+neither drained; a www-form XML body is unrecoverable — XML carries `=`/`&`). 9 SAFE (three
+`loadParams(new Form(entity))` sites guarded to multipart; XML/JSON content reads; file uploads; the GET-path
+CSV read). **Why 1-24's sweep missed these:** it was PUT-scoped and its A/B saw POST+form "working" for the
+auth endpoint (whose body IS form data), so the helper asserted "POST forms are handled" — false for a POST
+carrying a JSON/XML payload under a form content type.
+
+Validated on dave-tc11 (SHA `cb782a5bb5`): features form-encoded POST 200 (malformed still 400); 4 feature
+specs 4/4; www-form + JSON script PUT 200 and persist. On `feature/jakarta-cutover`; `feature/tomcat11`
+rebased on top adds only context.xml (Tomcat-11 `suspendWrappedResponseAfterForward`). Not pushed.
+
+## 1-43 ⚪ Open — XFT emits `col IS ?` (bound null) → Postgres syntax error, project Pipelines tab blank
+
+Found in the dave-tc11 run (T1301.1). The descendant-pipeline query populating a project's Pipelines tab
+fails server-side: `PSQLException: syntax error at or near "$2"` on `… (arc_project_descendant_pipeline2 IS ?)
+…`. XFT renders a **null relationship criterion** as `col IS ?` and binds null; Postgres rejects `IS $2` at
+parse time (`IS` takes only NULL/TRUE/FALSE). `SearchCriteria.getSQLClause` renders `IS NULL` correctly only
+on its QueryOrganizer path; this query reaches a builder that binds a parameter. **Likely PRE-EXISTING, not a
+cutover regression:** the XFT query-generation source is byte-identical between the 1.10 merge-base and the
+jakarta branch (git diff empty over `xft/search`, `xft/db`, `XFTItem`, `XdatCriteria`), and pgjdbc is the same
+42.7.3 in both WARs — so the migration did not introduce the mis-render; the full 399-spec run is simply the
+first thing to exercise this path. Fix belongs in XFT (render a null `IS` criterion as `IS NULL`). Affects any
+query filtering a relationship field on null, not just pipelines. Not fixed.
+
+## ⚪ Note — automation hard-disabled makes script delete 500 (not a cutover bug)
+
+On dave-tc11 `/xapi/automation/enabled` is **false**: `_automationEnabled` (from the `automation.enabled`
+application property, defaults off, not set in config) is ANDed with the `internalScriptingEnabled` site pref
+(true). `HibernateScriptService.getByScriptId()` short-circuits to **null** when automation is off, so
+`DefaultScriptRunnerService.deleteScript()` throws "Can't find script" (→ 500) for a script `getScripts()`
+still lists — the UI delete hits the same path. Latent inconsistency: while automation is disabled, scripts
+can be created and listed but not deleted (surfaced by 1-42's ScriptResource validation, which created test
+scripts via the now-fixed www-form path). Also why the Administer→Automation menu is hidden
+(`uiHideAdministerAutomation=true`). Pre-existing; recorded so it is not mistaken for a migration regression.

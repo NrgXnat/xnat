@@ -43,8 +43,17 @@ import java.util.List;
  */
 public final class BufferedBulkDataCreator implements BulkDataCreator, Closeable {
 
-    private final File       spoolDirectory;
-    private final List<File> spoolFiles = new ArrayList<>();
+    /**
+     * Supplies the spool directory, creating it if need be. Resolved at most once per creator, and
+     * only if something is actually spooled.
+     */
+    @FunctionalInterface
+    public interface SpoolDirectory {
+        File get() throws IOException;
+    }
+
+    private final SpoolDirectory spoolDirectory;
+    private final List<File>     spoolFiles = new ArrayList<>();
 
     private File         spoolFile;
     private OutputStream spool;
@@ -52,11 +61,14 @@ public final class BufferedBulkDataCreator implements BulkDataCreator, Closeable
     private byte[]       copyBuffer;
 
     /**
-     * @param spoolDirectory where values that cannot be referenced in place are spooled. It must
-     *                       exist, and it should be readable only by this user: pixel data lands
-     *                       in it.
+     * @param spoolDirectory where values that cannot be referenced in place are spooled: it should
+     *                       be readable only by this user, since pixel data lands in it. Asked for
+     *                       the directory only when a value has to be spooled -- most reads
+     *                       reference in place or never reach bulk data at all, and resolving a
+     *                       directory that will not be used costs a stat on the per-object path,
+     *                       serialized behind whatever lock the supplier holds.
      */
-    public BufferedBulkDataCreator(final File spoolDirectory) {
+    public BufferedBulkDataCreator(final SpoolDirectory spoolDirectory) {
         this.spoolDirectory = spoolDirectory;
     }
 
@@ -91,7 +103,7 @@ public final class BufferedBulkDataCreator implements BulkDataCreator, Closeable
     private BulkData spool(final DicomInputStream in) throws IOException {
         final long length = in.unsignedLength();
         if (spool == null) {
-            final File file = Files.createTempFile(spoolDirectory.toPath(), "mizer-bulk-", ".spool").toFile();
+            final File file = Files.createTempFile(spoolDirectory.get().toPath(), "mizer-bulk-", ".spool").toFile();
             spoolFiles.add(file);
             spoolFile     = file;
             spool         = new BufferedOutputStream(new FileOutputStream(file), DicomObjectFactory.BULK_DATA_BUFFER_SIZE);

@@ -134,7 +134,12 @@ public final class ResumableDicomInputStream extends DicomInputStream {
         if (sourceFile != null) {
             dis.setURI(sourceFile.toURI().toString());
         }
-        dis._creator = new BufferedBulkDataCreator(scratchDirectory());
+        // A method reference, not a call: scratchDirectory() stats the directory under a
+        // class-level lock, and the ordinary import stops short of the pixel data and spools
+        // nothing, so resolving it per object would be a serialized syscall for nothing. A
+        // configured directory that cannot be created still fails the read -- now when the first
+        // value has to be spooled rather than when the stream opens.
+        dis._creator = new BufferedBulkDataCreator(ResumableDicomInputStream::scratchDirectory);
         dis.setBulkDataCreator(dis._creator);
         return dis;
     }

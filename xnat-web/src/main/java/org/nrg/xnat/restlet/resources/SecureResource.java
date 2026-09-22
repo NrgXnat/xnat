@@ -499,9 +499,19 @@ public abstract class SecureResource extends ServerResource {
      */
     private Form getBodyAsForm() {
         if (_body == null) {
-            final Representation entity = getRequest().getEntity();
-            if (RequestUtil.isMultiPartFormData(entity) && entity.getSize() > 0) {
-                _mediaType = entity.getMediaType();
+            final Representation entity = getRequest() == null ? null : getRequest().getEntity();
+            final MediaType mediaType = entity == null ? null : entity.getMediaType();
+            if (isWwwFormUrlEncoded(mediaType)) {
+                // application/x-www-form-urlencoded: the Restlet 2.6 servlet connector consumed the body
+                // -- on a POST into the merged (query+body) servlet parameter map (Servlet 6.0 3.1), on a
+                // PUT left in the raw reader -- and the reconstructed entity reports size 0. So the
+                // multipart branch below (guarded by entity.getSize() > 0) never fired for www-form and
+                // this returned null, silently dropping EVERY www-form body from getBodyVariable*,
+                // loadBodyVariables and createObjectFromFormData. Recover the body-only params instead.
+                _mediaType = mediaType;
+                _body = formUrlEncodedBody();
+            } else if (RequestUtil.isMultiPartFormData(entity) && entity.getSize() > 0) {
+                _mediaType = mediaType;
                 _body = bodyOnlyForm(new Form(entity));
             }
         }
@@ -539,9 +549,7 @@ public abstract class SecureResource extends ServerResource {
         //    step 3 -- this is what a JSON body posted under a form content type (the Manage Features
         //    UI) needs.
         final Representation entity = request.getEntity();
-        final MediaType mediaType = entity == null ? null : entity.getMediaType();
-        final boolean formEncoded = mediaType != null
-                && MediaType.APPLICATION_WWW_FORM.getName().equalsIgnoreCase(mediaType.getName());
+        final boolean formEncoded = isWwwFormUrlEncoded(entity == null ? null : entity.getMediaType());
         try {
             if (!formEncoded && request.isEntityAvailable() && entity != null) {
                 final String text = entity.getText();
@@ -600,6 +608,54 @@ public abstract class SecureResource extends ServerResource {
 
     private static String encodeParameter(final String value) {
         return value == null ? "" : URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private static boolean isWwwFormUrlEncoded(final MediaType mediaType) {
+        return mediaType != null
+                && MediaType.APPLICATION_WWW_FORM.getName().equalsIgnoreCase(mediaType.getName());
+    }
+
+    /**
+     * The body of an {@code application/x-www-form-urlencoded} request as a body-only {@link Form}.
+     *
+     * <p>Under the Restlet 2.6 servlet connector the container consumes the body: on a POST it parses it
+     * into the merged (query+body) servlet parameter map (Servlet 6.0 3.1) and the Restlet entity reports
+     * size 0; on a PUT it does not parse it, leaving the raw body in the servlet reader. This reads
+     * whichever holds the body and reduces it to body-only params via {@link #bodyOnlyForm}, so a
+     * www-form body is no longer silently lost by {@link #getBodyAsForm()}. Returns an empty Form when
+     * there is no body.</p>
+     */
+    private Form formUrlEncodedBody() {
+        final HttpServletRequest servletRequest = new RequestUtil().getHttpServletRequest(getRequest());
+        if (servletRequest == null) {
+            return new Form();
+        }
+        // POST: the container merged query+body into the parameter map (and drained the stream). A PUT
+        // that carries a query string lands here too, but bodyOnlyForm() removes the query, leaving it
+        // empty so the raw-reader path below recovers the PUT body.
+        final Map<String, String[]> parameters = servletRequest.getParameterMap();
+        if (parameters != null && !parameters.isEmpty()) {
+            final Form merged = new Form();
+            for (final Map.Entry<String, String[]> entry : parameters.entrySet()) {
+                for (final String value : entry.getValue()) {
+                    merged.add(entry.getKey(), value);
+                }
+            }
+            final Form body = bodyOnlyForm(merged);
+            if (!body.isEmpty()) {
+                return body;
+            }
+        }
+        // PUT: the container never parsed the body; the raw servlet reader still holds "k=v&...".
+        try (final Reader reader = servletRequest.getReader()) {
+            final String raw = new java.io.BufferedReader(reader).lines().collect(Collectors.joining("\n"));
+            if (StringUtils.isNotEmpty(raw)) {
+                return new Form(raw);
+            }
+        } catch (IllegalStateException | IOException e) {
+            logger.debug("Servlet body reader unavailable for a form-urlencoded body", e);
+        }
+        return new Form();
     }
 
     /**

@@ -222,19 +222,18 @@ public final class PrearcSessionResource extends SecureResource {
             loadBodyVariables();
             loadQueryVariables();
             
-            final Representation entity=getRequest().getEntity();
-            if(entity!=null){
-                final String json = entity.getText();
-                if (!Strings.isNullOrEmpty(json)) {
-                    loadParams(json);
-                }
+            // Read via SecureResource#getRequestBodyText(): a JSON body posted under an
+            // application/x-www-form-urlencoded content type is parsed into the servlet parameter
+            // map by the Restlet 2.6 connector (Servlet 6.0 3.1), so entity.getText() returns the
+            // merged "k=v&..." string, not the JSON -- loadParams()/new JSONObject then threw and the
+            // body params were silently lost. The helper recovers the raw body. Same class as 1-24.
+            final String json = getRequestBodyText();
+            if (!Strings.isNullOrEmpty(json)) {
+                loadParams(json);
             }
         } catch (ClientException e1) {
             log.error("", e1);
             getResponse().setStatus(e1.getStatus(), e1);
-        } catch (IOException e) {
-            log.error("", e);
-            getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
         }
 
         final File sessionDir;

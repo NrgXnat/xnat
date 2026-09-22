@@ -39,6 +39,7 @@ class Cluster:
         self.ctx, self.ns, self.pod, self.container = context, namespace, pod, container
         self.user, self.password, self.base = user, password, base
         self._warned_no_nfs = False
+        self._prearchive_root: str | None = None
 
     # ---- low-level exec / cp -------------------------------------------------
     def _kubectl(self, *args: str, input_bytes: bytes | None = None, timeout: int = 600) -> subprocess.CompletedProcess:
@@ -104,22 +105,20 @@ class Cluster:
 
     # ---- metrics -------------------------------------------------------------
     _METRIC_AWK = (
-        r'''awk '/mounted on \/data\/xnat\/archive /{f=1;next} f&&/^[[:space:]]*bytes:/{print $7;exit}' '''
-        r"/proc/self/mountstats; awk '/^wchar/{print $2}' /proc/1/io"
+        r'''awk '/mounted on \/data\/xnat\/archive /{f=1;next} f&&/^[[:space:]]*bytes:/{print "nfs=" $7;exit}' '''
+        r"""/proc/self/mountstats; awk '/^wchar/{print "wchar=" $2}' /proc/1/io"""
     )
 
     def metrics(self) -> Metrics:
-        # The mountstats awk prints nothing when the archive is not an NFS mount (RBD, local-path,
-        # or a different mount point), which would otherwise shift wchar into nfs_write and then
-        # IndexError. Report no NFS bytes instead: wall-clock still measures, and the report
-        # footer says the NFS column is absent.
-        out = self.exec(self._METRIC_AWK).split()
-        if len(out) < 2:
-            if not self._warned_no_nfs:
-                print("  ! archive mount reports no NFS stats; nfs_mb will read 0 for this run")
-                self._warned_no_nfs = True
-            return Metrics(nfs_write=0, wchar=int(out[0]) if out else 0)
-        return Metrics(nfs_write=int(out[0]), wchar=int(out[1]))
+        # Each figure is labelled, so a missing one cannot shift the other into its place: the
+        # mountstats awk prints nothing when the archive is not an NFS mount (RBD, local-path, or
+        # another mount point), and /proc/1/io can be unreadable. A missing NFS figure reads 0 and
+        # is reported once; wall-clock still measures.
+        fields = dict(t.split("=", 1) for t in self.exec(self._METRIC_AWK).split() if "=" in t)
+        if "nfs" not in fields and not self._warned_no_nfs:
+            print("  ! archive mount reports no NFS stats; nfs_mb will read 0 for this run")
+            self._warned_no_nfs = True
+        return Metrics(nfs_write=int(fields.get("nfs", 0)), wchar=int(fields.get("wchar", 0)))
 
     # ---- XNAT facts ----------------------------------------------------------
     def build_sha(self) -> str:
@@ -200,12 +199,20 @@ class Cluster:
         return self.curl("POST", "/data/services/archive",
                          query=f"src=/prearchive/projects/{project}/{ts}/{folder}&overwrite=append")
 
-    def prearchive_file_count(self, project: str, ts: str, folder: str,
-                              root: str = "/data/xnat/prearchive") -> int:
+    def prearchive_root(self) -> str:
+        """The instance's prearchivePath from siteConfig (cached): the layout differs between
+        deployments, and a wrong root here would make every async wait time out."""
+        if self._prearchive_root is None:
+            v = self.curl("GET", "/xapi/siteConfig/prearchivePath").body.strip().strip('"')
+            self._prearchive_root = v or "/data/xnat/prearchive"
+        return self._prearchive_root
+
+    def prearchive_file_count(self, project: str, ts: str, folder: str) -> int:
         """Objects landed in a prearchive session so far, counted under SCANS (any file name, since
         the importer names output from the source). Catalogs only appear at build, after any caller
         here has stopped polling. The progress signal for the async routes."""
-        out = self.exec(f"find {root}/projects/{project}/{ts}/{folder}/SCANS -type f 2>/dev/null | wc -l")
+        scans = shlex.quote(f"{self.prearchive_root()}/projects/{project}/{ts}/{folder}/SCANS")
+        out = self.exec(f"find {scans} -type f 2>/dev/null | wc -l")
         try:
             return int(out.strip())
         except ValueError:

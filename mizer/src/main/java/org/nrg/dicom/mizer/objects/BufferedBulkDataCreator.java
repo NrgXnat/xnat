@@ -31,9 +31,11 @@ import java.util.List;
  * stream and opens one temporary file per value.</li>
  * </ul>
  * The choice is made from the stream's own state, never by the caller, because a reference into
- * the raw file is only honest when stream positions are file positions. A Deflated dataset is read
- * through an inflater, so its positions are inflated offsets that mean nothing against the file;
- * dcm4che's default creator refuses to reference in exactly that case, and this one spools it.
+ * the raw file is only honest when stream positions are file positions. A deflated dataset --
+ * Deflated Explicit VR Little Endian, or either JPIP Referenced Deflate syntax, see
+ * {@link #isDeflated} -- is read through an inflater, so its positions are inflated offsets that
+ * mean nothing against the file; dcm4che's default creator refuses to reference in exactly those
+ * cases, and this one spools them.
  * <p>
  * The creator owns every file it spools -- and nothing else, never a source file that references
  * point into. {@link #getSpoolFiles()} lists the spool files for whoever must delete them once
@@ -79,10 +81,23 @@ public final class BufferedBulkDataCreator implements BulkDataCreator, Closeable
 
     /**
      * A reference into the source is only honest when the stream has one and reads it raw: a
-     * Deflated dataset arrives through an inflater, so its positions are not file positions.
+     * deflated dataset arrives through an inflater, so its positions are not file positions.
      */
     private static boolean canReferenceIntoSource(final DicomInputStream in) {
-        return in.getURI() != null && !UID.DeflatedExplicitVRLittleEndian.equals(in.getTransferSyntax());
+        return in.getURI() != null && !isDeflated(in.getTransferSyntax());
+    }
+
+    /**
+     * Whether dcm4che reads a dataset in this transfer syntax through an inflater -- so that stream
+     * positions are inflated offsets rather than file offsets, and everything past the meta group
+     * is one continuous zlib stream that cannot be split. These are the three syntaxes
+     * {@code DicomInputStream.switchTransferSyntax} wraps in an {@code InflaterInputStream};
+     * dcm4che offers no predicate of its own.
+     */
+    public static boolean isDeflated(final String transferSyntax) {
+        return UID.DeflatedExplicitVRLittleEndian.equals(transferSyntax)
+               || UID.JPIPReferencedDeflate.equals(transferSyntax)
+               || UID.JPIPHTJ2KReferencedDeflate.equals(transferSyntax);
     }
 
     /**

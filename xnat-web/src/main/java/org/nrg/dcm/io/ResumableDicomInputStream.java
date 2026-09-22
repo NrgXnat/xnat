@@ -2,22 +2,17 @@ package org.nrg.dcm.io;
 
 import lombok.extern.slf4j.Slf4j;
 import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.ItemPointer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.BulkDataDescriptor;
 import org.dcm4che3.io.DicomInputStream;
+import org.nrg.dicom.mizer.objects.BufferedBulkDataCreator;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
-import org.nrg.dicom.mizer.objects.ReadAheadBulkData;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.EOFException;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -89,11 +84,12 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * {@link IncludeBulkData#YES}, which costs heap per concurrent read and fails outright above 2 GiB --
      * dcm4che throws "tag value too large, must be less than 2Gib". {@link IncludeBulkData#URI URI} stores a
      * reference instead. When the source is a file the reference points into it, but here it is a stream, so
-     * the value is spooled to a file and the reference points there. The spooling is this class's own rather
-     * than dcm4che's, which writes 2 KB at a time to an unbuffered stream and hands back references that read
-     * the same way: a gigabyte of pixel data would cost a million system calls each way. Here every value of an
-     * object goes into one spool file through a {@link DicomObjectFactory#BULK_DATA_BUFFER_SIZE} buffer, and the
-     * references read ahead by the same amount.
+     * the value is spooled to a file and the reference points there. The spooling is
+     * {@link BufferedBulkDataCreator}'s rather than dcm4che's, which writes 2 KB at a time to an unbuffered
+     * stream and hands back references that read the same way: a gigabyte of pixel data would cost a million
+     * system calls each way. Here every value of an object goes into one spool file through a
+     * {@link DicomObjectFactory#BULK_DATA_BUFFER_SIZE} buffer, and the references read ahead by the same
+     * amount.
      * <p>
      * Nothing else owns the spool files and nothing else removes them: the caller must pass
      * {@link #getSpoolFiles()} to {@link #deleteBulkDataFiles} once everything holding a reference is done
@@ -114,8 +110,8 @@ public final class ResumableDicomInputStream extends DicomInputStream {
         final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);
         dis.setIncludeBulkData(IncludeBulkData.URI);
         dis.setBulkDataDescriptor(PIXEL_DATA_OF_ANY_FORM);
-        dis._spoolDirectory = scratchDirectory();
-        dis.setBulkDataCreator(stream -> dis.spool());
+        dis._creator = new BufferedBulkDataCreator(scratchDirectory());
+        dis.setBulkDataCreator(dis._creator);
         return dis;
     }
 
@@ -124,40 +120,9 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * none when the read never reached any bulk data, which is the ordinary case.
      */
     public List<File> getSpoolFiles() {
-        final List<File> files = new ArrayList<>(_spoolFiles);
+        final List<File> files = _creator == null ? new ArrayList<>() : _creator.getSpoolFiles();
         files.addAll(getBulkDataFiles());
         return files;
-    }
-
-    /**
-     * Copies the value at the stream position into the spool and returns a reference to it there. Called by
-     * dcm4che for every bulk data value and every fragment of encapsulated pixel data.
-     */
-    private BulkData spool() throws IOException {
-        final long length = unsignedLength();
-        if (_spool == null) {
-            final File file = Files.createTempFile(_spoolDirectory.toPath(), "xnat-import-", ".bulk").toFile();
-            _spoolFiles.add(file);
-            _spoolFile     = file;
-            _spool         = new BufferedOutputStream(new FileOutputStream(file), DicomObjectFactory.BULK_DATA_BUFFER_SIZE);
-            _spoolPosition = 0;
-        }
-        if (_copyBuffer == null) {
-            _copyBuffer = new byte[DicomObjectFactory.BULK_DATA_BUFFER_SIZE];
-        }
-        long remaining = length;
-        while (remaining > 0) {
-            final int read = read(_copyBuffer, 0, (int) Math.min(_copyBuffer.length, remaining));
-            if (read < 0) {
-                throw new EOFException("Stream ended " + remaining + " bytes short of a " + length
-                                       + " byte value at " + getPosition());
-            }
-            _spool.write(_copyBuffer, 0, read);
-            remaining -= read;
-        }
-        final BulkData reference = new ReadAheadBulkData(_spoolFile.toURI().toString(), _spoolPosition, length, bigEndian());
-        _spoolPosition += length;
-        return reference;
     }
 
     /**
@@ -182,10 +147,8 @@ public final class ResumableDicomInputStream extends DicomInputStream {
     }
 
     private void closeSpool() throws IOException {
-        final OutputStream spool = _spool;
-        if (spool != null) {
-            _spool = null;
-            spool.close();
+        if (_creator != null) {
+            _creator.close();
         }
     }
 
@@ -245,10 +208,5 @@ public final class ResumableDicomInputStream extends DicomInputStream {
         }
     }
 
-    private final List<File> _spoolFiles = new ArrayList<>();
-    private File             _spoolDirectory;
-    private File             _spoolFile;
-    private OutputStream     _spool;
-    private long             _spoolPosition;
-    private byte[]           _copyBuffer;
+    private BufferedBulkDataCreator _creator;
 }

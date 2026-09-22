@@ -9,7 +9,6 @@ import org.dcm4che3.data.SpecificCharacterSet;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.io.DicomOutputStream;
 import org.dcm4che3.util.TagUtils;
 import org.dcm4che3.util.UIDUtils;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -28,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -133,17 +131,6 @@ public class DicomObjectFactory {
     }
 
     /**
-     * What dcm4che does for a bulk data value when the stream has a URI -- record where the value
-     * sits in the file and skip past it -- except that the reference is a {@link ReadAheadBulkData}.
-     */
-    private static BulkData referenceIntoFile(final DicomInputStream in) throws IOException {
-        final long length = in.unsignedLength();
-        final BulkData reference = new ReadAheadBulkData(in.getURI(), in.getPosition(), length, in.bigEndian());
-        in.skipFully(length);
-        return reference;
-    }
-
-    /**
      * Implementation of {@link DicomObjectI} as inner class.
      */
     public static class MizerDicomObject implements DicomObjectI {
@@ -156,9 +143,10 @@ public class DicomObjectFactory {
 
         /**
          * Files holding bulk data that this object's {@link org.dcm4che3.data.BulkData} values point
-         * at, and that nothing else owns: dcm4che's spool files for gzipped sources, and the edited
-         * pixel data written by pixel edit handlers. They must outlive every {@link #write} and be
-         * deleted afterwards, which {@link #releaseScratchFiles()} does.
+         * at, and that nothing else owns: the {@link BufferedBulkDataCreator}'s spool files for
+         * sources whose values cannot be referenced in place (gzipped files, Deflated transfer
+         * syntax), and the edited pixel data written by pixel edit handlers. They must outlive every
+         * {@link #write} and be deleted afterwards, which {@link #releaseScratchFiles()} does.
          */
         private final List<File> scratchFiles = new ArrayList<>();
 
@@ -195,11 +183,13 @@ public class DicomObjectFactory {
         /**
          * Create from the DICOM object in file, controlling bulk data handling.
          * <p>
-         * With {@link DicomInputStream.IncludeBulkData#URI URI}, the stream's URI is set to
-         * <b>file</b> so that bulk data values become references into it, read on demand and never
-         * copied. That is not possible for a gzipped source, where stream offsets bear no relation
-         * to file offsets; dcm4che detects the {@code InflaterInputStream} and spools bulk data to
-         * its own temporary files instead, which we register for cleanup.
+         * With {@link DicomInputStream.IncludeBulkData#URI URI}, bulk data values become
+         * {@link ReadAheadBulkData} references instead of heap arrays: into <b>file</b> itself
+         * where stream offsets are file offsets, and into a private spool where they are not -- a
+         * gzipped source, read through a {@code GZIPInputStream}, or a Deflated transfer syntax,
+         * which dcm4che inflates mid-stream. The choice is {@link BufferedBulkDataCreator}'s, made
+         * per value from the stream's own state, so no caller can pick the in-place reference when
+         * its offsets would be dishonest.
          *
          * @param file            DICOM object file.
          * @param includeBulkData how to handle bulk data elements.
@@ -210,24 +200,28 @@ public class DicomObjectFactory {
             try (final InputStream fin = getInputStream(file);
                  final DicomInputStream dis = new DicomInputStream(fin)) {
                 dis.setIncludeBulkData(includeBulkData);
-                if (gzipped) {
-                    dis.setBulkDataDirectory(spoolDirectory());
-                } else {
+                if (!gzipped) {
+                    // Offsets in the stream are offsets in the file, so values can be referenced
+                    // in place -- except under a Deflated transfer syntax, which the creator
+                    // detects and spools.
                     dis.setURI(file.toURI().toString());
-                    dis.setBulkDataCreator(DicomObjectFactory::referenceIntoFile);
                 }
+                final BufferedBulkDataCreator creator = new BufferedBulkDataCreator(spoolDirectory());
+                dis.setBulkDataCreator(creator);
                 try {
                     final Attributes fmi = dis.readFileMetaInformation();
                     dataset = dis.readDataset();
                     if (fmi != null) {
                         dataset.addAll(fmi);
                     }
+                    // Flushed and closed here, before anything follows a reference into the spool.
+                    creator.close();
                 } catch (IOException | RuntimeException e) {
-                    // Anything dcm4che spooled before the read failed holds pixel data, and no
-                    // object is going to exist to release it: the constructor is throwing. A
-                    // truncated gzipped source would otherwise leave it in the temp directory for
-                    // good.
-                    for (final File spooled : dis.getBulkDataFiles()) {
+                    // Anything spooled before the read failed holds pixel data, and no object is
+                    // going to exist to release it: the constructor is throwing. A truncated
+                    // source would otherwise leave it in the spool directory for good.
+                    closeQuietly(creator, file);
+                    for (final File spooled : creator.getSpoolFiles()) {
                         if (spooled.exists() && !spooled.delete()) {
                             logger.warn("Unable to delete bulk data spool file {} after a failed read of {}",
                                         spooled, file);
@@ -235,10 +229,19 @@ public class DicomObjectFactory {
                     }
                     throw e;
                 }
-                // Non-empty only for the gzipped case, where dcm4che had to spool.
-                scratchFiles.addAll(dis.getBulkDataFiles());
+                // Non-empty only when values could not be referenced in place: a gzipped source,
+                // or a Deflated transfer syntax.
+                scratchFiles.addAll(creator.getSpoolFiles());
             } catch (IOException e) {
                 throw new MizerException(e);
+            }
+        }
+
+        private static void closeQuietly(final BufferedBulkDataCreator creator, final File file) {
+            try {
+                creator.close();
+            } catch (IOException e) {
+                logger.warn("Unable to close the bulk data spool after a failed read of {}", file, e);
             }
         }
 
@@ -1158,28 +1161,19 @@ public class DicomObjectFactory {
         @Override
         public void write(OutputStream os) throws MizerException {
             try {
-                String tsString = dataset.getString(org.dcm4che3.data.Tag.TransferSyntaxUID);
-                if (tsString == null) {
-                    tsString = "1.2.840.10008.1.2.1"; // Explicit VR Little Endian
-                    dataset.setString(org.dcm4che3.data.Tag.TransferSyntaxUID, VR.UI, tsString);
+                // Longstanding defaults callers may rely on: an object built from scratch still
+                // writes as a valid Explicit VR Little Endian secondary capture.
+                if (dataset.getString(org.dcm4che3.data.Tag.TransferSyntaxUID) == null) {
+                    dataset.setString(org.dcm4che3.data.Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2.1"); // Explicit VR Little Endian
                 }
-                // Buffered here rather than left to each caller, because every caller needs it: see
-                // BULK_DATA_BUFFER_SIZE for what dcm4che does to a bare FileOutputStream.
-                try (DicomOutputStream out = new DicomOutputStream(new BufferedOutputStream(os, BULK_DATA_BUFFER_SIZE), UID.ExplicitVRLittleEndian)) {
-                    String sopClassUID = dataset.getString(org.dcm4che3.data.Tag.SOPClassUID);
-                    String sopInstanceUID = dataset.getString(org.dcm4che3.data.Tag.SOPInstanceUID);
-
-                    if (sopClassUID == null) {
-                        dataset.setString(org.dcm4che3.data.Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
-                    }
-                    if (sopInstanceUID == null) {
-                        dataset.setString(org.dcm4che3.data.Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
-                    }
-                    Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.extractFmiFromDataset(dataset);
-                    out.writeDataset(split.fmi, split.onlyDataset);
-                    dataset.addAll(split.fmi);
+                if (dataset.getString(org.dcm4che3.data.Tag.SOPClassUID) == null) {
+                    dataset.setString(org.dcm4che3.data.Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
                 }
-            }catch (IOException e) {
+                if (dataset.getString(org.dcm4che3.data.Tag.SOPInstanceUID) == null) {
+                    dataset.setString(org.dcm4che3.data.Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
+                }
+                DicomObjectWriter.write(dataset, os, null, null);
+            } catch (IOException e) {
                 throw new MizerException(e);
             }
         }

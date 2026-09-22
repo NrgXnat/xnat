@@ -443,18 +443,33 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     /**
-     * Whether a script is expected to run on this object, decided from what is known before it is read:
-     * the request's own anonymization flag, the site-wide setting, and any inline script. The session row
-     * looked up later has the final say on the site-wide script, so this can be wrong in either direction
-     * without harm. A whole read that turns out to need no script is written as it is; a partial read
-     * that turns out to need one is anonymized on the file, as every import used to be.
+     * Whether a script is expected to run on this object, decided from what is known before it is
+     * read: the request's own anonymization flag, any inline script, and the site-wide script --
+     * checked exactly as {@link #applyScripts} will check it, preference flag and cached
+     * configuration both, so the prediction only misses what cannot be known yet. The session row
+     * looked up later has the final say (an upload marked prevent-anon on its session row cannot be
+     * seen from here), so the prediction can still be wrong in either direction without harm: a
+     * whole read that turns out to need no script is written as it is -- re-encoded, so parse-equal
+     * rather than byte-equal to what was sent, as any whole read is -- and a partial read that
+     * turns out to need one is anonymized on the file, as every import used to be.
      */
     private boolean anonymizesOnReceive() {
         if (StringUtils.isNotBlank((String) TurbineUtils.unescapeParam(_parameters.get(ANON_SCRIPT_PARAM)))) {
             return true;
         }
-        final boolean preventAnon = Boolean.parseBoolean((String) _parameters.get(URIManager.PREVENT_ANON));
-        return !preventAnon && DefaultAnonUtils.getService().isSiteWideScriptEnabled();
+        if (Boolean.parseBoolean((String) _parameters.get(URIManager.PREVENT_ANON))
+            || !DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
+            return false;
+        }
+        try {
+            final Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
+            return c != null && Configuration.ENABLED_STRING.equals(c.getStatus());
+        } catch (Exception e) {
+            // The whole read is correct whether or not a script runs, so predict that one will and
+            // leave surfacing the real failure to applyScripts, which owns error handling.
+            log.debug("Unable to check the site-wide anonymization configuration before the read, assuming a script applies", e);
+            return true;
+        }
     }
 
     /** Runs one script, in memory or against the written file. */

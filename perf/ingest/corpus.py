@@ -37,6 +37,7 @@ from pydicom.uid import (
 ROOT_UID = "1.2.826.0.1.3680043.10.9999"
 MR_STORAGE = UID("1.2.840.10008.5.1.4.1.1.4")          # MR Image Storage (single frame)
 ENH_MR = UID("1.2.840.10008.5.1.4.1.1.4.1")            # Enhanced MR Image Storage (multiframe MR session)
+SC_MF_WORD = UID("1.2.840.10008.5.1.4.1.1.7.3")        # Multi-frame Grayscale Word Secondary Capture
 
 
 def _uid() -> str:
@@ -83,14 +84,18 @@ def _base_image(rows: int, cols: int, ts: UID = ExplicitVRLittleEndian) -> Datas
     return ds
 
 
-def _pixels(rows, cols, frames, rng) -> bytes:
-    """Smooth gradient plus mild noise: image-like (compressible) but not constant, in a single call."""
+def _pixels(rows, cols, frames, rng, dtype: str = "<u2") -> bytes:
+    """Smooth gradient plus mild noise: image-like (compressible) but not constant, in a single call.
+
+    ``dtype`` must match the transfer syntax's byte order -- pydicom writes PixelData bytes through
+    untouched, so an Explicit VR Big Endian object needs ">u2" or every sample is byte-swapped.
+    """
     import numpy as np
     yy, xx = np.mgrid[0:rows, 0:cols]
-    out = np.empty((frames, rows, cols), dtype="<u2")
+    out = np.empty((frames, rows, cols), dtype=dtype)
     for f in range(frames):
         base = ((f * 13) % 4096 + yy + xx).astype(np.int64)
-        out[f] = ((base + rng.integers(0, 64, size=(rows, cols))) & 0x0FFF).astype("<u2")
+        out[f] = ((base + rng.integers(0, 64, size=(rows, cols))) & 0x0FFF).astype(dtype)
     return out.tobytes()
 
 
@@ -189,7 +194,8 @@ def gen_mixed(out: Path, project: str) -> None:
                 ds.file_meta.MediaStorageSOPClassUID = SC_MF_WORD
                 ds.Modality = "OT"
             ds.NumberOfFrames = str(frames)
-            ds.PixelData = _pixels(rows, cols, frames, rng)
+            ds.PixelData = _pixels(rows, cols, frames, rng,
+                                   ">u2" if ts == ExplicitVRBigEndian else "<u2")
             n += 1
             _identity(ds, project=project, study_uid=study, series_uid=series,
                       series_number=n, instance_number=i, label=f"mixed-{label}")

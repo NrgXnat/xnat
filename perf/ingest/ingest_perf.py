@@ -33,7 +33,7 @@ HERE = Path(__file__).resolve().parent
 PROJECT = "PERF"
 POD_STAGE = "/tmp/ingest-perf"                 # workloads + anon scripts inside the XNAT pod
 SENDER_STAGE = "/work"                         # workloads inside the sender pod
-WHEELS = str(Path.home() / "QA/ingest-io/wheels")
+WHEELS = str(Path.home() / "QA/ingest-io/wheels")   # default --wheels: pydicom/pynetdicom wheels for the sender pod
 IN_SENDER = {"huge"}                           # >2 GB: generated in the sender pod, cstore-only (won't cross the tunnel)
 
 # anon mode -> (site_enable, site_script, project_enable, project_script). Scripts are basenames in anon/.
@@ -48,7 +48,9 @@ ANON = {
 
 def make_cluster(args) -> Cluster:
     ctx, ns, pod = args.k8s.split(":")
-    return Cluster(ctx, ns, pod, args.user, args.__dict__["pass"])
+    c = Cluster(ctx, ns, pod, args.user, args.__dict__["pass"])
+    c.wheels = getattr(args, "wheels", WHEELS)
+    return c
 
 
 def _is_transient(e: Exception) -> bool:
@@ -95,7 +97,7 @@ def stage_workload(c: Cluster, name: str, routes: list[str], corpus_dir: Path | 
     """
     sender_dir = f"{SENDER_STAGE}/{name}"
     if name in IN_SENDER:
-        c.ensure_sender_pod(WHEELS, str(HERE / "sender.py"))
+        c.ensure_sender_pod(c.wheels, str(HERE / "sender.py"))
         c.cp_to(str(HERE / "corpus.py"), "/work/corpus.py", pod=c.SENDER_POD, container="sender")
         c.exec(f"rm -rf {sender_dir}; mkdir -p {sender_dir}", pod=c.SENDER_POD, container="sender")
         c.exec(f"cd /work && python -c \"from corpus import gen_{name}; from pathlib import Path; "
@@ -145,7 +147,7 @@ def cmd_run(args) -> None:
     out_path = out_dir / f"{args.label}.json"
 
     if "cstore" in routes:
-        c.ensure_sender_pod(WHEELS, str(HERE / "sender.py"))
+        c.ensure_sender_pod(c.wheels, str(HERE / "sender.py"))
 
     header = {"label": args.label, "build_sha": c.build_sha(), "storage": c.storage_layout(),
               "reps": args.reps, "workloads": {}, "routes": routes, "anon": anon_modes}
@@ -232,6 +234,9 @@ def main() -> None:
         p.add_argument("--k8s", required=True, help="context:namespace:pod")
         p.add_argument("--user", default="admin")
         p.add_argument("--pass", default="admin", dest="pass")
+        p.add_argument("--wheels", default=WHEELS,
+                       help="directory of pydicom/pynetdicom wheels installed into the sender pod "
+                            "offline (cstore and huge only); default %(default)s")
 
     p = sub.add_parser("setup"); add_conn(p); p.set_defaults(fn=cmd_setup)
     p = sub.add_parser("run"); add_conn(p)

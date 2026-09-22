@@ -38,6 +38,7 @@ class Cluster:
                  container: str = "xnat", base: str = "http://localhost:8080"):
         self.ctx, self.ns, self.pod, self.container = context, namespace, pod, container
         self.user, self.password, self.base = user, password, base
+        self._warned_no_nfs = False
 
     # ---- low-level exec / cp -------------------------------------------------
     def _kubectl(self, *args: str, input_bytes: bytes | None = None, timeout: int = 600) -> subprocess.CompletedProcess:
@@ -108,7 +109,16 @@ class Cluster:
     )
 
     def metrics(self) -> Metrics:
+        # The mountstats awk prints nothing when the archive is not an NFS mount (RBD, local-path,
+        # or a different mount point), which would otherwise shift wchar into nfs_write and then
+        # IndexError. Report no NFS bytes instead: wall-clock still measures, and the report
+        # footer says the NFS column is absent.
         out = self.exec(self._METRIC_AWK).split()
+        if len(out) < 2:
+            if not self._warned_no_nfs:
+                print("  ! archive mount reports no NFS stats; nfs_mb will read 0 for this run")
+                self._warned_no_nfs = True
+            return Metrics(nfs_write=0, wchar=int(out[0]) if out else 0)
         return Metrics(nfs_write=int(out[0]), wchar=int(out[1]))
 
     # ---- XNAT facts ----------------------------------------------------------
@@ -189,6 +199,17 @@ class Cluster:
     def archive_session(self, project: str, ts: str, folder: str) -> CurlResult:
         return self.curl("POST", "/data/services/archive",
                          query=f"src=/prearchive/projects/{project}/{ts}/{folder}&overwrite=append")
+
+    def prearchive_file_count(self, project: str, ts: str, folder: str,
+                              root: str = "/data/xnat/prearchive") -> int:
+        """Objects landed in a prearchive session so far, counted under SCANS (any file name, since
+        the importer names output from the source). Catalogs only appear at build, after any caller
+        here has stopped polling. The progress signal for the async routes."""
+        out = self.exec(f"find {root}/projects/{project}/{ts}/{folder}/SCANS -type f 2>/dev/null | wc -l")
+        try:
+            return int(out.strip())
+        except ValueError:
+            return 0
 
     def wait_prearchive_empty(self, project: str, timeout: int = 900, poll: float = 1.0) -> float:
         t0 = time.monotonic()

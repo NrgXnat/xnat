@@ -21,8 +21,11 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 public class WorkOnCopyOpTest {
 
@@ -98,6 +101,35 @@ public class WorkOnCopyOpTest {
         assertArrayEquals(firstOutput, Files.readAllBytes(first.toPath()));
         assertArrayEquals(secondOutput, Files.readAllBytes(second.toPath()));
         assertEquals(0, staging.list().length);
+    }
+
+    /**
+     * A failed replacement can leave the staged file as the only intact copy of the data -- the
+     * non-atomic fallback deletes the source before copying over it -- so rollback must not delete
+     * it, and the failure must say where it is.
+     */
+    @Test
+    public void keepsTheStagedFileWhenTheReplacementItselfFails() throws Exception {
+        final File dataDir = folder.newFolder("data");
+        final File source  = write(dataDir, "1.dcm", ORIGINAL);
+        final File staging = folder.newFolder("staging");
+        assumeTrue("test needs a directory the process cannot rename into", dataDir.setWritable(false));
+        assumeFalse("running with permissions that ignore the write bit", dataDir.canWrite());
+        try {
+            new TransactionRunner<String>().runTransaction(new WorkOnCopyOp<>(source, staging, writing(REPLACED, "unused")));
+            fail("the replacement should have failed");
+        } catch (TransactionException expected) {
+            assertTrue("the failure should name the preserved staged file: " + expected.getMessage(),
+                       String.valueOf(expected.getMessage()).contains("preserved at"));
+        } finally {
+            assertTrue(dataDir.setWritable(true));
+        }
+
+        assertArrayEquals("the source must be untouched by a failed replacement", ORIGINAL, Files.readAllBytes(source.toPath()));
+        final File[] staged = staging.listFiles();
+        assertNotNull(staged);
+        assertEquals("the staged file must survive rollback: it may be the only intact copy", 1, staged.length);
+        assertArrayEquals("and it must hold the operation's output", REPLACED, Files.readAllBytes(staged[0].toPath()));
     }
 
     @Test

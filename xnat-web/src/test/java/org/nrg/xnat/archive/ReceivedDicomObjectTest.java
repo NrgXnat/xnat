@@ -22,6 +22,7 @@ import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerContext;
 import org.nrg.dicom.mizer.service.impl.BaseMizerService;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -35,12 +36,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeNoException;
 
@@ -296,6 +299,21 @@ public class ReceivedDicomObjectTest {
             }
             assertArrayEquals(transferSyntax + ": pixels must survive the round trip", pixelData(MR_FIXTURE), pixelData(output));
         }
+    }
+
+    /** What an inbox holding a README or a zero-byte file hands the importer: the stream never opens, and the source must still be closed. */
+    @Test
+    public void closesTheSourceWhenItCannotBeReadAsDicom() {
+        final AtomicBoolean closed = new AtomicBoolean();
+        final InputStream empty = new ByteArrayInputStream(new byte[0]) {
+            @Override
+            public void close() throws IOException {
+                closed.set(true);
+                super.close();
+            }
+        };
+        assertThrows(IOException.class, () -> ReceivedDicomObject.read(empty, null, ORDINARY_LAST_TAG, false).close());
+        assertTrue("the source must be closed even though the stream never opened", closed.get());
     }
 
     /**

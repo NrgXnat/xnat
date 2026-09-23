@@ -80,8 +80,20 @@ final class ReceivedDicomObject implements Closeable {
      */
     static ReceivedDicomObject read(final InputStream source, final String transferSyntaxFromCaller,
                                     final int lastTag, final boolean whole, final File sourceFile) throws IOException {
-        final BufferedInputStream       in  = new BufferedInputStream(source);
-        final ResumableDicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(in, sourceFile);
+        final BufferedInputStream       in = new BufferedInputStream(source);
+        final ResumableDicomInputStream dis;
+        try {
+            dis = ResumableDicomInputStream.openWithBulkDataOffHeap(in, sourceFile);
+        } catch (IOException | RuntimeException e) {
+            // Opening reads the start of the stream, so a source that isn't DICOM fails here, before
+            // there is a stream to discard, and the source has to be closed on its own.
+            try {
+                in.close();
+            } catch (IOException suppressed) {
+                e.addSuppressed(suppressed);
+            }
+            throw e;
+        }
         try {
             Attributes fmi = dis.readFileMetaInformation();
             final String     transferSyntax = null == transferSyntaxFromCaller ? dis.getTransferSyntax() : transferSyntaxFromCaller;

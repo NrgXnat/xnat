@@ -80,6 +80,9 @@ def cmd_setup(args) -> None:
     c = make_cluster(args)
     print(f"setup: build {c.build_sha()[:10]} on {c.ctx}/{c.ns}/{c.pod}")
     c.ensure_project(PROJECT)
+    # Manual prearchive handling: every route archives explicitly, and the inbox route cannot survive
+    # the project auto-archiving (see route_inbox). Also stops the rebuilder archiving leftovers on its own.
+    c.curl("PUT", f"/data/projects/{PROJECT}/prearchive_code/0")
     c.ensure_receiver("XNAT", anon=True)          # site/project anon controlled globally; receiver stays on
     # stage the anon scripts into the pod
     c.exec(f"mkdir -p {POD_STAGE}/anon")

@@ -21,6 +21,7 @@ import org.nrg.xnat.restlet.representations.ZipRepresentation;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
+import org.restlet.data.Method;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
@@ -71,7 +72,9 @@ public abstract class PrearcSessionResourceA extends SecureResource {
 		File sessionDIR;
 		File srcXML;
 		try {
-			sessionDIR = PrearcUtils.getPrearcSessionDir(getUser(), project, timestamp, session,false);
+			sessionDIR = isReadRequest()
+					? PrearcUtils.getPrearcSessionDirForRead(getUser(), project, timestamp, session)
+					: PrearcUtils.getPrearcSessionDir(getUser(), project, timestamp, session, false);
 			srcXML=new File(sessionDIR.getAbsolutePath()+".xml");
 		} catch (InvalidPermissionException e) {
 			logger.error("",e);
@@ -93,6 +96,16 @@ public abstract class PrearcSessionResourceA extends SecureResource {
 		}
 	}
 
+	/**
+	 * GET and HEAD only read the session, so they need prearchive read access (project edit access or the
+	 * all-data-access role) rather than project edit access. This lets all-data-access users open the sessions
+	 * the prearchive lists for them (XNAT-8806).
+	 */
+	private boolean isReadRequest() {
+		final Method method = getRequest().getMethod();
+		return Method.GET.equals(method) || Method.HEAD.equals(method);
+	}
+
 	protected void saveSessionBean(PrearcInfo info) throws ServerException {
 		try (FileWriter fw = new FileWriter(info.sessionXML)) {
 			info.session.toXML(fw);
@@ -111,7 +124,7 @@ public abstract class PrearcSessionResourceA extends SecureResource {
 				final File sessionDIR;
 				final File srcXML;
 				try {
-					sessionDIR = PrearcUtils.getPrearcSessionDir(getUser(), project, timestamp, session,false);
+					sessionDIR = PrearcUtils.getPrearcSessionDirForRead(getUser(), project, timestamp, session);
 					srcXML=new File(sessionDIR.getAbsolutePath()+".xml");
 				} catch (InvalidPermissionException e) {
 					logger.error("",e);

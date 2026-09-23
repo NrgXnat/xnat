@@ -37,7 +37,6 @@ from pydicom.uid import (
 ROOT_UID = "1.2.826.0.1.3680043.10.9999"
 MR_STORAGE = UID("1.2.840.10008.5.1.4.1.1.4")          # MR Image Storage (single frame)
 ENH_MR = UID("1.2.840.10008.5.1.4.1.1.4.1")            # Enhanced MR Image Storage (multiframe MR session)
-SC_MF_WORD = UID("1.2.840.10008.5.1.4.1.1.7.3")        # Multi-frame Grayscale Word Secondary Capture
 
 
 def _uid() -> str:
@@ -176,7 +175,16 @@ def gen_multiframe(out: Path, project: str, count: int = 4, frames: int = 100,
 
 
 def gen_mixed(out: Path, project: str) -> None:
-    """A smaller spread: single-frame Explicit LE, Explicit BE, and Deflated (all pydicom-native)."""
+    """A smaller spread in one session: single-frame Explicit LE, Explicit BE and Deflated series, plus
+    a multiframe Enhanced-MR series (all pydicom-native).
+
+    One session, so one label for every object -- ``_identity`` derives the patient from it, and a
+    label per group made one zip into four sessions. One SeriesNumber per series: it is a series-level
+    attribute, and varying it within a SeriesInstanceUID made the importer file each object under its
+    own scan while the builder catalogued them as one, which the archiver then rejected as unreferenced.
+    The multiframe members are Enhanced MR rather than secondary capture, so they archive as scans
+    instead of secondary resources.
+    """
     import numpy as np
     rng = np.random.default_rng(3)
     study = _uid()
@@ -184,21 +192,17 @@ def gen_mixed(out: Path, project: str) -> None:
             ("explicitBE", ExplicitVRBigEndian, 10, 256, 256, 1),
             ("deflatedLE", DeflatedExplicitVRLittleEndian, 10, 256, 256, 1),
             ("multiframe", ExplicitVRLittleEndian, 2, 512, 512, 60)]
-    n = 0
-    for label, ts, cnt, rows, cols, frames in plan:
+    for series_number, (label, ts, cnt, rows, cols, frames) in enumerate(plan, start=1):
         series = _uid()
         for i in range(1, cnt + 1):
-            ds = _base_image(rows, cols, ts=ts)
             if frames > 1:
-                ds.SOPClassUID = SC_MF_WORD
-                ds.file_meta.MediaStorageSOPClassUID = SC_MF_WORD
-                ds.Modality = "OT"
-            ds.NumberOfFrames = str(frames)
-            ds.PixelData = _pixels(rows, cols, frames, rng,
-                                   ">u2" if ts == ExplicitVRBigEndian else "<u2")
-            n += 1
+                ds = _enhanced_mr(rows, cols, frames, _pixels(rows, cols, frames, rng))
+            else:
+                ds = _base_image(rows, cols, ts=ts)
+                ds.NumberOfFrames = "1"
+                ds.PixelData = _pixels(rows, cols, 1, rng, ">u2" if ts == ExplicitVRBigEndian else "<u2")
             _identity(ds, project=project, study_uid=study, series_uid=series,
-                      series_number=n, instance_number=i, label=f"mixed-{label}")
+                      series_number=series_number, instance_number=i, label="mixed")
             _write(ds, out / label / f"{i:03d}.dcm")
 
 

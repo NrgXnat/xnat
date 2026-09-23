@@ -39,7 +39,7 @@ never in the measured path. The orchestrator only issues control calls and parse
 | `cstore` | sender pod → SCP receiver `XNAT` on 8104; then build + archive |
 | `cache` | Compressed Uploader flow: `PUT /data/user/cache/...` then `POST import src=…&action=commit&auto-archive` (async) |
 | `direct` | zip import with `Direct-Archive=true`; then `POST /xapi/direct-archive/{p}/{tag}/{name}` to force the archive |
-| `inbox` | files staged under `inboxPath`; `POST import-handler=inbox` (async JMS); then build + archive |
+| `inbox` | files staged under `inboxPath`; `POST import-handler=inbox` (async JMS); XNAT's own Rebuild builds the session (the route waits for READY), then explicit archive. Needs the project on Manual prearchive handling, which `setup` sets — see `route_inbox` |
 
 Anon is one axis with two dimensions — **where** the script runs × **what** it does:
 

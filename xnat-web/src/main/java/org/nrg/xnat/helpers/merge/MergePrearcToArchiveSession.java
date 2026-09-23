@@ -30,6 +30,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.PhaseTimer;
 import org.restlet.data.Status;
 
 import java.io.File;
@@ -166,13 +167,16 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     @Override
     protected XnatImagesessiondata getPostAnonSession() throws Exception {
         // Now that we're at the project level, let's re-anonymize.
+        final PhaseTimer timer = new PhaseTimer();
         boolean wasAnonymized = anonymizeSession();
+        timer.lap("anonymize");
 
         final File sessionXml = new File(srcDIR.getPath() + XML_EXTENSION);
 
         // If anonymization wasn't performed or the session XML doesn't exist yet...
         if (!wasAnonymized || !sessionXml.exists()) {
             // Return the original session XML.
+            log.info("Project anonymization of {} changed nothing: {}", srcDIR, timer);
             return src;
         }
 
@@ -197,6 +201,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
 
         final Boolean sessionRebuildSuccess = new XNATSessionBuilder(srcDIR, sessionXml, true, params).call();
+        timer.lap("rebuild");
         if (!sessionRebuildSuccess || sessionXml.length() == 0) {
             try (final Stream<Path> paths = Files.walk(srcDIR.toPath())) {
                 // Are there any non-log files? Then I'm not sure what's wrong.
@@ -210,6 +215,8 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
 
         final XnatImagesessiondata session = populateSession(sessionXml);
+        timer.lap("populate");
+        log.info("Project anonymization of {} rebuilt the session: {}", srcDIR, timer);
         try (final ScanIdValidator scanIdValidator = new ScanIdValidator(control, dest, session, _prearcSession, allowSessionMerge, overwriteFiles)) {
             if (scanIdValidator.needsScanIdCorrection()) {
                 scanIdValidator.call();

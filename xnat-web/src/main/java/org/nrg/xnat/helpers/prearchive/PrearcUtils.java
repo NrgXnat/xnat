@@ -294,6 +294,28 @@ public class PrearcUtils {
         throw new InvalidPermissionException(user.getUsername(), action, XnatProjectdata.SCHEMA_ELEMENT_NAME, project);
     }
 
+    /**
+     * Tells whether the user may modify (archive, move, delete, rebuild) sessions in the prearchive of the given
+     * project. This is the same decision {@link #getPrearcDir(UserI, String, boolean)} enforces, exposed as a
+     * boolean so that pages can hide actions the user could not perform anyway (XNAT-8806).
+     *
+     * @param user    The user to check.
+     * @param project Project ID or alias, or null/UNASSIGNED for unassigned sessions.
+     *
+     * @return true if the user may modify the project's prearchive sessions, false otherwise or if access can't be determined.
+     */
+    public static boolean canModifyPrearchive(final UserI user, @Nullable final String project) {
+        try {
+            checkPrearcAccess(user, project, false, false);
+            return true;
+        } catch (InvalidPermissionException e) {
+            return false;
+        } catch (Exception e) {
+            log.warn("Unable to determine whether user {} can modify the prearchive for project {}, assuming not", user == null ? null : user.getUsername(), project, e);
+            return false;
+        }
+    }
+
     private static File getPrearcDir(final UserI user, final String project, final boolean allowUnassigned, final boolean readOnly) throws Exception {
         String prearcPath;
         String prearcRootPref = XDAT.getSiteConfigPreferences().getPrearchivePath();

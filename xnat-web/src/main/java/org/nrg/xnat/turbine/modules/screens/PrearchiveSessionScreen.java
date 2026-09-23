@@ -60,6 +60,7 @@ public abstract class PrearchiveSessionScreen extends SecureScreen {
 		context.put("timestamp",timestamp);
 		context.put("folder",folder);
         context.put("url", String.format("/prearchive/projects/%s/%s/%s", (project == null) ? UNASSIGNED : project, timestamp, folder));
+        context.put("canModify", PrearcUtils.canModifyPrearchive(user, project));
 
 		finalProcessing(sessionBean, data,context);
 	}

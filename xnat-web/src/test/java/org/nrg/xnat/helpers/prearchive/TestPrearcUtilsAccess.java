@@ -20,6 +20,7 @@ import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
@@ -126,6 +127,38 @@ public class TestPrearcUtilsAccess {
     public void nullUserBypassesChecks() {
         assertThatCode(() -> PrearcUtils.checkPrearcAccess(null, PROJECT, UNASSIGNED_DENIED, EDIT)).doesNotThrowAnyException();
         assertThatCode(() -> PrearcUtils.checkPrearcAccess(null, UNASSIGNED, UNASSIGNED_DENIED, EDIT)).doesNotThrowAnyException();
+    }
+
+    @Test
+    public void readOnlyAllDataAccessUserCannotModifyProjectOrUnassignedSessions() throws Exception {
+        givenAllDataAccess();
+
+        assertThat(PrearcUtils.canModifyPrearchive(user, PROJECT)).isFalse();
+        assertThat(PrearcUtils.canModifyPrearchive(user, UNASSIGNED)).isFalse();
+    }
+
+    @Test
+    public void projectEditorCanModifyProjectSessions() throws Exception {
+        givenNoSpecialAccess();
+        Mockito.when(helperService.hasEditAccessToSessionDataByTag(PROJECT)).thenReturn(true);
+
+        assertThat(PrearcUtils.canModifyPrearchive(user, PROJECT)).isTrue();
+    }
+
+    @Test
+    public void allDataAdminCanModifyUnassignedSessions() {
+        groups.when(() -> Groups.hasAllDataAdmin(user)).thenReturn(true);
+        groups.when(() -> Groups.hasAllDataAccess(user)).thenReturn(true);
+
+        assertThat(PrearcUtils.canModifyPrearchive(user, null)).isTrue();
+    }
+
+    @Test
+    public void accessLookupFailureMeansCannotModify() throws Exception {
+        givenNoSpecialAccess();
+        Mockito.when(helperService.hasEditAccessToSessionDataByTag(PROJECT)).thenThrow(new IllegalStateException("no db"));
+
+        assertThat(PrearcUtils.canModifyPrearchive(user, PROJECT)).isFalse();
     }
 
     private void givenAllDataAccess() throws Exception {

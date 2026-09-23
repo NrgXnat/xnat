@@ -49,6 +49,18 @@ public class WorkOnCopyOpTest {
     }
 
     @Test
+    public void stagesASourceWhoseNameIsNearTheFileNameLimit() throws Throwable {
+        // 240 bytes is inside the usual 255-byte NAME_MAX, but not once a prefix is put in front of it,
+        // so the staged name must not grow with the source's.
+        final File source  = write(folder.newFolder("data"), "x".repeat(236) + ".dcm", ORIGINAL);
+        final File staging = folder.newFolder("staging");
+
+        new TransactionRunner<String>().runTransaction(new WorkOnCopyOp<>(source, staging, writing(REPLACED, "done")));
+
+        assertArrayEquals("the source should hold the operation's output", REPLACED, Files.readAllBytes(source.toPath()));
+    }
+
+    @Test
     public void leavesTheSourceUntouchedAndCleansUpWhenTheOperationFails() throws Exception {
         final File source  = write(folder.newFolder("data"), "1.dcm", ORIGINAL);
         final File staging = folder.newFolder("staging");

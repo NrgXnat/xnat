@@ -87,6 +87,18 @@ public class SameVolumeStagingDirectoryResolverTest {
         assertEquals(link.resolve(SameVolumeStagingDirectoryResolver.STAGING_DIRECTORY_NAME).toFile(), throughLink.resolve(file));
     }
 
+    @Test
+    public void fallsBackWhenTheStagingDirectoryCannotBeCreated() throws Exception {
+        final SameVolumeStagingDirectoryResolver resolver = resolver();
+        final File file = fileUnder(archive, "proj/arc001/SESSION/SCANS/1/DICOM/1.dcm");
+        // A plain file where the directory should go makes creating it fail the way a root the
+        // importer can't write to does, and unlike a read-only directory it still fails when the
+        // tests run as root.
+        Files.createFile(new File(archive, SameVolumeStagingDirectoryResolver.STAGING_DIRECTORY_NAME).toPath());
+
+        assertEquals(elsewhere, resolver.resolve(file));
+    }
+
     private static File fileUnder(final File root, final String relative) throws Exception {
         final File file = new File(root, relative);
         Files.createDirectories(file.getParentFile().toPath());

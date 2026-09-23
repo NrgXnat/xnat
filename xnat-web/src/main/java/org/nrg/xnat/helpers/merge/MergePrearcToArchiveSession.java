@@ -176,7 +176,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         // If anonymization wasn't performed or the session XML doesn't exist yet...
         if (!wasAnonymized || !sessionXml.exists()) {
             // Return the original session XML.
-            log.info("Project anonymization of {} changed nothing: {}", srcDIR, timer);
+            PhaseTimer.LOG.info("Project anonymization of {} changed nothing: {}", srcDIR, timer);
             return src;
         }
 
@@ -216,7 +216,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
 
         final XnatImagesessiondata session = populateSession(sessionXml);
         timer.lap("populate");
-        log.info("Project anonymization of {} rebuilt the session: {}", srcDIR, timer);
+        PhaseTimer.LOG.info("Project anonymization of {} rebuilt the session: {}", srcDIR, timer);
         try (final ScanIdValidator scanIdValidator = new ScanIdValidator(control, dest, session, _prearcSession, allowSessionMerge, overwriteFiles)) {
             if (scanIdValidator.needsScanIdCorrection()) {
                 scanIdValidator.call();

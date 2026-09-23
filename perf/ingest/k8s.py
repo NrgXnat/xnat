@@ -262,6 +262,9 @@ class Cluster:
             "spec": {"restartPolicy": "Never", "containers": [{
                 "name": "sender", "image": image,
                 "command": ["sh", "-c", "sleep infinity"],
+                # The >2 GB `huge` object is built and reloaded in Python (~4 GB peak); request enough
+                # RAM that the scheduler reserves it on a node with headroom (else node pressure OOMs it).
+                "resources": {"requests": {"memory": "6Gi"}, "limits": {"memory": "8Gi"}},
             }]},
         })
         last = ""

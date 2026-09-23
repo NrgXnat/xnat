@@ -104,8 +104,12 @@ class Cluster:
         return CurlResult(http=int(code_s or 0), secs=float(secs_s or 0.0), body=body)
 
     # ---- metrics -------------------------------------------------------------
+    # The NFS mount that contains the archive, whichever path it is mounted at: one export mounted
+    # at /data/xnat, or a separate mount per data directory. Mount points are compared as path
+    # prefixes so /data/xnat matches /data/xnat/archive but /data/xnat-other does not.
     _METRIC_AWK = (
-        r'''awk '/mounted on \/data\/xnat\/archive /{f=1;next} f&&/^[[:space:]]*bytes:/{print "nfs=" $7;exit}' '''
+        r'''awk '/^device .* mounted on .* with fstype nfs/{f=(index("/data/xnat/archive/", $5 "/")==1);next} '''
+        r'''f&&/^[[:space:]]*bytes:/{print "nfs=" $7;exit}' '''
         r"""/proc/self/mountstats; awk '/^wchar/{print "wchar=" $2}' /proc/1/io"""
     )
 

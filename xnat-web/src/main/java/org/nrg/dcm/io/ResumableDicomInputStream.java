@@ -7,6 +7,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.BulkDataDescriptor;
 import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.util.StreamUtils;
 import org.nrg.dicom.mizer.objects.BufferedBulkDataCreator;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 
@@ -108,7 +109,7 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      *                     spooled.
      */
     public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in) throws IOException {
-        return openWithBulkDataOffHeap(in, null);
+        return openWithBulkDataOffHeap(in, null, null);
     }
 
     /**
@@ -119,9 +120,15 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * followed when the object is written, so the file must outlive that write; nothing here
      * alters or deletes it -- {@link #getSpoolFiles()} never includes it.
      *
-     * @param in         the object's bytes.
-     * @param sourceFile the file the stream reads from its beginning, or null when the source is
-     *                   not a file.
+     * @param in                       the object's bytes.
+     * @param sourceFile               the file the stream reads from its beginning, or null when the
+     *                                 source is not a file.
+     * @param negotiatedTransferSyntax the syntax the caller negotiated for a stream without file meta
+     *                                 information, such as a C-STORE's, or null. Only a deflated one
+     *                                 is used: dcm4che recognizes every other syntax from the first
+     *                                 element, but can't guess its way into an inflater. A stream that
+     *                                 starts with a preamble reads its own file meta information
+     *                                 either way.
      *
      * @return a resumable stream that references bulk data rather than loading it.
      *
@@ -129,8 +136,11 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      *                     not exist and cannot be created fails the read instead, at the first value
      *                     that has to be spooled.
      */
-    public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in, final File sourceFile) throws IOException {
-        final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);
+    public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in, final File sourceFile,
+                                                                    final String negotiatedTransferSyntax) throws IOException {
+        final ResumableDicomInputStream dis = BufferedBulkDataCreator.isDeflated(negotiatedTransferSyntax) && !hasPreamble(in)
+                                              ? new ResumableDicomInputStream(in, negotiatedTransferSyntax)
+                                              : new ResumableDicomInputStream(in);
         dis.setIncludeBulkData(IncludeBulkData.URI);
         dis.setBulkDataDescriptor(PIXEL_DATA_OF_ANY_FORM);
         if (sourceFile != null) {
@@ -144,6 +154,18 @@ public final class ResumableDicomInputStream extends DicomInputStream {
         dis._creator = new BufferedBulkDataCreator(ResumableDicomInputStream::scratchDirectory);
         dis.setBulkDataCreator(dis._creator);
         return dis;
+    }
+
+    /** Whether <b>in</b> starts with a Part 10 file's 128-byte preamble and "DICM", leaving it where it was. */
+    private static boolean hasPreamble(final BufferedInputStream in) throws IOException {
+        final byte[] start = new byte[132];
+        in.mark(start.length);
+        try {
+            return StreamUtils.readAvailable(in, start, 0, start.length) == start.length
+                   && start[128] == 'D' && start[129] == 'I' && start[130] == 'C' && start[131] == 'M';
+        } finally {
+            in.reset();
+        }
     }
 
     /**

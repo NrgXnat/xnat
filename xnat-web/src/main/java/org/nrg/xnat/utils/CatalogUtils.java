@@ -16,6 +16,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.*;
 import org.apache.commons.lang3.RegExUtils;
@@ -61,6 +62,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
@@ -204,11 +206,14 @@ public class CatalogUtils {
                 final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, true);
                 fl.tryLock(2L, TimeUnit.MINUTES);
                 //log.trace("{} reader start: {}", System.currentTimeMillis(), fl.toString());
-                try (FileInputStream fis = new FileInputStream(catFile)) {
+                try {
+                    // One read of the file serves both the parse and the checksum the writer later compares
+                    // against; a catalog is small, and on a network mount the second read was mostly latency.
+                    final byte[] bytes = Files.readAllBytes(catFile.toPath());
                     if (catFile.getName().endsWith(".gz")) {
-                        inputStream = new GZIPInputStream(fis);
+                        inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes));
                     } else {
-                        inputStream = fis;
+                        inputStream = new ByteArrayInputStream(bytes);
                     }
 
                     final XDATXMLReader reader = new XDATXMLReader();
@@ -227,12 +232,9 @@ public class CatalogUtils {
                     }
                     if (base instanceof CatCatalogBean bean) {
                         cat = bean;
-                        catFileChecksum = getHash(catFile, false);
-                        if (StringUtils.isBlank(catFileChecksum)) {
-                            throw new ServerException("Unable to compute checksum for " + catFile + ". This will be needed to safely write the catalog");
-                        }
+                        catFileChecksum = DigestUtils.md5Hex(bytes);
                     }
-                } catch (FileNotFoundException exception) {
+                } catch (FileNotFoundException | NoSuchFileException exception) {
                     log.error("Couldn't find file: {}", catFile, exception);
                 } catch (IOException exception) {
                     log.error("Error occurred reading file: {}", catFile, exception);
@@ -2180,13 +2182,16 @@ public class CatalogUtils {
                             catalogData.catFile + " since I last read it or I don't have a previous checksum to compare. " +
                             "To avoid overwriting changes, I'm throwing an exception.");
                 }
-                try (final FileOutputStream fos = new FileOutputStream(catalogData.catFile)) {
-                    final OutputStreamWriter fw = new OutputStreamWriter(fos);
-                    catalogData.catBean.toXML(fw);
-                    fw.flush();
-                }
+                // Render first, then write the bytes and checksum them from memory: the file is left untouched
+                // if rendering fails, and the checksum no longer costs a second read of the file just written.
+                final ByteArrayOutputStream rendered = new ByteArrayOutputStream();
+                final OutputStreamWriter    fw       = new OutputStreamWriter(rendered);
+                catalogData.catBean.toXML(fw);
+                fw.flush();
+                final byte[] bytes = rendered.toByteArray();
+                Files.write(catalogData.catFile.toPath(), bytes);
                 // update checksum after we write so this catalogData object will allow a future write
-                catalogData.catFileChecksum = getHash(catalogData.catFile, false);
+                catalogData.catFileChecksum = DigestUtils.md5Hex(bytes);
             } finally {
                 fl.unlock();
                 //log.trace("{} writer finish: {}", System.currentTimeMillis(), fl.toString());

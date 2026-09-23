@@ -158,6 +158,7 @@ def cmd_run(args) -> None:
         c.ensure_sender_pod(c.wheels, str(HERE / "sender.py"))
 
     header = {"label": args.label, "build_sha": c.build_sha(), "storage": c.storage_layout(),
+              "pod_clock_offset_s": c.pod_clock_offset(),
               "reps": args.reps, "workloads": {}, "routes": routes, "anon": anon_modes}
     cells: list[dict] = []
     done: set[tuple] = set()

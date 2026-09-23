@@ -214,6 +214,14 @@ class Cluster:
         except Exception:
             return "?"
 
+    def pod_clock_offset(self) -> float:
+        """Pod clock minus this machine's, in seconds. The pod's log lines are stamped by the node and
+        the cells by this machine; matching one to the other needs the skew (18.7 s on adapt-dev)."""
+        t0 = time.time()
+        pod = float(self.exec("date -u +%s.%N").strip())
+        t1 = time.time()
+        return round(pod - (t0 + t1) / 2, 3)
+
     def storage_layout(self) -> str:
         return self.exec(
             'for p in /data/xnat/archive /data/xnat/prearchive /data/xnat/cache; do '

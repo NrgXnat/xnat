@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -79,15 +80,31 @@ public abstract class AbstractAttrAdapter<S, V> implements AttrAdapter<S, V> {
                                                    final Map<ExtAttrDef<S>, Throwable> failed) {
         final Map<S, ConversionFailureException> failures = Maps.newLinkedHashMap();
         final List<ExtAttrValue> values = Lists.newArrayList();
+        final Function<ExtAttrDef<S>, Collection<Map<S, V>>> combinations = combinationsFor(given, failures);
         for (final ExtAttrDef<S> ea : _attrDefs) {
             try {
-                Iterables.addAll(values,
-                                 ((EvaluableAttrDef<S, V, ?>) ea).foldl(getUniqueCombinationsGivenValues(given, ea.getAttrs(), failures)));
+                Iterables.addAll(values, ((EvaluableAttrDef<S, V, ?>) ea).foldl(combinations.apply(ea)));
             } catch (Throwable t) {
                 failed.put(ea, t);
             }
         }
         return values;
+    }
+
+    /**
+     * How {@link #getValuesGiven} obtains each definition's unique combinations of native attribute
+     * values: by default one {@link #getUniqueCombinationsGivenValues} call per definition. An adapter
+     * whose source can answer for every definition at once may override this to fetch once and hand
+     * each definition a projection of the shared result.
+     *
+     * @param given    Constraints on the native attributes.
+     * @param failures Receives conversion failures by native attribute.
+     *
+     * @return A function from a definition to its unique combinations.
+     */
+    protected Function<ExtAttrDef<S>, Collection<Map<S, V>>> combinationsFor(final Map<S, V> given,
+                                                                            final Map<S, ConversionFailureException> failures) {
+        return ea -> getUniqueCombinationsGivenValues(given, ea.getAttrs(), failures);
     }
 
     /*

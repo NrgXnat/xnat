@@ -457,20 +457,21 @@ public class GradualDicomImporter extends ImporterHandlerA {
      * turns out to need one is anonymized on the file, as every import used to be.
      */
     private boolean anonymizesOnReceive() {
-        if (StringUtils.isNotBlank((String) TurbineUtils.unescapeParam(_parameters.get(ANON_SCRIPT_PARAM)))) {
-            return true;
-        }
-        if (Boolean.parseBoolean((String) _parameters.get(URIManager.PREVENT_ANON))
-            || !DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
-            return false;
-        }
         try {
+            if (StringUtils.isNotBlank((String) TurbineUtils.unescapeParam(_parameters.get(ANON_SCRIPT_PARAM)))) {
+                return true;
+            }
+            if (Boolean.parseBoolean((String) _parameters.get(URIManager.PREVENT_ANON))
+                || !DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
+                return false;
+            }
             final Configuration c = DefaultAnonUtils.getCachedSitewideAnon();
             return c != null && Configuration.ENABLED_STRING.equals(c.getStatus());
         } catch (Exception e) {
-            // The whole read is correct whether or not a script runs, so predict that one will and
-            // leave surfacing the real failure to applyScripts, which owns error handling.
-            log.debug("Unable to check the site-wide anonymization configuration before the read, assuming a script applies", e);
+            // This runs before the read's error handling, and the whole read is correct whether or not
+            // a script runs, so predict that one will and leave surfacing the real failure to
+            // applyScripts, which runs inside it.
+            log.debug("Unable to check whether a script applies before the read, assuming one does", e);
             return true;
         }
     }

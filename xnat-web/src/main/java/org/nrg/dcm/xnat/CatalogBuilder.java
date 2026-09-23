@@ -93,6 +93,19 @@ public class CatalogBuilder implements Callable<Map<File, AbstractMap.SimpleEntr
                           final DicomMetadataStore store, final File root,
                           final Map<?, String> constraints,
                           final boolean shouldLoadFiles) {
+        this(id, microLog, store, root, constraints, shouldLoadFiles, null);
+    }
+
+    /**
+     * @param separateSecondaryDicomOnArchive The site preference of that name when the caller has already read
+     *                                        it (a session build makes one builder per scan, and each read is a
+     *                                        database round trip); null reads it here.
+     */
+    public CatalogBuilder(final String id, final MicroLog microLog,
+                          final DicomMetadataStore store, final File root,
+                          final Map<?, String> constraints,
+                          final boolean shouldLoadFiles,
+                          @Nullable final Boolean separateSecondaryDicomOnArchive) {
         this.id       = id;
         this.microLog = microLog;
         this.store    = store;
@@ -101,8 +114,16 @@ public class CatalogBuilder implements Callable<Map<File, AbstractMap.SimpleEntr
             this.constraints.putAll(constraints);
         }
         this.shouldLoadFiles = shouldLoadFiles;
+        this.separateSecondaryDicomOnArchive = separateSecondaryDicomOnArchive != null
+                                               ? separateSecondaryDicomOnArchive : readSeparateSecondaryDicomOnArchive();
+    }
+
+    /**
+     * Reads the separateSecondaryDicomOnArchive site preference; true when no preferences are available.
+     */
+    public static boolean readSeparateSecondaryDicomOnArchive() {
         final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
-        this.separateSecondaryDicomOnArchive = preferences == null || preferences.getSeparateSecondaryDicomOnArchive();
+        return preferences == null || preferences.getSeparateSecondaryDicomOnArchive();
     }
 
     public int getFrameCount() {

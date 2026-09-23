@@ -72,6 +72,30 @@ public class WorkOnCopyOpTest {
         assertEquals("the partial staged file should have been rolled back", 0, staging.list().length);
     }
 
+    /**
+     * An anonymization that rejects or fails on an object reports that as its result and writes no
+     * staged version. The source must then stay exactly as it was: putting an absent (or empty)
+     * staged file in its place would destroy the object.
+     */
+    @Test
+    public void leavesTheSourceUntouchedWhenTheOperationProducedNothing() throws Throwable {
+        final File source  = write(folder.newFolder("data"), "1.dcm", ORIGINAL);
+        final File staging = folder.newFolder("staging");
+
+        final CallOnFile<String> producingNothing = new CallOnFile<String>() {
+            @Override
+            public String call() {
+                return "rejected";
+            }
+        };
+
+        final String result = new TransactionRunner<String>().runTransaction(new WorkOnCopyOp<>(source, staging, producingNothing));
+
+        assertEquals("the operation's result still comes back", "rejected", result);
+        assertArrayEquals("the source must be untouched when nothing was staged", ORIGINAL, Files.readAllBytes(source.toPath()));
+        assertEquals(0, staging.list().length);
+    }
+
     @Test
     public void keepsConcurrentlyStagedFilesWithTheSameNameApart() throws Exception {
         final File first   = write(folder.newFolder("scan1"), "1.dcm", ORIGINAL);

@@ -55,7 +55,8 @@ public final class WorkOnCopyOp<T> extends Transaction<T> {
     public T run() throws TransactionException {
         final T result;
         try {
-            _callOnFile.setFile(new File(_tempDir, "staged-" + UUID.randomUUID() + "-" + _source.getName()));
+            // A fixed-length name: prefixing the source's own name could push a long one past NAME_MAX.
+            _callOnFile.setFile(new File(_tempDir, "staged-" + UUID.randomUUID()));
             result = _callOnFile.call();
         } catch (Throwable e) {
             throw new TransactionException(e);

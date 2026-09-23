@@ -6,6 +6,7 @@ import org.dcm4che3.io.DicomInputStream;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.AnonymizationResultSuccess;
@@ -16,11 +17,15 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -88,6 +93,62 @@ public class BaseMizerServiceStagingTest {
         assertTrue("the failure should come back as an error result: " + result.getMessage(), result instanceof AnonymizationResultError);
         assertArrayEquals("the object must be exactly what it was", before, Files.readAllBytes(source.toPath()));
         assertEquals("no staged file may be left behind", 0, staging.list().length);
+    }
+
+    /**
+     * A batch is anonymized all or nothing. Regression: each file was put in place as soon as it was
+     * anonymized, so a failure on a later file left the earlier ones changed, and archiving again
+     * after fixing the script ran it over them a second time.
+     */
+    @Test
+    public void leavesEveryFileInTheBatchUntouchedWhenOneFails() throws Exception {
+        final File first  = copyOfFixture("1.dcm");
+        final File second = copyOfFixture("2.dcm");
+        final byte[] firstBefore  = Files.readAllBytes(first.toPath());
+        final byte[] secondBefore = Files.readAllBytes(second.toPath());
+        final File   staging      = temporaryFolder.newFolder("staging");
+
+        final AtomicInteger calls = new AtomicInteger();
+        final BaseMizerService service = new BaseMizerService(Collections.singletonList(new TestMizer() {
+            @Override
+            protected AnonymizationResult anonymizeImpl(final DicomObjectI dicomObject, final MizerContextWithScript context) throws MizerException {
+                return calls.incrementAndGet() == 2
+                       ? new AnonymizationResultError(dicomObject, "no codec for the transfer syntax")
+                       : super.anonymizeImpl(dicomObject, context);
+            }
+        }));
+        service.setStagingDirectoryResolver(dicomFile -> staging);
+
+        assertThrows(MizerException.class,
+                     () -> service.anonymize(Arrays.asList(first, second), "project", "subject", "session", 7L, SCRIPT, true, false));
+
+        assertEquals("both files should have been tried", 2, calls.get());
+        assertArrayEquals("the file anonymized before the failure must be exactly what it was", firstBefore, Files.readAllBytes(first.toPath()));
+        assertArrayEquals("the file that failed must be exactly what it was", secondBefore, Files.readAllBytes(second.toPath()));
+        assertEquals("no staged file may be left behind", 0, staging.list().length);
+    }
+
+    @Test
+    public void putsTheWholeBatchInPlaceWhenEveryFileSucceeds() throws Exception {
+        final File first   = copyOfFixture("1.dcm");
+        final File second  = copyOfFixture("2.dcm");
+        final File staging = temporaryFolder.newFolder("staging");
+        final BaseMizerService service = new BaseMizerService(Collections.singletonList(new TestMizer()));
+        service.setStagingDirectoryResolver(dicomFile -> staging);
+
+        final List<AnonymizationResult> results = service.anonymize(Arrays.asList(first, second), "project", "subject", "session", 7L, SCRIPT, true, false);
+
+        assertEquals(2, results.size());
+        for (final File file : Arrays.asList(first, second)) {
+            assertTrue(file + " should have been anonymized in place", read(file).contains(Tag.DeidentificationMethodCodeSequence));
+        }
+        assertEquals("the staging directory should be empty once the batch is in place", 0, staging.list().length);
+    }
+
+    private File copyOfFixture(final String name) throws Exception {
+        final File copy = temporaryFolder.newFile(name);
+        Files.copy(fixture().toPath(), copy.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        return copy;
     }
 
     private static File fixture() throws Exception {

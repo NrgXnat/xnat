@@ -49,6 +49,34 @@ public class WorkOnCopyOpTest {
     }
 
     @Test
+    public void stagingLeavesTheSourceAloneUntilCommitted() throws Throwable {
+        final File source  = write(folder.newFolder("data"), "1.dcm", ORIGINAL);
+        final File staging = folder.newFolder("staging");
+        final WorkOnCopyOp<String> op = new WorkOnCopyOp<>(source, staging, writing(REPLACED, "done"));
+
+        assertEquals("done", op.stage());
+        assertArrayEquals("staging must not touch the source", ORIGINAL, Files.readAllBytes(source.toPath()));
+        assertEquals("the staged version should be waiting in the staging directory", 1, staging.list().length);
+
+        op.commit();
+        assertArrayEquals("committing should put the staged version in place", REPLACED, Files.readAllBytes(source.toPath()));
+        assertEquals("nothing should be left in the staging directory", 0, staging.list().length);
+    }
+
+    @Test
+    public void rollbackAfterStagingLeavesTheSourceAsItWas() throws Throwable {
+        final File source  = write(folder.newFolder("data"), "1.dcm", ORIGINAL);
+        final File staging = folder.newFolder("staging");
+        final WorkOnCopyOp<String> op = new WorkOnCopyOp<>(source, staging, writing(REPLACED, "done"));
+
+        op.stage();
+        op.rollback();
+
+        assertArrayEquals(ORIGINAL, Files.readAllBytes(source.toPath()));
+        assertEquals("the staged version should have been discarded", 0, staging.list().length);
+    }
+
+    @Test
     public void stagesASourceWhoseNameIsNearTheFileNameLimit() throws Throwable {
         // 240 bytes is inside the usual 255-byte NAME_MAX, but not once a prefix is put in front of it,
         // so the staged name must not grow with the source's.

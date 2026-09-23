@@ -1007,10 +1007,9 @@ public class PrearcUtils {
                .map(XnatResourcecatalog.class::cast)
                .forEach(catalog -> {
                    try {
-                       CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(fixedRootPath, catalog, project.getId());
-                       if (CatalogUtils.formalizeCatalog(catalogData.catBean, catalogData.catPath, catalogData.project, c.getUser(), c, checksums, false)) {
-                           CatalogUtils.writeCatalogToFile(catalogData, checksums);
-                       }
+                       // read, formalize and write under one exclusive lock rather than a read lock then a write lock
+                       CatalogUtils.updateCatalog(fixedRootPath, catalog, project.getId(), checksums,
+                               catalogData -> CatalogUtils.formalizeCatalog(catalogData.catBean, catalogData.catPath, catalogData.project, c.getUser(), c, checksums, false));
                    } catch (Exception e) {
                        log.error("An error occurred trying to write catalog data for {}", catalog.getUri(), e);
                    }

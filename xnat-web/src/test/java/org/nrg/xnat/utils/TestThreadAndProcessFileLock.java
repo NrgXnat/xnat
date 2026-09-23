@@ -165,6 +165,34 @@ public class TestThreadAndProcessFileLock {
         assertThat(cat2.getEntries_entry().size(), is(size-2));
     }
 
+    @Test
+    public void testUpdateCatalogUnderOneLock() throws Exception {
+        // This operates on a separate file from testDcm/testDcmRepeat so it doesn't change their data mid-test
+        final File outfile = new File(TMPDIR, "testUpdateCatalogUnderOneLock_catalog.xml");
+        Files.copy(TEST_DCMCATALOG_PERM.toPath(), outfile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        final int before = new CatalogUtils.CatalogData(outfile, fakeProject, false).catBean.getEntries_entry().size();
+
+        // A change that declines leaves the file alone
+        final byte[] untouched = Files.readAllBytes(outfile.toPath());
+        assertFalse(CatalogUtils.updateCatalog(outfile, null, fakeProject, false, data -> false));
+        assertArrayEquals(untouched, Files.readAllBytes(outfile.toPath()));
+
+        // A change that removes an entry is written, and the lock file does not linger
+        assertTrue(CatalogUtils.updateCatalog(outfile, null, fakeProject, false, data -> {
+            final CatEntryBean entry = (CatEntryBean) CatalogUtils.getEntryByURI(data.catBean, "TESTID.MR.999.4.53.20080618.133713.agkqek.dcm");
+            assertNotNull(entry);
+            return CatalogUtils.removeEntry(data.catBean, entry);
+        }));
+        final CatalogUtils.CatalogData after = new CatalogUtils.CatalogData(outfile, fakeProject, false);
+        assertThat(after.catBean.getEntries_entry().size(), is(before - 1));
+        try (var locks = Files.list(Path.of(System.getProperty("java.io.tmpdir"), "file-locks"))) {
+            assertTrue("lock file released", locks.noneMatch(p -> p.getFileName().toString().contains("testUpdateCatalogUnderOneLock")));
+        }
+
+        // The rewritten catalog still goes through the two-lock path: the checksum recorded on write is the file's
+        CatalogUtils.writeCatalogToFile(after);
+    }
+
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
 

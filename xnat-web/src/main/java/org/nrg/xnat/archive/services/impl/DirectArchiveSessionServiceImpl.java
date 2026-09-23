@@ -46,6 +46,7 @@ import org.nrg.xnat.services.messaging.archive.DirectArchiveRequest;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.PhaseTimer;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.model.CatDcmentryI;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -216,10 +217,13 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         String               location   = target.getUrl();
         String               project    = target.getProject();
         XnatImagesessiondata session;
+        final PhaseTimer timer = new PhaseTimer();
         try {
             session = populateSession(user, location, project);
+            timer.lap("populate");
             if (Boolean.FALSE.equals(target.getPreventAnon())) {
                 List<AnonymizationResult>  anonResults = new ProjectAnonymizer(session, project, location, false).call();
+                timer.lap("anonymize");
                 if (anonResults.stream().anyMatch(AnonymizationResultError.class::isInstance)) {
                     log.error("Anonymization failed for DirectArchiveSession id={} at {} ", id, location);
                     throw new ArchivingException("Anonymization failed for DirectArchiveSession id="+id+ "at "+location);
@@ -232,6 +236,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                     // rebuild XML and update session
                     PrearcUtils.buildSession(target);
                     session = populateSession(user, location, project);
+                    timer.lap("rebuild");
                 }
             }
 
@@ -254,10 +259,14 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             PrearcSessionArchiver.preArchive(user, session, EMPTY_MAP, null);
             workflow = createWorkflow(user, session);
             saveSubject(session, workflow.buildEvent());
+            timer.lap("prepare");
             setupScans(session, location);
+            timer.lap("setup-scans");
             saveSession(session, workflow.buildEvent());
+            timer.lap("save");
             PrearcSessionArchiver.postArchive(user, session, EMPTY_MAP);
             Files.delete(Path.of(location + ".xml"));
+            timer.lap("post-archive");
         } catch (Exception e) {
             log.error("Unable to archive DirectArchiveSession id={}, attempting to move to prearchive", id, e);
             if (workflow != null) {
@@ -274,8 +283,10 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         // At this point, the session has been archived, so we no longer want to move to prearchive if there's an exception
         try {
             cleanupScans(session, location, workflow.buildEvent()); // could potentially be removed for performance. need to set format=DICOM in catalog prior to this
+            timer.lap("cleanup-catalogs");
             directArchiveSessionHibernateService.delete(id);
             completeWorkflow(workflow);
+            log.info("Direct-archived session {} at {}: {}", id, location, timer);
         } catch (Exception e) {
             log.error("Issue after direct archive DirectArchiveSession id={}", id, e);
             failWorkflow(workflow, e);

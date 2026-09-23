@@ -25,6 +25,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.FileUtils.FileHandlerI;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.PhaseTimer;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,15 +112,19 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
     public A call() throws ClientException, ServerException, IOException {
         processing("Preparing to move uploaded resources into destination directory.");
+        final PhaseTimer timer = new PhaseTimer();
         File backupDIR  = null;
         this.checkForConflict();
+        timer.lap("conflict-check");
         final File rootBackup = createPrimaryBackupDirectory(this.getCacheBKDirName(), src.getProject(), destDIR.getName());
         if (destDIR.exists()) {
             backupDIR = backupDestDIR(destDIR, rootBackup);
         }
+        timer.lap("backup");
 
         try {
             final XnatImagesessiondataI session = getPostAnonSession();
+            timer.lap("anonymize");
 
             if (dest != null) {
                 if (dest instanceof XnatImagesessiondata imagesessiondata) {
@@ -143,6 +148,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             final Results<A> update = mergeSessions((A) session, srcRootPath, dest, destRootPath, rootBackup);
 
             this.merged = update.getResult();
+            timer.lap("merge-metadata");
 
             //If we wrote to the src directory's catalogs, would the overwrite persist them into the new space (overwriting the old ones).
             //What if the same catalog had two different catalog file names.  This would cause duplicate catalogs.
@@ -159,11 +165,14 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             MergeUtils.deleteEmptyDirectoriesRecursively(srcDIR);
 
             mergeDirectories(srcDIR, destDIR, overwriteFiles);
+            timer.lap("move");
 
             finalize(this.merged);
+            timer.lap("finalize-scans");
 
             processing("Updating stored metadata.");
             saver.save(this.merged);
+            timer.lap("save");
 
             for (Callable<Boolean> followup : update.getAfter()) {
                 try {
@@ -174,6 +183,8 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
             }
 
             postSave(this.merged);
+            timer.lap("cleanup-catalogs");
+            logger.info("Merged {} into {}: {}", srcDIR, destDIR, timer);
 
             return this.merged;
         } catch (MizerException e) {

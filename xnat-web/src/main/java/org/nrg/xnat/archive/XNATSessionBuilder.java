@@ -28,6 +28,7 @@ import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.XFT;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
+import org.nrg.xnat.utils.PhaseTimer;
 import org.springframework.core.io.Resource;
 
 import javax.annotation.Nonnull;
@@ -244,8 +245,12 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         final XnatAttrDef[] attrDefs = params.entrySet().stream().map(entry -> new XnatAttrDef.Constant(entry.getKey(), createPetMrAsPet && entry.getKey().equals("label") && entry.getValue().toLowerCase().contains(HandlePetMr.PetMr.value())
                                                                                                                         ? new StringBuilder(new StringBuilder(entry.getValue()).reverse().toString().replaceFirst("(?i)rmtep", "TEP")).reverse().toString()
                                                                                                                         : entry.getValue())).toArray(XnatAttrDef[]::new);
+        // The constructor is the whole-directory walk and header parse; run() assembles the session,
+        // builds the catalogs, moves the files into their scan directories and writes the XML.
+        final PhaseTimer timer = new PhaseTimer();
         try (final FileWriter fileWriter = new FileWriter(xml);
              final DICOMSessionBuilder dicomSessionBuilder = new DICOMSessionBuilder(dir, fileWriter, attrDefs)) {
+            timer.lap("scan-files");
             @SuppressWarnings("unchecked") final List<String> excludedFields = XDAT.getContextService().getBean("excludedDicomImportFields", List.class);
             if (excludedFields != null) {
                 dicomSessionBuilder.setExcludedFields(excludedFields);
@@ -260,6 +265,8 @@ public class XNATSessionBuilder implements Callable<Boolean> {
                 dicomSessionBuilder.setParameters(params);
             }
             dicomSessionBuilder.run();
+            timer.lap("assemble");
+            log.info("Built DICOM session in {}: {}", dir, timer);
         } catch (IOException e) {
             log.warn("unable to process session directory {}", dir, e);
             throw e;

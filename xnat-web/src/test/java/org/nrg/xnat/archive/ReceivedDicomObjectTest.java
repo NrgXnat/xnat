@@ -301,6 +301,38 @@ public class ReceivedDicomObjectTest {
         }
     }
 
+    /**
+     * A C-STORE carries the dataset alone, deflated from its first byte, and names its syntax only in
+     * the association. With no file meta group to learn it from, the read has to take the syntax the
+     * caller negotiated. Regression: the stream guessed from the compressed bytes and the object
+     * failed to read.
+     */
+    @Test
+    public void negotiatedDeflatedDatasetWithoutFileMetaIsInflatedAndRoundTrips() throws Exception {
+        for (final String transferSyntax : new String[] {
+                UID.DeflatedExplicitVRLittleEndian, UID.JPIPReferencedDeflate, UID.JPIPHTJ2KReferencedDeflate}) {
+            final File bare   = deflatedDatasetOnly(MR_FIXTURE, transferSyntax);
+            final File output = new File(folder.getRoot(), "negotiated-" + transferSyntax + ".dcm");
+            try (ReceivedDicomObject received = ReceivedDicomObject.read(open(bare), transferSyntax, ORDINARY_LAST_TAG, false)) {
+                assertTrue(transferSyntax + " must force the whole read even when a partial one was asked for", received.isWhole());
+                received.write(received.getDataset(), AE_TITLE, output, "test");
+            }
+            try (DicomInputStream in = new DicomInputStream(output)) {
+                assertEquals(transferSyntax + ": the written object must keep the negotiated syntax",
+                             transferSyntax, in.readFileMetaInformation().getString(Tag.TransferSyntaxUID));
+            }
+            assertArrayEquals(transferSyntax + ": pixels must survive the round trip", pixelData(MR_FIXTURE), pixelData(output));
+        }
+    }
+
+    /** A caller naming the syntax of a stream that carries its own file meta group must not make the read skip that group. */
+    @Test
+    public void deflatedFileStillReadsWhenTheCallerAlsoNamesItsSyntax() throws Exception {
+        final File deflated = deflate(MR_FIXTURE);
+        final File written  = write(deflated, UID.DeflatedExplicitVRLittleEndian, false, "named-deflated-out.dcm");
+        assertArrayEquals("pixels must survive the deflate round-trip", pixelData(deflated), pixelData(written));
+    }
+
     /** What an inbox holding a README or a zero-byte file hands the importer: the stream never opens, and the source must still be closed. */
     @Test
     public void closesTheSourceWhenItCannotBeReadAsDicom() {
@@ -369,6 +401,17 @@ public class ReceivedDicomObjectTest {
             out.writeDataset(fmi, dataset);
         }
         return deflated;
+    }
+
+    /** The dataset alone, deflated in <b>transferSyntax</b> from its first byte, as a C-STORE carries it: no preamble, no file meta group. */
+    private File deflatedDatasetOnly(final File source, final String transferSyntax) throws IOException {
+        final File bare = folder.newFile("bare-" + transferSyntax + ".dcm");
+        try (DicomInputStream in = new DicomInputStream(source);
+             DicomOutputStream out = new DicomOutputStream(new FileOutputStream(bare), transferSyntax)) {
+            in.readFileMetaInformation();
+            out.writeDataset(null, in.readDataset());
+        }
+        return bare;
     }
 
     private MizerContext context(final String script) throws Exception {

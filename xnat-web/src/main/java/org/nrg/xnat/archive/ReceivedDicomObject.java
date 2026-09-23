@@ -83,7 +83,7 @@ final class ReceivedDicomObject implements Closeable {
         final BufferedInputStream       in = new BufferedInputStream(source);
         final ResumableDicomInputStream dis;
         try {
-            dis = ResumableDicomInputStream.openWithBulkDataOffHeap(in, sourceFile);
+            dis = ResumableDicomInputStream.openWithBulkDataOffHeap(in, sourceFile, transferSyntaxFromCaller);
         } catch (IOException | RuntimeException e) {
             // Opening reads the start of the stream, so a source that isn't DICOM fails here, before
             // there is a stream to discard, and the source has to be closed on its own.
@@ -98,7 +98,8 @@ final class ReceivedDicomObject implements Closeable {
             Attributes fmi = dis.readFileMetaInformation();
             final String     transferSyntax = null == transferSyntaxFromCaller ? dis.getTransferSyntax() : transferSyntaxFromCaller;
             // A deflated source -- Deflated Explicit VR LE or either JPIP Referenced Deflate syntax,
-            // the three dcm4che inflates -- is one continuous zlib stream past the file meta group.
+            // the three dcm4che inflates -- is one continuous zlib stream past the file meta group, or
+            // from its first byte on a C-STORE.
             // The partial read stops mid-stream and lets write() copy the raw remainder through, but
             // a fresh header followed by the leftover compressed bytes does not re-read -- the object
             // comes back malformed. So a deflated object is always read whole, whether or not a

@@ -286,7 +286,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             timer.lap("cleanup-catalogs");
             directArchiveSessionHibernateService.delete(id);
             completeWorkflow(workflow);
-            log.info("Direct-archived session {} at {}: {}", id, location, timer);
+            PhaseTimer.LOG.info("Direct-archived session {} at {}: {}", id, location, timer);
         } catch (Exception e) {
             log.error("Issue after direct archive DirectArchiveSession id={}", id, e);
             failWorkflow(workflow, e);

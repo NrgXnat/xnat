@@ -184,7 +184,7 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
             postSave(this.merged);
             timer.lap("cleanup-catalogs");
-            logger.info("Merged {} into {}: {}", srcDIR, destDIR, timer);
+            PhaseTimer.LOG.info("Merged {} into {}: {}", srcDIR, destDIR, timer);
 
             return this.merged;
         } catch (MizerException e) {

@@ -43,6 +43,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.XftStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -99,6 +101,11 @@ public class DBAction {
     public static final String NEGATIVE_INFINITY_ABBR_CAPS = "-INF";
     public static final String EQUALS_NULL = "= NULL";
 
+    // Same logger as xnat-web's PhaseTimer (routed to the prearchive log at INFO), so a save's parts land beside
+    // the build/merge/archive laps; only saves slow enough to matter are reported.
+    private static final Logger TIMING              = LoggerFactory.getLogger("org.nrg.xnat.ingest.timing");
+    private static final long   TIMING_THRESHOLD_MS = 250;
+
     /**
      * This method is used to insert/update an item into the database.
      *
@@ -117,17 +124,20 @@ public class DBAction {
      * @return updated XFTItem
      */
     public static boolean StoreItem(XFTItem item, UserI user, boolean checkForDuplicates, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, SecurityManagerI securityManager, EventMetaI c) throws Exception {
-        long        localStartTime = Calendar.getInstance().getTimeInMillis();
+        final long  started        = Calendar.getInstance().getTimeInMillis();
+        long        localStartTime = started;
         DBItemCache cache          = new DBItemCache(user, c);
         item = StoreItem(item, user, checkForDuplicates, new ArrayList(), quarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
 
-        log.debug("prepare-sql: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+        final long prepareMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+        log.debug("prepare-sql: {} ms", prepareMs);
         localStartTime = Calendar.getInstance().getTimeInMillis();
 
         if (!cache.getSQL().equals("") && !cache.getSQL().equals("[]")) {
             Quarantine(item, user, quarantine, overrideQuarantine, cache);
 
-            log.debug("quarantine-sql: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+            final long quarantineMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+            log.debug("quarantine-sql: {} ms", quarantineMs);
             localStartTime = Calendar.getInstance().getTimeInMillis();
 
             PoolDBUtils con;
@@ -144,16 +154,27 @@ public class DBAction {
                 log.debug("***** {} REMOVED ITEMS *******", cache.getRemoved().size());
                 PerformUpdateTriggers(cache, username, xdat_user_id, false);
             }
-            log.debug("pre-triggers: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+            final long preTriggersMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+            log.debug("pre-triggers: {} ms", preTriggersMs);
             localStartTime = Calendar.getInstance().getTimeInMillis();
             con = new PoolDBUtils();
             con.sendBatch(cache, item.getDBName(), username);
             log.debug("Item modifications stored. {} modified elements. {} SQL statements.", cache.getDBTriggers().size(), cache.getStatements().size());
-            log.debug("store: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+            final long storeMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+            log.debug("store: {} ms", storeMs);
             localStartTime = Calendar.getInstance().getTimeInMillis();
             PerformUpdateTriggers(cache, username, xdat_user_id, false);
-            log.debug("post-triggers: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
-            log.debug("Total: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+            final long postTriggersMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+            log.debug("post-triggers: {} ms", postTriggersMs);
+            final long totalMs = Calendar.getInstance().getTimeInMillis() - started;
+            log.debug("Total: {} ms", totalMs);
+            if (totalMs >= TIMING_THRESHOLD_MS) {
+                // one line per slow save on the ingest timing logger, so an archive's save lap can be split into
+                // its parts from the log alone: the SELECTs that build the statements, the batch, the triggers
+                TIMING.info("Stored {} ({} statements, {} trigger items): prepare-sql {} ms, quarantine {} ms, pre-triggers {} ms, store {} ms, post-triggers {} ms, total {} ms",
+                            item.getXSIType(), cache.getStatements().size(), cache.getDBTriggers().size(),
+                            prepareMs, quarantineMs, preTriggersMs, storeMs, postTriggersMs, totalMs);
+            }
             return true;
         } else {
             log.info("Pre-existing item found without modifications");

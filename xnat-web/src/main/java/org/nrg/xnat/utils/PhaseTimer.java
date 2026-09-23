@@ -9,6 +9,9 @@
 
 package org.nrg.xnat.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Times the consecutive phases of one operation, for a single summary log line at the end.
  * <p>
@@ -17,8 +20,15 @@ package org.nrg.xnat.utils;
  * inferred from what was written. Each {@link #lap} records the time since the previous one under
  * a name, and {@link #toString} renders the total and the laps in order, so one line per session
  * says where the time went.
+ * <p>
+ * The summaries are written through {@link #LOG}, a logger of its own: the classes doing the work
+ * live in packages that logback holds at WARN or ERROR, so a line logged through their loggers
+ * never reaches an appender. The logger is configured at INFO in logback.xml, alongside
+ * {@code org.nrg.xnat.received}, which exists for the same reason.
  */
 public final class PhaseTimer {
+    public static final Logger LOG = LoggerFactory.getLogger("org.nrg.xnat.ingest.timing");
+
     private final long          _start = System.nanoTime();
     private final StringBuilder _laps  = new StringBuilder();
     private       long          _last  = _start;

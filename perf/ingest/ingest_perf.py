@@ -22,6 +22,7 @@ import shutil
 import sys
 import uuid
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import corpus
@@ -51,6 +52,10 @@ def make_cluster(args) -> Cluster:
     c = Cluster(ctx, ns, pod, args.user, args.__dict__["pass"])
     c.wheels = getattr(args, "wheels", WHEELS)
     return c
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
 def _is_transient(e: Exception) -> bool:
@@ -188,6 +193,7 @@ def cmd_run(args) -> None:
                             c.wipe_project(PROJECT)
                             if route == "inbox":
                                 staged.inbox_pod_dir = restage_inbox(c, wl, local)
+                            cell["started"] = _utc_now()   # window for matching the pod's timing lines to this cell
                             cell["phases"] = ROUTES[route](c, PROJECT, staged)
                             cell["ok"] = True
                             break
@@ -198,6 +204,7 @@ def cmd_run(args) -> None:
                                 continue
                             cell["phases"], cell["ok"], cell["error"] = [], False, str(e)[:300]
                             break
+                    cell["finished"] = _utc_now()
                     tag = "ok" if cell["ok"] else f"FAIL: {cell.get('error', '')[:80]}"
                     walls = " ".join(f"{p['phase']}={p['wall_s']}s/{p['nfs_mb']}MB" for p in cell["phases"])
                     print(f"  [{mode}] {route} rep{rep}: {tag}  {walls}", flush=True)

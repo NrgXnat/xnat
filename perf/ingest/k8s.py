@@ -214,8 +214,11 @@ class Cluster:
     def prearchive_file_count(self, project: str, ts: str, folder: str) -> int:
         """Objects landed in a prearchive session so far, counted under SCANS (any file name, since
         the importer names output from the source). Catalogs only appear at build, after any caller
-        here has stopped polling. The progress signal for the async routes."""
-        scans = shlex.quote(f"{self.prearchive_root()}/projects/{project}/{ts}/{folder}/SCANS")
+        here has stopped polling. The progress signal for the async routes.
+
+        On disk a session is <prearchivePath>/<project>/<timestamp>/<session>: the REST URL's
+        ``projects/`` segment is not part of the path."""
+        scans = shlex.quote(f"{self.prearchive_root()}/{project}/{ts}/{folder}/SCANS")
         out = self.exec(f"find {scans} -type f 2>/dev/null | wc -l")
         try:
             return int(out.strip())

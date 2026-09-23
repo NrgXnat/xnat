@@ -12,9 +12,12 @@ and app-level write bytes from ``/proc/1/io`` ``wchar``.
 from __future__ import annotations
 
 import json
+import os
+import select
 import shlex
 import subprocess
 import time
+import uuid
 from dataclasses import dataclass
 
 
@@ -31,6 +34,53 @@ class Metrics:
     wchar: int           # /proc/1/io wchar bytes (all write() bytes by the XNAT jvm)
 
 
+class _Shell:
+    """One long-lived ``kubectl exec -i … sh`` into a container. A command is written to its stdin
+    followed by a sentinel echo and stdout is read back up to the sentinel, so a control call costs a
+    pipe round trip (tens of ms) instead of a fresh exec through the API tunnel (~0.9 s each, and a
+    cell makes a dozen of them). The command's stderr is folded into its output, as the one-shot exec
+    reported it on failure."""
+
+    def __init__(self, kubectl: list[str]):
+        self.p = subprocess.Popen([*kubectl, "sh"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, bufsize=0)
+
+    def run(self, script: str, timeout: int) -> tuple[int, str]:
+        tag = uuid.uuid4().hex
+        try:
+            self.p.stdin.write(f"{{\n{script}\n}} 2>&1\necho \"{tag} $?\"\n".encode())
+            self.p.stdin.flush()
+        except OSError as e:
+            raise RuntimeError(f"exec channel closed: {e}") from e
+        buf = bytearray()
+        fd = self.p.stdout.fileno()
+        deadline = time.monotonic() + timeout
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError(f"command timed out after {timeout}s in the exec channel")
+            if not select.select([fd], [], [], min(remaining, 5.0))[0]:
+                if self.p.poll() is not None:
+                    raise RuntimeError(f"exec channel closed: {buf.decode(errors='replace')[-300:]}")
+                continue
+            chunk = os.read(fd, 65536)
+            if not chunk:
+                raise RuntimeError(f"exec channel closed: {buf.decode(errors='replace')[-300:]}")
+            buf += chunk
+            text = buf.decode(errors="replace")
+            idx = text.rfind(tag)
+            if idx != -1 and text.endswith("\n"):
+                rc = text[idx + len(tag):].strip()
+                if rc.isdigit():
+                    return int(rc), text[:idx]
+
+    def close(self) -> None:
+        try:
+            self.p.kill()
+        except OSError:
+            pass
+
+
 class Cluster:
     """Talks to one XNAT pod. ``base`` is the in-pod XNAT URL (Tomcat, no tunnel)."""
 
@@ -40,6 +90,8 @@ class Cluster:
         self.user, self.password, self.base = user, password, base
         self._warned_no_nfs = False
         self._prearchive_root: str | None = None
+        self._shells: dict[tuple[str, str], _Shell] = {}
+        self._jsession: str | None = None
 
     # ---- low-level exec / cp -------------------------------------------------
     def _kubectl(self, *args: str, input_bytes: bytes | None = None, timeout: int = 600) -> subprocess.CompletedProcess:
@@ -48,12 +100,24 @@ class Cluster:
 
     def exec(self, script: str, *, pod: str | None = None, container: str | None = None,
              timeout: int = 600) -> str:
-        """Run ``sh -c script`` in a pod; return stdout (raises on non-zero)."""
-        r = self._kubectl("exec", pod or self.pod, "-c", container or self.container, "--",
-                           "sh", "-c", script, timeout=timeout)
-        if r.returncode != 0:
-            raise RuntimeError(f"exec failed ({r.returncode}): {r.stderr.decode(errors='replace')[:400]}")
-        return r.stdout.decode(errors="replace")
+        """Run ``script`` under ``sh`` in a pod through its persistent exec channel; return stdout
+        (raises on non-zero). A channel that dies (tunnel drop, pod restart) is discarded and the
+        error surfaces as a transient one, so the caller's cell retry re-runs the work rather than
+        this method re-sending a possibly non-idempotent command."""
+        key = (pod or self.pod, container or self.container)
+        shell = self._shells.get(key)
+        if shell is None:
+            shell = self._shells[key] = _Shell(["kubectl", "--context", self.ctx, "-n", self.ns,
+                                                 "exec", "-i", key[0], "-c", key[1], "--"])
+        try:
+            rc, out = shell.run(script, timeout)
+        except (RuntimeError, TimeoutError):
+            shell.close()
+            self._shells.pop(key, None)
+            raise
+        if rc != 0:
+            raise RuntimeError(f"exec failed ({rc}): {out[-400:]}")
+        return out
 
     def cp_to(self, local: str, dest: str, *, pod: str | None = None, container: str | None = None) -> None:
         tgt = f"{pod or self.pod}:{dest}"
@@ -87,9 +151,27 @@ class Cluster:
     # ---- in-pod curl against XNAT -------------------------------------------
     def curl(self, method: str, path: str, *, query: str = "", data_file: str | None = None,
              ctype: str | None = None, timeout: int = 1200) -> CurlResult:
-        """curl inside the pod against the local XNAT; timing is curl's in-pod time_total."""
+        """curl inside the pod against the local XNAT; timing is curl's in-pod time_total. Requests
+        ride one XNAT session cookie rather than basic auth: BCrypt on every request was the top
+        CPU consumer in the pod profile, and at one poll per second that was the harness's doing."""
+        r = self._curl(method, path, query, data_file, ctype, timeout, self._cookie())
+        if r.http in (401, 403, 302):              # session gone: log in again, retry once
+            self._jsession = None
+            r = self._curl(method, path, query, data_file, ctype, timeout, self._cookie())
+        return r
+
+    def _cookie(self) -> list[str]:
+        if self._jsession is None:
+            r = self._curl("POST", "/data/JSESSION", "", None, None, 60, ["-u", f"{self.user}:{self.password}"])
+            if r.http != 200 or not r.body.strip():
+                raise RuntimeError(f"could not open an XNAT session: HTTP {r.http} {r.body[:120]}")
+            self._jsession = r.body.strip()
+        return ["-b", f"JSESSIONID={self._jsession}"]
+
+    def _curl(self, method: str, path: str, query: str, data_file: str | None, ctype: str | None,
+              timeout: int, auth: list[str]) -> CurlResult:
         url = f"{self.base}{path}" + (("?" + query) if query else "")
-        parts = ["curl", "-sS", "-u", f"{self.user}:{self.password}", "-X", method]
+        parts = ["curl", "-sS", *auth, "-X", method]
         if ctype:
             parts += ["-H", f"Content-Type: {ctype}"]
         if data_file:
@@ -225,7 +307,7 @@ class Cluster:
         except ValueError:
             return 0
 
-    def wait_prearchive_empty(self, project: str, timeout: int = 900, poll: float = 1.0) -> float:
+    def wait_prearchive_empty(self, project: str, timeout: int = 900, poll: float = 0.5) -> float:
         t0 = time.monotonic()
         while time.monotonic() - t0 < timeout:
             if not self.prearchive_rows(project):

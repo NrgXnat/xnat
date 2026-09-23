@@ -130,7 +130,7 @@ def route_cache(cluster: Cluster, project: str, s: Staged) -> list[dict]:
         while time.monotonic() - t0 < 600:
             if cluster.archived_count(project) > arch0:
                 return time.monotonic() - t0
-            time.sleep(1.0)
+            time.sleep(0.5)
         raise RuntimeError("cache commit did not archive within 600s")
 
     return [_phase(cluster, "cache_put", put), _phase(cluster, "commit_archive", commit_archive)]
@@ -159,7 +159,7 @@ def route_direct(cluster: Cluster, project: str, s: Staged) -> list[dict]:
         while time.monotonic() - t0 < 600:
             if cluster.archived_count(project) > arch0:
                 return time.monotonic() - t0
-            time.sleep(1.0)
+            time.sleep(0.5)
         raise RuntimeError("direct-archive did not complete within 600s")
 
     return [_phase(cluster, "receive", receive), _phase(cluster, "trigger_archive", trigger)]
@@ -191,7 +191,7 @@ def route_inbox(cluster: Cluster, project: str, s: Staged) -> list[dict]:
             if rows and cluster.prearchive_file_count(
                     project, rows[0]["timestamp"], rows[0]["folderName"]) >= s.files:
                 return time.monotonic() - t0
-            time.sleep(1.0)
+            time.sleep(0.5)
         raise RuntimeError(f"inbox import did not deliver {s.files} files within 1800s")
 
     def build() -> float:
@@ -204,7 +204,7 @@ def route_inbox(cluster: Cluster, project: str, s: Staged) -> list[dict]:
                 return time.monotonic() - t0
             if status in ("ERROR", "CONFLICT") or status.startswith("QUEUED_ARCHIVING"):
                 raise RuntimeError(f"inbox session unexpectedly in status {status} (project auto-archive on?)")
-            time.sleep(1.0)
+            time.sleep(0.5)
         raise RuntimeError("inbox session did not reach READY within 900s")
 
     return [_phase(cluster, "receive", receive), _phase(cluster, "build", build),

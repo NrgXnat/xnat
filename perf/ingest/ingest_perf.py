@@ -64,7 +64,7 @@ def _is_transient(e: Exception) -> bool:
     kube = ("tls handshake timeout", "unable to connect to the server", "i/o timeout",
             "context deadline exceeded", "connection refused", "connection reset",
             "broken pipe", "unexpected eof", "error validating", "the server is currently unable",
-            "cp failed after", "exec failed")
+            "cp failed after", "exec failed", "exec channel closed")
     app = ("did not archive within", "did not complete within", "failed http", "contains no")
     return any(k in s for k in kube) and not any(a in s for a in app)
 
@@ -177,7 +177,15 @@ def cmd_run(args) -> None:
         if not remaining(wl):
             print(f"workload {wl}: all cells already done, skipping")
             continue
-        staged, local, nbytes = stage_workload(c, wl, routes, Path(args.corpus) if args.corpus else None)
+        for attempt in range(1, 6):   # staging crosses the tunnel too (cp of the whole workload)
+            try:
+                staged, local, nbytes = stage_workload(c, wl, routes, Path(args.corpus) if args.corpus else None)
+                break
+            except Exception as e:
+                if not _is_transient(e) or attempt == 5:
+                    raise
+                print(f"    transient while staging {wl} (try {attempt}): {str(e)[:70]} — waiting + retrying", flush=True)
+                c.wait_healthy()
         header["workloads"][wl] = {"files": staged.files, "bytes": nbytes}
         print(f"workload {wl}: {staged.files} objects, {nbytes/1e6:.1f} MB")
         for mode in anon_modes:

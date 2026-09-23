@@ -53,10 +53,15 @@ public class AnonymizeCallOnFileWithPixels extends CallOnFile<AnonymizationResul
         // value in a byte[]. Constructed from the File, not a stream, so the BulkData references
         // point at _dicomFile rather than at a spooled copy.
         final DicomObjectI dicomObject = DicomObjectFactory.newInstance(_dicomFile, DicomInputStream.IncludeBulkData.URI);
-        try (final FileOutputStream output = new FileOutputStream(getFile())) {
+        try {
             final AnonymizationResult result = _mizer.anonymize(dicomObject, _mizerContext);
+            // The staging file exists only once there is a successful result to write into it. A
+            // rejection or an error is reported through the result, and WorkOnCopyOp then leaves the
+            // source alone; a staging file opened beforehand would be empty and would replace it.
             if (!(result instanceof AnonymizationResultReject) && !(result instanceof AnonymizationResultError)) {
-                result.getDicomObject().write(output);
+                try (final FileOutputStream output = new FileOutputStream(getFile())) {
+                    result.getDicomObject().write(output);
+                }
             }
             result.releaseObjectFromMemory();
             return result;

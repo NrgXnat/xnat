@@ -266,7 +266,7 @@ public class XNATSessionBuilder implements Callable<Boolean> {
             }
             dicomSessionBuilder.run();
             timer.lap("assemble");
-            log.info("Built DICOM session in {}: {}", dir, timer);
+            PhaseTimer.LOG.info("Built DICOM session in {}: {}", dir, timer);
         } catch (IOException e) {
             log.warn("unable to process session directory {}", dir, e);
             throw e;

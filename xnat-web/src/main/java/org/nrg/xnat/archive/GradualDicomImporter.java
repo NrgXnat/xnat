@@ -356,6 +356,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     if (!applyScripts(context -> _mizer.anonymize(toAnonymize, context), session, isNew, outputFile)) {
                         return returnEmptyList();
                     }
+                    // Write what the scripts left, re-read like every round above: a processor may give
+                    // the wrapper a new dataset instead of editing this one.
+                    dataset = toAnonymize.getAttributes();
                 }
 
                 try {

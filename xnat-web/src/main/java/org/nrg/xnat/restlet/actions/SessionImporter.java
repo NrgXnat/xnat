@@ -26,6 +26,7 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.FinishImageUpload;
 import org.nrg.xnat.helpers.PrearcImporterHelper;
+import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.merge.SiteWideAnonymizer;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.helpers.uri.URIManager;
@@ -268,6 +269,9 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 this.processing("Performing anonymization");
                 final SiteWideAnonymizer   siteWideAnonymizer = new SiteWideAnonymizer(imageSession, true, false);
                 List<AnonymizationResult> anonResults = siteWideAnonymizer.call();
+                // An object the site script rejects must not be archived. The merge and direct archive
+                // delete what their scripts reject; this import has to delete what this one rejects.
+                MergeUtils.deleteRejectedFiles(log, anonResults, imageSession.getProject());
                 if (!(anonResults.isEmpty() || anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance))){
                     // rebuild XML
                     XnatSubjectdata s = imageSession.getSubjectData();

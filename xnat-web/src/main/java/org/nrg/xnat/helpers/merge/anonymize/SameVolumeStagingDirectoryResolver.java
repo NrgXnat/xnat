@@ -33,8 +33,9 @@ import java.util.function.Supplier;
  * DICOM object, which is what happened when lock files lived beside the data.
  * <p>
  * A file under none of the roots is staged wherever the fallback says, which by default is
- * {@code java.io.tmpdir}, and is replaced by a copy as it always was. The same happens, one level
- * down, when a root turns out to span more than one mount: the rename fails and the caller copies.
+ * {@code java.io.tmpdir}, and is replaced by a copy as it always was. So is a file under a root
+ * where the staging directory can't be created. The same happens, one level down, when a root
+ * turns out to span more than one mount: the rename fails and the caller copies.
  */
 @Slf4j
 public class SameVolumeStagingDirectoryResolver implements StagingDirectoryResolver {
@@ -64,7 +65,15 @@ public class SameVolumeStagingDirectoryResolver implements StagingDirectoryResol
             final Path root = Paths.get(dataRoot).toAbsolutePath().normalize();
             if (isUnder(target, realTarget, root)) {
                 final Path staging = root.resolve(STAGING_DIRECTORY_NAME);
-                Files.createDirectories(staging);
+                try {
+                    Files.createDirectories(staging);
+                } catch (IOException e) {
+                    // A root this process can't write to (a read-only root over per-project mounts,
+                    // say) staged in the temp directory before this class existed, and still can;
+                    // only the rename is lost.
+                    log.warn("Unable to create {}, staging {} under the fallback location instead: {}", staging, dicomFile, e.toString());
+                    return _fallback.resolve(dicomFile);
+                }
                 return staging.toFile();
             }
         }

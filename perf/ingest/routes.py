@@ -58,15 +58,17 @@ def _build_and_archive(cluster: Cluster, project: str) -> list[dict]:
         ts_folder["ts"], ts_folder["folder"] = ts, folder
         r = cluster.build_session(project, ts, folder)
         # Unchecked, a failed build records its own error-response time as the build wall-clock and
-        # only surfaces 900 s later as an archive timeout, blamed on the wrong phase.
-        if r.http not in (200, 201):
+        # only surfaces 900 s later as an archive timeout, blamed on the wrong phase. Only 4xx/5xx
+        # is failure: the archive service answers a successful archive with a 303 to the new session,
+        # and in-pod curl does not follow it.
+        if r.http >= 400:
             raise RuntimeError(f"build failed HTTP {r.http}: {r.body[:200]}")
         return r.secs
 
     def archive() -> float:
         t0 = time.monotonic()
         r = cluster.archive_session(project, ts_folder["ts"], ts_folder["folder"])
-        if r.http not in (200, 201):
+        if r.http >= 400:
             raise RuntimeError(f"archive failed HTTP {r.http}: {r.body[:200]}")
         cluster.wait_prearchive_empty(project)
         return time.monotonic() - t0

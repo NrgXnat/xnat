@@ -10,6 +10,7 @@ package org.nrg.dcm;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.dcm4che3.data.Tag;
 import org.junit.Before;
@@ -18,10 +19,13 @@ import org.nrg.attr.*;
 import org.nrg.util.FileURIOpener;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -132,6 +136,52 @@ public class AttrAdapterTest {
         assertEquals("empty", values.get(1).getName());
     }
 
+
+    @Test
+    public final void queriesTheStoreOnceForAllDefinitions() throws ExtAttrException, IOException, SQLException {
+        // A scan's definitions used to cost one store query each; they now share one query, and every
+        // definition must still see exactly what its own query returned.
+        final AtomicInteger queries = new AtomicInteger();
+        final DicomMetadataStore counting = (DicomMetadataStore) Proxy.newProxyInstance(
+                DicomMetadataStore.class.getClassLoader(), new Class<?>[]{DicomMetadataStore.class},
+                (proxy, method, args) -> {
+                    if ("getUniqueCombinationsGivenValues".equals(method.getName())) {
+                        queries.incrementAndGet();
+                    }
+                    try {
+                        return method.invoke(fs, args);
+                    } catch (InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
+        final List<ExtAttrDef<DicomAttributeIndex>> definitions = Arrays.asList(
+                new TestAttrDef.Text("date", STUDY_DATE),
+                new TestAttrDef.Text("time", STUDY_TIME),
+                MultiValueAttrDef.wrap(new TestAttrDef.Text("series number", SERIES_NUMBER)),
+                MultiValueAttrDef.wrap(new TestAttrDef.AttributesOnly("voxel", new String[]{"spacing", "thickness"},
+                                                                      new DicomAttributeIndex[]{PIXEL_SPACING, SLICE_THICKNESS})),
+                new TestAttrDef.Empty("empty"),
+                new TestAttrDef.Constant("constant", "fixed"));
+        final Map<DicomAttributeIndex, String> scanSpec = Collections.singletonMap(STUDY_DATE, "20061214");
+
+        final List<ExtAttrValue> expected = new ArrayList<>();
+        for (final ExtAttrDef<DicomAttributeIndex> definition : definitions) {
+            final Map<DicomAttributeIndex, ConversionFailureException> failed = new HashMap<>();
+            expected.addAll(Lists.newArrayList(AbstractExtAttrDef.foldl(definition,
+                    fs.getUniqueCombinationsGivenValues(scanSpec, definition.getAttrs(), failed))));
+            assertTrue(failed.isEmpty());
+        }
+
+        final AttrAdapter adapter = new AttrAdapter(counting);
+        adapter.add(definitions);
+        final Map<ExtAttrDef<DicomAttributeIndex>, Throwable> failures = new HashMap<>();
+        final List<ExtAttrValue> values = adapter.getValuesGiven(scanSpec, failures);
+
+        assertTrue(failures.toString(), failures.isEmpty());
+        assertEquals(expected, values);
+        assertEquals(3, values.stream().filter(v -> "series number".equals(v.getName())).count());
+        assertEquals(1, queries.get());
+    }
 
     @Test
     public final void testGetMultipleValues() throws ExtAttrException {

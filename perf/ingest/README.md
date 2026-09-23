@@ -86,6 +86,11 @@ uv run python ingest_perf.py run --k8s ... --label baseline-huge \
 # compare two runs
 uv run python ingest_perf.py report --compare results/baseline.json results/candidate.json -o report.md
 
+# output verification: add --verify to both runs and the report gains a per-cell table saying whether the
+# candidate archived the same objects, catalog entries and session XML as the baseline (see verify.py)
+uv run python ingest_perf.py run --k8s ... --label candidate --verify --workloads small,mixed,multiframe \
+    --routes zip,direct --anon none,project-header --reps 2 --out results/
+
 # clean up (delete sender pod, restore anon; --delete-project also removes PERF)
 uv run python ingest_perf.py teardown --k8s ... [--delete-project]
 ```

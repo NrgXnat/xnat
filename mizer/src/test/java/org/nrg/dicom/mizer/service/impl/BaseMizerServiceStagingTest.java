@@ -7,7 +7,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.AnonymizationResultSuccess;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.impl.test.TestMizer;
 
 import java.io.File;
@@ -59,6 +61,33 @@ public class BaseMizerServiceStagingTest {
         assertEquals("the object at the original path should be the same instance", before.getString(Tag.SOPInstanceUID), after.getString(Tag.SOPInstanceUID));
         assertTrue("the anonymization should have been recorded in the header", after.contains(Tag.DeidentificationMethodCodeSequence));
         assertArrayEquals("pixel data must survive the replacement byte for byte", pixelsBefore, pixelDigest(source));
+    }
+
+    /**
+     * A script that fails on an object reports that as an error result, not an exception. The
+     * object must then be exactly what it was: the staging file used to be opened before the
+     * script ran, so a failure left it empty, and the empty file was put in the object's place.
+     */
+    @Test
+    public void leavesTheObjectUntouchedWhenTheScriptFails() throws Exception {
+        final File source = temporaryFolder.newFile("1.dcm");
+        Files.copy(fixture().toPath(), source.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        final byte[] before  = Files.readAllBytes(source.toPath());
+        final File   staging = temporaryFolder.newFolder("staging");
+
+        final BaseMizerService service = new BaseMizerService(Collections.singletonList(new TestMizer() {
+            @Override
+            protected AnonymizationResult anonymizeImpl(final DicomObjectI dicomObject, final MizerContextWithScript context) {
+                return new AnonymizationResultError(dicomObject, "no codec for the transfer syntax");
+            }
+        }));
+        service.setStagingDirectoryResolver(dicomFile -> staging);
+
+        final AnonymizationResult result = service.anonymize(source, "project", "subject", "session", true, false, 7L, SCRIPT);
+
+        assertTrue("the failure should come back as an error result: " + result.getMessage(), result instanceof AnonymizationResultError);
+        assertArrayEquals("the object must be exactly what it was", before, Files.readAllBytes(source.toPath()));
+        assertEquals("no staged file may be left behind", 0, staging.list().length);
     }
 
     private static File fixture() throws Exception {

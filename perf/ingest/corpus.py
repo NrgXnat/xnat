@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import itertools
 import shutil
 import struct
 from pathlib import Path
@@ -39,8 +40,15 @@ MR_STORAGE = UID("1.2.840.10008.5.1.4.1.1.4")          # MR Image Storage (singl
 ENH_MR = UID("1.2.840.10008.5.1.4.1.1.4.1")            # Enhanced MR Image Storage (multiframe MR session)
 
 
+_uid_scope = "corpus"
+_uid_counter = itertools.count()
+
+
 def _uid() -> str:
-    return generate_uid(prefix=ROOT_UID + ".")
+    """Deterministic: generating a workload twice gives the same UIDs, so what two builds archive from it
+    can be compared byte for byte (see verify.py). The scope is the workload name, set by build_workload,
+    so no two workloads share a UID."""
+    return generate_uid(prefix=ROOT_UID + ".", entropy_srcs=[_uid_scope, str(next(_uid_counter))])
 
 
 def _identity(ds: Dataset, *, project: str, study_uid: str, series_uid: str,
@@ -285,6 +293,8 @@ def write_manifest(directory: Path) -> list[dict]:
 
 def build_workload(name: str, out: Path, project: str, *, corpus: Path | None = None) -> list[dict]:
     """Generate (or route) a workload into ``out`` and return its manifest rows."""
+    global _uid_scope, _uid_counter
+    _uid_scope, _uid_counter = name, itertools.count()
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)

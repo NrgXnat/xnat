@@ -183,7 +183,12 @@ class Cluster:
         out = self.exec(script, timeout=timeout)
         first, _, body = out.partition("\n")
         code_s, _, secs_s = first.strip().partition(" ")
-        return CurlResult(http=int(code_s or 0), secs=float(secs_s or 0.0), body=body)
+        try:
+            return CurlResult(http=int(code_s or 0), secs=float(secs_s or 0.0), body=body)
+        except ValueError:
+            # curl itself failed (unreadable data file, connection refused): no status line, just its
+            # message. Report it as HTTP 0 so the route's error names the cause instead of a parse error.
+            return CurlResult(http=0, secs=0.0, body=out.strip())
 
     # ---- metrics -------------------------------------------------------------
     # The NFS mount that contains the archive, whichever path it is mounted at: one export mounted

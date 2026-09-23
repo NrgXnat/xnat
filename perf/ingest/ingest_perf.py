@@ -27,6 +27,7 @@ from pathlib import Path
 
 import corpus
 import report
+import verify
 from k8s import Cluster
 from routes import ROUTES, Staged
 
@@ -207,6 +208,8 @@ def cmd_run(args) -> None:
                                 staged.inbox_pod_dir = restage_inbox(c, wl, local)
                             cell["started"] = _utc_now()   # window for matching the pod's timing lines to this cell
                             cell["phases"] = ROUTES[route](c, PROJECT, staged)
+                            if args.verify:   # what got archived, before the wipe takes it away
+                                cell["digests"] = verify.archived_digests(c, PROJECT)
                             cell["ok"] = True
                             break
                         except Exception as e:
@@ -265,6 +268,8 @@ def main() -> None:
     p.add_argument("--anon", default="none,site-header,site-pixel,project-header,project-pixel")
     p.add_argument("--reps", type=int, default=3)
     p.add_argument("--corpus", default=None, help="use real DICOM under this dir instead of synthesizing")
+    p.add_argument("--verify", action="store_true",
+                   help="record digests of the archived files, catalogs and session XML per cell (see verify.py)")
     p.add_argument("--out", default="results")
     p.set_defaults(fn=cmd_run)
     p = sub.add_parser("report")

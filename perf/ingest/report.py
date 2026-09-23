@@ -83,6 +83,12 @@ def compare(baseline_path: Path, candidate_path: Path, out: Path) -> str:
             lines.append(f"| {k[0]} | {k[1]} | {k[2]} | {ph} | {bp['wall']:.2f}→{cp['wall']:.2f} s "
                          f"({_delta(bp['wall'], cp['wall'])}) | {bp['nfs']:.1f}→{cp['nfs']:.1f} ({_delta(bp['nfs'], cp['nfs'])}) |")
 
+    if any(c.get("digests") for c in base["cells"] + cand["cells"]):
+        from verify import compare_digests   # here so a results-only use of this module needs no cluster plumbing
+        lines.append("\n## Output verification (archived files, catalog entries, session XML)\n")
+        lines.append("_same = every candidate rep's digest matches the baseline's; a difference names what changed._\n")
+        lines.extend(compare_digests(base["cells"], cand["cells"]))
+
     lines.append("\n---\n_Wall-clock is in-pod curl time (blocking phases) or server-side poll duration "
                  "(async phases, ±1 s). NFS MB = FSx serverwrite delta. Deltas are candidate vs baseline; "
                  "negative is faster/less._")

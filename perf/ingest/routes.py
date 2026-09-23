@@ -49,19 +49,6 @@ def _one_session(cluster: Cluster, project: str) -> tuple[str, str]:
     return rows[0]["timestamp"], rows[0]["folderName"]
 
 
-def _archive_phase(cluster: Cluster, project: str, ts_folder: dict[str, str]) -> dict:
-    """Archive the built prearchive session named by ``ts_folder`` and wait for the prearchive to drain."""
-    def archive() -> float:
-        t0 = time.monotonic()
-        r = cluster.archive_session(project, ts_folder["ts"], ts_folder["folder"])
-        if r.http >= 400:
-            raise RuntimeError(f"archive failed HTTP {r.http}: {r.body[:200]}")
-        cluster.wait_prearchive_empty(project)
-        return time.monotonic() - t0
-
-    return _phase(cluster, "archive", archive)
-
-
 def _build_and_archive(cluster: Cluster, project: str) -> list[dict]:
     """Shared tail for routes that land in the prearchive: explicit build, then archive (no idle wait)."""
     ts_folder: dict[str, str] = {}
@@ -78,7 +65,15 @@ def _build_and_archive(cluster: Cluster, project: str) -> list[dict]:
             raise RuntimeError(f"build failed HTTP {r.http}: {r.body[:200]}")
         return r.secs
 
-    return [_phase(cluster, "build", build), _archive_phase(cluster, project, ts_folder)]
+    def archive() -> float:
+        t0 = time.monotonic()
+        r = cluster.archive_session(project, ts_folder["ts"], ts_folder["folder"])
+        if r.http >= 400:
+            raise RuntimeError(f"archive failed HTTP {r.http}: {r.body[:200]}")
+        cluster.wait_prearchive_empty(project)
+        return time.monotonic() - t0
+
+    return [_phase(cluster, "build", build), _phase(cluster, "archive", archive)]
 
 
 # ---------------------------------------------------------------- routes
@@ -168,12 +163,23 @@ def route_direct(cluster: Cluster, project: str, s: Staged) -> list[dict]:
 
 
 def route_inbox(cluster: Cluster, project: str, s: Staged) -> list[dict]:
-    """Inbox: files already staged under inboxPath; POST import-handler=inbox (async). The importer
-    queues XNAT's own build once the last object has landed, so an explicit build request finds the
-    session locked (HTTP 409): the build phase here waits for that build to reach READY instead. It may
-    already be under way when receive returns, so the pod's ``Built DICOM session`` line is the
-    authoritative build time for this route."""
-    ts_folder: dict[str, str] = {}
+    """Inbox: files already staged under inboxPath; POST import-handler=inbox (async). The import
+    listener queues XNAT's own Rebuild once the last object has landed, and that handler queues the
+    project's auto-archive after the build, so this route can issue neither: an explicit build finds
+    the session locked (HTTP 409), and an explicit archive races the auto-archive for the lock (the
+    loser's failure path throws LazyInitializationException on the inbox import request and leaves
+    the session QUEUED_ARCHIVING for good). Build = waiting for the session to leave the building
+    states, archive = waiting for the auto-archive to drain it; the project must auto-archive. The
+    build may already be under way when receive returns, so the pod's ``Built DICOM session`` line
+    is the authoritative build time for this route."""
+    building = {"RECEIVING", "QUEUED_BUILDING", "BUILDING"}
+
+    def status() -> str:
+        rows = cluster.prearchive_rows(project)
+        s = rows[0].get("status", "") if rows else "GONE"
+        if s in ("ERROR", "CONFLICT"):
+            raise RuntimeError(f"inbox session ended in status {s}")
+        return s
 
     def receive() -> float:
         t0 = time.monotonic()
@@ -195,19 +201,20 @@ def route_inbox(cluster: Cluster, project: str, s: Staged) -> list[dict]:
     def build() -> float:
         t0 = time.monotonic()
         while time.monotonic() - t0 < 900:
-            rows = cluster.prearchive_rows(project)
-            if rows:
-                ts_folder["ts"], ts_folder["folder"] = rows[0]["timestamp"], rows[0]["folderName"]
-                status = rows[0].get("status", "")
-                if status == "READY":
-                    return time.monotonic() - t0
-                if status in ("ERROR", "CONFLICT"):
-                    raise RuntimeError(f"inbox session ended in status {status}")
+            if status() not in building:
+                return time.monotonic() - t0
             time.sleep(1.0)
-        raise RuntimeError("inbox session did not reach READY within 900s")
+        raise RuntimeError("inbox session did not finish building within 900s")
 
-    return [_phase(cluster, "receive", receive), _phase(cluster, "build", build),
-            _archive_phase(cluster, project, ts_folder)]
+    def archive() -> float:
+        t0 = time.monotonic()
+        while time.monotonic() - t0 < 900:
+            if status() == "GONE":
+                return time.monotonic() - t0
+            time.sleep(1.0)
+        raise RuntimeError("inbox session was not auto-archived within 900s")
+
+    return [_phase(cluster, "receive", receive), _phase(cluster, "build", build), _phase(cluster, "archive", archive)]
 
 
 ROUTES: dict[str, Callable[[Cluster, str, Staged], list[dict]]] = {

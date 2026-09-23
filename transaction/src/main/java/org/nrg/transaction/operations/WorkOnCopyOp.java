@@ -39,6 +39,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * When the replacement itself fails -- possible only on the non-atomic cross-filesystem fallback --
  * the source may already be damaged, so the staged file may be the only intact copy: rollback
  * leaves it in place, and the exception names where it is.
+ * <p>
+ * An operation may return without producing a staged version -- an anonymization that rejected or
+ * failed on the object reports that as its result rather than by throwing. Then there is nothing to
+ * put in the source's place, and the source stays as it was.
  */
 public final class WorkOnCopyOp<T> extends Transaction<T> {
     public WorkOnCopyOp(File source, File tempDir, CallOnFile<T> callOnFile) {
@@ -55,6 +59,9 @@ public final class WorkOnCopyOp<T> extends Transaction<T> {
             result = _callOnFile.call();
         } catch (Throwable e) {
             throw new TransactionException(e);
+        }
+        if (!_callOnFile.getFile().exists()) {
+            return result;
         }
         try {
             replace(_callOnFile.getFile().toPath(), _source.toPath());

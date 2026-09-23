@@ -639,7 +639,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
 
         final String url = buildURI(project, src);
 
-        log.info("Archived {} to {}: {}", prearcSession.getUrl(), url, timer);
+        PhaseTimer.LOG.info("Archived {} to {}: {}", prearcSession.getUrl(), url, timer);
         completed("archiving operation complete");
         return url;
     }

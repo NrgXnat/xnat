@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.Mizer;
 import org.nrg.dicom.mizer.service.MizerContext;
@@ -292,25 +293,72 @@ public class BaseMizerService implements MizerService {
         }
     }
 
+    /**
+     * All or nothing: every file is anonymized into a staged copy before any is put in its place. A
+     * failure on any one discards every staged copy and throws, so the batch is left as it was rather
+     * than partly anonymized, and running the script again later can't apply it twice to some of the
+     * files. The cost is room on the data volume for the anonymized copy of the whole batch at once,
+     * rather than of one file at a time.
+     * <p>
+     * A rejection isn't a failure: it comes back as a result, with the file untouched, for the caller
+     * to delete.
+     *
+     * @throws MizerException when any file fails to anonymize, in which case no file was changed. The
+     *                        exception is only thrown after some files were changed if putting a staged
+     *                        copy in place fails, and then it names the file whose copy is preserved.
+     */
     @Override
     public List<AnonymizationResult> anonymize(List<File> dicomFiles, String project, String subject, String session, long scriptId, String script, boolean record, boolean ignoreRejection) throws MizerException {
+        final List<WorkOnCopyOp<AnonymizationResult>> staged = new ArrayList<>();
+        boolean committed = false;
         try {
             List<AnonymizationResult> resultList = new ArrayList<>();
             MizerContextWithScript context = createContext( project, subject, session, scriptId, script, record, ignoreRejection);
             final Mizer mizer = findMizer(context);
             log.info("Found mizer for versions {}", Joiner.on(", ").join(mizer.getSupportedVersions()));
             mizer.setContext( context);
-            for( File dicomFile: dicomFiles) {
-                final CallOnFile<AnonymizationResult> callOnFile = new AnonymizeCallOnFileWithPixels(dicomFile, mizer, context);
-                final WorkOnCopyOp<AnonymizationResult> anonymizeOp = new WorkOnCopyOp<>(dicomFile, stagingDirectoryFor(dicomFile), callOnFile);
-                AnonymizationResult result = new TransactionRunner<AnonymizationResult>().runTransaction(anonymizeOp);
-                result.setAbsolutePath(dicomFile.getAbsolutePath());
-                resultList.add(result);
+            try {
+                for( File dicomFile: dicomFiles) {
+                    final CallOnFile<AnonymizationResult> callOnFile = new AnonymizeCallOnFileWithPixels(dicomFile, mizer, context);
+                    final WorkOnCopyOp<AnonymizationResult> anonymizeOp = new WorkOnCopyOp<>(dicomFile, stagingDirectoryFor(dicomFile), callOnFile);
+                    staged.add(anonymizeOp);
+                    AnonymizationResult result = anonymizeOp.stage();
+                    result.setAbsolutePath(dicomFile.getAbsolutePath());
+                    if (result instanceof AnonymizationResultError) {
+                        throw new MizerException("Unable to anonymize " + dicomFile + ", so none of the " + dicomFiles.size()
+                                                 + " files in this batch was changed: " + result.getMessage());
+                    }
+                    resultList.add(result);
+                }
+                for (final WorkOnCopyOp<AnonymizationResult> anonymizeOp : staged) {
+                    anonymizeOp.commit();
+                }
+                committed = true;
+            } finally {
+                mizer.removeContext( context);
             }
-            mizer.removeContext( context);
             return resultList;
-        } catch (RollbackException | TransactionException e) {
+        } catch (TransactionException e) {
             throw new MizerException(e);
+        } finally {
+            if (!committed) {
+                discard(staged);
+            }
+        }
+    }
+
+    /**
+     * Removes the staged copies still there after a batch didn't finish: all of them when staging
+     * failed, the ones not yet in place when putting one in place failed. A copy whose replacement
+     * failed is kept, since it may be the only intact version of its file.
+     */
+    private static void discard(final List<WorkOnCopyOp<AnonymizationResult>> staged) {
+        for (final WorkOnCopyOp<AnonymizationResult> anonymizeOp : staged) {
+            try {
+                anonymizeOp.rollback();
+            } catch (RollbackException e) {
+                log.warn("Unable to remove a staged anonymization file", e);
+            }
         }
     }
 

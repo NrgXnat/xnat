@@ -19,6 +19,7 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
@@ -42,6 +43,7 @@ import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.services.messaging.archive.DirectArchiveRequest;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
@@ -135,19 +137,23 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     @Override
-    public void delete(long id, UserI user)
+    public void delete(long id, UserI user, boolean force)
             throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
         final SessionData session = directArchiveSessionHibernateService.getSessionData(id);
         if (!Permissions.canDeleteProject(user, session.getProject())) {
             throw new InvalidPermissionException(session.getProject());
         }
-        // Same guard as triggerArchive: files still landing in the directory would recreate it behind the delete
-        if (PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
-            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Cannot delete direct archive session " +
-                    session.getSessionDataTriple() + " while it is still receiving files");
+        if (force && !Roles.isSiteAdmin(user)) {
+            throw new InvalidPermissionException("Only a site administrator can force the deletion of a direct archive session");
         }
+        // Same guard as triggerArchive: files still landing in the directory would recreate it behind the delete
+        refuseWhileReceiving(session, false);
 
-        claimForDeletion(id);
+        claimForDeletion(id, force);
+        // The importer decides the session is RECEIVING before it takes its file lock, so a file can still be on its
+        // way in when the claim lands; it re-checks the status under the lock, so a lock seen now is one that will
+        // either finish writing or back off. The claim stands: the next delete of this session will retry it.
+        refuseWhileReceiving(session, true);
         try {
             if (ownsSessionDirectory(session)) {
                 deleteSessionFiles(session);
@@ -164,16 +170,44 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         directArchiveSessionHibernateService.delete(id);
     }
 
+    /** 409 while lock files show the importer at work; after the claim the message says the delete can be retried. */
+    private static void refuseWhileReceiving(SessionData session, boolean claimed) throws ClientException {
+        if (PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
+            if (claimed) {
+                log.info("DirectArchiveSession id={} {} was claimed for deletion while a file was still landing; leaving it DELETING for a retry",
+                        session.getId(), session.getSessionDataTriple());
+            }
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Cannot delete direct archive session " +
+                    session.getSessionDataTriple() + " while it is still receiving files" +
+                    (claimed ? "; it has been claimed for deletion and can be deleted once the files have landed" : ""));
+        }
+    }
+
     /**
      * Claims the session before anything on the filesystem is touched: the importer stops appending to a session that
      * is no longer RECEIVING, the archive trigger only queues RECEIVING and ERROR sessions, and a session the archiver
-     * is already working on cannot be claimed at all.
+     * is already working on cannot be claimed unless the delete is forced.
      */
-    private void claimForDeletion(long id) throws NotFoundException, ClientException {
+    private void claimForDeletion(long id, boolean force) throws NotFoundException, ClientException {
         try {
-            directArchiveSessionHibernateService.setStatusToDeleting(id);
+            directArchiveSessionHibernateService.setStatusToDeleting(id, force);
         } catch (ArchivingException e) {
             throw new ClientException(Status.CLIENT_ERROR_CONFLICT, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void requireReceiving(SessionData session) throws ClientException {
+        final PrearcStatus status;
+        try {
+            status = directArchiveSessionHibernateService.getSessionData(session.getId()).getStatus();
+        } catch (NotFoundException e) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Direct archive session " +
+                    session.getSessionDataTriple() + " was deleted while this file was being received", e);
+        }
+        if (status != PrearcStatus.RECEIVING) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Direct archive session " +
+                    session.getSessionDataTriple() + " is no longer receiving files (" + status + ")");
         }
     }
 
@@ -281,7 +315,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             }
         }
         if(!created) {
-            if(session.getStatus() != PrearcUtils.PrearcStatus.RECEIVING) {
+            if(session.getStatus() != PrearcStatus.RECEIVING) {
                 throw new ArchivingException("Cannot direct archive additional files for session " + session.getSessionDataTriple() +
                                              " because it is no longer in receiving state (" + session.getStatus() + ")");
             }

@@ -345,7 +345,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
             final File sessionFolder = new File(session.getUrl());
             final File outputFile = getSafeFile(sessionFolder, scan, name, dataset,
                     Boolean.parseBoolean((String) _parameters.get(RENAME_PARAM)));
-            outputFile.getParentFile().mkdirs();
 
             final PrearcUtils.PrearcFileLock lock;
             try {
@@ -359,6 +358,13 @@ public class GradualDicomImporter extends ImporterHandlerA {
             }
 
             try {
+                if (_directArchive) {
+                    // The status check in getOrCreate ran before this lock was taken. A delete claims the session and
+                    // then looks for locks, so only a check made under the lock guarantees the directory is not about
+                    // to be removed; nothing is created in the session directory until it passes (XNAT-7944).
+                    _directArchiveSessionService.requireReceiving(session);
+                }
+                outputFile.getParentFile().mkdirs();
                 try {
                     // Split FMI from dataset before writing (dcm4che5 requires them separate for i/o)
                     final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(dataset);

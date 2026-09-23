@@ -2,6 +2,7 @@ package org.nrg.xnat.archive.xapi;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -61,10 +62,17 @@ public class DirectArchiveSessionApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(path="{id}", method = DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Delete direct archive session")
-    public ResponseEntity<Void> delete(@PathVariable long id)
+    @ApiOperation(value = "Delete direct archive session",
+                  notes = "Removes the session's tracking row and, when the archive directory belongs to this session " +
+                          "alone, its files. Refused with 409 while the session is receiving files or being archived. " +
+                          "A site admin may pass force=true to delete a session left in a queued, building or archiving " +
+                          "status; nothing verifies the archiver has given up on it, so forcing a session that is really " +
+                          "being archived can leave a half-saved experiment. Files still landing are refused regardless.")
+    public ResponseEntity<Void> delete(@PathVariable long id,
+                                       @ApiParam("Claim the session whatever its status (site admins only; see notes)")
+                                       @RequestParam(required = false, defaultValue = "false") boolean force)
             throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
-        directArchiveSessionService.delete(id, getSessionUser());
+        directArchiveSessionService.delete(id, getSessionUser(), force);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

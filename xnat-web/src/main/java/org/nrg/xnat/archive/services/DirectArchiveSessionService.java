@@ -22,7 +22,28 @@ public interface DirectArchiveSessionService {
      * {@link ClientException} while the session is still receiving files or the archiver is working on it; if the
      * files cannot be removed the row is left in ERROR and a {@link ServerException} is thrown.
      */
-    void delete(long id, UserI sessionUser) throws InvalidPermissionException, NotFoundException, ClientException, ServerException;
+    default void delete(long id, UserI sessionUser) throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
+        delete(id, sessionUser, false);
+    }
+
+    /**
+     * As {@link #delete(long, UserI)}; with {@code force}, which only a site admin may set, the session is claimed
+     * whatever its status. This is for rows left in a queued, building or archiving status by a failure or a restart,
+     * which nothing else moves on. Nothing checks that the archiver has really given up: forcing a session that is
+     * still being built or archived can leave a half-saved experiment or a build failing on missing files, so check
+     * the row's timestamp and the logs first. Files still landing are refused whatever the flag says.
+     */
+    void delete(long id, UserI sessionUser, boolean force) throws InvalidPermissionException, NotFoundException, ClientException, ServerException;
+
+    /**
+     * For the importer, once it holds the file lock for a session: confirms the session is still RECEIVING. Its
+     * earlier check in {@link #getOrCreate} runs before the lock is taken, and a delete claims the session and then
+     * looks for locks, so only a check made under the lock can guarantee the file is not written into a directory
+     * the delete is about to remove.
+     *
+     * @throws ClientException 409 when the session has been claimed for deletion, has moved on, or is gone
+     */
+    void requireReceiving(SessionData session) throws ClientException;
 
     void touch(SessionData session) throws NotFoundException;
 

@@ -27,6 +27,7 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
@@ -54,8 +55,10 @@ import static org.mockito.Mockito.when;
 /**
  * XNAT-7944: deleting a direct archive session through the user-facing API must remove the session's files from the
  * archive directory, not just the tracking row. The session is claimed (moved to DELETING) before any file is touched,
- * so a session the archiver is working on is refused, and the directory is left alone when it belongs to something
- * other than the session being deleted. The archive trigger, in turn, must not queue a session a delete has claimed.
+ * so a session the archiver is working on is refused unless a site admin forces it, and the directory is left alone
+ * when it belongs to something other than the session being deleted. Files still landing are checked both before and
+ * after the claim, because the importer decides the session is RECEIVING before it takes its file lock. The archive
+ * trigger, in turn, must not queue a session a delete has claimed, and the importer must not write into one.
  */
 public class DirectArchiveSessionServiceImplDeleteTest {
     private static final long   SESSION_ID = 42L;
@@ -69,6 +72,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     private DirectArchiveSessionServiceImpl      service;
     private UserI                                user;
     private MockedStatic<Permissions>            mockedPermissions;
+    private MockedStatic<Roles>                  mockedRoles;
     private MockedStatic<XDAT>                   mockedXDAT;
     private MockedStatic<PrearcUtils>            mockedPrearcUtils;
     private MockedStatic<BaseXnatExperimentdata> mockedExperiments;
@@ -95,6 +99,8 @@ public class DirectArchiveSessionServiceImplDeleteTest {
 
         mockedPermissions = Mockito.mockStatic(Permissions.class);
         mockedPermissions.when(() -> Permissions.canDeleteProject(user, PROJECT)).thenReturn(true);
+        mockedRoles = Mockito.mockStatic(Roles.class);
+        mockedRoles.when(() -> Roles.isSiteAdmin(user)).thenReturn(false);
         // No backup-to-cache: MoveToCache deletes outright.
         mockedXDAT = Mockito.mockStatic(XDAT.class);
         mockedXDAT.when(() -> XDAT.getBoolSiteConfigurationProperty("backupDeletedToCache", false)).thenReturn(false);
@@ -110,6 +116,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         mockedExperiments.closeOnDemand();
         mockedPrearcUtils.closeOnDemand();
         mockedXDAT.closeOnDemand();
+        mockedRoles.closeOnDemand();
         mockedPermissions.closeOnDemand();
         archiveDirectory.setWritable(true);
     }
@@ -168,7 +175,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     @Test
     public void aSessionThatCannotBeClaimedIsRefusedWithConflict() throws Exception {
         when(hibernateService.getSessionData(SESSION_ID)).thenReturn(sessionIn(PrearcStatus.ARCHIVING));
-        doThrow(new ArchivingException("not deletable")).when(hibernateService).setStatusToDeleting(SESSION_ID);
+        doThrow(new ArchivingException("not deletable")).when(hibernateService).setStatusToDeleting(SESSION_ID, false);
 
         assertThatThrownBy(() -> service.delete(SESSION_ID, user))
                 .isInstanceOfSatisfying(ClientException.class,
@@ -190,8 +197,91 @@ public class DirectArchiveSessionServiceImplDeleteTest {
                                         e -> assertThat(e.getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
 
         assertFilesIntact();
-        verify(hibernateService, never()).setStatusToDeleting(anyLong());
+        verify(hibernateService, never()).setStatusToDeleting(anyLong(), anyBoolean());
         verify(hibernateService, never()).delete(anyLong());
+    }
+
+    @Test
+    public void aSessionThatStartsReceivingAfterItIsClaimedIsRefusedAndLeftClaimed() throws Exception {
+        // The importer checks the status before it takes its file lock, so a file can be on its way in when the
+        // claim lands. The lock check is repeated after the claim; the claim stands so the next delete can retry.
+        stubDeletableSession();
+        mockedPrearcUtils.when(() -> PrearcUtils.isSessionReceiving(any())).thenReturn(false, true);
+
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user))
+                .isInstanceOfSatisfying(ClientException.class,
+                                        e -> assertThat(e.getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
+
+        assertFilesIntact();
+        verify(hibernateService).setStatusToDeleting(SESSION_ID, false);
+        verify(hibernateService, never()).setStatusToError(anyLong(), any());
+        verify(hibernateService, never()).delete(anyLong());
+    }
+
+    @Test
+    public void forcingADeleteRequiresASiteAdmin() throws Exception {
+        stubDeletableSession(sessionIn(PrearcStatus.ARCHIVING));
+
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user, true)).isInstanceOf(InvalidPermissionException.class);
+
+        assertFilesIntact();
+        verify(hibernateService, never()).setStatusToDeleting(anyLong(), anyBoolean());
+        verify(hibernateService, never()).delete(anyLong());
+    }
+
+    @Test
+    public void forcingDoesNotBypassTheReceivingGuard() throws Exception {
+        // Files still landing would recreate the directory whatever the row's status says.
+        stubDeletableSession(sessionIn(PrearcStatus.ARCHIVING));
+        mockedRoles.when(() -> Roles.isSiteAdmin(user)).thenReturn(true);
+        mockedPrearcUtils.when(() -> PrearcUtils.isSessionReceiving(any())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user, true))
+                .isInstanceOfSatisfying(ClientException.class,
+                                        e -> assertThat(e.getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
+
+        assertFilesIntact();
+        verify(hibernateService, never()).setStatusToDeleting(anyLong(), anyBoolean());
+        verify(hibernateService, never()).delete(anyLong());
+    }
+
+    @Test
+    public void aSiteAdminCanForceDeleteASessionTheArchiverLeftBehind() throws Exception {
+        // Rows stuck in a queued, building or archiving status have no other way out.
+        stubDeletableSession(sessionIn(PrearcStatus.ARCHIVING));
+        mockedRoles.when(() -> Roles.isSiteAdmin(user)).thenReturn(true);
+
+        service.delete(SESSION_ID, user, true);
+
+        assertFilesGone();
+        verify(hibernateService).setStatusToDeleting(SESSION_ID, true);
+        verify(hibernateService).delete(SESSION_ID);
+    }
+
+    @Test
+    public void aFileMayLandWhileTheSessionIsStillReceiving() throws Exception {
+        stubDeletableSession(sessionIn(PrearcStatus.RECEIVING));
+
+        service.requireReceiving(sessionIn(PrearcStatus.RECEIVING));
+    }
+
+    @Test
+    public void aFileIsRefusedOnceADeleteHasClaimedTheSession() throws Exception {
+        // The importer's status check ran before its file lock; under the lock the row now says DELETING.
+        stubDeletableSession(sessionIn(PrearcStatus.DELETING));
+
+        assertThatThrownBy(() -> service.requireReceiving(sessionIn(PrearcStatus.RECEIVING)))
+                .isInstanceOfSatisfying(ClientException.class,
+                                        e -> assertThat(e.getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
+    }
+
+    @Test
+    public void aFileIsRefusedWhenTheSessionRowIsAlreadyGone() throws Exception {
+        when(hibernateService.getSessionData(SESSION_ID)).thenThrow(new NotFoundException("gone"));
+
+        assertThatThrownBy(() -> service.requireReceiving(sessionIn(PrearcStatus.RECEIVING)))
+                .isInstanceOfSatisfying(ClientException.class,
+                                        e -> assertThat(e.getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
     }
 
     @Test
@@ -202,7 +292,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(InvalidPermissionException.class);
 
         assertFilesIntact();
-        verify(hibernateService, never()).setStatusToDeleting(anyLong());
+        verify(hibernateService, never()).setStatusToDeleting(anyLong(), anyBoolean());
         verify(hibernateService, never()).delete(anyLong());
     }
 

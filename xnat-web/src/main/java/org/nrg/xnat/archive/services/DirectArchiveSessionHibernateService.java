@@ -38,10 +38,14 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
 
     /**
      * Claims a session for deletion: allowed from RECEIVING, ERROR and DELETING (so an interrupted delete can be
-     * retried), refused with {@link ArchivingException} while the session is queued, building or archiving. Once
-     * claimed, the importer no longer appends files to it and the archive trigger no longer queues it.
+     * retried), refused with {@link ArchivingException} while the session is queued, building or archiving unless
+     * {@code force} is set, which claims it from any status. Once claimed, the importer no longer appends files to it
+     * and the archive trigger no longer queues it. The claim is a single conditional update, so a concurrent
+     * transition on the same row cannot overwrite it.
+     *
+     * @param force Claim the session whatever its status; for rows the archiver left behind
      */
-    void setStatusToDeleting(long id) throws NotFoundException, ArchivingException;
+    void setStatusToDeleting(long id, boolean force) throws NotFoundException, ArchivingException;
 
     void setStatusToError(long id, Exception e) throws NotFoundException;
     /**

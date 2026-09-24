@@ -30,6 +30,7 @@ from pathlib import Path
 
 import merge_results
 import report
+from k8s import Cluster
 from measure_lock import MeasureLock
 
 HERE = Path(__file__).resolve().parent
@@ -133,6 +134,9 @@ class Instance:
             cmd += ["--wheels", str(Path(self.plan["wheels"]).expanduser())]
         return self._run(cmd, log)
 
+    def cluster(self) -> Cluster:
+        return Cluster(self.ctx, self.ns, self.pod, self.plan.get("user", "admin"), self.plan.get("password", "admin"))
+
     def pod_timing(self, since: str, dest: Path) -> None:
         r = self._kubectl("logs", self.pod, "-c", "xnat", f"--since-time={since}", "--timestamps", timeout=300)
         keep = ("Built DICOM session", "Merged ", "Archived ", "Direct-archived", "Stored ")
@@ -168,10 +172,32 @@ def run_block(plan: dict, entry: dict, dry_run: bool) -> bool:
     if inst.harness(["setup"], log) != 0:
         say(f"{ns}: setup failed on {tag}; see {log}")
         return False
+
+    # The builds under test stage anonymized files at the data root a file sits under, and fall back to the
+    # temp directory (a copy, as before) without a word when the site configuration's roots don't match
+    # where the files are. So check the roots, and check the staging directory appears where it should,
+    # before measuring anything: a silent fallback would make a build look like its baseline.
+    c = inst.cluster()
+    roots = c.data_roots()
+    archive, prearchive = roots["archivePath"], roots["prearchivePath"]
+    if not archive["mount"] or archive["mount"] != prearchive["mount"]:
+        say(f"{ns}: archive {archive} and prearchive {prearchive} are not on one mount; not measuring")
+        return False
+    staging_roots = [archive["path"], prearchive["path"]]
+    expects_staging = bool(spec.get("stages_on_volume"))
+    staging = {"roots": roots, "expects_staging": expects_staging}
+    with MeasureLock(plan["lock"]).busy():
+        c.clear_staging(staging_roots)
     if warm:
         inst.harness(["run", "--label", f"{plan['prefix']}-warmup-{ns}-r{entry['round']}", "--reps", "1",
                       "--out", str(out / "warmup"), "--workloads", warm["workloads"], "--routes", warm["routes"],
                       "--anon", warm["anon"]], log)
+        staging["after_warmup"] = c.staging_present(staging_roots)
+        if not _staging_as_expected(ns, leg, expects_staging, staging["after_warmup"], "the warm-up"):
+            (out / f"{label}.staging.json").write_text(json.dumps(staging, indent=2))
+            return False
+        with MeasureLock(plan["lock"]).busy():
+            c.clear_staging(staging_roots)
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     say(f"{ns}: running {label}")
     ok = True
@@ -180,14 +206,33 @@ def run_block(plan: dict, entry: dict, dry_run: bool) -> bool:
             ok = False
             say(f"{ns}: {label} invocation failed ({' '.join(a[7:13])}); see {log}")
     inst.pod_timing(started, out / f"{label}-timing.log")
+    staging["after_block"] = c.staging_present(staging_roots)
+    (out / f"{label}.staging.json").write_text(json.dumps(staging, indent=2))
+    ok = _staging_as_expected(ns, leg, expects_staging, staging["after_block"], label) and ok
     results = out / f"{label}.json"
-    failed = [c for c in report.load(results).get("cells", []) if not c.get("ok")] if results.exists() else ["missing"]
+    failed = [x for x in report.load(results).get("cells", []) if not x.get("ok")] if results.exists() else ["missing"]
     if ok and not failed:
         marker.write_text(started + "\n")
         say(f"{ns}: {label} complete")
         return True
     say(f"{ns}: {label} incomplete ({len(failed)} failed cells); a rerun resumes it")
     return False
+
+
+def _staging_as_expected(ns: str, leg: str, expected: bool, present: dict[str, bool], when: str) -> bool:
+    """A leg that stages beside the data must have made a staging directory under a data root during a run
+    with project scripts; one that doesn't must not have. Missing on one root only is reported, not fatal:
+    the other root's anonymization may not have run in that window."""
+    made = [p for p, yes in present.items() if yes]
+    if expected and not made:
+        say(f"{ns}: leg {leg} made no staging directory under {sorted(present)} during {when}: it fell back to "
+            f"the temp directory, so its numbers would be the old copy path; not counting it")
+        return False
+    if expected and len(made) < len(present):
+        say(f"{ns}: leg {leg} staged under {made} but not {[p for p in present if p not in made]} during {when}")
+    if not expected and made:
+        say(f"{ns}: leg {leg} is not expected to stage beside the data, yet {made} appeared during {when}")
+    return True
 
 
 def run(plan: dict, dry_run: bool) -> int:

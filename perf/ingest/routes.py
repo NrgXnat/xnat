@@ -35,7 +35,8 @@ def _phase(cluster: Cluster, name: str, fn: Callable[[], float | None]) -> dict:
 
     ``nfs_ops`` counts the NFS operations the phase caused on the archive mount and ``nfs_rtt_ms`` is their
     mean round trip: how many times the phase went to the storage, and how fast the storage answered.
-    ``nfs_op_rtt_ms`` breaks that down for the busiest operations as ``[count, mean ms]``."""
+    ``nfs_op_rtt_ms`` breaks that down per operation as ``[count, mean ms]``; its RENAME count, for one,
+    shows whether a build put files in place by rename or by copy."""
     m0 = cluster.metrics()
     t0 = time.monotonic()
     wall = fn()
@@ -53,8 +54,8 @@ def _phase(cluster: Cluster, name: str, fn: Callable[[], float | None]) -> dict:
         total_ops = sum(n for n, _ in deltas.values())
         record["nfs_ops"] = total_ops
         record["nfs_rtt_ms"] = round(sum(r for _, r in deltas.values()) / total_ops, 3) if total_ops else None
-        busiest = sorted(deltas.items(), key=lambda kv: -kv[1][0])[:8]
-        record["nfs_op_rtt_ms"] = {op: [n, round(r / n, 3)] for op, (n, r) in busiest}
+        by_count = sorted(deltas.items(), key=lambda kv: -kv[1][0])
+        record["nfs_op_rtt_ms"] = {op: [n, round(r / n, 3)] for op, (n, r) in by_count}
     return record
 
 

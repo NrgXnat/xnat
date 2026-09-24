@@ -253,7 +253,39 @@ class Cluster:
         except Exception:
             pass
         facts["pod_clock_offset_s"] = self.pod_clock_offset()
+        try:
+            facts["data_roots"] = self.data_roots()
+        except Exception as e:
+            facts["data_roots"] = f"? ({str(e)[:80]})"
         return facts
+
+    STAGING_DIR = ".xnat-tmp"
+
+    def data_roots(self) -> dict[str, dict]:
+        """The archive, prearchive and cache paths from XNAT's site configuration, each with the mount point
+        and filesystem type it sits on. A build that stages anonymized files beside the data finds its data
+        roots here, not in the mount layout, so a mismatch between the two quietly changes what is measured."""
+        roots = {}
+        for name in ("archivePath", "prearchivePath", "cachePath"):
+            path = self.curl("GET", f"/xapi/siteConfig/{name}").body.strip().strip('"').rstrip("/")
+            mount, fstype = "", ""
+            if path:
+                out = self.exec(f"df -PT {shlex.quote(path)} 2>/dev/null | awk 'NR==2{{print $7, $2}}'").split()
+                if len(out) == 2:
+                    mount, fstype = out
+            roots[name] = {"path": path, "mount": mount, "fstype": fstype}
+        return roots
+
+    def clear_staging(self, paths: list[str]) -> None:
+        """Remove the staging directory a build leaves at each data root, so the next run shows whether it
+        makes one again."""
+        self.exec("; ".join(f"rm -rf {shlex.quote(p.rstrip('/') + '/' + self.STAGING_DIR)}" for p in paths) + "; true")
+
+    def staging_present(self, paths: list[str]) -> dict[str, bool]:
+        out = self.exec("; ".join(f"test -d {shlex.quote(p.rstrip('/') + '/' + self.STAGING_DIR)} && echo {i}=1 || echo {i}=0"
+                                  for i, p in enumerate(paths)))
+        flags = dict(t.split("=", 1) for t in out.split() if "=" in t)
+        return {p: flags.get(str(i)) == "1" for i, p in enumerate(paths)}
 
     # ---- XNAT facts ----------------------------------------------------------
     def build_sha(self) -> str:

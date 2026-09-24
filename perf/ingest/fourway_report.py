@@ -130,6 +130,25 @@ def build(legs: list[tuple[str, dict]]) -> str:
     else:
         lines.append("_No NFS operation counts recorded._")
 
+    lines.append("\n## NFS renames per cell with a script, median\n")
+    lines.append("_A build that stages anonymized files beside the data puts them in place by rename; one that stages "
+                 "in the temp directory copies them back. Renames near the object count on a script cell mean the "
+                 "staging ran; none means that leg copied._\n")
+    renames = {n: defaultdict(list) for n in names}
+    for n, d in legs:
+        for c in d["cells"]:
+            if c.get("ok") and c["anon"] != "none" and any("nfs_op_rtt_ms" in p for p in c.get("phases", [])):
+                renames[n][cell_key(c)].append(sum(p.get("nfs_op_rtt_ms", {}).get("RENAME", [0])[0] for p in c["phases"]))
+    rkeys = sorted(set().union(*(set(r) for r in renames.values())))
+    if rkeys:
+        lines.append("| workload | route | anon | " + " | ".join(names) + " |")
+        lines.append("|---|---|---|" + "---|" * len(names))
+        for k in rkeys:
+            vals = [f"{statistics.median(renames[n][k]):.0f}" if renames[n].get(k) else "–" for n in names]
+            lines.append(f"| {k[0]} | {k[1]} | {k[2]} | " + " | ".join(vals) + " |")
+    else:
+        lines.append("_No per-operation NFS counts recorded._")
+
     lines.append("\n## Storage conditions: mean NFS round trip per phase, ms\n")
     lines.append(f"_Over phases with at least {MIN_OPS} NFS operations. Similar figures across legs and instances "
                  "mean they were measured under similar storage conditions._\n")

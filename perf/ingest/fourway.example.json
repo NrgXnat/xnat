@@ -10,8 +10,8 @@
   "legs": {
     "A": {"tag": "1.10.1"},
     "B": {"tag": "1.10.2-develop-2026.09.24-SNAPSHOT"},
-    "C": {"tag": "1.10.2-ingest-io-2026.09.24-SNAPSHOT"},
-    "D": {"tag": "1.10.2-archive-phase-2026.09.24.18-SNAPSHOT"}
+    "C": {"tag": "1.10.2-ingest-io-2026.09.24-SNAPSHOT", "stages_on_volume": true},
+    "D": {"tag": "1.10.2-archive-phase-2026.09.24.18-SNAPSHOT", "stages_on_volume": true}
   },
   "rounds": [
     ["A", "A", "A", "A"],

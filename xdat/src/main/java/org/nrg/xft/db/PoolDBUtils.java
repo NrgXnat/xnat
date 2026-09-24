@@ -360,6 +360,23 @@ public class PoolDBUtils {
 		con.executeNonSelectQuery(query,db,userName);
 	}
 
+	/**
+	 * Executes the query with a pooled connection and closes the connection, letting every SQL error through.
+	 * {@link #ExecuteNonSelectQuery} tolerates a few (a missing column or table, the metadata relation before
+	 * it exists), which a caller that runs several statements as one, and must know whether all of them ran,
+	 * cannot afford.
+	 *
+	 * @param query The query to execute.
+	 */
+	public static void ExecuteOrThrow(final String query) throws SQLException, DBPoolException {
+		final PoolDBUtils con = new PoolDBUtils();
+		try (final Statement statement = con.getStatement()) {
+			statement.execute(query);
+		} finally {
+			con.closeConnection();
+		}
+	}
+
 	public static void ExecuteBatch(List<String> queries,String db, String userName) throws SQLException,Exception
 	{
 		PoolDBUtils con = new PoolDBUtils();

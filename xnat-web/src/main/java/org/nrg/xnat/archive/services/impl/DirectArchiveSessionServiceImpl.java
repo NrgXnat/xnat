@@ -455,7 +455,32 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         if (force && !Roles.isSiteAdmin(user)) {
             throw new InvalidPermissionException("Only a site administrator can force a direct archive session back into the build queue");
         }
+        refuseIfArchivedExperimentOwnsDirectory(session);
         queueForBuild(session, force);
+    }
+
+    /**
+     * A session that is not a merge and whose directory already belongs to a saved experiment is a leftover of an
+     * archive that failed after saving (or of a failed move to the prearchive). Archiving it again would either move
+     * the experiment's files into the prearchive or save a duplicate, so it is refused; deleting the session is the
+     * way out and keeps the files. Merge sessions write into an archived experiment's directory by design and are
+     * exempt. The scheduled trigger does not come through here.
+     */
+    private void refuseIfArchivedExperimentOwnsDirectory(SessionData session) throws ClientException, ServerException {
+        if (!isArchivedExperimentDirectory(session)) {
+            return;
+        }
+        final String overwriteMode;
+        try {
+            overwriteMode = directArchiveSessionHibernateService.getOverwriteMode(session.getId());
+        } catch (NotFoundException e) {
+            throw new ServerException("DirectArchiveSession id=" + session.getId() + " disappeared while checking its overwrite mode", e);
+        }
+        if (StringUtils.isBlank(overwriteMode)) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Refusing to queue DirectArchiveSession id=" + session.getId() +
+                                      " for building: an archived experiment already owns " + session.getUrl() +
+                                      "; delete the session instead (a forced delete keeps the files)");
+        }
     }
 
     private void queueForBuild(@Nonnull SessionData session, boolean force) throws ClientException, ServerException {

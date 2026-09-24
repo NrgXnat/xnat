@@ -10,6 +10,8 @@ import org.springframework.jms.core.JmsTemplate;
 
 import org.nrg.action.ClientException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
@@ -26,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -45,6 +48,7 @@ public class DirectArchiveSessionServiceImplTriggerTest {
     private MockedStatic<Roles>                  mockedRoles;
     private MockedStatic<XDAT>                   mockedXDAT;
     private MockedStatic<PrearcUtils>            mockedPrearcUtils;
+    private MockedStatic<BaseXnatExperimentdata> mockedExperiments;
 
     @Before
     public void setUp() {
@@ -61,10 +65,14 @@ public class DirectArchiveSessionServiceImplTriggerTest {
         mockedXDAT = Mockito.mockStatic(XDAT.class);
         mockedPrearcUtils = Mockito.mockStatic(PrearcUtils.class);
         mockedPrearcUtils.when(() -> PrearcUtils.isSessionReceiving(any())).thenReturn(false);
+        // No archived experiment owns the session directory unless a test says so
+        mockedExperiments = Mockito.mockStatic(BaseXnatExperimentdata.class);
+        mockedExperiments.when(() -> BaseXnatExperimentdata.GetExptByProjectIdentifier(any(), any(), any(), anyBoolean())).thenReturn(null);
     }
 
     @After
     public void tearDown() {
+        mockedExperiments.closeOnDemand();
         mockedPrearcUtils.closeOnDemand();
         mockedXDAT.closeOnDemand();
         mockedRoles.closeOnDemand();
@@ -95,6 +103,48 @@ public class DirectArchiveSessionServiceImplTriggerTest {
         assertThatCode(() -> service.triggerArchive(session, user, false)).doesNotThrowAnyException();
 
         verify(hibernateService).setStatusToQueuedBuilding(SESSION_ID, false);
+    }
+
+    @Test
+    public void aManualRetryIsRefusedWhenAnArchivedExperimentOwnsTheDirectory() throws Exception {
+        givenAnArchivedExperimentOwnsTheDirectory();
+
+        assertThatThrownBy(() -> service.triggerArchive(session, user, false))
+                .isInstanceOf(ClientException.class)
+                .satisfies(e -> org.assertj.core.api.Assertions.assertThat(((ClientException) e).getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
+
+        verify(hibernateService, never()).setStatusToQueuedBuilding(anyLong(), anyBoolean());
+        mockedXDAT.verify(() -> XDAT.sendJmsRequest(any(), any()), never());
+    }
+
+    @Test
+    public void aForcedRetryIsRefusedWhenAnArchivedExperimentOwnsTheDirectory() throws Exception {
+        mockedRoles.when(() -> Roles.isSiteAdmin(user)).thenReturn(true);
+        givenAnArchivedExperimentOwnsTheDirectory();
+
+        assertThatThrownBy(() -> service.triggerArchive(session, user, true))
+                .isInstanceOf(ClientException.class)
+                .satisfies(e -> org.assertj.core.api.Assertions.assertThat(((ClientException) e).getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
+
+        verify(hibernateService, never()).setStatusToQueuedBuilding(anyLong(), anyBoolean());
+        mockedXDAT.verify(() -> XDAT.sendJmsRequest(any(), any()), never());
+    }
+
+    @Test
+    public void aMergeSessionMayBeRetriedAlthoughAnArchivedExperimentOwnsTheDirectory() throws Exception {
+        givenAnArchivedExperimentOwnsTheDirectory();
+        when(hibernateService.getOverwriteMode(SESSION_ID)).thenReturn("append");
+        when(hibernateService.setStatusToQueuedBuilding(SESSION_ID, false)).thenReturn(true);
+
+        assertThatCode(() -> service.triggerArchive(session, user, false)).doesNotThrowAnyException();
+
+        verify(hibernateService).setStatusToQueuedBuilding(SESSION_ID, false);
+    }
+
+    private void givenAnArchivedExperimentOwnsTheDirectory() throws Exception {
+        final XnatExperimentdata archived = mock(XnatExperimentdata.class);
+        mockedExperiments.when(() -> BaseXnatExperimentdata.GetExptByProjectIdentifier(eq("PROJ"), eq("SESSION_1"), any(), anyBoolean())).thenReturn(archived);
+        when(hibernateService.getOverwriteMode(SESSION_ID)).thenReturn(null);
     }
 
     @Test

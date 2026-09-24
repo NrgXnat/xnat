@@ -1,12 +1,12 @@
 """In-cluster driver plumbing for the ingest performance suite.
 
-All timed data-path work runs *inside* the XNAT pod (or a sender pod), so the kube API tunnel never
+All timed data-path work runs *inside* the XNAT pod (or a sender pod), so the kube API connection never
 sits in the measured path. The orchestrator (this process) only issues ``kubectl exec``/``cp`` control
 calls and parses JSON returned from in-pod ``curl``.
 
-Metrics come from the pod, not the block layer: NFS writes to FSx are counted from
+Metrics come from the pod, not the block layer: NFS writes are counted from
 ``/proc/self/mountstats`` ``bytes:`` field 6 (server write bytes) on the archive mount — the archive,
-prearchive and cache mounts share one FSx export and report identical aggregate stats, so read one —
+prearchive and cache mounts share one NFS export and report identical aggregate stats, so read one —
 and app-level write bytes from ``/proc/1/io`` ``wchar``.
 """
 from __future__ import annotations
@@ -24,20 +24,20 @@ from dataclasses import dataclass
 @dataclass
 class CurlResult:
     http: int
-    secs: float          # curl's own time_total, measured in-pod (no tunnel)
+    secs: float          # curl's own time_total, measured in-pod (no API hop)
     body: str
 
 
 @dataclass
 class Metrics:
-    nfs_write: int       # FSx serverwrite bytes (mountstats field 6 on the archive mount)
+    nfs_write: int       # NFS server-write bytes (mountstats field 6 on the archive mount)
     wchar: int           # /proc/1/io wchar bytes (all write() bytes by the XNAT jvm)
 
 
 class _Shell:
     """One long-lived ``kubectl exec -i … sh`` into a container. A command is written to its stdin
     followed by a sentinel echo and stdout is read back up to the sentinel, so a control call costs a
-    pipe round trip (tens of ms) instead of a fresh exec through the API tunnel (~0.9 s each, and a
+    pipe round trip (tens of ms) instead of a fresh exec through the API connection (~0.9 s each, and a
     cell makes a dozen of them). The command's stderr is folded into its output, as the one-shot exec
     reported it on failure."""
 
@@ -82,7 +82,7 @@ class _Shell:
 
 
 class Cluster:
-    """Talks to one XNAT pod. ``base`` is the in-pod XNAT URL (Tomcat, no tunnel)."""
+    """Talks to one XNAT pod. ``base`` is the in-pod XNAT URL (Tomcat, no API hop)."""
 
     def __init__(self, context: str, namespace: str, pod: str, user: str, password: str,
                  container: str = "xnat", base: str = "http://localhost:8080"):
@@ -101,7 +101,7 @@ class Cluster:
     def exec(self, script: str, *, pod: str | None = None, container: str | None = None,
              timeout: int = 600) -> str:
         """Run ``script`` under ``sh`` in a pod through its persistent exec channel; return stdout
-        (raises on non-zero). A channel that dies (tunnel drop, pod restart) is discarded and the
+        (raises on non-zero). A channel that dies (connection drop, pod restart) is discarded and the
         error surfaces as a transient one, so the caller's cell retry re-runs the work rather than
         this method re-sending a possibly non-idempotent command."""
         key = (pod or self.pod, container or self.container)
@@ -121,7 +121,7 @@ class Cluster:
 
     def cp_to(self, local: str, dest: str, *, pod: str | None = None, container: str | None = None) -> None:
         tgt = f"{pod or self.pod}:{dest}"
-        # cp is idempotent, so retry transient tunnel timeouts (the localhost API tunnel is flaky).
+        # cp is idempotent, so retry transient API timeouts (the API connection can be flaky).
         last = ""
         for attempt in range(3):
             r = self._kubectl("cp", local, tgt, "-c", container or self.container, timeout=1800)
@@ -132,18 +132,18 @@ class Cluster:
         raise RuntimeError(f"cp failed after 3 attempts: {last}")
 
     def wait_healthy(self, max_wait: int = 28800, poll: int = 20) -> None:
-        """Block until the kube API (the localhost tunnel) answers. Patient by design: an overnight
-        run pauses here through a tunnel outage and continues when it comes back (up to 8 h)."""
+        """Block until the kube API answers. Patient by design: an overnight
+        run pauses here through a connection outage and continues when it comes back (up to 8 h)."""
         t0 = time.monotonic()
         first = True
         while time.monotonic() - t0 < max_wait:
             r = self._kubectl("get", "pod", self.pod, "--no-headers", "--request-timeout=8s", timeout=15)
             if r.returncode == 0:
                 if not first:
-                    print(f"    tunnel back after {int(time.monotonic()-t0)}s", flush=True)
+                    print(f"    API back after {int(time.monotonic()-t0)}s", flush=True)
                 return
             if first:
-                print("    tunnel unreachable — waiting for it to recover...", flush=True)
+                print("    API unreachable — waiting for it to recover...", flush=True)
                 first = False
             time.sleep(poll)
         raise RuntimeError(f"kube API did not recover within {max_wait}s")
@@ -216,7 +216,7 @@ class Cluster:
 
     def pod_clock_offset(self) -> float:
         """Pod clock minus this machine's, in seconds. The pod's log lines are stamped by the node and
-        the cells by this machine; matching one to the other needs the skew (18.7 s on adapt-dev)."""
+        the cells by this machine; matching one to the other needs the skew (many seconds on some clusters)."""
         t0 = time.time()
         pod = float(self.exec("date -u +%s.%N").strip())
         t1 = time.time()
@@ -365,7 +365,7 @@ class Cluster:
             }]},
         })
         last = ""
-        for attempt in range(3):   # --validate=false skips the openapi download (a tunnel-blip risk)
+        for attempt in range(3):   # --validate=false skips the openapi download (a connection-blip risk)
             a = self._kubectl("apply", "-f", "-", "--validate=false", input_bytes=spec.encode())
             if a.returncode == 0:
                 break

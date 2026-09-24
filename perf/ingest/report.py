@@ -84,7 +84,7 @@ def compare(baseline_path: Path, candidate_path: Path, out: Path) -> str:
                          f"({_delta(bp['wall'], cp['wall'])}) | {bp['nfs']:.1f}→{cp['nfs']:.1f} ({_delta(bp['nfs'], cp['nfs'])}) |")
 
     lines.append("\n---\n_Wall-clock is in-pod curl time (blocking phases) or server-side poll duration "
-                 "(async phases, ±1 s). NFS MB = FSx serverwrite delta. Deltas are candidate vs baseline; "
+                 "(async phases, ±1 s). NFS MB = NFS server-write delta. Deltas are candidate vs baseline; "
                  "negative is faster/less._")
     text = "\n".join(lines) + "\n"
     out.write_text(text)

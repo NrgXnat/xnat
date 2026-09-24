@@ -19,7 +19,7 @@ reuses the same route mechanics the Java suite exercises (verified against the c
 
 ## How it measures
 
-Every timed operation runs **inside the XNAT pod** (or a sender pod), so the `kubectl` API tunnel is
+Every timed operation runs **inside the XNAT pod** (or a sender pod), so the `kubectl` API connection is
 never in the measured path. The orchestrator only issues control calls and parses JSON from in-pod
 `curl`.
 
@@ -27,8 +27,8 @@ never in the measured path. The orchestrator only issues control calls and parse
   duration (±1 s) for async routes (cache/inbox/direct trigger). The RECEIVING→READY *idle timeout*
   (`sessionXmlRebuilderInterval`, default 5 min) is **never** timed — every route drives
   `action=build`/`action=commit`/the direct-archive trigger explicitly.
-- **NFS write**: FSx `serverwrite` bytes from `/proc/self/mountstats` (`bytes:` field 6) on the
-  archive mount. Archive/prearchive/cache share one FSx export and report identical aggregate stats,
+- **NFS write**: NFS server-write bytes from `/proc/self/mountstats` (`bytes:` field 6) on the
+  archive mount. Archive/prearchive/cache share one NFS export and report identical aggregate stats,
   so one number covers the pod's writes to NFS. Also `/proc/1/io` `wchar` (all `write()` bytes).
 
 ## Routes and anon modes
@@ -72,10 +72,10 @@ real DICOM instead (re-tagged to one project with fresh UIDs).
 ```bash
 cd perf/ingest
 # one-time: create the PERF project + receiver, stage anon scripts into the pod
-uv run python ingest_perf.py setup --k8s adapt-dev-amd64-v1:xnat-perf:xnat-0 --user admin --pass admin
+uv run python ingest_perf.py setup --k8s my-cluster:xnat:xnat-0 --user admin --pass admin
 
-# baseline build (develop), then Kate swaps the candidate WAR and re-runs with --label candidate
-uv run python ingest_perf.py run --k8s adapt-dev-amd64-v1:xnat-perf:xnat-0 --user admin --pass admin \
+# baseline build (develop), then swap in the candidate WAR and re-run with --label candidate
+uv run python ingest_perf.py run --k8s my-cluster:xnat:xnat-0 --user admin --pass admin \
     --label baseline --workloads small,multiframe --routes zip,cstore,cache,direct,inbox \
     --anon none,site-header,site-pixel,project-header,project-pixel --reps 3 --out results/
 
@@ -95,10 +95,10 @@ manifest) plus the A/B `report.md`.
 
 ## Constraints
 
-- **Synthetic / dev targets only** (Scout PHI rules). Never point this at a PHI-bearing instance.
+- **Synthetic / dev targets only.** Never point this at an instance that holds patient data.
 - The suite drives an existing server; it never deploys WARs — swap builds out of band between runs.
 - Requires `kubectl` access to the pod and (for `cstore`) permission to run a short-lived sender pod.
 - The `cstore` and `huge` cells install pydicom/pynetdicom into the sender pod **offline**, from a
-  local wheel directory: `--wheels DIR` (default `~/QA/ingest-io/wheels`). Populate it once with
-  `uvx pip download pydicom pynetdicom -d ~/QA/ingest-io/wheels`. Other routes don't need it.
+  local wheel directory: `--wheels DIR` (default `wheels/` beside the harness, or `$INGEST_PERF_WHEELS`). Populate it once with
+  `uvx pip download pydicom pynetdicom -d wheels`. Other routes don't need it.
 - Async-phase wall-clock has ±1 s poll granularity (stated in the report footer).

@@ -3291,6 +3291,20 @@ public class DBAction {
         }
 
         //process modification triggers
+        if (commands.size() > 1) {
+            // One round trip for all of them: the driver pipelines a multi-statement string and the server runs it
+            // as one implicit transaction. A 200-scan session has 400 of these, each a pooled connection and a
+            // round trip on its own. Should any statement fail, the whole string is rolled back and the commands
+            // run one at a time below, exactly as they always did, so one bad trigger still stops only itself.
+            final String pipeline = commands.stream().map(command -> StringUtils.removeEnd(command.trim(), ";")).collect(Collectors.joining(";\n"));
+            try {
+                PoolDBUtils.ExecuteNonSelectQuery(pipeline, dbname, username);
+                log.debug("Processed {} triggers in one statement in {} ms", commands.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);
+                return;
+            } catch (Exception e) {
+                log.warn("Running {} triggers as one statement failed ({}); running them one at a time", commands.size(), e.getMessage());
+            }
+        }
         for (final String command : commands) {
             try {
                 PoolDBUtils.ExecuteNonSelectQuery(command, dbname, username);

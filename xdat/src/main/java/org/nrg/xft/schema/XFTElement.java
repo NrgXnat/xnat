@@ -60,6 +60,7 @@ public class XFTElement extends XFTNode{
 	private String fullDescription = "";
 	private String xsDescription="";
 	private Hashtable fields = new Hashtable();
+	private volatile ArrayList sortedFieldsCache = null;
 	private XFTWebAppElement webAppElement = null;
 	private XFTSqlElement sqlElement = null;
 	private int sequence = 100;
@@ -352,6 +353,7 @@ public class XFTElement extends XFTNode{
 			}
 
 			setType(getName(),s);
+			sortedFieldsCache = null;
 		} catch (RuntimeException e) {
 		    logger.error(e);
 		    e.printStackTrace();
@@ -462,6 +464,7 @@ public class XFTElement extends XFTNode{
 	{
 		fields.put(xf.getName(),xf);
 		xf.setParent(this);
+		sortedFieldsCache = null;
 	}
 
 	/**
@@ -617,10 +620,16 @@ public class XFTElement extends XFTNode{
 	 */
 	public ArrayList getSortedFields()
 	{
-		ArrayList temp = new ArrayList();
-		temp.addAll(getFields().values());
-		Collections.sort(temp,XFTField.SequenceComparator);
-		return temp;
+		// Sorted once and kept until a field is added (the constructor and addField reset it); a copy goes out
+		// each time so callers that alter the list keep seeing fresh ones, as they always did.
+		ArrayList sorted = sortedFieldsCache;
+		if (sorted == null) {
+			sorted = new ArrayList();
+			sorted.addAll(getFields().values());
+			Collections.sort(sorted, XFTField.SequenceComparator);
+			sortedFieldsCache = sorted;
+		}
+		return new ArrayList(sorted);
 	}
 
 	public final static Comparator SequenceComparator = new Comparator() {

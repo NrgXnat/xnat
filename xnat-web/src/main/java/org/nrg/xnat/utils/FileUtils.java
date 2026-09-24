@@ -41,7 +41,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 import java.nio.charset.Charset;
@@ -65,25 +64,32 @@ import java.util.stream.StreamSupport;
 @Slf4j
 public class FileUtils {
     /**
-     * The cachePath site preference, read at most once a second: reading a preference is a database round
-     * trip, and the cache directory is resolved for every prearchive file lock and catalog lock.
+     * The cachePath site preference, read once and kept until it changes: reading a preference is a database
+     * round trip, and the cache directory is resolved for every prearchive file lock and catalog lock. A change
+     * reaches {@link #cachePathChanged} through CachePathHandlerMethod, on every node when the distributed
+     * events plugin relays it.
      */
     private static String cachePath() {
         final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
         final CachedPath            cached      = CACHE_PATH;
-        final long                  now         = System.nanoTime();
-        if (cached != null && cached.preferences == preferences && now - cached.readAt < CACHE_PATH_TTL_NANOS) {
+        if (cached != null && cached.preferences == preferences) {
             return cached.path;
         }
         final String path = preferences.getCachePath();
-        CACHE_PATH = new CachedPath(preferences, path, now);
+        CACHE_PATH = new CachedPath(preferences, path);
         return path;
     }
 
-    private record CachedPath(SiteConfigPreferences preferences, String path, long readAt) {}
+    /**
+     * Forgets the cache path read from the preferences, so the next caller reads it again.
+     */
+    public static void cachePathChanged() {
+        CACHE_PATH = null;
+    }
+
+    private record CachedPath(SiteConfigPreferences preferences, String path) {}
 
     private static volatile CachedPath CACHE_PATH;
-    private static final    long       CACHE_PATH_TTL_NANOS = TimeUnit.SECONDS.toNanos(1);
 
     public static boolean isChild(final Path parent, final Path child) {
         // Remove and flatten relative references (i.e., "..") in paths

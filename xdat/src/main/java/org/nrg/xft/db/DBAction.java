@@ -158,6 +158,7 @@ public class DBAction {
             log.debug("pre-triggers: {} ms", preTriggersMs);
             localStartTime = Calendar.getInstance().getTimeInMillis();
             con = new PoolDBUtils();
+            final int statements = cache.getStatements().size();   // sendBatch resets the cache
             con.sendBatch(cache, item.getDBName(), username);
             log.debug("Item modifications stored. {} modified elements. {} SQL statements.", cache.getDBTriggers().size(), cache.getStatements().size());
             final long storeMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
@@ -172,7 +173,7 @@ public class DBAction {
                 // one line per slow save on the ingest timing logger, so an archive's save lap can be split into
                 // its parts from the log alone: the SELECTs that build the statements, the batch, the triggers
                 TIMING.info("Stored {} ({} statements, {} trigger items): prepare-sql {} ms, quarantine {} ms, pre-triggers {} ms, store {} ms, post-triggers {} ms, total {} ms",
-                            item.getXSIType(), cache.getStatements().size(), cache.getDBTriggers().size(),
+                            item.getXSIType(), statements, cache.getDBTriggers().size(),
                             prepareMs, quarantineMs, preTriggersMs, storeMs, postTriggersMs, totalMs);
             }
             return true;

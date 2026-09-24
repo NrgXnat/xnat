@@ -28,6 +28,9 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipOutputStream;
 
+import static org.nrg.xft.utils.zip.ZipUtils.bufferToCache;
+import static org.nrg.xft.utils.zip.ZipUtils.rejectArchiveUpload;
+
 /**
  * @author timo
  */
@@ -66,11 +69,56 @@ public class TarUtils implements ZipI {
 
     @Override
     public List<File> extract(final InputStream is, final String dir, final boolean overwrite, final EventMetaI ci, final IOFileFilter filter) throws IOException {
+        // A plain InputStream isn't seekable, so it has to be buffered before it can be scanned and extracted in two
+        // passes. Buffer it under the XNAT cache path rather than the default java.io.tmpdir, which may be tmpfs
+        // (RAM-backed) in containerized deployments -- buffering a large upload there could otherwise exhaust memory.
+        final File buffered = bufferToCache(is, "tar-upload-");
+        try {
+            return extractFromFile(buffered, dir, overwrite, ci, filter);
+        } finally {
+            FileUtils.DeleteFile(buffered);
+        }
+    }
+
+    /**
+     * Scans the given archive file to confirm every entry resolves within the destination directory and, if so,
+     * extracts it directly -- avoiding any redundant buffering copy when the caller already has a materialized,
+     * seekable file. If any entry does not, the entire upload is rejected via
+     * {@link ZipUtils#rejectArchiveUpload(File, String, Path, List)} and nothing is extracted.
+     *
+     * @param archiveFile The tar (optionally gzipped, per {@link #_compressionMethod}) file to scan and extract.
+     * @param dir         The destination folder to extract into.
+     * @param overwrite   Whether existing files at the destination should be overwritten.
+     * @param ci          Event metadata used when moving overwritten files to history.
+     * @param filter      An optional filter restricting which entries are extracted.
+     *
+     * @return The files that were extracted.
+     *
+     * @throws IOException When an error occurs reading the archive, or when the upload is rejected.
+     */
+    List<File> extractFromFile(final File archiveFile, final String dir, final boolean overwrite, final EventMetaI ci, final IOFileFilter filter) throws IOException {
+        return extractFromFile(archiveFile, dir, overwrite, ci, filter, true);
+    }
+
+    /**
+     * @param moveExistingToHistory Whether an existing file at the destination should be moved into archive history
+     *                              before being overwritten, or simply overwritten in place.
+     *
+     * @see #extractFromFile(File, String, boolean, EventMetaI, IOFileFilter)
+     */
+    private List<File> extractFromFile(final File archiveFile, final String dir, final boolean overwrite, final EventMetaI ci, final IOFileFilter filter, final boolean moveExistingToHistory) throws IOException {
         final File dest = new File(dir);
         dest.mkdirs();
 
+        final List<String> unsafeEntries = findPathTraversalEntries(archiveFile, dest);
+        if (!unsafeEntries.isEmpty()) {
+            rejectArchiveUpload(archiveFile, _compressionMethod == ZipOutputStream.DEFLATED ? "upload.tar.gz" : "upload.tar", Path.of(dir), unsafeEntries);
+            return new ArrayList<>();
+        }
+
         final List<File> extractedFiles = new ArrayList<>();
-        try (final TarInputStream tis = _compressionMethod == ZipOutputStream.DEFLATED ? new TarInputStream(new GZIPInputStream(is)) : new TarInputStream(is)) {
+        try (final InputStream fis = new FileInputStream(archiveFile);
+             final TarInputStream tis = _compressionMethod == ZipOutputStream.DEFLATED ? new TarInputStream(new GZIPInputStream(fis)) : new TarInputStream(fis)) {
             TarEntry te = tis.getNextEntry();
             while (te != null) {
                 final String name     = te.getName();
@@ -82,16 +130,17 @@ public class TarUtils implements ZipI {
                         _duplicates.add(name);
                     } else {
                         if (filter == null || filter.accept(destPath)) {
-                            if (destPath.exists()) {
+                            if (destPath.exists() && moveExistingToHistory) {
                                 FileUtils.MoveToHistory(destPath, EventUtils.getTimestamp(ci));
                             }
                             destPath.getParentFile().mkdirs();
                             log.debug("Writing: {}", name);
-                            FileOutputStream output = new FileOutputStream(destPath);
-
-                            tis.copyEntryContents(output);
-
-                            output.close();
+                            try (final FileOutputStream output = new FileOutputStream(destPath)) {
+                                tis.copyEntryContents(output);
+                            }
+                            // A tar entry can carry a Unix mode (e.g. from a permission change on the machine that
+                            // built the archive) marking it executable; never let an extracted file inherit that.
+                            FileUtils.clearExecutable(destPath);
                             extractedFiles.add(destPath);
                         } else {
                             log.warn("File {} was rejected by the provided filter and will not be extracted.", name);
@@ -104,41 +153,44 @@ public class TarUtils implements ZipI {
         return extractedFiles;
     }
 
+    /**
+     * Scans every entry of the specified tar (optionally gzipped, per {@link #_compressionMethod}) file and returns
+     * the names of any entries whose relative path does not resolve within <b>destinationDir</b> once resolved
+     * against it.
+     *
+     * @param archiveFile    The tar file to scan.
+     * @param destinationDir The directory the archive is intended to be extracted into.
+     *
+     * @return The (possibly empty) list of entry names found in the archive that do not resolve within the
+     *         destination directory.
+     *
+     * @throws IOException When an error occurs reading the archive.
+     */
+    private List<String> findPathTraversalEntries(final File archiveFile, final File destinationDir) throws IOException {
+        final List<String> unsafeEntries = new ArrayList<>();
+        try (final InputStream fis = new FileInputStream(archiveFile);
+             final TarInputStream tis = _compressionMethod == ZipOutputStream.DEFLATED ? new TarInputStream(new GZIPInputStream(fis)) : new TarInputStream(fis)) {
+            TarEntry te;
+            while ((te = tis.getNextEntry()) != null) {
+                if (!FileUtils.isCanonicalPath(destinationDir, te.getName())) {
+                    unsafeEntries.add(te.getName());
+                }
+            }
+        }
+        return unsafeEntries;
+    }
+
     @Override
     public List<String> getDuplicates() {
         return _duplicates;
     }
 
     public void extract(File f, String dir, boolean deleteZip) throws IOException {
-
-        InputStream is = new FileInputStream(f);
-        if (_compressionMethod == ZipOutputStream.DEFLATED) {
-            is = new GZIPInputStream(is);
-        }
-
-        File dest = new File(dir);
-        dest.mkdirs();
-
-        TarInputStream tis = new TarInputStream(is);
-
-        TarEntry te = tis.getNextEntry();
-
-        while (te != null) {
-            File destPath = new File(dest.toString() + File.separatorChar + te.getName());
-            if (te.isDirectory()) {
-                destPath.mkdirs();
-            } else {
-                // System.out.println("Writing: " + te.getName());
-                FileOutputStream output = new FileOutputStream(destPath);
-
-                tis.copyEntryContents(output);
-
-                output.close();
-            }
-            te = tis.getNextEntry();
-        }
-
-        tis.close();
+        // Route through extractFromFile so this direct File-based entry point gets the same entry-name validation as
+        // extract(InputStream, ...) -- but, unlike that InputStream path, preserve this method's original
+        // plain-overwrite semantics (moveExistingToHistory=false): before path-traversal validation was added, this
+        // method wrote each entry directly over any existing file, without ever moving it into archive history.
+        extractFromFile(f, dir, true, null, null, false);
 
         f.deleteOnExit();
     }

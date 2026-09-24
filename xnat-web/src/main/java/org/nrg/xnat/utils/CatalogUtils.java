@@ -2270,7 +2270,7 @@ public class CatalogUtils {
         ThreadAndProcessFileLock fl = null;
         try {
             fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, false);
-            fl.tryLock(10L, TimeUnit.SECONDS);
+            fl.tryLock(2L, TimeUnit.MINUTES);   // as long as the read path waits for its lock
             try {
                 final CatalogData catalogData = new CatalogData(catFile, catRes, project, null, true, true);
                 if (!change.test(catalogData)) {

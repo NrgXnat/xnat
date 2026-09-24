@@ -15,7 +15,7 @@ import java.util.function.Consumer;
  * The one place a dataset carrying its file meta information becomes bytes.
  * <p>
  * Every serialization does the same things in the same order: split group 0002 back out of the
- * dataset ({@link Dcm4cheConvert#splitFmiAndDataset}, which also re-derives the media storage SOP
+ * dataset ({@link Dcm4cheConvert#extractFmiFromDataset}, which also re-derives the media storage SOP
  * Class and Instance UIDs from the dataset, so a script that rewrote them stays consistent), write
  * both through a {@link DicomObjectFactory#BULK_DATA_BUFFER_SIZE} buffer -- dcm4che moves bulk
  * data 2 KB at a time, so an unbuffered target costs a system call per 2 KB -- on a stream opened
@@ -52,7 +52,7 @@ public final class DicomObjectWriter {
      */
     public static long write(final Attributes datasetWithFmi, final OutputStream out,
                              final Consumer<Attributes> fmiCustomizer, final InputStream rawRemainder) throws IOException {
-        final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(datasetWithFmi);
+        final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.extractFmiFromDataset(datasetWithFmi);
         if (fmiCustomizer != null) {
             fmiCustomizer.accept(split.fmi);
         }

@@ -14,7 +14,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -57,6 +59,14 @@ public class ExtractorFromRuleProvider implements ExtractorProvider {
     }
     @Nullable
     public Extractor parseDicomRuleToExtractor( final String rule) {
+        // Extractors are immutable and stateless, and a rule's text parses to the same extractor every time, so
+        // each distinct rule is compiled once rather than once per received object.
+        return _extractors.computeIfAbsent(rule, this::compileExtractor);
+    }
+
+    private final Map<String, Extractor> _extractors = new ConcurrentHashMap<>();
+
+    private Extractor compileExtractor( final String rule) {
         final DicomPatternRuleMetaData md = parseDicomRule( rule.trim());
         if (md.target != null && md.repl != null) {
             return new MatchedPatternExtractorWithReplacement(md.tag, md.regexp, md.group, md.target, md.repl);

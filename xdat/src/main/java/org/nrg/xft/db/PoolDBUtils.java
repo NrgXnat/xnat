@@ -145,48 +145,44 @@ public class PoolDBUtils {
 
 	public Object getNextID(String db,String table, String pk, String sequence) throws SQLException, Exception
 	{
-		Object o = null;
+		final List<Object> ids = getNextIDs(db, table, pk, sequence, 1);
+		return ids.isEmpty() ? null : ids.getFirst();
+	}
+
+	/**
+	 * The next {@code count} values of an item's sequence in one round trip; for a count of 1 the query is the
+	 * one {@link #getNextID} always sent. Tries the same sequence names as getNextID, in the same order.
+	 *
+	 * @return The values, in order; empty when the sequence yielded no row.
+	 */
+	public List<Object> getNextIDs(String db, String table, String pk, String sequence, int count) throws SQLException, Exception
+	{
+		final String from = count > 1 ? " FROM generate_series(1, " + count + ")" : "";
 		ResultSet rs = null;
 		try {
 			if (sequence != null && !sequence.equalsIgnoreCase(""))
 			{
-				String newQuery = "SELECT nextval('"+ sequence + "') AS " + pk;
 				try {
-					rs= executeQuery(db, newQuery, "");
-					if (rs.first())
-					{
-						o = rs.getObject(pk);
-					}
+					rs = executeQuery(db, "SELECT nextval('"+ sequence + "') AS " + pk + from, "");
+					return values(rs, pk);
 				} catch (SQLException e1) {
-					newQuery = "SELECT nextval('"+ table + "_" + pk + "_seq') AS " + pk;
 					try {
-						rs= executeQuery(db, newQuery, "");
-						if (rs.first())
-						{
-							o = rs.getObject(pk);
-						}
+						rs = executeQuery(db, "SELECT nextval('"+ table + "_" + pk + "_seq') AS " + pk + from, "");
+						return values(rs, pk);
 					} catch (SQLException e2) {
-						newQuery = "SELECT nextval('"+ table + "_" + table + "_seq') AS " + pk;
 						try {
-							rs= executeQuery(db, newQuery, "");
-							if (rs.first())
-							{
-								o = rs.getObject(pk);
-							}
+							rs = executeQuery(db, "SELECT nextval('"+ table + "_" + table + "_seq') AS " + pk + from, "");
+							return values(rs, pk);
 						} catch (SQLException e3) {
-						    newQuery = "SELECT nextval('"+ table + "','"+ pk + "') AS col_name";
 						    try {
-								rs= executeQuery(db, newQuery, "");
+								rs = executeQuery(db, "SELECT nextval('"+ table + "','"+ pk + "') AS col_name", "");
 								if (rs.first())
 								{
-									String colName = rs.getObject("col_name").toString();
-									newQuery = "SELECT nextval('"+ colName + "') AS " + pk;
-									rs= executeQuery(db, newQuery, "");
-									if (rs.first())
-									{
-										o = rs.getObject(pk);
-									}
+									final String colName = rs.getObject("col_name").toString();
+									rs = executeQuery(db, "SELECT nextval('"+ colName + "') AS " + pk + from, "");
+									return values(rs, pk);
 								}
+								return new ArrayList<>();
 							} catch (Exception e4) {
 								logger.error("POSTGRES - SEQUENCE BUG",e1);
 								logger.error("POSTGRES - SEQUENCE BUG",e2);
@@ -197,21 +193,13 @@ public class PoolDBUtils {
 					}
 				}
 			}else{
-				String newQuery = "SELECT nextval('"+ table + "_" + pk + "_seq') AS " + pk;
 				try {
-					rs= executeQuery(db, newQuery, "");
-					if (rs.first())
-					{
-						o = rs.getObject(pk);
-					}
+					rs = executeQuery(db, "SELECT nextval('"+ table + "_" + pk + "_seq') AS " + pk + from, "");
+					return values(rs, pk);
 				} catch (SQLException e1) {
-					newQuery = "SELECT nextval('"+ table + "_" + table + "_seq') AS " + pk;
 					try {
-						rs= executeQuery(db, newQuery, "");
-						if (rs.first())
-						{
-							o = rs.getObject(pk);
-						}
+						rs = executeQuery(db, "SELECT nextval('"+ table + "_" + table + "_seq') AS " + pk + from, "");
+						return values(rs, pk);
 					} catch (SQLException e2) {
 						logger.error("POSTGRES - SEQUENCE BUG",e1);
 						logger.error("POSTGRES - SEQUENCE BUG",e2);
@@ -226,8 +214,14 @@ public class PoolDBUtils {
 		}finally{
 			closeConnection(rs);
 		}
+	}
 
-		return o;
+	private static List<Object> values(final ResultSet rs, final String column) throws SQLException {
+		final List<Object> values = new ArrayList<>();
+		while (rs.next()) {
+			values.add(rs.getObject(column));
+		}
+		return values;
 	}
 
 	private void sendBatchExec(List<String> statements, String db, String userName, int resultSetType, int resultSetConcurrency) throws SQLException, Exception {

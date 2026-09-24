@@ -18,7 +18,7 @@ import shlex
 import subprocess
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -32,6 +32,9 @@ class CurlResult:
 class Metrics:
     nfs_write: int       # FSx serverwrite bytes (mountstats field 6 on the archive mount)
     wchar: int           # /proc/1/io wchar bytes (all write() bytes by the XNAT jvm)
+    # per NFS operation on the archive mount: (operations, cumulative round-trip ms, cumulative execute ms),
+    # from the mount's per-op statistics; only operations that have run at least once are listed
+    ops: dict[str, tuple[int, int, int]] = field(default_factory=dict)
 
 
 class _Shell:
@@ -194,9 +197,15 @@ class Cluster:
     # The NFS mount that contains the archive, whichever path it is mounted at: one export mounted
     # at /data/xnat, or a separate mount per data directory. Mount points are compared as path
     # prefixes so /data/xnat matches /data/xnat/archive but /data/xnat-other does not.
+    # The per-op lines of the archive mount's section ("WRITE: ops trans timeouts sent recv queue rtt execute
+    # [errors]") give each NFS operation's count and cumulative round-trip time: the storage's latency as
+    # this instance saw it, which is what shared storage changes when a neighbour loads it.
     _METRIC_AWK = (
-        r'''awk '/^device .* mounted on .* with fstype nfs/{f=(index("/data/xnat/archive/", $5 "/")==1);next} '''
-        r'''f&&/^[[:space:]]*bytes:/{print "nfs=" $7;exit}' '''
+        r'''awk '/^device /{f=0;g=0} '''
+        r'''/^device .* mounted on .* with fstype nfs/{f=(index("/data/xnat/archive/", $5 "/")==1);next} '''
+        r'''f&&/^[[:space:]]*bytes:/{print "nfs=" $7} '''
+        r'''f&&/per-op statistics/{g=1;next} '''
+        r'''f&&g&&$1~/^[A-Z_0-9]+:$/&&$2>0{n=$1;sub(/:$/,"",n);print "op_" n "=" $2 "," $8 "," $9}' '''
         r"""/proc/self/mountstats; awk '/^wchar/{print "wchar=" $2}' /proc/1/io"""
     )
 
@@ -209,7 +218,42 @@ class Cluster:
         if "nfs" not in fields and not self._warned_no_nfs:
             print("  ! archive mount reports no NFS stats; nfs_mb will read 0 for this run")
             self._warned_no_nfs = True
-        return Metrics(nfs_write=int(fields.get("nfs", 0)), wchar=int(fields.get("wchar", 0)))
+        ops = {}
+        for key, value in fields.items():
+            if key.startswith("op_"):
+                count, rtt, execute = (int(x) for x in value.split(","))
+                ops[key[3:]] = (count, rtt, execute)
+        return Metrics(nfs_write=int(fields.get("nfs", 0)), wchar=int(fields.get("wchar", 0)), ops=ops)
+
+    def instance_facts(self) -> dict:
+        """What this run measured on: the pod's node and its instance type, the image and its digest, the
+        JVM, XNAT's build, and the pod clock's offset. Several instances measured side by side must be
+        told apart, and a leg's reps come from different ones."""
+        facts: dict = {"context": self.ctx, "namespace": self.ns, "pod": self.pod}
+        r = self._kubectl("get", "pod", self.pod, "-o", "json", timeout=60)
+        if r.returncode == 0:
+            pod = json.loads(r.stdout)
+            facts["node"] = pod.get("spec", {}).get("nodeName")
+            for status in pod.get("status", {}).get("containerStatuses", []):
+                if status.get("name") == self.container:
+                    facts["image"], facts["image_id"] = status.get("image"), status.get("imageID")
+                    facts["restarts"] = status.get("restartCount")
+            if facts.get("node"):
+                n = subprocess.run(["kubectl", "--context", self.ctx, "get", "node", facts["node"], "-o",
+                                    r"jsonpath={.metadata.labels.node\.kubernetes\.io/instance-type}"],
+                                   capture_output=True, timeout=60)
+                facts["instance_type"] = n.stdout.decode().strip() or None
+        try:
+            facts["java"] = self.exec("java -version 2>&1 | head -1").strip()
+        except Exception as e:
+            facts["java"] = f"? ({str(e)[:80]})"
+        try:
+            info = json.loads(self.curl("GET", "/xapi/siteConfig/buildInfo").body)
+            facts["xnat_version"], facts["build_sha"] = info.get("version"), info.get("shaFull")
+        except Exception:
+            pass
+        facts["pod_clock_offset_s"] = self.pod_clock_offset()
+        return facts
 
     # ---- XNAT facts ----------------------------------------------------------
     def build_sha(self) -> str:

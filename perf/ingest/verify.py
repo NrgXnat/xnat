@@ -137,8 +137,11 @@ def session_digest(cluster: Cluster, project: str) -> tuple[str, int, int]:
     return _sha("\n".join(docs)), len(ids), scans
 
 
-def archived_digests(cluster: Cluster, project: str) -> dict:
-    settle(cluster, project)
+def archived_digests(cluster: Cluster, project: str, *, settled: bool = False) -> dict:
+    """Digest what the project archived. Pass ``settled`` when the caller has already waited for the
+    archiver to go quiet (see settle), as the run loop does inside its measurement."""
+    if not settled:
+        settle(cluster, project)
     content, files = content_digest(cluster, project)
     objects, nobj = object_digest(cluster, project)
     if nobj != files:

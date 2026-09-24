@@ -31,15 +31,31 @@ class Staged:
 
 
 def _phase(cluster: Cluster, name: str, fn: Callable[[], float | None]) -> dict:
-    """Bracket ``fn`` with metric snapshots; wall comes from fn (authoritative) or the local clock."""
+    """Bracket ``fn`` with metric snapshots; wall comes from fn (authoritative) or the local clock.
+
+    ``nfs_ops`` counts the NFS operations the phase caused on the archive mount and ``nfs_rtt_ms`` is their
+    mean round trip: how many times the phase went to the storage, and how fast the storage answered.
+    ``nfs_op_rtt_ms`` breaks that down for the busiest operations as ``[count, mean ms]``."""
     m0 = cluster.metrics()
     t0 = time.monotonic()
     wall = fn()
     dt = time.monotonic() - t0
     m1 = cluster.metrics()
-    return {"phase": name, "wall_s": round(wall if wall is not None else dt, 3),
-            "nfs_mb": round((m1.nfs_write - m0.nfs_write) / 1e6, 1),
-            "wchar_mb": round((m1.wchar - m0.wchar) / 1e6, 1)}
+    record = {"phase": name, "wall_s": round(wall if wall is not None else dt, 3),
+              "nfs_mb": round((m1.nfs_write - m0.nfs_write) / 1e6, 1),
+              "wchar_mb": round((m1.wchar - m0.wchar) / 1e6, 1)}
+    if m1.ops:
+        deltas = {}
+        for op, (count, rtt, _execute) in m1.ops.items():
+            before = m0.ops.get(op, (0, 0, 0))
+            if count > before[0]:
+                deltas[op] = (count - before[0], rtt - before[1])
+        total_ops = sum(n for n, _ in deltas.values())
+        record["nfs_ops"] = total_ops
+        record["nfs_rtt_ms"] = round(sum(r for _, r in deltas.values()) / total_ops, 3) if total_ops else None
+        busiest = sorted(deltas.items(), key=lambda kv: -kv[1][0])[:8]
+        record["nfs_op_rtt_ms"] = {op: [n, round(r / n, 3)] for op, (n, r) in busiest}
+    return record
 
 
 def _one_session(cluster: Cluster, project: str) -> tuple[str, str]:

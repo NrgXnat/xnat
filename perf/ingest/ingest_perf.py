@@ -29,6 +29,7 @@ import corpus
 import report
 import verify
 from k8s import Cluster
+from measure_lock import MeasureLock
 from routes import ROUTES, Staged
 
 HERE = Path(__file__).resolve().parent
@@ -79,16 +80,17 @@ def _zip_dir(src: Path, dst_zip: Path) -> None:
 
 def cmd_setup(args) -> None:
     c = make_cluster(args)
-    print(f"setup: build {c.build_sha()[:10]} on {c.ctx}/{c.ns}/{c.pod}")
-    c.ensure_project(PROJECT)
-    # Manual prearchive handling: every route archives explicitly, and the inbox route cannot survive
-    # the project auto-archiving (see route_inbox). Also stops the rebuilder archiving leftovers on its own.
-    c.curl("PUT", f"/data/projects/{PROJECT}/prearchive_code/0")
-    c.ensure_receiver("XNAT", anon=True)          # site/project anon controlled globally; receiver stays on
-    # stage the anon scripts into the pod
-    c.exec(f"mkdir -p {POD_STAGE}/anon")
-    for das in sorted((HERE / "anon").glob("*.das")):
-        c.cp_to(str(das), f"{POD_STAGE}/anon/{das.name}")
+    with MeasureLock(args.lock).busy():
+        print(f"setup: build {c.build_sha()[:10]} on {c.ctx}/{c.ns}/{c.pod}")
+        c.ensure_project(PROJECT)
+        # Manual prearchive handling: every route archives explicitly, and the inbox route cannot survive
+        # the project auto-archiving (see route_inbox). Also stops the rebuilder archiving leftovers on its own.
+        c.curl("PUT", f"/data/projects/{PROJECT}/prearchive_code/0")
+        c.ensure_receiver("XNAT", anon=True)          # site/project anon controlled globally; receiver stays on
+        # stage the anon scripts into the pod
+        c.exec(f"mkdir -p {POD_STAGE}/anon")
+        for das in sorted((HERE / "anon").glob("*.das")):
+            c.cp_to(str(das), f"{POD_STAGE}/anon/{das.name}")
     print(f"  project {PROJECT} ready, receiver XNAT on 8104, anon scripts staged under {POD_STAGE}/anon")
 
 
@@ -116,7 +118,8 @@ def stage_workload(c: Cluster, name: str, routes: list[str], corpus_dir: Path | 
         return Staged(zip_pod_path="", sender_dir=sender_dir, inbox_pod_dir="",
                       scp_service="xnat-dicom-scp", scp_port=8104, files=1), None, nbytes
 
-    local = Path("/tmp/ingest-perf-local") / name
+    # one folder per instance: harness processes driving several instances at once each build their own copy
+    local = Path("/tmp/ingest-perf-local") / c.ns / name
     man = corpus.build_workload(name, local, PROJECT, corpus=corpus_dir)
     zip_local = local.parent / f"{name}.zip"
     _zip_dir(local, zip_local)
@@ -154,13 +157,17 @@ def cmd_run(args) -> None:
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{args.label}.json"
+    # With --lock, this run shares the storage with harness runs against other instances: it measures only
+    # while it holds the lock exclusively, and does its overhead while no one measures (see measure_lock).
+    lock = MeasureLock(args.lock)
 
-    if "cstore" in routes:
-        c.ensure_sender_pod(c.wheels, str(HERE / "sender.py"))
-
-    header = {"label": args.label, "build_sha": c.build_sha(), "storage": c.storage_layout(),
-              "pod_clock_offset_s": c.pod_clock_offset(),
-              "reps": args.reps, "workloads": {}, "routes": routes, "anon": anon_modes}
+    with lock.busy():
+        if "cstore" in routes:
+            c.ensure_sender_pod(c.wheels, str(HERE / "sender.py"))
+        header = {"label": args.label, "build_sha": c.build_sha(), "storage": c.storage_layout(),
+                  "pod_clock_offset_s": c.pod_clock_offset(), "instance": c.instance_facts(),
+                  "measure_lock": bool(args.lock),
+                  "reps": args.reps, "workloads": {}, "routes": routes, "anon": anon_modes}
     cells: list[dict] = []
     done: set[tuple] = set()
     if out_path.exists():                     # resume: keep prior ok cells, skip re-running them
@@ -181,7 +188,8 @@ def cmd_run(args) -> None:
             continue
         for attempt in range(1, 6):   # staging crosses the tunnel too (cp of the whole workload)
             try:
-                staged, local, nbytes = stage_workload(c, wl, routes, Path(args.corpus) if args.corpus else None)
+                with lock.busy():
+                    staged, local, nbytes = stage_workload(c, wl, routes, Path(args.corpus) if args.corpus else None)
                 break
             except Exception as e:
                 if not _is_transient(e) or attempt == 5:
@@ -191,7 +199,8 @@ def cmd_run(args) -> None:
         header["workloads"][wl] = {"files": staged.files, "bytes": nbytes}
         print(f"workload {wl}: {staged.files} objects, {nbytes/1e6:.1f} MB")
         for mode in anon_modes:
-            configure_anon(c, mode)
+            with lock.busy():
+                configure_anon(c, mode)
             for route in routes:
                 if wl in IN_SENDER and route != "cstore":
                     print(f"  [skip] {wl}/{route}: >2 GB workload is cstore-only (won't cross the tunnel)")
@@ -203,13 +212,21 @@ def cmd_run(args) -> None:
                     cell = {"workload": wl, "route": route, "anon": mode, "rep": rep, "files": staged.files}
                     for attempt in range(1, 6):
                         try:
-                            c.wipe_project(PROJECT)
-                            if route == "inbox":
-                                staged.inbox_pod_dir = restage_inbox(c, wl, local)
-                            cell["started"] = _utc_now()   # window for matching the pod's timing lines to this cell
-                            cell["phases"] = ROUTES[route](c, PROJECT, staged)
+                            with lock.busy():
+                                c.wipe_project(PROJECT)
+                                if route == "inbox":
+                                    staged.inbox_pod_dir = restage_inbox(c, wl, local)
+                            with lock.measuring():
+                                cell["started"] = _utc_now()   # window for matching the pod's timing lines to this cell
+                                cell["phases"] = ROUTES[route](c, PROJECT, staged)
+                                if args.verify or args.lock:
+                                    # The archiver keeps rewriting catalogs for seconds after the session
+                                    # appears; that tail is this cell's load on the storage, so it stays
+                                    # inside the measurement rather than spilling into another instance's.
+                                    verify.settle(c, PROJECT)
                             if args.verify:   # what got archived, before the wipe takes it away
-                                cell["digests"] = verify.archived_digests(c, PROJECT)
+                                with lock.busy():
+                                    cell["digests"] = verify.archived_digests(c, PROJECT, settled=True)
                             cell["ok"] = True
                             break
                         except Exception as e:
@@ -221,13 +238,16 @@ def cmd_run(args) -> None:
                             break
                     cell["finished"] = _utc_now()
                     tag = "ok" if cell["ok"] else f"FAIL: {cell.get('error', '')[:80]}"
-                    walls = " ".join(f"{p['phase']}={p['wall_s']}s/{p['nfs_mb']}MB" for p in cell["phases"])
+                    walls = " ".join(f"{p['phase']}={p['wall_s']}s/{p['nfs_mb']}MB"
+                                     + (f"/{p['nfs_rtt_ms']}ms" if p.get("nfs_rtt_ms") is not None else "")
+                                     for p in cell["phases"])
                     print(f"  [{mode}] {route} rep{rep}: {tag}  {walls}", flush=True)
                     cells.append(cell)
                     # checkpoint after every cell so a tunnel drop mid-sweep never loses prior results
                     header["cell_count"] = len(cells)
                     report.write_results(out_path, header, cells)
-    c.wipe_project(PROJECT)
+    with lock.busy():
+        c.wipe_project(PROJECT)
     print(f"\nwrote {out_path} ({len(cells)} cells, {sum(1 for x in cells if not x['ok'])} failed)")
 
 
@@ -260,8 +280,14 @@ def main() -> None:
                        help="directory of pydicom/pynetdicom wheels installed into the sender pod "
                             "offline (cstore and huge only); default %(default)s")
 
-    p = sub.add_parser("setup"); add_conn(p); p.set_defaults(fn=cmd_setup)
-    p = sub.add_parser("run"); add_conn(p)
+    def add_lock(p):
+        p.add_argument("--lock", default=None, metavar="PATH",
+                       help="measurement lock shared with harness runs against other instances on the same "
+                            "storage, all on this machine: measure only while no other run measures or "
+                            "loads the storage (see measure_lock.py)")
+
+    p = sub.add_parser("setup"); add_conn(p); add_lock(p); p.set_defaults(fn=cmd_setup)
+    p = sub.add_parser("run"); add_conn(p); add_lock(p)
     p.add_argument("--label", required=True)
     p.add_argument("--workloads", default="small,multiframe")
     p.add_argument("--routes", default="zip,cstore,cache,direct,inbox")

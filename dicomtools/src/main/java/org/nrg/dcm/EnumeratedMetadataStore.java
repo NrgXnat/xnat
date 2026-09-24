@@ -251,7 +251,15 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         // database's only one HSQLDB syncs its log to disk on the close (Database.closeIfLast): a
         // session build paid one fsync per attribute lookup, some forty per scan. A connection held
         // for the store's lifetime keeps the database from ever being last-closed between queries.
-        final Connection anchor = ds.getConnection();
+        final Connection anchor;
+        try {
+            anchor = ds.getConnection();
+        } catch (SQLException | RuntimeException e) {
+            // Otherwise the database and its directory would outlive the failed build.
+            s.closeHandlers.addAll(closeHandlers);
+            s.close();
+            throw e;
+        }
         s.closeHandlers.add(() -> {
             try {
                 anchor.close();

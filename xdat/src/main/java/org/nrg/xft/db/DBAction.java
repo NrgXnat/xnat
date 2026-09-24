@@ -106,6 +106,10 @@ public class DBAction {
     private static final Logger TIMING              = LoggerFactory.getLogger("org.nrg.xnat.ingest.timing");
     private static final long   TIMING_THRESHOLD_MS = 250;
 
+    // SimpleDateFormat is not thread-safe and costs a pattern compile to build; ValueParser formats a timestamp
+    // for every date-time property of every item stored, so each thread keeps one.
+    private static final ThreadLocal<SimpleDateFormat> DATE_TIME_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat(YYYY_MM_DD_HH_MM_SS_SSS));
+
     /**
      * This method is used to insert/update an item into the database.
      *
@@ -2379,9 +2383,7 @@ public class DBAction {
             }
 
             if (d != null) {
-                SimpleDateFormat df = new SimpleDateFormat(YYYY_MM_DD_HH_MM_SS_SSS);
-
-                return toStringWrap(df.format(d));
+                return toStringWrap(DATE_TIME_FORMAT.get().format(d));
             } else {
                 return toStringWrap(XftStringUtils.CleanForSQLValue(object.toString()));
             }

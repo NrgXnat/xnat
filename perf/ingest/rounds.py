@@ -189,7 +189,10 @@ def run_block(plan: dict, entry: dict, dry_run: bool) -> bool:
     with MeasureLock(plan["lock"]).busy():
         c.clear_staging(staging_roots)
     if warm:
-        inst.harness(["run", "--label", f"{plan['prefix']}-warmup-{ns}-r{entry['round']}", "--reps", "1",
+        # A fresh label per attempt: resuming a warm-up would skip its cells, and the staging check below needs
+        # them to have run.
+        attempt = datetime.now(timezone.utc).strftime("%H%M%S")
+        inst.harness(["run", "--label", f"{plan['prefix']}-warmup-{ns}-r{entry['round']}-{attempt}", "--reps", "1",
                       "--out", str(out / "warmup"), "--workloads", warm["workloads"], "--routes", warm["routes"],
                       "--anon", warm["anon"]], log)
         staging["after_warmup"] = c.staging_present(staging_roots)

@@ -17,6 +17,7 @@ Only run against synthetic / dev instances, never one that holds patient data.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import shutil
 import sys
@@ -107,14 +108,17 @@ def stage_workload(c: Cluster, name: str, routes: list[str], corpus_dir: Path | 
     C-STOREd — a 2 GB file won't cross the kube API connection in reasonable time — so there is no local dir.
     """
     sender_dir = f"{SENDER_STAGE}/{name}"
+    sender = {"pod": c.SENDER_POD, "container": "sender"}
     if name in IN_SENDER:
         c.ensure_sender_pod(c.wheels, str(HERE / "sender.py"))
-        c.cp_to(str(HERE / "corpus.py"), "/work/corpus.py", pod=c.SENDER_POD, container="sender")
-        c.exec(f"rm -rf {sender_dir}; mkdir -p {sender_dir}", pod=c.SENDER_POD, container="sender")
-        c.exec(f"cd /work && python -c \"from corpus import gen_{name}; from pathlib import Path; "
-               f"gen_{name}(Path('{sender_dir}'), '{PROJECT}')\"",
-               pod=c.SENDER_POD, container="sender", timeout=900)
-        nbytes = int(c.exec(f"du -sb {sender_dir} | cut -f1", pod=c.SENDER_POD, container="sender").split()[0])
+        digest = hashlib.sha256((HERE / "corpus.py").read_bytes()).hexdigest()[:16]
+        if not _staged(c, f"{sender_dir}/.staged", digest, **sender):
+            c.cp_to(str(HERE / "corpus.py"), "/work/corpus.py", **sender)
+            c.exec(f"rm -rf {sender_dir}; mkdir -p {sender_dir}", **sender)
+            c.exec(f"cd /work && python -c \"from corpus import gen_{name}; from pathlib import Path; "
+                   f"gen_{name}(Path('{sender_dir}'), '{PROJECT}')\"", timeout=900, **sender)
+            c.exec(f"echo {digest} > {sender_dir}/.staged", **sender)
+        nbytes = int(c.exec(f"du -sb --exclude=.staged {sender_dir} | cut -f1", **sender).split()[0])
         return Staged(zip_pod_path="", sender_dir=sender_dir, inbox_pod_dir="",
                       scp_service="xnat-dicom-scp", scp_port=8104, files=1), None, nbytes
 
@@ -124,12 +128,19 @@ def stage_workload(c: Cluster, name: str, routes: list[str], corpus_dir: Path | 
     zip_local = local.parent / f"{name}.zip"
     _zip_dir(local, zip_local)
     zip_pod = f"{POD_STAGE}/{name}.zip"
-    if {"zip", "cache", "direct"} & set(routes):
+    # The corpus is deterministic, so a copy already staged from the same manifest is the same data: skip the
+    # transfer, which crosses the kube API connection. The sender pod keeps its copy across image swaps.
+    digest = hashlib.sha256((local / "manifest.tsv").read_bytes()).hexdigest()[:16]
+    if {"zip", "cache", "direct", "inbox"} & set(routes):
         c.exec(f"mkdir -p {POD_STAGE}")
-        c.cp_to(str(zip_local), zip_pod)
+        if not _staged(c, f"{zip_pod}.staged", digest):
+            c.cp_to(str(zip_local), zip_pod)
+            c.exec(f"echo {digest} > {zip_pod}.staged")
     if "cstore" in routes:
-        c.exec(f"rm -rf {sender_dir}; mkdir -p {sender_dir}", pod=c.SENDER_POD, container="sender")
-        c.cp_to(str(local), sender_dir, pod=c.SENDER_POD, container="sender")
+        if not _staged(c, f"{sender_dir}/.staged", digest, **sender):
+            c.exec(f"rm -rf {sender_dir}; mkdir -p {sender_dir}", **sender)
+            c.cp_to(str(local), sender_dir, **sender)
+            c.exec(f"echo {digest} > {sender_dir}/.staged", **sender)
     nbytes = sum(p.stat().st_size for p in local.rglob("*.dcm"))
     return Staged(zip_pod_path=zip_pod, sender_dir=sender_dir, inbox_pod_dir="",
                   scp_service="xnat-dicom-scp", scp_port=8104, files=len(man)), local, nbytes
@@ -140,12 +151,26 @@ def _inbox_root(c: Cluster) -> str:
     return v or "/data/xnat/inbox"
 
 
-def restage_inbox(c: Cluster, name: str, local: Path) -> str:
-    """Inbox consumes (cleanupAfterImport) the files, so place a fresh copy under inboxPath per rep."""
+def _staged(c: Cluster, marker: str, digest: str, **where) -> bool:
+    """True when ``marker`` in the pod records ``digest``: that copy was staged from the same corpus."""
+    try:
+        return c.exec(f"cat {marker} 2>/dev/null || true", **where).strip() == digest
+    except Exception:
+        return False
+
+
+def restage_inbox(c: Cluster, name: str, local: Path, staged: Staged) -> str:
+    """Inbox consumes (cleanupAfterImport) the files, so place a fresh copy under inboxPath per rep: unpacked
+    in the pod from the workload zip already staged there, so nothing crosses the kube API connection (a
+    per-rep copy from this machine stalled for minutes when the connection did, holding up the other
+    instances' measurements)."""
     root = _inbox_root(c)
     dest = f"{root}/{PROJECT}/{name}-{uuid.uuid4().hex[:8]}"
-    c.exec(f"mkdir -p {dest}")
-    c.cp_to(str(local), dest)
+    if staged.zip_pod_path:
+        c.exec(f"mkdir -p {dest} && cd {dest} && unzip -q -o {staged.zip_pod_path}")
+    else:
+        c.exec(f"mkdir -p {dest}")
+        c.cp_to(str(local), dest)
     return dest
 
 
@@ -215,7 +240,7 @@ def cmd_run(args) -> None:
                             with lock.busy():
                                 c.wipe_project(PROJECT)
                                 if route == "inbox":
-                                    staged.inbox_pod_dir = restage_inbox(c, wl, local)
+                                    staged.inbox_pod_dir = restage_inbox(c, wl, local, staged)
                             with lock.measuring():
                                 cell["started"] = _utc_now()   # window for matching the pod's timing lines to this cell
                                 cell["phases"] = ROUTES[route](c, PROJECT, staged)

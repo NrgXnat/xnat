@@ -106,6 +106,7 @@ public class DBAction {
     // the build/merge/archive laps; only saves slow enough to matter are reported.
     private static final Logger TIMING              = LoggerFactory.getLogger("org.nrg.xnat.ingest.timing");
     private static final long   TIMING_THRESHOLD_MS = 250;
+    private static final int    TRIGGER_PIPELINE    = 50;   // update_ls commands per multi-statement round trip
 
     // SimpleDateFormat is not thread-safe and costs a pattern compile to build; ValueParser formats a timestamp
     // for every date-time property of every item stored, so each thread keeps one.
@@ -3374,28 +3375,30 @@ public class DBAction {
         }
 
         //process modification triggers
-        if (commands.size() > 1) {
-            // One round trip for all of them: the driver pipelines a multi-statement string and the server runs it
-            // as one implicit transaction. A 200-scan session has 400 of these, each a pooled connection and a
-            // round trip on its own. Should any statement fail, the whole string is rolled back and the commands
-            // run one at a time below, exactly as they always did, so one bad trigger still stops only itself.
-            final String pipeline = commands.stream().map(command -> StringUtils.removeEnd(command.trim(), ";")).collect(Collectors.joining(";\n"));
-            try {
-                PoolDBUtils.ExecuteNonSelectQuery(pipeline, dbname, username);
-                log.debug("Processed {} triggers in one statement in {} ms", commands.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);
-                return;
-            } catch (Exception e) {
-                log.warn("Running {} triggers as one statement failed ({}); running them one at a time", commands.size(), e.getMessage());
+        // In pipelines of up to TRIGGER_PIPELINE commands: the driver sends a multi-statement string in one round
+        // trip and the server runs it as one implicit transaction. A 200-scan session has 400 of these, each a
+        // pooled connection and a round trip on its own. Should any statement fail, the server rolls its pipeline
+        // back and that pipeline's commands run one at a time, exactly as they always did, so one bad trigger
+        // still stops only itself. The pipeline must see every error (ExecuteOrThrow): the tolerant executor the
+        // single commands use would take a rolled-back pipeline for a success.
+        for (final List<String> pipeline : Lists.partition(commands, TRIGGER_PIPELINE)) {
+            if (pipeline.size() > 1) {
+                try {
+                    PoolDBUtils.ExecuteOrThrow(pipeline.stream().map(command -> StringUtils.removeEnd(command.trim(), ";")).collect(Collectors.joining(";\n")));
+                    continue;
+                } catch (Exception e) {
+                    log.warn("Running {} triggers as one statement failed ({}); running them one at a time", pipeline.size(), e.getMessage());
+                }
             }
-        }
-        for (final String command : commands) {
-            try {
-                PoolDBUtils.ExecuteNonSelectQuery(command, dbname, username);
-            } catch (RuntimeException ignored) {
-            } catch (SQLException e) {
-                log.error("An SQL exception occurred trying to execute the command: \"{}\"", command, e);
-            } catch (Exception e) {
-                log.error("An unexpected exception occurred trying to execute the command: \"{}\"", command, e);
+            for (final String command : pipeline) {
+                try {
+                    PoolDBUtils.ExecuteNonSelectQuery(command, dbname, username);
+                } catch (RuntimeException ignored) {
+                } catch (SQLException e) {
+                    log.error("An SQL exception occurred trying to execute the command: \"{}\"", command, e);
+                } catch (Exception e) {
+                    log.error("An unexpected exception occurred trying to execute the command: \"{}\"", command, e);
+                }
             }
         }
         log.debug("Processed {} triggers in {} ms", commands.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);

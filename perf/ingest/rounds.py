@@ -14,7 +14,7 @@ completed leaves a marker and is skipped on a rerun, so a rerun resumes.
     uv run rounds.py fourway.json             # run or resume every round
     uv run rounds.py fourway.json --merge     # merge each leg's blocks into <prefix>-<leg>.json
 
-Only run against synthetic / dev instances (Scout PHI rules).
+Only run against synthetic / dev instances, never one that holds patient data.
 """
 from __future__ import annotations
 
@@ -129,6 +129,8 @@ class Instance:
         cmd = [sys.executable, str(HERE / "ingest_perf.py"), *args, "--k8s", self.k8s,
                "--user", self.plan.get("user", "admin"), "--pass", self.plan.get("password", "admin"),
                "--lock", self.plan["lock"]]
+        if self.plan.get("wheels"):
+            cmd += ["--wheels", str(Path(self.plan["wheels"]).expanduser())]
         return self._run(cmd, log)
 
     def pod_timing(self, since: str, dest: Path) -> None:

@@ -1,7 +1,7 @@
 """XNAT DICOM ingest performance harness — CLI.
 
 Runs one synthetic (or supplied) corpus through several ingest routes, with and without
-anonymization, entirely in-cluster (so the kube tunnel never sits in the measured path), and records
+anonymization, entirely in-cluster (so the kube API connection never sits in the measured path), and records
 wall-clock + NFS-write per phase. Compare two runs (baseline vs candidate WAR) with ``report``.
 
     uv run ingest_perf.py setup    --k8s ctx:ns:pod --user admin --pass admin
@@ -12,7 +12,7 @@ wall-clock + NFS-write per phase. Compare two runs (baseline vs candidate WAR) w
     uv run ingest_perf.py report   --compare results/baseline.json results/candidate.json -o report.md
     uv run ingest_perf.py teardown --k8s ctx:ns:pod --user admin --pass admin
 
-Only run against synthetic / dev instances (Scout PHI rules).
+Only run against synthetic / dev instances, never one that holds patient data.
 """
 from __future__ import annotations
 
@@ -36,8 +36,8 @@ HERE = Path(__file__).resolve().parent
 PROJECT = "PERF"
 POD_STAGE = "/tmp/ingest-perf"                 # workloads + anon scripts inside the XNAT pod
 SENDER_STAGE = "/work"                         # workloads inside the sender pod
-WHEELS = str(Path.home() / "QA/ingest-io/wheels")   # default --wheels: pydicom/pynetdicom wheels for the sender pod
-IN_SENDER = {"huge"}                           # >2 GB: generated in the sender pod, cstore-only (won't cross the tunnel)
+WHEELS = os.environ.get("INGEST_PERF_WHEELS", str(HERE / "wheels"))   # default --wheels: pydicom/pynetdicom wheels for the sender pod
+IN_SENDER = {"huge"}                           # >2 GB: generated in the sender pod, cstore-only (won't cross the API connection)
 
 # anon mode -> (site_enable, site_script, project_enable, project_script). Scripts are basenames in anon/.
 ANON = {
@@ -61,7 +61,7 @@ def _utc_now() -> str:
 
 
 def _is_transient(e: Exception) -> bool:
-    """True for kube-tunnel connectivity errors (retry the cell), false for real app failures."""
+    """True for kube API connectivity errors (retry the cell), false for real app failures."""
     s = str(e).lower()
     kube = ("tls handshake timeout", "unable to connect to the server", "i/o timeout",
             "context deadline exceeded", "connection refused", "connection reset",
@@ -104,7 +104,7 @@ def stage_workload(c: Cluster, name: str, routes: list[str], corpus_dir: Path | 
     """Stage a workload where each route needs it. Returns (staged, local_dir_or_None, total_bytes).
 
     Big workloads (IN_SENDER, e.g. >2 GB ``huge``) are generated *inside the sender pod* and only
-    C-STOREd — a 2 GB file won't cross the kube tunnel in reasonable time — so there is no local dir.
+    C-STOREd — a 2 GB file won't cross the kube API connection in reasonable time — so there is no local dir.
     """
     sender_dir = f"{SENDER_STAGE}/{name}"
     if name in IN_SENDER:
@@ -186,7 +186,7 @@ def cmd_run(args) -> None:
         if not remaining(wl):
             print(f"workload {wl}: all cells already done, skipping")
             continue
-        for attempt in range(1, 6):   # staging crosses the tunnel too (cp of the whole workload)
+        for attempt in range(1, 6):   # staging crosses the API connection too (cp of the whole workload)
             try:
                 with lock.busy():
                     staged, local, nbytes = stage_workload(c, wl, routes, Path(args.corpus) if args.corpus else None)
@@ -203,7 +203,7 @@ def cmd_run(args) -> None:
                 configure_anon(c, mode)
             for route in routes:
                 if wl in IN_SENDER and route != "cstore":
-                    print(f"  [skip] {wl}/{route}: >2 GB workload is cstore-only (won't cross the tunnel)")
+                    print(f"  [skip] {wl}/{route}: >2 GB workload is cstore-only (won't cross the API connection)")
                     continue
                 for rep in range(1, args.reps + 1):
                     if (wl, route, mode, rep) in done:
@@ -243,7 +243,7 @@ def cmd_run(args) -> None:
                                      for p in cell["phases"])
                     print(f"  [{mode}] {route} rep{rep}: {tag}  {walls}", flush=True)
                     cells.append(cell)
-                    # checkpoint after every cell so a tunnel drop mid-sweep never loses prior results
+                    # checkpoint after every cell so a connection drop mid-sweep never loses prior results
                     header["cell_count"] = len(cells)
                     report.write_results(out_path, header, cells)
     with lock.busy():

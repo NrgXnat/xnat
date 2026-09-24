@@ -1,12 +1,12 @@
 {
-  "context": "adapt-dev-amd64-v1",
+  "context": "my-cluster",
   "release": "xnat",
   "chart": "oci://ghcr.io/nrgxnat/charts/xnat",
   "chart_version": "3.3.0",
   "pod": "xnat-0",
   "user": "admin",
   "password": "admin",
-  "instances": ["xnat-perf", "xnat-perf2", "xnat-perf3", "xnat-perf4"],
+  "instances": ["xnat-a", "xnat-b", "xnat-c", "xnat-d"],
   "legs": {
     "A": {"tag": "1.10.1"},
     "B": {"tag": "1.10.2-develop-2026.09.24-SNAPSHOT"},
@@ -28,7 +28,7 @@
   ],
   "warmup": {"workloads": "mixed", "routes": "zip,direct", "anon": "none,project-header"},
   "prefix": "fourway",
-  "out": "~/QA/ingest-io/results-fsx/fourway",
-  "lock": "~/QA/ingest-io/results-fsx/fourway/.measure.lock",
+  "out": "results/fourway",
+  "lock": "results/fourway/.measure.lock",
   "verify": true
 }

@@ -23,7 +23,6 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
-import org.nrg.xft.utils.SaveLaps;
 
 /**
  * @author timo
@@ -66,7 +65,7 @@ public class ItemUniqueEquality extends ItemEqualityA implements ItemEqualityI {
 			try {
 				final Object o = item.getProperty(key.getXMLPathString(element.getFullXMLName()));
 				if (o != null) {
-					keys.add("U|" + type + "|" + key.getXMLPathString(element.getFullXMLName()) + "|" + parse(o, key));
+					keys.add("U|" + type + "|" + key.getXMLPathString(element.getFullXMLName()) + "|" + DBAction.ValueParser(o, key, true));
 				}
 			} catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
 				logger.error("", e);
@@ -85,7 +84,7 @@ public class ItemUniqueEquality extends ItemEqualityA implements ItemEqualityI {
 								complete = false;
 								break;
 							}
-							sb.append('|').append(parse(o, ((GenericWrapperField) field.get(1)).getXMLType().getLocalType()));
+							sb.append('|').append(DBAction.ValueParser(o, ((GenericWrapperField) field.get(1)).getXMLType().getLocalType(), true));
 						} catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
 							logger.error("", e);   // doCheck skips a field it cannot read; so does the key
 						}
@@ -96,7 +95,7 @@ public class ItemUniqueEquality extends ItemEqualityA implements ItemEqualityI {
 						if (o == null) {
 							complete = false;
 						} else {
-							sb.append('|').append(parse(o, key.getXMLPathString(element.getFullXMLName())));
+							sb.append('|').append(DBAction.ValueParser(o, key.getXMLPathString(element.getFullXMLName()), true));
 						}
 					} catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
 						logger.error("", e);
@@ -111,25 +110,6 @@ public class ItemUniqueEquality extends ItemEqualityA implements ItemEqualityI {
 			}
 		}
 		return keys;
-	}
-
-	// The two ValueParser forms doCheck uses, timed so the save's lap line can say what the keys cost.
-	private static String parse(final Object o, final GenericWrapperField field) throws XFTInitException, InvalidValueException {
-		final long started = SaveLaps.start();
-		try {
-			return DBAction.ValueParser(o, field, true);
-		} finally {
-			SaveLaps.add(SaveLaps.Lap.VALUE_PARSE, started);
-		}
-	}
-
-	private static String parse(final Object o, final String type) throws InvalidValueException {
-		final long started = SaveLaps.start();
-		try {
-			return DBAction.ValueParser(o, type, true);
-		} finally {
-			SaveLaps.add(SaveLaps.Lap.VALUE_PARSE, started);
-		}
 	}
 
 	/* (non-Javadoc)

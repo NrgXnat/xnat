@@ -12,6 +12,7 @@ package org.nrg.xft.db;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.collections.SavedItemCollection;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -31,7 +32,7 @@ import java.util.Map;
  */
 public class DBItemCache {
     private static final Logger         logger      = LoggerFactory.getLogger(DBItemCache.class);
-    private              ItemCollection saved       = new ItemCollection();
+    private              ItemCollection saved       = new SavedItemCollection();   // indexed for StoreItem's lookups
     private              ItemCollection removed     = new ItemCollection();
     private              ItemCollection preexisting = new ItemCollection();
     private              ItemCollection dbTrigger   = new ItemCollection();

@@ -16,6 +16,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -55,6 +56,7 @@ import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
+import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -216,8 +218,35 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
      * no archived experiment already owns it. The cheap row check runs first.
      */
     private boolean ownsSessionDirectory(SessionData session) {
-        return !directArchiveSessionHibernateService.hasActiveSessionAtLocation(session.getUrl(), session.getId())
+        return isWithinProjectArchive(session)
+               && !directArchiveSessionHibernateService.hasActiveSessionAtLocation(session.getUrl(), session.getId())
                && !isArchivedExperimentDirectory(session);
+    }
+
+    /**
+     * The session url comes from the importer, which builds it from the session label without validating it, so a
+     * blank label yields the arcNNN directory itself and a label with path segments can leave the project archive.
+     * Only a directory at least two levels below the project's archive root (arcNNN/session) is ever removed; anything
+     * else, or a project that cannot be resolved, leaves the files alone.
+     */
+    private boolean isWithinProjectArchive(SessionData session) {
+        final XnatProjectdata project = BaseXnatProjectdata.getProjectByIDorAlias(session.getProject(), receivedFileUserProvider.get(), false);
+        if (project == null) {
+            log.warn("Not removing files for DirectArchiveSession id={} at {}: project {} could not be resolved", session.getId(), session.getUrl(), session.getProject());
+            return false;
+        }
+        final boolean removable = isRemovableSessionDirectory(Path.of(project.getRootArchivePath()), Path.of(session.getUrl()));
+        if (!removable) {
+            log.warn("Not removing files for DirectArchiveSession id={}: {} is not a session directory under the archive root {} of project {}",
+                     session.getId(), session.getUrl(), project.getRootArchivePath(), session.getProject());
+        }
+        return removable;
+    }
+
+    static boolean isRemovableSessionDirectory(Path archiveRoot, Path sessionDirectory) {
+        final Path root = archiveRoot.toAbsolutePath().normalize();
+        final Path dir  = sessionDirectory.toAbsolutePath().normalize();
+        return dir.startsWith(root) && dir.getNameCount() >= root.getNameCount() + 2;
     }
 
     /**

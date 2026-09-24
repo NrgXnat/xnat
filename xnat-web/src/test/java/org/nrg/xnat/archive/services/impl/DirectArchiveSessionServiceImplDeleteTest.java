@@ -24,7 +24,9 @@ import org.nrg.action.ServerException;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
+import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
@@ -74,6 +76,8 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     private MockedStatic<Permissions>            mockedPermissions;
     private MockedStatic<Roles>                  mockedRoles;
     private MockedStatic<XDAT>                   mockedXDAT;
+    private MockedStatic<BaseXnatProjectdata>    mockedProjects;
+    private File                                 projectArchiveRoot;
     private MockedStatic<PrearcUtils>            mockedPrearcUtils;
     private MockedStatic<BaseXnatExperimentdata> mockedExperiments;
 
@@ -91,8 +95,9 @@ public class DirectArchiveSessionServiceImplDeleteTest {
                                                                mock(GroupsAndPermissionsCache.class),
                                                                mock(PermissionsServiceI.class));
 
-        sessionDirectory = temporaryFolder.newFolder("archive", PROJECT, "arc001", SESSION);
-        archiveDirectory = sessionDirectory.getParentFile();
+        sessionDirectory   = temporaryFolder.newFolder("archive", PROJECT, "arc001", SESSION);
+        archiveDirectory   = sessionDirectory.getParentFile();
+        projectArchiveRoot = archiveDirectory.getParentFile();
         sessionXml       = new File(archiveDirectory, SESSION + ".xml");
         Files.writeString(new File(sessionDirectory, "1.dcm").toPath(), "dicom");
         Files.writeString(sessionXml.toPath(), "<xml/>");
@@ -109,10 +114,16 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         mockedPrearcUtils.when(() -> PrearcUtils.isSessionReceiving(any())).thenReturn(false);
         mockedExperiments = Mockito.mockStatic(BaseXnatExperimentdata.class);
         mockedExperiments.when(() -> BaseXnatExperimentdata.GetExptByProjectIdentifier(any(), any(), any(), anyBoolean())).thenReturn(null);
+        // The project's archive root is the temp folder's archive/PROJECT; only directories below arcNNN are removable
+        final XnatProjectdata project = mock(XnatProjectdata.class);
+        when(project.getRootArchivePath()).thenReturn(projectArchiveRoot.getAbsolutePath());
+        mockedProjects = Mockito.mockStatic(BaseXnatProjectdata.class);
+        mockedProjects.when(() -> BaseXnatProjectdata.getProjectByIDorAlias(eq(PROJECT), any(), anyBoolean())).thenReturn(project);
     }
 
     @After
     public void tearDown() {
+        mockedProjects.closeOnDemand();
         mockedExperiments.closeOnDemand();
         mockedPrearcUtils.closeOnDemand();
         mockedXDAT.closeOnDemand();
@@ -324,6 +335,54 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         when(hibernateService.hasActiveSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenReturn(true);
 
         assertDeleteKeepsFilesAndRemovesRow();
+    }
+
+    @Test
+    public void filesAreKeptWhenTheSessionUrlIsTheArchiveDirectoryItself() throws Exception {
+        // A blank label makes the importer set the url to arcNNN; removing that would take every session in the arc
+        final SessionData session = sessionIn(PrearcStatus.ERROR);
+        session.setUrl(archiveDirectory.getAbsolutePath());
+        stubDeletableSession(session);
+
+        service.delete(SESSION_ID, user);
+
+        assertThat(archiveDirectory).isDirectory();
+        assertFilesIntact();
+        verify(hibernateService).delete(SESSION_ID);
+    }
+
+    @Test
+    public void filesAreKeptWhenTheSessionUrlEscapesTheProjectArchive() throws Exception {
+        final File outside = temporaryFolder.newFolder("elsewhere");
+        Files.writeString(new File(outside, "keep.txt").toPath(), "keep");
+        final SessionData session = sessionIn(PrearcStatus.ERROR);
+        session.setUrl(new File(archiveDirectory, "../../../elsewhere").getPath());
+        stubDeletableSession(session);
+
+        service.delete(SESSION_ID, user);
+
+        assertThat(new File(outside, "keep.txt")).isFile();
+        verify(hibernateService).delete(SESSION_ID);
+    }
+
+    @Test
+    public void filesAreKeptWhenTheProjectCannotBeResolved() throws Exception {
+        mockedProjects.when(() -> BaseXnatProjectdata.getProjectByIDorAlias(eq(PROJECT), any(), anyBoolean())).thenReturn(null);
+        stubDeletableSession();
+
+        assertDeleteKeepsFilesAndRemovesRow();
+    }
+
+    @Test
+    public void onlyDirectoriesAtLeastTwoLevelsBelowTheProjectArchiveRootAreRemovable() {
+        final Path root = Path.of("/data/xnat/archive/PROJ");
+        assertThat(DirectArchiveSessionServiceImpl.isRemovableSessionDirectory(root, Path.of("/data/xnat/archive/PROJ/arc001/SESSION"))).isTrue();
+        assertThat(DirectArchiveSessionServiceImpl.isRemovableSessionDirectory(root, Path.of("/data/xnat/archive/PROJ/arc001/SESSION/"))).isTrue();
+        assertThat(DirectArchiveSessionServiceImpl.isRemovableSessionDirectory(root, Path.of("/data/xnat/archive/PROJ/arc001"))).isFalse();
+        assertThat(DirectArchiveSessionServiceImpl.isRemovableSessionDirectory(root, Path.of("/data/xnat/archive/PROJ"))).isFalse();
+        assertThat(DirectArchiveSessionServiceImpl.isRemovableSessionDirectory(root, Path.of("/data/xnat/archive/PROJ/arc001/../.."))).isFalse();
+        assertThat(DirectArchiveSessionServiceImpl.isRemovableSessionDirectory(root, Path.of("/data/xnat/archive/OTHER/arc001/SESSION"))).isFalse();
+        assertThat(DirectArchiveSessionServiceImpl.isRemovableSessionDirectory(root, Path.of("/data/xnat/archive/PROJ2/arc001/SESSION"))).isFalse();
     }
 
     @Test

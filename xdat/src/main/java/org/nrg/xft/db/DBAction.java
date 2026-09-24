@@ -42,6 +42,7 @@ import org.nrg.xft.security.SecurityManagerI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xft.utils.SaveLaps;
 import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,6 +131,7 @@ public class DBAction {
     public static boolean StoreItem(XFTItem item, UserI user, boolean checkForDuplicates, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, SecurityManagerI securityManager, EventMetaI c) throws Exception {
         final long  started        = Calendar.getInstance().getTimeInMillis();
         long        localStartTime = started;
+        SaveLaps.reset();
         DBItemCache cache          = new DBItemCache(user, c);
         item = StoreItem(item, user, checkForDuplicates, new ArrayList(), quarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
 
@@ -176,9 +178,9 @@ public class DBAction {
             if (totalMs >= TIMING_THRESHOLD_MS) {
                 // one line per slow save on the ingest timing logger, so an archive's save lap can be split into
                 // its parts from the log alone: the SELECTs that build the statements, the batch, the triggers
-                TIMING.info("Stored {} ({} statements, {} trigger items): prepare-sql {} ms, quarantine {} ms, pre-triggers {} ms, store {} ms, post-triggers {} ms, total {} ms",
+                TIMING.info("Stored {} ({} statements, {} trigger items): prepare-sql {} ms, quarantine {} ms, pre-triggers {} ms, store {} ms, post-triggers {} ms, total {} ms; prepare-sql laps: {}",
                             item.getXSIType(), statements, cache.getDBTriggers().size(),
-                            prepareMs, quarantineMs, preTriggersMs, storeMs, postTriggersMs, totalMs);
+                            prepareMs, quarantineMs, preTriggersMs, storeMs, postTriggersMs, totalMs, SaveLaps.summary());
             }
             return true;
         } else {
@@ -335,7 +337,9 @@ public class DBAction {
 
             if (hasPK) {
                 //HAS ASSIGNED PK
+                final long pkLookup = SaveLaps.start();
                 ItemCollection al = item.getPkMatches(false);
+                SaveLaps.add(SaveLaps.Lap.PK_MATCHES, pkLookup);
                 if (al.size() > 0) {
                     isNew = false;
                     //ITEM EXISTS
@@ -371,7 +375,9 @@ public class DBAction {
                     }
                 } else {
                     if (item.hasUniques()) {
+                        final long uniqueLookup = SaveLaps.start();
                         ItemCollection temp = item.getUniqueMatches(false);
+                        SaveLaps.add(SaveLaps.Lap.UNIQUE_MATCHES, uniqueLookup);
                         if (temp.size() > 0) {
                             isNew = false;
                             XFTItem duplicate = (XFTItem) temp.get(0);
@@ -525,7 +531,9 @@ public class DBAction {
             } else {
                 //HAS NO PK
                 if (item.hasUniques()) {
+                    final long uniqueLookup = SaveLaps.start();
                     ItemCollection temp = item.getUniqueMatches(false);
+                    SaveLaps.add(SaveLaps.Lap.UNIQUE_MATCHES, uniqueLookup);
                     if (temp.size() > 0) {
                         isNew = false;
                         XFTItem duplicate = (XFTItem) temp.get(0);
@@ -807,6 +815,15 @@ public class DBAction {
      * @throws InvalidValueException    When an invalid value is specified for item properties.
      */
     private static boolean HasNewFields(final XFTItem oldI, final XFTItem newI, final boolean allowItemOverwrite) throws XFTInitException, ElementNotFoundException, InvalidValueException {
+        final long started = SaveLaps.start();
+        try {
+            return hasNewFieldsImpl(oldI, newI, allowItemOverwrite);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.HAS_NEW_FIELDS, started);
+        }
+    }
+
+    private static boolean hasNewFieldsImpl(final XFTItem oldI, final XFTItem newI, final boolean allowItemOverwrite) throws XFTInitException, ElementNotFoundException, InvalidValueException {
         Hashtable   newHash      = newI.getProps();
         Hashtable   oldHashClone = (Hashtable) oldI.getProps().clone();
         Enumeration enumer       = newHash.keys();
@@ -1746,8 +1763,17 @@ public class DBAction {
      *
      * @return The item after insertion.
      */
-    @SuppressWarnings("ConstantConditions")
     public static XFTItem InsertItem(XFTItem item, String login, DBItemCache cache, boolean allowInvalidValues) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return insertItemImpl(item, login, cache, allowInvalidValues);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.INSERT, started);
+        }
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private static XFTItem insertItemImpl(XFTItem item, String login, DBItemCache cache, boolean allowInvalidValues) throws Exception {
         item.modified = true;
         item.assignDefaultValues();
 
@@ -1987,6 +2013,15 @@ public class DBAction {
      *
      */
     private static XFTItem UpdateItem(final XFTItem oldI, final XFTItem newI, final UserI user, final boolean quarantine, final boolean overrideQuarantine, final DBItemCache cache, final boolean storeNULLS) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return updateItemImpl(oldI, newI, user, quarantine, overrideQuarantine, cache, storeNULLS);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.UPDATE, started);
+        }
+    }
+
+    private static XFTItem updateItemImpl(final XFTItem oldI, final XFTItem newI, final UserI user, final boolean quarantine, final boolean overrideQuarantine, final DBItemCache cache, final boolean storeNULLS) throws Exception {
         // MARK MODIFIED AS TRUE
         StoreHistoryAndMeta(oldI, newI, user, overrideQuarantine ? quarantine : oldI.getStatus().equals(ViewManager.QUARANTINE), cache);
 

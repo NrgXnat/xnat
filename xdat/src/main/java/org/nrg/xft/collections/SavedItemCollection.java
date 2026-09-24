@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.compare.ItemUniqueEquality;
+import org.nrg.xft.utils.SaveLaps;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -90,6 +91,15 @@ public class SavedItemCollection extends ItemCollection {
         if (checkExtensions) {
             return super.findByPK(item, true);
         }
+        final long started = SaveLaps.start();
+        try {
+            return findByPKIndexed(item);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.SAVED_LOOKUPS, started);
+        }
+    }
+
+    private ItemI findByPKIndexed(final ItemI item) {
         final XFTItem probe = item.getItem();
         try {
             if (probe.getPkValues().isEmpty()) {
@@ -121,6 +131,15 @@ public class SavedItemCollection extends ItemCollection {
         if (checkExtensions) {
             return super.findByUnique(item, true);
         }
+        final long started = SaveLaps.start();
+        try {
+            return findByUniqueIndexed(item);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.SAVED_LOOKUPS, started);
+        }
+    }
+
+    private ItemI findByUniqueIndexed(final ItemI item) {
         final XFTItem probe = item.getItem();
         final List<String> keys;
         try {

@@ -136,4 +136,24 @@ public class DirectArchiveSessionStatusTransitionTest {
         assertThat(claimed).isFalse();
         assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.BUILDING);
     }
+
+    @Test
+    public void queueingForBuildFromAnInFlightStatusIsRefusedWithoutForce() throws Exception {
+        final long id = receivingSession(ROUNDS + 2).getId();
+        service.setStatusToQueuedBuilding(id);
+        service.setStatusToBuildingAndReturn(id);
+
+        assertThat(service.setStatusToQueuedBuilding(id, false)).isFalse();
+        assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.BUILDING);
+    }
+
+    @Test
+    public void forcingTheQueueForBuildMovesAnInFlightSessionBackToQueuedBuilding() throws Exception {
+        final long id = receivingSession(ROUNDS + 3).getId();
+        service.setStatusToQueuedBuilding(id);
+        service.setStatusToBuildingAndReturn(id);
+
+        assertThat(service.setStatusToQueuedBuilding(id, true)).isTrue();
+        assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.QUEUED_BUILDING);
+    }
 }

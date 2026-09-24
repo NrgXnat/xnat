@@ -15,12 +15,17 @@ import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.services.DirectArchiveSessionService;
+import org.nrg.xnat.helpers.prearchive.SessionData;
+
+import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -30,19 +35,28 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * The shared XAPI advice only honours a status carried by an exception annotation, so the controller maps it.
  */
 public class DirectArchiveSessionApiTest {
-    private static final long SESSION_ID = 42L;
+    private static final long   SESSION_ID = 42L;
+    private static final String PROJECT    = "PROJ";
+    private static final String TAG        = "1.2.3";
+    private static final String NAME       = "SESSION_1";
 
     private DirectArchiveSessionService service;
+    private PermissionsServiceI         permissions;
     private UserI                       user;
+    private SessionData                 session;
     private MockMvc                     mockMvc;
 
     @Before
-    public void setUp() {
-        service = mock(DirectArchiveSessionService.class);
-        user    = mock(UserI.class);
+    public void setUp() throws Exception {
+        service     = mock(DirectArchiveSessionService.class);
+        permissions = mock(PermissionsServiceI.class);
+        user        = mock(UserI.class);
+        session     = new SessionData().setProject(PROJECT).setTag(TAG).setName(NAME);
+        when(permissions.getUserEditableProjects(user)).thenReturn(List.of(PROJECT));
+        when(service.findByProjectTagName(PROJECT, TAG, NAME)).thenReturn(session);
         SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken(user, "secret"));
         mockMvc = MockMvcBuilders.standaloneSetup(new DirectArchiveSessionApi(service, mock(UserManagementServiceI.class),
-                                                                              mock(PermissionsServiceI.class), mock(RoleHolder.class))).build();
+                                                                              permissions, mock(RoleHolder.class))).build();
     }
 
     @After
@@ -73,5 +87,30 @@ public class DirectArchiveSessionApiTest {
                .andExpect(status().isOk());
 
         verify(service).delete(SESSION_ID, user, false);
+    }
+
+    @Test
+    public void triggerForceIsPassedThroughToTheService() throws Exception {
+        mockMvc.perform(post("/direct-archive/{project}/{tag}/{name}", PROJECT, TAG, NAME).param("force", "true"))
+               .andExpect(status().isOk());
+
+        verify(service).triggerArchive(session, user, true);
+    }
+
+    @Test
+    public void triggerDefaultsToNotForced() throws Exception {
+        mockMvc.perform(post("/direct-archive/{project}/{tag}/{name}", PROJECT, TAG, NAME))
+               .andExpect(status().isOk());
+
+        verify(service).triggerArchive(session, user, false);
+    }
+
+    @Test
+    public void aTriggerTheServiceRefusesAnswersWithTheServiceStatus() throws Exception {
+        doThrow(new ClientException(Status.CLIENT_ERROR_CONFLICT, "not in a status that can be queued")).when(service).triggerArchive(session, user, false);
+
+        mockMvc.perform(post("/direct-archive/{project}/{tag}/{name}", PROJECT, TAG, NAME))
+               .andExpect(status().isConflict())
+               .andExpect(content().string(containsString("not in a status that can be queued")));
     }
 }

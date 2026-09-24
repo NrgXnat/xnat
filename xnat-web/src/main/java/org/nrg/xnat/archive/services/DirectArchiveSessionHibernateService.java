@@ -54,6 +54,13 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
      * @return false, with the session left untouched, when it is in any other status, e.g. claimed by a delete
      */
     boolean setStatusToQueuedBuilding(long id) throws NotFoundException;
+
+    /**
+     * As {@link #setStatusToQueuedBuilding(long)}; with {@code force} the session is re-queued from any status except
+     * a delete in progress, so that a session left queued, building or archiving by a dead worker can be retried.
+     */
+    boolean setStatusToQueuedBuilding(long id, boolean force) throws NotFoundException;
+
     void setStatusToQueuedArchiving(long id) throws NotFoundException;
     void setStatusBackToReceiving(long id);
 

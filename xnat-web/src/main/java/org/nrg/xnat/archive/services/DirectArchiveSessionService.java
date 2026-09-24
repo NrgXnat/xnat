@@ -57,5 +57,12 @@ public interface DirectArchiveSessionService {
     void triggerArchive();
     void triggerArchive(@Nonnull SessionData session) throws ClientException, ServerException;
 
+    /**
+     * As {@link #triggerArchive(SessionData)}, on behalf of a user; with {@code force}, which only a site admin may
+     * set, the session is re-queued for building from any status except a delete in progress, to retry a session a
+     * dead worker left queued, building or archiving. Nothing verifies that no worker is still processing it.
+     */
+    void triggerArchive(@Nonnull SessionData session, UserI user, boolean force) throws InvalidPermissionException, ClientException, ServerException;
+
     List<SessionData> getPaginated(UserI user, DirectArchiveSessionPaginatedRequest request);
 }

@@ -388,7 +388,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
 
     @Test
     public void triggerArchiveQueuesTheSessionAndSendsTheBuildRequest() throws Exception {
-        when(hibernateService.setStatusToQueuedBuilding(SESSION_ID)).thenReturn(true);
+        when(hibernateService.setStatusToQueuedBuilding(SESSION_ID, false)).thenReturn(true);
 
         service.triggerArchive(sessionIn(PrearcStatus.RECEIVING));
 
@@ -398,7 +398,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     @Test
     public void triggerArchiveRefusesASessionItCouldNotQueueAndSendsNothing() throws Exception {
         // A session a delete has claimed (or that is otherwise not queueable) must not reach the archiver.
-        when(hibernateService.setStatusToQueuedBuilding(SESSION_ID)).thenReturn(false);
+        when(hibernateService.setStatusToQueuedBuilding(SESSION_ID, false)).thenReturn(false);
 
         assertThatThrownBy(() -> service.triggerArchive(sessionIn(PrearcStatus.DELETING)))
                 .isInstanceOfSatisfying(ClientException.class,

@@ -446,6 +446,19 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
     @Override
     public synchronized void triggerArchive(@Nonnull SessionData session) throws ClientException, ServerException {
+        queueForBuild(session, false);
+    }
+
+    @Override
+    public synchronized void triggerArchive(@Nonnull SessionData session, UserI user, boolean force)
+            throws InvalidPermissionException, ClientException, ServerException {
+        if (force && !Roles.isSiteAdmin(user)) {
+            throw new InvalidPermissionException("Only a site administrator can force a direct archive session back into the build queue");
+        }
+        queueForBuild(session, force);
+    }
+
+    private void queueForBuild(@Nonnull SessionData session, boolean force) throws ClientException, ServerException {
         Long id = session.getId();
         if(id == null || PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
             throw new ClientException("Refusing to trigger archive on DirectArchiveSession id=" + id +
@@ -453,7 +466,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         }
         final boolean queued;
         try {
-            queued = directArchiveSessionHibernateService.setStatusToQueuedBuilding(id);
+            queued = directArchiveSessionHibernateService.setStatusToQueuedBuilding(id, force);
         } catch (Exception e) {
             throw new ServerException("Issue setting status to queued building for DirectArchiveSession id=" + id, e);
         }

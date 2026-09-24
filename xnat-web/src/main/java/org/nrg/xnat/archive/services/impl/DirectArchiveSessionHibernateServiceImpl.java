@@ -134,7 +134,13 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public boolean setStatusToQueuedBuilding(long id) throws NotFoundException {
-        return transitionIfAllowed(id, PrearcStatus.QUEUED_BUILDING);
+        return setStatusToQueuedBuilding(id, false);
+    }
+
+    @Override
+    public boolean setStatusToQueuedBuilding(long id, boolean force) throws NotFoundException {
+        return transitionIfAllowed(id, PrearcStatus.QUEUED_BUILDING,
+                                   force ? EnumSet.complementOf(EnumSet.of(PrearcStatus.DELETING)) : GUARDED_TRANSITIONS.get(PrearcStatus.QUEUED_BUILDING));
     }
 
     @Override
@@ -183,7 +189,11 @@ public class DirectArchiveSessionHibernateServiceImpl
      * transition applies to, typically because a delete has claimed it, leave it alone and say so.
      */
     private boolean transitionIfAllowed(long id, PrearcStatus target) throws NotFoundException {
-        if (getDao().transitionStatus(id, target, GUARDED_TRANSITIONS.get(target)) == 1) {
+        return transitionIfAllowed(id, target, GUARDED_TRANSITIONS.get(target));
+    }
+
+    private boolean transitionIfAllowed(long id, PrearcStatus target, Set<PrearcStatus> allowed) throws NotFoundException {
+        if (getDao().transitionStatus(id, target, allowed) == 1) {
             return true;
         }
         final PrearcStatus current = get(id).getStatus();

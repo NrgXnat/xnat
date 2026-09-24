@@ -77,16 +77,22 @@ public class DirectArchiveSessionApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(path="{project}/{tag}/{name}", method = POST, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Trigger direct archive of session")
+    @ApiOperation(value = "Trigger direct archive of session",
+                  notes = "Queues the session for building. Refused with 409 unless the session is receiving or in " +
+                          "error. A site admin may pass force=true to re-queue a session left queued, building or " +
+                          "archiving, for example by a node restart; nothing verifies that no worker is still " +
+                          "processing it, so forcing a session that is really being archived puts two workers on it.")
     public ResponseEntity<Void> triggerArchive(@Project @PathVariable String project,
                                                @PathVariable String tag,
-                                               @PathVariable String name)
+                                               @PathVariable String name,
+                                               @ApiParam("Re-queue the session whatever its status (site admins only; see notes)")
+                                               @RequestParam(required = false, defaultValue = "false") boolean force)
             throws ClientException, ServerException, NotFoundException, InvalidPermissionException {
         if (!permissionsService.getUserEditableProjects(getSessionUser()).contains(project)) {
             throw new InvalidPermissionException("User cannot trigger archive for project " + project);
         }
         SessionData sessionData = directArchiveSessionService.findByProjectTagName(project, tag, name);
-        directArchiveSessionService.triggerArchive(sessionData);
+        directArchiveSessionService.triggerArchive(sessionData, getSessionUser(), force);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

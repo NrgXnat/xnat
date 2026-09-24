@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 public final class SaveLaps {
     public enum Lap {
         PK_MATCHES("pk-matches"), UNIQUE_MATCHES("unique-matches"), SAVED_LOOKUPS("saved-lookups"),
-        INSERT("insert"), UPDATE("update"), HAS_NEW_FIELDS("has-new-fields");
+        INSERT("insert"), NEXT_ID("next-id"), UPDATE("update"), HAS_NEW_FIELDS("has-new-fields"), META("meta");
 
         final String label;
 

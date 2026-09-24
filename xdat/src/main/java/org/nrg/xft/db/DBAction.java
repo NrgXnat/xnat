@@ -444,7 +444,9 @@ public class DBAction {
                                     GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                                     XFTItem             meta = (XFTItem) item.getProperty(f);
                                     if (meta == null) {
-                                        meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                        final long metaStart = SaveLaps.start();
+                                    meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                    SaveLaps.add(SaveLaps.Lap.META, metaStart);
                                         assert meta != null;
 
                                         StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -482,7 +484,9 @@ public class DBAction {
                                 GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                                 XFTItem             meta = (XFTItem) item.getProperty(f);
                                 if (meta == null) {
+                                    final long metaStart = SaveLaps.start();
                                     meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                    SaveLaps.add(SaveLaps.Lap.META, metaStart);
                                     assert meta != null;
 
                                     StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -574,7 +578,9 @@ public class DBAction {
                                 GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                                 XFTItem             meta = (XFTItem) item.getProperty(f);
                                 if (meta == null) {
+                                    final long metaStart = SaveLaps.start();
                                     meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                    SaveLaps.add(SaveLaps.Lap.META, metaStart);
                                     assert meta != null;
 
                                     StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -661,7 +667,9 @@ public class DBAction {
                             GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                             XFTItem             meta = (XFTItem) item.getProperty(f);
                             if (meta == null) {
+                                final long metaStart = SaveLaps.start();
                                 meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                SaveLaps.add(SaveLaps.Lap.META, metaStart);
                                 assert meta != null;
 
                                 StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -697,7 +705,9 @@ public class DBAction {
                         GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                         XFTItem             meta = (XFTItem) item.getProperty(f);
                         if (meta == null) {
+                            final long metaStart = SaveLaps.start();
                             meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                            SaveLaps.add(SaveLaps.Lap.META, metaStart);
                             assert meta != null;
 
                             StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -1781,7 +1791,9 @@ public class DBAction {
         final PoolDBUtils           con     = new PoolDBUtils();
         if (element.isAutoIncrement()) {
             if (!item.hasPK()) {
+                final long nextId = SaveLaps.start();
                 Object key = con.getNextID(element.getDbName(), element.getSQLName(), item.getPkNames().getFirst(), element.getSequenceName());
+                SaveLaps.add(SaveLaps.Lap.NEXT_ID, nextId);
                 if (key != null) {
                     item.setFieldValue(item.getPkNames().getFirst(), key);
                 }

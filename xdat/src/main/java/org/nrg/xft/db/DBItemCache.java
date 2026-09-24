@@ -37,7 +37,7 @@ public class DBItemCache {
     private              ItemCollection saved       = new SavedItemCollection();   // indexed for StoreItem's lookups
     private              ItemCollection removed     = new ItemCollection();
     private              ItemCollection preexisting = new ItemCollection();
-    private              ItemCollection dbTrigger   = new ItemCollection();
+    private              ItemCollection dbTrigger   = new SavedItemCollection();   // indexed for StoreItem's contains() per root item
     private              ItemCollection modified    = new ItemCollection();
 
     private ArrayList<String> sql = new ArrayList<>();

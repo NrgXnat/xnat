@@ -295,7 +295,7 @@ public class ResumableDicomInputStreamTest {
 
             // Mirrors GradualDicomImporter.write, which cannot be called from here: any static touch of that
             // class runs ImporterHandlerA's initializer, which needs a Spring context.
-            final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(dataset);
+            final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.extractFmiFromDataset(dataset);
             try (final FileOutputStream fos = new FileOutputStream(output);
                  final BufferedOutputStream bos = new BufferedOutputStream(fos);
                  final DicomOutputStream dos = new DicomOutputStream(bos, UID.ExplicitVRLittleEndian)) {

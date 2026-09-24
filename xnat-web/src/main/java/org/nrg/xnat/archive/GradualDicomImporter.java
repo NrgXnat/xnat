@@ -360,11 +360,11 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
             try {
                 try {
-                    // Split FMI from dataset before writing (dcm4che5 requires them separate for i/o)
-                    final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(dataset);
+                    // dcm4che5 writes FMI and dataset separately. extractFmiFromDataset strips the FMI out of
+                    // `dataset` in place (see its Javadoc / XNAT-8719), so it is added back after the write for
+                    // any subsequent processing.
+                    final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.extractFmiFromDataset(dataset);
                     write(split.fmi, split.onlyDataset, transferSyntaxUID, _parameters.get(SENDER_AE_TITLE_PARAM), bis, outputFile, source);
-                    // Re-merge FMI back into dataset for any subsequent processing
-                    //https://radiologics.atlassian.net/browse/XNAT-8719
                     dataset.addAll(split.fmi);
                 } catch (IOException e) {
                     throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);

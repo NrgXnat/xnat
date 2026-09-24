@@ -92,7 +92,9 @@ public class SavedItemCollection extends ItemCollection {
     private List<String> keysOf(final XFTItem item) throws Exception {
         List<String> keys = probeKeys.get(item);
         if (keys == null) {
+            final long started = SaveLaps.start();
             keys = ItemUniqueEquality.uniqueKeys(item);
+            SaveLaps.add(SaveLaps.Lap.SAVED_KEYS, started);
             probeKeys.put(item, keys);
         }
         return keys;
@@ -121,7 +123,10 @@ public class SavedItemCollection extends ItemCollection {
     private ItemI findByPKIndexed(final ItemI item) {
         final XFTItem probe = item.getItem();
         try {
-            if (probe.getPkValues().isEmpty()) {
+            final long started = SaveLaps.start();
+            final boolean noKeys = probe.getPkValues().isEmpty();
+            SaveLaps.add(SaveLaps.Lap.SAVED_PK, started);
+            if (noKeys) {
                 return null;   // ItemPKEquality.doCheck matches nothing for an item without primary-key values
             }
         } catch (Exception e) {

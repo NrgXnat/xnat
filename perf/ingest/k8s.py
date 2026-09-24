@@ -282,6 +282,16 @@ class Cluster:
         except Exception:
             return []
 
+    def direct_archive_rows(self, project: str) -> list[dict]:
+        self.exec(f"mkdir -p {self._STAGE} && printf '{{\"page\":1,\"size\":200}}' > {self._STAGE}/da-req.json")
+        body = self.curl("POST", "/xapi/direct-archive", data_file=f"{self._STAGE}/da-req.json", ctype="application/json").body
+        try:
+            return [r for r in json.loads(body) if r.get("project") == project]
+        except Exception:
+            return []
+
+    _STAGE = "/tmp/ingest-perf"
+
     def archived_count(self, project: str) -> int:
         body = self.curl("GET", f"/data/projects/{project}/experiments",
                          query="format=json&columns=label").body
@@ -332,6 +342,11 @@ class Cluster:
         # delete prearchive sessions, then archived subjects; ignore individual failures
         for r in self.prearchive_rows(project):
             self.curl("DELETE", f"/data/prearchive/projects/{project}/{r['timestamp']}/{r['folderName']}")
+        # and any direct-archive session rows: a direct archive interrupted mid-flight (pod restart) leaves its
+        # row behind, and every later direct import of the same study then waits on it until the 600 s timeout
+        for r in self.direct_archive_rows(project):
+            self.curl("DELETE", f"/xapi/direct-archive/{r['id']}")
+        self.exec(f"rm -f /data/xnat/archive/{project}/arc001/*.xml 2>/dev/null; true")   # its top-level session XML, too
         body = self.curl("GET", f"/data/projects/{project}/subjects", query="format=json").body
         try:
             subs = [s["ID"] for s in json.loads(body)["ResultSet"]["Result"]]

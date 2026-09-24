@@ -22,8 +22,10 @@ import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -146,7 +148,31 @@ public class DBItemCache {
         saved.clear();
         removed.clear();
         preexisting.clear();
+        sequenceValues.clear();
+        sequenceBatch.clear();
     }
+
+    /**
+     * The next value of an item's sequence. A transaction storing many items of one type fetched every value
+     * with its own round trip (a 200-scan session: some 800 of them); the values are now fetched in batches
+     * that grow with use within the transaction (1, then 4, 16, 64), so a lone insert still costs one value
+     * and a large session a handful of round trips per table. Values fetched and not used are lost, which
+     * sequences always allowed.
+     */
+    public Object nextSequenceValue(final PoolDBUtils con, final String db, final String table, final String pk, final String sequence) throws Exception {
+        final String  key    = db + "|" + table + "|" + pk + "|" + sequence;
+        Deque<Object> values = sequenceValues.get(key);
+        if (values == null || values.isEmpty()) {
+            final int batch = sequenceBatch.getOrDefault(key, 1);
+            values = new ArrayDeque<>(con.getNextIDs(db, table, pk, sequence, batch));
+            sequenceValues.put(key, values);
+            sequenceBatch.put(key, Math.min(batch * 4, 64));
+        }
+        return values.poll();
+    }
+
+    private final Map<String, Deque<Object>> sequenceValues = new HashMap<>();
+    private final Map<String, Integer>       sequenceBatch  = new HashMap<>();
 
     public String toString() {
         return this.sql.toString();

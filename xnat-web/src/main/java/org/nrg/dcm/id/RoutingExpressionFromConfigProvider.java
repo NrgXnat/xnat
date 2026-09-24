@@ -5,14 +5,12 @@ import org.apache.commons.lang.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.services.ConfigService;
 import org.nrg.xdat.XDAT;
+import org.nrg.xnat.archive.ImportScope;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * RoutingExpressionFromConfigProvider is an implementation of RoutingExpressionProvider that reads expressions
@@ -36,22 +34,10 @@ public class RoutingExpressionFromConfigProvider implements RoutingExpressionPro
     @Override
     public List<String> provide(CompositeDicomObjectIdentifier.ExtractorType type) {
         // Every received object asks for the project, subject, session and auto-archive rules in turn, and each
-        // ask was a config-service read (several database round trips). The rules are kept for a few seconds:
-        // a rule edited in the UI takes effect within that time instead of on the very next object.
-        final CachedRules cached = _cache.get(type);
-        final long        now    = System.nanoTime();
-        if (cached != null && now - cached.readAt < CACHE_TTL_NANOS) {
-            return new ArrayList<>(cached.rules);
-        }
-        final List<String> rules = readRules(type);
-        _cache.put(type, new CachedRules(List.copyOf(rules), now));
-        return rules;
+        // ask was a config-service read (several database round trips). Within one import scope (the objects
+        // of one association, one uploaded archive, one inbox request) each set of rules is read once.
+        return new ArrayList<>(ImportScope.scoped(getClass().getName() + ":" + type, () -> List.copyOf(readRules(type))));
     }
-
-    private record CachedRules(List<String> rules, long readAt) {}
-
-    private final Map<CompositeDicomObjectIdentifier.ExtractorType, CachedRules> _cache = new ConcurrentHashMap<>();
-    private static final long CACHE_TTL_NANOS = TimeUnit.SECONDS.toNanos(5);
 
     private List<String> readRules(CompositeDicomObjectIdentifier.ExtractorType type) {
         List<String> rules = new ArrayList<>();

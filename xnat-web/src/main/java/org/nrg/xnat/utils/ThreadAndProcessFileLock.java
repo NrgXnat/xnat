@@ -196,9 +196,24 @@ public class ThreadAndProcessFileLock {
     }
 
     private String getCachePath() {
+        // Reading the preference is a database round trip, and every lock cycle read it (twice per catalog at
+        // archive time, hundreds of times per session). Keep the answer for a second, tied to the preferences
+        // bean it came from; a changed cache path is seen within that second.
         final SiteConfigPreferences preferences = getSiteConfigPreferences();
-        return preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+        final CachedPath            cached      = CACHE_PATH;
+        final long                  now         = System.nanoTime();
+        if (cached != null && cached.preferences == preferences && now - cached.readAt < CACHE_PATH_TTL_NANOS) {
+            return cached.path;
+        }
+        final String path = preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+        CACHE_PATH = new CachedPath(preferences, path, now);
+        return path;
     }
+
+    private record CachedPath(SiteConfigPreferences preferences, String path, long readAt) {}
+
+    private static volatile CachedPath CACHE_PATH;
+    private static final    long       CACHE_PATH_TTL_NANOS = TimeUnit.SECONDS.toNanos(1);
 
     /**
      * Create the lock-file File corresponding to the provided file.

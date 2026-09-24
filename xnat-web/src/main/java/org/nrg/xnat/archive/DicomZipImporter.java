@@ -270,6 +270,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
             throws ServerException, ClientException {
         final GradualDicomImporter importer = new GradualDicomImporter(listenerControl, u, entryFileWriter, params);
         importer.setIdentifier(getIdentifier());
+        importer.setScope(scope);
         if (null != getNamer()) {
             importer.setNamer(getNamer());
         }
@@ -319,6 +320,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
     }
 
     private final Object listenerControl;
+    private final ImportScope scope = new ImportScope();   // the archive's entries read their settings once
     private final UserI u;
     private final Map<String, Object> params;
     private final FileWriterWrapperI fw;

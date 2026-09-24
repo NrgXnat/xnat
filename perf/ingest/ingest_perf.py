@@ -67,7 +67,7 @@ def _is_transient(e: Exception) -> bool:
     kube = ("tls handshake timeout", "unable to connect to the server", "i/o timeout",
             "context deadline exceeded", "connection refused", "connection reset",
             "broken pipe", "unexpected eof", "error validating", "the server is currently unable",
-            "cp failed after", "exec failed", "exec channel closed")
+            "cp failed after", "exec failed", "exec channel closed", "exec channel stalled")
     app = ("did not archive within", "did not complete within", "failed http", "contains no")
     return any(k in s for k in kube) and not any(a in s for a in app)
 

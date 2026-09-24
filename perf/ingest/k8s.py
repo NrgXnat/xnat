@@ -42,7 +42,16 @@ class _Shell:
     followed by a sentinel echo and stdout is read back up to the sentinel, so a control call costs a
     pipe round trip (tens of ms) instead of a fresh exec through the API connection (~0.9 s each, and a
     cell makes a dozen of them). The command's stderr is folded into its output, as the one-shot exec
-    reported it on failure."""
+    reported it on failure.
+
+    While a command runs, a background loop in the pod's shell writes a NUL byte every HEARTBEAT_S
+    seconds; the NULs are dropped from the output. A connection that stalls leaves kubectl running but
+    silent, which without a heartbeat looks exactly like a slow command and held a caller for the whole
+    command timeout. With one, STALL_S seconds without a single byte means the channel has stalled, and
+    it is abandoned so the caller can retry."""
+
+    HEARTBEAT_S = 5
+    STALL_S = 45
 
     def __init__(self, kubectl: list[str]):
         self.p = subprocess.Popen([*kubectl, "sh"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -50,18 +59,24 @@ class _Shell:
 
     def run(self, script: str, timeout: int) -> tuple[int, str]:
         tag = uuid.uuid4().hex
+        wrapped = (f"( while :; do sleep {self.HEARTBEAT_S}; printf '\\000'; done ) &\n_hb=$!\n"
+                   f"{{\n{script}\n}} 2>&1\n_rc=$?\nkill $_hb 2>/dev/null\necho \"{tag} $_rc\"\n")
         try:
-            self.p.stdin.write(f"{{\n{script}\n}} 2>&1\necho \"{tag} $?\"\n".encode())
+            self.p.stdin.write(wrapped.encode())
             self.p.stdin.flush()
         except OSError as e:
             raise RuntimeError(f"exec channel closed: {e}") from e
         buf = bytearray()
         fd = self.p.stdout.fileno()
         deadline = time.monotonic() + timeout
+        last_byte = time.monotonic()
         while True:
-            remaining = deadline - time.monotonic()
+            now = time.monotonic()
+            remaining = deadline - now
             if remaining <= 0:
                 raise TimeoutError(f"command timed out after {timeout}s in the exec channel")
+            if now - last_byte > self.STALL_S:
+                raise RuntimeError(f"exec channel stalled: no bytes, not even a heartbeat, for {self.STALL_S}s")
             if not select.select([fd], [], [], min(remaining, 5.0))[0]:
                 if self.p.poll() is not None:
                     raise RuntimeError(f"exec channel closed: {buf.decode(errors='replace')[-300:]}")
@@ -69,7 +84,8 @@ class _Shell:
             chunk = os.read(fd, 65536)
             if not chunk:
                 raise RuntimeError(f"exec channel closed: {buf.decode(errors='replace')[-300:]}")
-            buf += chunk
+            last_byte = time.monotonic()
+            buf += chunk.replace(b"\x00", b"")
             text = buf.decode(errors="replace")
             idx = text.rfind(tag)
             if idx != -1 and text.endswith("\n"):
@@ -124,10 +140,15 @@ class Cluster:
 
     def cp_to(self, local: str, dest: str, *, pod: str | None = None, container: str | None = None) -> None:
         tgt = f"{pod or self.pod}:{dest}"
-        # cp is idempotent, so retry transient API timeouts (the API connection can be flaky).
+        # cp is idempotent, so retry transient API timeouts (the API connection can be flaky). An attempt that
+        # takes five minutes has stalled: the largest staged workload copies in well under one.
         last = ""
         for attempt in range(3):
-            r = self._kubectl("cp", local, tgt, "-c", container or self.container, timeout=1800)
+            try:
+                r = self._kubectl("cp", local, tgt, "-c", container or self.container, timeout=300)
+            except subprocess.TimeoutExpired:
+                last = "kubectl cp stalled for 300s"
+                continue
             if r.returncode == 0:
                 return
             last = r.stderr.decode(errors="replace")[:400]

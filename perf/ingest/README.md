@@ -96,7 +96,33 @@ uv run python ingest_perf.py teardown --k8s ... [--delete-project]
 ```
 
 Results are one JSON per `--label` (self-describing header: build sha, storage layout, corpus
-manifest) plus the A/B `report.md`.
+manifest, and the instance it ran on: node, instance type, image digest, JVM) plus the A/B `report.md`.
+Each phase also records `nfs_ops` and `nfs_rtt_ms`, the NFS operations it caused on the archive mount and
+their mean round trip, from the pod's `mountstats`: how often the phase went to the storage, and how fast
+the storage answered while it did.
+
+## Several instances on shared storage (`rounds.py`, `measure_lock.py`)
+
+Most of a run is not measurement: the wipe between cells (XNAT deleting the previous session and its files)
+took 60–80 % of the wall time in the runs so far. Several instances can share that overhead without
+measuring each other, if no instance is ever measured while another loads the storage:
+
+- `--lock PATH` on `setup` and `run` makes every harness process that names the same lock file (all on this
+  machine) take it **exclusively** for a cell's route and the settle after it, and **shared** for everything
+  else: staging, anonymization setup, the wipe, the inbox restage, digests. So at any moment one instance is
+  measured and every other waits, or any number do their overhead side by side. A waiting measurement goes
+  before new overhead. Running instances side by side *without* the lock would let them slow each other,
+  and slow the builds that make more NFS round trips the most, which inflates their differences.
+- `rounds.py PLAN` runs rounds of legs across instances (`fourway.example.json`): each round, every instance
+  swaps to its leg's image, runs setup and a warm-up, then its block under its own label
+  `<prefix>-<leg>-b<n>`, all under one lock. The next round starts when every instance is done, so whatever
+  the shared storage does at a given hour lands on that round's legs alike, and rotating legs across
+  instances keeps any instance's quirks out of the comparison. Completed blocks leave a marker; a rerun
+  resumes. `--dry-run` prints the schedule; `--merge` writes `<prefix>-<leg>.json` per leg
+  (`merge_results.py`), which `report --compare` reads like any results file.
+- Give each instance its own node of one instance type, its own database, and a fresh database at the start:
+  the example plan runs 1.10.1 on every instance first and only ever upgrades afterwards.
+- `uv run python -m unittest measure_lock_test` checks the lock's guarantees.
 
 ## Constraints
 

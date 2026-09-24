@@ -1,0 +1,34 @@
+{
+  "context": "adapt-dev-amd64-v1",
+  "release": "xnat",
+  "chart": "oci://ghcr.io/nrgxnat/charts/xnat",
+  "chart_version": "3.1.0",
+  "pod": "xnat-0",
+  "user": "admin",
+  "password": "admin",
+  "instances": ["xnat-perf", "xnat-perf2", "xnat-perf3", "xnat-perf4"],
+  "legs": {
+    "A": {"tag": "1.10.1"},
+    "B": {"tag": "1.10.2-develop-2026.09.24-SNAPSHOT"},
+    "C": {"tag": "1.10.2-ingest-io-2026.09.24-SNAPSHOT"},
+    "D": {"tag": "1.10.2-archive-phase-2026.09.24.18-SNAPSHOT"}
+  },
+  "rounds": [
+    ["A", "A", "A", "A"],
+    ["B", "C", "D", "B"],
+    ["C", "D", "B", "C"],
+    ["D", "B", "C", "D"]
+  ],
+  "block": [
+    {"workloads": "small,mixed", "routes": "zip,cstore,direct,inbox", "anon": "none,site-header,project-header"},
+    {"workloads": "multiframe", "routes": "zip,cstore,direct,inbox", "anon": "none,site-header,site-pixel,project-header,project-pixel"}
+  ],
+  "first_block_extra": [
+    {"workloads": "huge", "routes": "cstore", "anon": "none,project-pixel"}
+  ],
+  "warmup": {"workloads": "mixed", "routes": "zip,direct", "anon": "none,project-header"},
+  "prefix": "fourway",
+  "out": "~/QA/ingest-io/results-fsx/fourway",
+  "lock": "~/QA/ingest-io/results-fsx/fourway/.measure.lock",
+  "verify": true
+}

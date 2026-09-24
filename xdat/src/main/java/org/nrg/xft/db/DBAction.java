@@ -178,7 +178,7 @@ public class DBAction {
             if (totalMs >= TIMING_THRESHOLD_MS) {
                 // one line per slow save on the ingest timing logger, so an archive's save lap can be split into
                 // its parts from the log alone: the SELECTs that build the statements, the batch, the triggers
-                TIMING.info("Stored {} ({} statements, {} trigger items): prepare-sql {} ms, quarantine {} ms, pre-triggers {} ms, store {} ms, post-triggers {} ms, total {} ms; prepare-sql laps: {}",
+                TIMING.info("Stored {} ({} statements, {} trigger items): prepare-sql {} ms, quarantine {} ms, pre-triggers {} ms, store {} ms, post-triggers {} ms, total {} ms; prepare-sql laps (own time): {}",
                             item.getXSIType(), statements, cache.getDBTriggers().size(),
                             prepareMs, quarantineMs, preTriggersMs, storeMs, postTriggersMs, totalMs, SaveLaps.summary());
             }
@@ -287,8 +287,17 @@ public class DBAction {
      *
      * @return The updated database item cache with the stored item.
      */
-    @SuppressWarnings("UnusedParameters")
     private static XFTItem StoreItem(XFTItem item, UserI user, boolean checkForDuplicates, ArrayList storedRelationships, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, DBItemCache cache, SecurityManagerI securityManager, boolean allowFieldMatching) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return storeItemImpl(item, user, checkForDuplicates, storedRelationships, quarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, allowFieldMatching);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.STORE_ITEM, started);
+        }
+    }
+
+    @SuppressWarnings("UnusedParameters")
+    private static XFTItem storeItemImpl(XFTItem item, UserI user, boolean checkForDuplicates, ArrayList storedRelationships, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, DBItemCache cache, SecurityManagerI securityManager, boolean allowFieldMatching) throws Exception {
         boolean isNew = true;
         try {
             String login = null;
@@ -1237,6 +1246,15 @@ public class DBAction {
     }
 
     private static boolean StoreSingleRefs(XFTItem item, boolean storeSubItems, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, DBItemCache cache, SecurityManagerI securityManager, boolean allowFieldMatching) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return storeSingleRefsImpl(item, storeSubItems, user, quarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, allowFieldMatching);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.SINGLE_REFS, started);
+        }
+    }
+
+    private static boolean storeSingleRefsImpl(XFTItem item, boolean storeSubItems, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, DBItemCache cache, SecurityManagerI securityManager, boolean allowFieldMatching) throws Exception {
         boolean hasNoIdentifier = false;
         //save single refs
         GenericWrapperField ext = null;
@@ -1442,6 +1460,15 @@ public class DBAction {
     }
 
     private static ItemI StoreMultipleRefs(XFTItem item, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval, DBItemCache cache, SecurityManagerI securityManager) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return storeMultipleRefsImpl(item, user, quarantine, overrideQuarantine, allowItemRemoval, cache, securityManager);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.MULTI_REFS, started);
+        }
+    }
+
+    private static ItemI storeMultipleRefsImpl(XFTItem item, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval, DBItemCache cache, SecurityManagerI securityManager) throws Exception {
 //		save multiple refs
         Iterator mRefs = item.getGenericSchemaElement().getMultiReferenceFields().iterator();
 
@@ -1711,6 +1738,15 @@ public class DBAction {
     }
 
     private static boolean StoreMapping(XFTManyToManyReference mapping, CriteriaCollection criteria, String login, DBItemCache cache) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return storeMappingImpl(mapping, criteria, login, cache);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.MAPPING, started);
+        }
+    }
+
+    private static boolean storeMappingImpl(XFTManyToManyReference mapping, CriteriaCollection criteria, String login, DBItemCache cache) throws Exception {
         final XFTTable table = TableSearch.GetMappingTable(mapping, criteria, login);
 
         if (table.getNumRows() > 0) {

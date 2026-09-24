@@ -1792,7 +1792,7 @@ public class DBAction {
         if (element.isAutoIncrement()) {
             if (!item.hasPK()) {
                 final long nextId = SaveLaps.start();
-                Object key = con.getNextID(element.getDbName(), element.getSQLName(), item.getPkNames().getFirst(), element.getSequenceName());
+                Object key = cache.nextSequenceValue(con, element.getDbName(), element.getSQLName(), item.getPkNames().getFirst(), element.getSequenceName());
                 SaveLaps.add(SaveLaps.Lap.NEXT_ID, nextId);
                 if (key != null) {
                     item.setFieldValue(item.getPkNames().getFirst(), key);

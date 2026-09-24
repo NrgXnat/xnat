@@ -107,6 +107,24 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     }
 
     @Test
+    public void aForcedQueueForBuildMovesEveryStatusButDeletingToQueuedBuilding() throws Exception {
+        for (final PrearcStatus from : EnumSet.complementOf(EnumSet.of(PrearcStatus.DELETING))) {
+            status = from;
+
+            assertThat(service.setStatusToQueuedBuilding(SESSION_ID, true)).as("from %s", from).isTrue();
+            assertThat(status).as("from %s", from).isEqualTo(PrearcStatus.QUEUED_BUILDING);
+        }
+    }
+
+    @Test
+    public void aForcedQueueForBuildLeavesADeletingRowAlone() throws Exception {
+        status = PrearcStatus.DELETING;
+
+        assertThat(service.setStatusToQueuedBuilding(SESSION_ID, true)).isFalse();
+        assertThat(status).isEqualTo(PrearcStatus.DELETING);
+    }
+
+    @Test
     public void claimingARowThatIsGoneThrowsNotFound() {
         status = null;
 

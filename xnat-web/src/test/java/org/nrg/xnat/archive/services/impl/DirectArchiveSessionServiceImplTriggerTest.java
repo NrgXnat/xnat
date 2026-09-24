@@ -9,6 +9,8 @@ import org.restlet.data.Status;
 import org.springframework.jms.core.JmsTemplate;
 
 import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
@@ -145,6 +147,50 @@ public class DirectArchiveSessionServiceImplTriggerTest {
         final XnatExperimentdata archived = mock(XnatExperimentdata.class);
         mockedExperiments.when(() -> BaseXnatExperimentdata.GetExptByProjectIdentifier(eq("PROJ"), eq("SESSION_1"), any(), anyBoolean())).thenReturn(archived);
         when(hibernateService.getOverwriteMode(SESSION_ID)).thenReturn(null);
+    }
+
+    @Test
+    public void aSessionStillReceivingFilesIsRefusedWithAConflict() throws Exception {
+        mockedPrearcUtils.when(() -> PrearcUtils.isSessionReceiving(any())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.triggerArchive(session, user, false))
+                .isInstanceOf(ClientException.class)
+                .satisfies(e -> org.assertj.core.api.Assertions.assertThat(((ClientException) e).getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
+
+        verify(hibernateService, never()).setStatusToQueuedBuilding(anyLong(), anyBoolean());
+    }
+
+    @Test
+    public void aFailedSendAfterAForcedRetryMarksTheSessionErrorInsteadOfReopeningIt() throws Exception {
+        mockedRoles.when(() -> Roles.isSiteAdmin(user)).thenReturn(true);
+        when(hibernateService.setStatusToQueuedBuilding(SESSION_ID, true)).thenReturn(true);
+        mockedXDAT.when(() -> XDAT.sendJmsRequest(any(), any())).thenThrow(new IllegalStateException("jms down"));
+
+        assertThatThrownBy(() -> service.triggerArchive(session, user, true)).isInstanceOf(ServerException.class);
+
+        verify(hibernateService).setStatusToError(eq(SESSION_ID), any(IllegalStateException.class));
+        verify(hibernateService, never()).setStatusBackToReceiving(anyLong());
+    }
+
+    @Test
+    public void aFailedSendForAReceivingSessionPutsItBackToReceiving() throws Exception {
+        session.setStatus(PrearcStatus.RECEIVING);
+        when(hibernateService.setStatusToQueuedBuilding(SESSION_ID, false)).thenReturn(true);
+        mockedXDAT.when(() -> XDAT.sendJmsRequest(any(), any())).thenThrow(new IllegalStateException("jms down"));
+
+        assertThatThrownBy(() -> service.triggerArchive(session, user, false)).isInstanceOf(ServerException.class);
+
+        verify(hibernateService).setStatusBackToReceiving(SESSION_ID);
+        verify(hibernateService, never()).setStatusToError(anyLong(), any());
+    }
+
+    @Test
+    public void aSessionDeletedUnderTheTriggerIsNotFound() throws Exception {
+        when(hibernateService.setStatusToQueuedBuilding(SESSION_ID, false)).thenThrow(new NotFoundException("gone"));
+
+        assertThatThrownBy(() -> service.triggerArchive(session, user, false))
+                .isInstanceOf(ClientException.class)
+                .satisfies(e -> org.assertj.core.api.Assertions.assertThat(((ClientException) e).getStatus()).isEqualTo(Status.CLIENT_ERROR_NOT_FOUND));
     }
 
     @Test

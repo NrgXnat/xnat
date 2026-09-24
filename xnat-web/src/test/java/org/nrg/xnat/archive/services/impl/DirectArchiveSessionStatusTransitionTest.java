@@ -148,6 +148,27 @@ public class DirectArchiveSessionStatusTransitionTest {
     }
 
     @Test
+    public void forcingTheQueueForBuildMovesAnArchivingSessionBackToQueuedBuilding() throws Exception {
+        final long id = receivingSession(ROUNDS + 4).getId();
+        service.setStatusToQueuedBuilding(id);
+        service.setStatusToBuildingAndReturn(id);
+        service.setStatusToQueuedArchiving(id);
+        service.setStatusToArchivingAndReturn(id);
+
+        assertThat(service.setStatusToQueuedBuilding(id, true)).isTrue();
+        assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.QUEUED_BUILDING);
+    }
+
+    @Test
+    public void forcingTheQueueForBuildLeavesAClaimedDeleteAlone() throws Exception {
+        final long id = receivingSession(ROUNDS + 5).getId();
+        service.setStatusToDeleting(id, false);
+
+        assertThat(service.setStatusToQueuedBuilding(id, true)).isFalse();
+        assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.DELETING);
+    }
+
+    @Test
     public void forcingTheQueueForBuildMovesAnInFlightSessionBackToQueuedBuilding() throws Exception {
         final long id = receivingSession(ROUNDS + 3).getId();
         service.setStatusToQueuedBuilding(id);

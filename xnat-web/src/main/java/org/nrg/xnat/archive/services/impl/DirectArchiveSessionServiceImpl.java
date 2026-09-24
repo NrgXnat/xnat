@@ -514,13 +514,18 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
     private void queueForBuild(@Nonnull SessionData session, boolean force) throws ClientException, ServerException {
         Long id = session.getId();
-        if(id == null || PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
-            throw new ClientException("Refusing to trigger archive on DirectArchiveSession id=" + id +
-                                      " because it is still receiving new files or doesn't have an id");
+        if (id == null) {
+            throw new ClientException("Refusing to trigger archive on a DirectArchiveSession that doesn't have an id");
+        }
+        if (PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Refusing to trigger archive on DirectArchiveSession id=" + id +
+                                      " because it is still receiving new files");
         }
         final boolean queued;
         try {
             queued = directArchiveSessionHibernateService.setStatusToQueuedBuilding(id, force);
+        } catch (NotFoundException e) {
+            throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "DirectArchiveSession id=" + id + " no longer exists", e);
         } catch (Exception e) {
             throw new ServerException("Issue setting status to queued building for DirectArchiveSession id=" + id, e);
         }
@@ -531,8 +536,25 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         try {
             XDAT.sendJmsRequest(jmsTemplate, new DirectArchiveRequest(id));
         } catch (Exception e) {
-            directArchiveSessionHibernateService.setStatusBackToReceiving(id);
+            undoQueue(session, id, e);
             throw new ServerException("Issue submitting request for DirectArchiveSession id=" + id, e);
+        }
+    }
+
+    /**
+     * A session that was resting in RECEIVING goes back there, so the scheduled trigger retries it. Anything else,
+     * an ERROR retry or a forced retry of an in-flight row, is marked ERROR instead: putting it back to RECEIVING
+     * would reopen it to the importer and to the scheduled trigger without the decision that queued it.
+     */
+    private void undoQueue(SessionData session, long id, Exception cause) {
+        if (session.getStatus() == PrearcStatus.RECEIVING) {
+            directArchiveSessionHibernateService.setStatusBackToReceiving(id);
+            return;
+        }
+        try {
+            directArchiveSessionHibernateService.setStatusToError(id, cause);
+        } catch (NotFoundException e) {
+            log.warn("DirectArchiveSession id={} disappeared while recording a failed build request", id, e);
         }
     }
 

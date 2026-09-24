@@ -155,9 +155,9 @@ public class DBItemCache {
     /**
      * The next value of an item's sequence. A transaction storing many items of one type fetched every value
      * with its own round trip (a 200-scan session: some 800 of them); the values are now fetched in batches
-     * that grow with use within the transaction (1, then 4, 16, 64), so a lone insert still costs one value
-     * and a large session a handful of round trips per table. Values fetched and not used are lost, which
-     * sequences always allowed.
+     * that grow with use within the transaction (1, then 4, then 16), so a lone insert still costs one value
+     * and a large session a round trip per sixteen items per table. Values fetched and not used are lost,
+     * which sequences always allowed; the cap keeps the gap a save can leave in a table's ids under sixteen.
      */
     public Object nextSequenceValue(final PoolDBUtils con, final String db, final String table, final String pk, final String sequence) throws Exception {
         final String  key    = db + "|" + table + "|" + pk + "|" + sequence;
@@ -166,7 +166,7 @@ public class DBItemCache {
             final int batch = sequenceBatch.getOrDefault(key, 1);
             values = new ArrayDeque<>(con.getNextIDs(db, table, pk, sequence, batch));
             sequenceValues.put(key, values);
-            sequenceBatch.put(key, Math.min(batch * 4, 64));
+            sequenceBatch.put(key, Math.min(batch * 4, 16));
         }
         return values.poll();
     }

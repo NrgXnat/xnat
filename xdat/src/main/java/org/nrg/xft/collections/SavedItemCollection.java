@@ -64,6 +64,7 @@ public class SavedItemCollection extends ItemCollection {
         byUniqueKey.clear();
         order.clear();
         unindexed.clear();
+        probeKeys.clear();
     }
 
     private void index(final ItemI item) {
@@ -71,15 +72,33 @@ public class SavedItemCollection extends ItemCollection {
         order.put(item, order.size());
         byType.computeIfAbsent(xftItem.getXSIType().toLowerCase(), k -> new ArrayList<>()).add(item);
         try {
-            for (final String key : ItemUniqueEquality.uniqueKeys(xftItem)) {
+            for (final String key : keysOf(xftItem)) {
                 byUniqueKey.computeIfAbsent(key, k -> new ArrayList<>()).add(item);
             }
         } catch (Exception e) {
             // Without its keys the item can still be found by the scan, which the lookups fall back to.
             logger.error("Unable to derive the unique keys of a stored " + xftItem.getXSIType() + "; lookups against it will scan", e);
             unindexed.add(item);
+        } finally {
+            probeKeys.remove(xftItem);
         }
     }
+
+    /**
+     * An item's unique keys cost a property read and a value format per unique field, and StoreItem looks an
+     * item up right before it stores it, so the keys derived for the lookup are kept (by identity) until the
+     * item is indexed or the transaction ends. Nothing sets an item's unique values in between.
+     */
+    private List<String> keysOf(final XFTItem item) throws Exception {
+        List<String> keys = probeKeys.get(item);
+        if (keys == null) {
+            keys = ItemUniqueEquality.uniqueKeys(item);
+            probeKeys.put(item, keys);
+        }
+        return keys;
+    }
+
+    private final IdentityHashMap<XFTItem, List<String>> probeKeys = new IdentityHashMap<>();
 
     @Override
     public boolean containsByPK(final ItemI item, final boolean checkExtensions) {
@@ -143,13 +162,15 @@ public class SavedItemCollection extends ItemCollection {
         final XFTItem probe = item.getItem();
         final List<String> keys;
         try {
-            if (!probe.hasUniques()) {
-                return null;   // the scan compares nothing for an item without unique values
-            }
-            keys = ItemUniqueEquality.uniqueKeys(probe);
+            keys = keysOf(probe);
         } catch (Exception e) {
             logger.error("", e);
             return super.findByUnique(item, false);
+        }
+        if (keys.isEmpty()) {
+            // No unique field with a value and no complete unique composite: doCheck matches nothing, as the
+            // scan's own hasUniques() gate concluded before comparing (it read the same properties again).
+            return null;
         }
         // Candidates in the order the scan would have reached them: items sharing a key, then any item whose
         // keys could not be derived.

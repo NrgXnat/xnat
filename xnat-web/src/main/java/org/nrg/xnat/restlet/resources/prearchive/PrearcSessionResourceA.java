@@ -102,7 +102,10 @@ public abstract class PrearcSessionResourceA extends SecureResource {
 	 * the prearchive lists for them (XNAT-8806).
 	 */
 	private boolean isReadRequest() {
-		final Method method = getRequest().getMethod();
+		return isReadMethod(getRequest().getMethod());
+	}
+
+	static boolean isReadMethod(final Method method) {
 		return Method.GET.equals(method) || Method.HEAD.equals(method);
 	}
 

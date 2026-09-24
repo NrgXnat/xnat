@@ -315,7 +315,7 @@ public final class DicomDump extends SecureResource {
             CatCatalogI getCatalog(XnatResourcecatalogI r) {
                 CatalogUtils.CatalogData catalogData;
                 try {
-                    catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(this.x.getPrearchivepath(), r, false, this.x.getProject()
+                    catalogData = CatalogUtils.CatalogData.getExistingAndClean(this.x.getPrearchivepath(), r, false, this.x.getProject()
                     );
                 } catch (ServerException e) {
                     return null;

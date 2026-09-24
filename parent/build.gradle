@@ -198,6 +198,7 @@ dependencies {
 
         // Swagger
         api libs.springfox.swagger2
+        api libs.springfox.spring.webmvc
         api libs.springfox.swagger.ui
 
         // Bouncy Castle

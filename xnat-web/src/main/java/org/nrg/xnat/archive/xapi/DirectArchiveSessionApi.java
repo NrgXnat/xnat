@@ -95,4 +95,13 @@ public class DirectArchiveSessionApi extends AbstractXapiRestController {
     public String handlePermissions(final Exception e) {
         return e.getMessage();
     }
+
+    /**
+     * The shared XAPI advice only honours a status carried by an exception annotation, so a {@link ClientException}
+     * would come back as a 500 whatever status the service put on it; answer with that status here.
+     */
+    @ExceptionHandler(ClientException.class)
+    public ResponseEntity<String> handleClientException(final ClientException e) {
+        return ResponseEntity.status(e.getStatus().getCode()).contentType(MediaType.TEXT_PLAIN).body(e.getMessage());
+    }
 }

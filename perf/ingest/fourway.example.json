@@ -2,7 +2,7 @@
   "context": "adapt-dev-amd64-v1",
   "release": "xnat",
   "chart": "oci://ghcr.io/nrgxnat/charts/xnat",
-  "chart_version": "3.1.0",
+  "chart_version": "3.3.0",
   "pod": "xnat-0",
   "user": "admin",
   "password": "admin",

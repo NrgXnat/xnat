@@ -226,6 +226,21 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     }
 
     @Test
+    public void anotherSessionInErrorAtTheLocationStillSharesTheDirectory() {
+        when(dao.findByLocation(LOCATION)).thenReturn(Arrays.asList(sessionIn(SESSION_ID, PrearcStatus.ERROR),
+                                                                    sessionIn(43L, PrearcStatus.ERROR)));
+
+        assertThat(service.hasOtherSessionAtLocation(LOCATION, SESSION_ID)).isTrue();
+    }
+
+    @Test
+    public void aSessionAloneAtTheLocationSharesItWithNoOne() {
+        when(dao.findByLocation(LOCATION)).thenReturn(Collections.singletonList(sessionIn(SESSION_ID, PrearcStatus.ERROR)));
+
+        assertThat(service.hasOtherSessionAtLocation(LOCATION, SESSION_ID)).isFalse();
+    }
+
+    @Test
     public void withoutAnExclusionEverySessionAtTheLocationCounts() {
         when(dao.findByLocation(LOCATION)).thenReturn(Collections.singletonList(sessionIn(SESSION_ID, PrearcStatus.RECEIVING)));
 

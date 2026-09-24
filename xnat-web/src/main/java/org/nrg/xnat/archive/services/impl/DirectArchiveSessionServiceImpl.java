@@ -219,7 +219,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
      */
     private boolean ownsSessionDirectory(SessionData session) {
         return isWithinProjectArchive(session)
-               && !directArchiveSessionHibernateService.hasActiveSessionAtLocation(session.getUrl(), session.getId())
+               && !directArchiveSessionHibernateService.hasOtherSessionAtLocation(session.getUrl(), session.getId())
                && !isArchivedExperimentDirectory(session);
     }
 

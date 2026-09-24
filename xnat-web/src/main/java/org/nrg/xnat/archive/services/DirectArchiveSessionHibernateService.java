@@ -25,6 +25,12 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
      */
     boolean hasActiveSessionAtLocation(String location, @Nullable Long excludingId);
 
+    /**
+     * Whether any other session, whatever its status, records the given location. Unlike
+     * {@link #hasActiveSessionAtLocation}, an errored session counts: its files are still in the directory.
+     */
+    boolean hasOtherSessionAtLocation(String location, @Nullable Long excludingId);
+
     SessionData findByProjectTagName(String project, String tag, String name) throws NotFoundException;
 
     SessionData create(SessionData initialize) throws ArchivingException;

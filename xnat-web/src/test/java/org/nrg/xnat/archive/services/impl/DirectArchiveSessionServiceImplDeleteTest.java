@@ -332,7 +332,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         // create() allows a new session at the same location once the old one has errored, so the directory may
         // now belong to a newer session that is still receiving.
         stubDeletableSession();
-        when(hibernateService.hasActiveSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenReturn(true);
+        when(hibernateService.hasOtherSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenReturn(true);
 
         assertDeleteKeepsFilesAndRemovesRow();
     }
@@ -386,6 +386,15 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     }
 
     @Test
+    public void filesAreKeptWhenAnErroredSessionSharesTheDirectory() throws Exception {
+        // Two sessions can error at the same location in turn; deleting one must not take the other's files
+        stubDeletableSession();
+        when(hibernateService.hasOtherSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenReturn(true);
+
+        assertDeleteKeepsFilesAndRemovesRow();
+    }
+
+    @Test
     public void deletingWhenTheDirectoryIsAlreadyGoneStillRemovesTheRow() throws Exception {
         stubDeletableSession();
         FileUtils.deleteDirectory(sessionDirectory);
@@ -421,7 +430,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     @Test
     public void anUnexpectedFailureWhileDecidingOwnershipAlsoMarksTheSessionErrorInsteadOfLeavingItDeleting() throws Exception {
         stubDeletableSession();
-        when(hibernateService.hasActiveSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenThrow(new IllegalStateException("db down"));
+        when(hibernateService.hasOtherSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenThrow(new IllegalStateException("db down"));
 
         assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(ServerException.class);
 

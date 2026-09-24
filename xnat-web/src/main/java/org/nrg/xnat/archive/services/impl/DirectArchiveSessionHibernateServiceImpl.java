@@ -75,6 +75,12 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
+    public boolean hasOtherSessionAtLocation(String location, @Nullable Long excludingId) {
+        final List<DirectArchiveSession> sessions = getDao().findByLocation(location);
+        return sessions != null && sessions.stream().anyMatch(session -> !Objects.equals(session.getId(), excludingId));
+    }
+
+    @Override
     public SessionData create(SessionData initialize) throws ArchivingException {
         String location = initialize.getUrl();
         // Direct archive sessions are removed from db after successful archive, so only in-progress or error cases remain

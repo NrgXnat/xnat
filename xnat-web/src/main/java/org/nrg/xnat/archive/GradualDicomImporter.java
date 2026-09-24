@@ -35,7 +35,6 @@ import org.nrg.dicom.mizer.service.MizerContext;
 import org.nrg.dicom.mizer.service.MizerService;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -82,7 +81,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("ThrowFromFinallyBlock")
@@ -121,9 +119,26 @@ public class GradualDicomImporter extends ImporterHandlerA {
         return false;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private ImportScope _scope;
+
+    /**
+     * Sets the scope this object's import reads its settings in: the scope of the association, uploaded archive
+     * or inbox request the object belongs to. Without one the import reads its settings for itself.
+     */
+    public void setScope(final ImportScope scope) {
+        _scope = scope;
+    }
+
     @Override
     public List<String> call() throws ClientException {
+        final ImportScope scope = _scope != null ? _scope : new ImportScope();
+        try (ImportScope.Binding ignored = scope.bind()) {
+            return importObject();
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private List<String> importObject() throws ClientException {
         final String name = _fileWriter.getName();
         final XnatProjectdata project;
         final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
@@ -404,25 +419,12 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     /**
-     * The enableNativeDicomPreCompression site preference, read at most once a second: reading a preference
-     * is a database round trip, and this one was read for every object received.
+     * The enableNativeDicomPreCompression site preference, read once per import scope: reading a preference is
+     * a database round trip, and this one was read for every object received.
      */
     private static boolean nativeDicomPreCompressionEnabled() {
-        final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
-        final CachedFlag            cached      = PRE_COMPRESSION;
-        final long                  now         = System.nanoTime();
-        if (cached != null && cached.preferences == preferences && now - cached.readAt < FLAG_TTL_NANOS) {
-            return cached.value;
-        }
-        final boolean value = preferences.getEnableNativeDicomPreCompression();
-        PRE_COMPRESSION = new CachedFlag(preferences, value, now);
-        return value;
+        return ImportScope.scoped("site.enableNativeDicomPreCompression", () -> XDAT.getSiteConfigPreferences().getEnableNativeDicomPreCompression());
     }
-
-    private record CachedFlag(SiteConfigPreferences preferences, boolean value, long readAt) {}
-
-    private static volatile CachedFlag PRE_COMPRESSION;
-    private static final    long       FLAG_TTL_NANOS = TimeUnit.SECONDS.toNanos(1);
 
     /**
      * Reject a Dicom instance by simply returning.

@@ -28,6 +28,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.GradualDicomImporter;
+import org.nrg.xnat.archive.ImportScope;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
@@ -256,6 +257,20 @@ public class CStoreService extends BasicCStoreSCP {
         return this;
     }
     
+    /**
+     * The import scope of an association, created with its first object and kept on the association: its
+     * objects read the routing rules, archive processors and preferences once (see {@link ImportScope}). The
+     * association's objects all arrive on its own thread, so no two of them ask at once.
+     */
+    private static ImportScope scopeOf(final Association association) {
+        ImportScope scope = association.getProperty(ImportScope.class);
+        if (scope == null) {
+            scope = new ImportScope();
+            association.setProperty(ImportScope.class, scope);
+        }
+        return scope;
+    }
+
     private final Object identifySender(final Association association) {
         return new StringBuilder()
         .append(association.getRemoteAET()).append("@")
@@ -296,6 +311,7 @@ public class CStoreService extends BasicCStoreSCP {
                 final GradualDicomImporter importer = new GradualDicomImporter(this,
                         userProvider.get(), fw, parameters);
                 importer.setIdentifier( _manager.getDicomObjectIdentifier( aeTitle, port));
+                importer.setScope(scopeOf(as));
                 if (null != namer) {
                     importer.setNamer(namer);
                 }

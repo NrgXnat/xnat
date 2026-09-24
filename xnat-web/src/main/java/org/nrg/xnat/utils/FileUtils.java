@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.om.ArcProject;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
@@ -40,6 +41,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 import java.nio.charset.Charset;
@@ -62,6 +64,27 @@ import java.util.stream.StreamSupport;
 
 @Slf4j
 public class FileUtils {
+    /**
+     * The cachePath site preference, read at most once a second: reading a preference is a database round
+     * trip, and the cache directory is resolved for every prearchive file lock and catalog lock.
+     */
+    private static String cachePath() {
+        final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
+        final CachedPath            cached      = CACHE_PATH;
+        final long                  now         = System.nanoTime();
+        if (cached != null && cached.preferences == preferences && now - cached.readAt < CACHE_PATH_TTL_NANOS) {
+            return cached.path;
+        }
+        final String path = preferences.getCachePath();
+        CACHE_PATH = new CachedPath(preferences, path, now);
+        return path;
+    }
+
+    private record CachedPath(SiteConfigPreferences preferences, String path, long readAt) {}
+
+    private static volatile CachedPath CACHE_PATH;
+    private static final    long       CACHE_PATH_TTL_NANOS = TimeUnit.SECONDS.toNanos(1);
+
     public static boolean isChild(final Path parent, final Path child) {
         // Remove and flatten relative references (i.e., "..") in paths
         final Path parentPath = parent.toAbsolutePath().normalize();
@@ -82,7 +105,7 @@ public class FileUtils {
     public static void moveToCache(final String project, final String subDir, final File src) throws IOException {
         // should include a timestamp in folder name
         if (src.exists()) {
-            final File cache = (StringUtils.isBlank(subDir)) ? new File(XDAT.getSiteConfigPreferences().getCachePath(), project) : new File(new File(XDAT.getSiteConfigPreferences().getCachePath(), project), subDir);
+            final File cache = (StringUtils.isBlank(subDir)) ? new File(cachePath(), project) : new File(new File(cachePath(), project), subDir);
 
             final File dest = new File(cache, renameWTimestamp(src.getName()));
 
@@ -91,7 +114,7 @@ public class FileUtils {
     }
 
     public static File buildCachepath(final String project, final String subDir, final String destName) {
-        final Path root = Path.of(XDAT.getSiteConfigPreferences().getCachePath(), StringUtils.defaultIfBlank(project, "Unknown"));
+        final Path root = Path.of(cachePath(), StringUtils.defaultIfBlank(project, "Unknown"));
         return (StringUtils.isEmpty(subDir) ? root : root.resolve(subDir)).resolve(renameWTimestamp(destName)).toFile();
     }
 
@@ -164,7 +187,7 @@ public class FileUtils {
 
     @SafeVarargs
     public static <T extends String> File buildCacheSubDir(T... directories) {
-        final File subDir = Path.of(XDAT.getSiteConfigPreferences().getCachePath(), directories).toFile();
+        final File subDir = Path.of(cachePath(), directories).toFile();
         if (log.isDebugEnabled()) {
             log.debug("Found cache sub-directory: {}", subDir.getAbsolutePath());
         }

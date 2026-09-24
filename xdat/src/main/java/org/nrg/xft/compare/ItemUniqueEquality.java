@@ -48,27 +48,23 @@ public class ItemUniqueEquality extends ItemEqualityA implements ItemEqualityI {
 	 * ("U|type|field|value") and one per unique composite all of whose fields it has values for
 	 * ("C|type|group|value|value…"), each value formatted exactly as doCheck formats it. Two items of one type
 	 * that doCheck would match share a key, so a collection can index its items by these keys and confirm the
-	 * few candidates with doCheck instead of comparing every pair. The one exception is a field that cannot be
-	 * read at all: doCheck logs that and matches on the remaining fields, which no key can express, so a
-	 * caller that finds no candidate for a probe whose reads fail should fall back to comparing every item.
+	 * few candidates with doCheck instead of comparing every pair. A field that cannot be read makes this
+	 * throw: doCheck logs such a field and matches on the remaining ones, which no key can express, so the
+	 * caller must fall back to comparing every item.
 	 *
 	 * @param item The item to derive the keys for.
 	 *
 	 * @return The keys, possibly empty.
 	 */
 	@SuppressWarnings("unchecked")
-	public static List<String> uniqueKeys(final XFTItem item) throws XFTInitException, ElementNotFoundException, InvalidValueException {
+	public static List<String> uniqueKeys(final XFTItem item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException, InvalidValueException {
 		final GenericWrapperElement element = item.getGenericSchemaElement();
 		final String                 type    = item.getXSIType().toLowerCase();
 		final List<String>           keys    = new ArrayList<>();
 		for (final GenericWrapperField key : (List<GenericWrapperField>) element.getUniqueFields()) {
-			try {
-				final Object o = item.getProperty(key.getXMLPathString(element.getFullXMLName()));
-				if (o != null) {
-					keys.add("U|" + type + "|" + key.getXMLPathString(element.getFullXMLName()) + "|" + DBAction.ValueParser(o, key, true));
-				}
-			} catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
-				logger.error("", e);
+			final Object o = item.getProperty(key.getXMLPathString(element.getFullXMLName()));
+			if (o != null) {
+				keys.add("U|" + type + "|" + key.getXMLPathString(element.getFullXMLName()) + "|" + DBAction.ValueParser(o, key, true));
 			}
 		}
 		final Map<String, List<GenericWrapperField>> uHash = element.getUniqueCompositeFields();
@@ -78,27 +74,19 @@ public class ItemUniqueEquality extends ItemEqualityA implements ItemEqualityI {
 			for (final GenericWrapperField key : entry.getValue()) {
 				if (key.isReference()) {
 					for (final List<Object> field : (List<List<Object>>) key.getLocalRefNames()) {
-						try {
-							final Object o = item.getProperty(element.getFullXMLName() + XFT.PATH_SEPARATOR + (String) field.getFirst());
-							if (o == null) {
-								complete = false;
-								break;
-							}
-							sb.append('|').append(DBAction.ValueParser(o, ((GenericWrapperField) field.get(1)).getXMLType().getLocalType(), true));
-						} catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
-							logger.error("", e);   // doCheck skips a field it cannot read; so does the key
-						}
-					}
-				} else {
-					try {
-						final Object o = item.getProperty(key.getXMLPathString(element.getFullXMLName()));
+						final Object o = item.getProperty(element.getFullXMLName() + XFT.PATH_SEPARATOR + (String) field.getFirst());
 						if (o == null) {
 							complete = false;
-						} else {
-							sb.append('|').append(DBAction.ValueParser(o, key.getXMLPathString(element.getFullXMLName()), true));
+							break;
 						}
-					} catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
-						logger.error("", e);
+						sb.append('|').append(DBAction.ValueParser(o, ((GenericWrapperField) field.get(1)).getXMLType().getLocalType(), true));
+					}
+				} else {
+					final Object o = item.getProperty(key.getXMLPathString(element.getFullXMLName()));
+					if (o == null) {
+						complete = false;
+					} else {
+						sb.append('|').append(DBAction.ValueParser(o, key.getXMLPathString(element.getFullXMLName()), true));
 					}
 				}
 				if (!complete) {

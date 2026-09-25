@@ -37,7 +37,7 @@ public abstract class PrearchiveSessionScreen extends SecureScreen {
 	    final String project = (String)TurbineUtils.GetPassedParameter("project",data);	
 	    final UserI user = TurbineUtils.getUser(data);
 	    
-	    final File sessionDir=PrearcUtils.getPrearcSessionDir(user, project, timestamp, folder,false);
+	    final File sessionDir=PrearcUtils.getPrearcSessionDirForRead(user, project, timestamp, folder);
 	    
 	    final File sessionXML = new File(sessionDir.getPath() + ".xml");
         final XnatImagesessiondataBean sessionBean;
@@ -60,6 +60,7 @@ public abstract class PrearchiveSessionScreen extends SecureScreen {
 		context.put("timestamp",timestamp);
 		context.put("folder",folder);
         context.put("url", String.format("/prearchive/projects/%s/%s/%s", (project == null) ? UNASSIGNED : project, timestamp, folder));
+        context.put("canModify", PrearcUtils.canModifyPrearchive(user, project));
 
 		finalProcessing(sessionBean, data,context);
 	}

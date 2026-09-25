@@ -19,6 +19,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.PermissionsServiceImpl;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
@@ -112,10 +113,7 @@ public final class PrearcSessionListResource extends SecureResource {
             if (StringUtils.isNotBlank(getTag())) {
                 table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(Lists.transform(new ArrayList<>(PrearcDatabase.getSessionByUID(getTag())), Functions.SESSION_DATA_TO_SESSION_DATA_TRIPLE)));
             } else {
-                final List<String> projects = new ArrayList<>(StringUtils.isNotBlank(getProject()) ? Arrays.asList(getProject().split("\\s*,\\s*")) : getPermissions().getUserEditableProjects(getUser().getUsername()));
-                if (isDataAccess()) {
-                    projects.add(null);
-                }
+                final List<String> projects = resolveProjects(getProject(), isDataAccess(), getUser().getUsername(), getPermissions());
                 table = PrearcUtils.convertArrayLtoTable(PrearcDatabase.buildRows(projects.toArray(new String[0])));
             }
 
@@ -125,6 +123,36 @@ public final class PrearcSessionListResource extends SecureResource {
             getResponse().setStatus(SERVER_ERROR_INTERNAL, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Resolves the projects whose prearchive sessions the current request may list.
+     *
+     * <p>An explicit project request is honored as given. Otherwise users with all-data-access list every project
+     * they can read, which for that role is every project on the site, while all other users only list projects
+     * they can edit so that plain collaborators never see the prearchive of their projects (XNAT-8806). Users with
+     * all-data-access additionally see the unassigned sessions, represented by a {@code null} project.
+     *
+     * @param requestedProjects A comma-separated list of project IDs, or blank to derive the list from the user.
+     * @param hasAllDataAccess  Whether the user is a site admin, all-data-admin, or all-data-access member.
+     * @param username          The user whose project access is being resolved.
+     * @param permissions       The permissions service used to look up project access.
+     *
+     * @return The project IDs to list, with a trailing {@code null} for unassigned sessions when applicable.
+     */
+    static List<String> resolveProjects(final String requestedProjects, final boolean hasAllDataAccess, final String username, final PermissionsServiceI permissions) {
+        final List<String> projects;
+        if (StringUtils.isNotBlank(requestedProjects)) {
+            projects = new ArrayList<>(Arrays.asList(requestedProjects.split("\\s*,\\s*")));
+        } else if (hasAllDataAccess) {
+            projects = new ArrayList<>(permissions.getUserReadableProjects(username));
+        } else {
+            projects = new ArrayList<>(permissions.getUserEditableProjects(username));
+        }
+        if (hasAllDataAccess) {
+            projects.add(null);
+        }
+        return projects;
     }
 
     private static final String PROJECT_ATTR = "PROJECT_ID";

@@ -21,7 +21,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.DicomInputStream;
@@ -238,27 +237,96 @@ public class PrearcUtils {
      *
      * @return prearchive root directory
      *
-     * @throws ResourceException if the named project does not exist, or if the user does not
-     *                           have create permission for it, or if the prearchive directory
-     *                           does not exist.
+     * @throws InvalidPermissionException if the user may not edit the project's prearchive (or, for unassigned
+     *                                    sessions, is neither allowed unassigned access nor an all-data admin).
+     * @throws Exception                  if the named project does not exist or the prearchive directory can't be resolved.
      */
     public static File getPrearcDir(final UserI user, final String project, final boolean allowUnassigned) throws Exception {
+        return getPrearcDir(user, project, allowUnassigned, false);
+    }
+
+    /**
+     * Retrieves the prearchive root directory for the named project for read-only use. Unlike
+     * {@link #getPrearcDir(UserI, String, boolean)}, this only requires that the user can read
+     * the project's prearchive, which all-data-access users can even without edit access.
+     *
+     * @param user    The user getting the directory.
+     * @param project Project abbreviation or alias, or null/UNASSIGNED for unassigned sessions.
+     *
+     * @return prearchive root directory
+     *
+     * @throws InvalidPermissionException if the user may not read the project's prearchive.
+     * @throws Exception                  if the named project does not exist or the prearchive directory can't be resolved.
+     */
+    public static File getPrearcDirForRead(final UserI user, final String project) throws Exception {
+        return getPrearcDir(user, project, false, true);
+    }
+
+    /**
+     * Checks whether the user may work with the prearchive of the given project. Editing always requires edit access
+     * to the project's session data (or all-data-admin for unassigned sessions). Reading is additionally open to
+     * all-data-access users, so that a read-only reviewer can look at every session the prearchive lists (XNAT-8806).
+     * A null user is allowed through for administrative code that runs outside the permissions structure.
+     *
+     * @param user            The user to check, or null for administrative code.
+     * @param project         Project ID or alias, or null/UNASSIGNED for unassigned sessions.
+     * @param allowUnassigned Whether unassigned sessions are open to the user regardless of role.
+     * @param readOnly        Whether the user only needs to read the prearchive.
+     *
+     * @throws InvalidPermissionException if the user may not access the prearchive as requested.
+     * @throws Exception                  if the user's project access can't be determined.
+     */
+    static void checkPrearcAccess(@Nullable final UserI user, @Nullable final String project, final boolean allowUnassigned, final boolean readOnly) throws Exception {
+        if (user == null) {
+            return;
+        }
+        final String  action                    = readOnly ? "read" : "edit";
+        final boolean readableViaAllDataAccess  = readOnly && Groups.hasAllDataAccess(user);
+        if (project == null || project.equals(UNASSIGNED)) {
+            if (allowUnassigned || readableViaAllDataAccess || Groups.hasAllDataAdmin(user)) {
+                return;
+            }
+            throw new InvalidPermissionException(user.getUsername(), action, XnatProjectdata.SCHEMA_ELEMENT_NAME, UNASSIGNED);
+        }
+        if (readableViaAllDataAccess || UserHelper.getUserHelperService(user).hasEditAccessToSessionDataByTag(project)) {
+            return;
+        }
+        throw new InvalidPermissionException(user.getUsername(), action, XnatProjectdata.SCHEMA_ELEMENT_NAME, project);
+    }
+
+    /**
+     * Tells whether the user may modify (archive, move, delete, rebuild) sessions in the prearchive of the given
+     * project. This is the same decision {@link #getPrearcDir(UserI, String, boolean)} enforces, exposed as a
+     * boolean so that pages can hide actions the user could not perform anyway (XNAT-8806).
+     *
+     * @param user    The user to check.
+     * @param project Project ID or alias, or null/UNASSIGNED for unassigned sessions.
+     *
+     * @return true if the user may modify the project's prearchive sessions, false otherwise or if access can't be determined.
+     */
+    public static boolean canModifyPrearchive(final UserI user, @Nullable final String project) {
+        try {
+            checkPrearcAccess(user, project, false, false);
+            return true;
+        } catch (InvalidPermissionException e) {
+            return false;
+        } catch (Exception e) {
+            log.warn("Unable to determine whether user {} can modify the prearchive for project {}, assuming not", user == null ? null : user.getUsername(), project, e);
+            return false;
+        }
+    }
+
+    private static File getPrearcDir(final UserI user, final String project, final boolean allowUnassigned, final boolean readOnly) throws Exception {
         String prearcPath;
         String prearcRootPref = XDAT.getSiteConfigPreferences().getPrearchivePath();
         if (project == null || project.equals(UNASSIGNED)) {
-            if (allowUnassigned || user == null || Roles.isSiteAdmin(user) || Groups.isDataAdmin(user)) {
-                prearcPath = prearcRootPref;
-            } else {
-                throw new InsufficientPrivilegesException(user.getUsername(), XnatProjectdata.SCHEMA_ELEMENT_NAME, UNASSIGNED);
-            }
+            checkPrearcAccess(user, project, allowUnassigned, readOnly);
+            prearcPath = prearcRootPref;
         } else {
             //Refactored to remove unnecessary database hits.  It only needs to hit the xnat_projectdata table if the query is using a project alias rather than a project id.  TO
-            ArcProject               p                 = ArcSpecManager.GetInstance().getProjectArc(project);
-            final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
+            ArcProject p = ArcSpecManager.GetInstance().getProjectArc(project);
             if (p != null) {
-                if (!userHelperService.hasEditAccessToSessionDataByTag(project)) {
-                    throw new InvalidPermissionException(user.getUsername(), "edit", XnatProjectdata.SCHEMA_ELEMENT_NAME, project);
-                }
+                checkPrearcAccess(user, project, allowUnassigned, readOnly);
                 final String arcSpecPathForProject = ArcSpecManager.GetInstance().getPrearchivePathForProject(project);
                 final String newPathForProject     = RegExUtils.replaceFirst(arcSpecPathForProject, "^/data/xnat/prearchive/", "");
                 if (!StringUtils.equals(arcSpecPathForProject, newPathForProject)) {
@@ -274,9 +342,7 @@ public class PrearcUtils {
                 //check to see if it used a project alias
                 XnatProjectdata proj = XnatProjectdata.getProjectByIDorAlias(project, user, false);
                 if (proj != null) {
-                    if (!userHelperService.hasEditAccessToSessionDataByTag(project)) {
-                        throw new InvalidPermissionException(user.getUsername(), "edit", XnatProjectdata.SCHEMA_ELEMENT_NAME, project);
-                    }
+                    checkPrearcAccess(user, project, allowUnassigned, readOnly);
                     String arcSpecPathForProject = proj.getPrearchivePath();
                     String newPathForProject     = arcSpecPathForProject.replaceFirst("^/data/xnat/prearchive/", "");
                     if (!StringUtils.equals(arcSpecPathForProject, newPathForProject)) {
@@ -461,11 +527,38 @@ public class PrearcUtils {
     }
 
     public static File getPrearcSessionDir(final UserI user, final String project, final String timestamp, final String session, final boolean allowUnassigned) throws Exception {
+        requireSessionCoordinates(user, timestamp, session);
+        return sessionDir(getPrearcDir(user, project, allowUnassigned), timestamp, session);
+    }
+
+    /**
+     * Retrieves the directory of a prearchive session for read-only use. See {@link #getPrearcDirForRead(UserI, String)}
+     * for the access rules applied.
+     *
+     * @param user      The user getting the directory.
+     * @param project   Project abbreviation or alias, or null/UNASSIGNED for unassigned sessions.
+     * @param timestamp The session's timestamp folder.
+     * @param session   The session's folder name.
+     *
+     * @return The session directory.
+     *
+     * @throws InvalidPermissionException if the user may not read the project's prearchive.
+     * @throws Exception                  if the named project does not exist or the prearchive directory can't be resolved.
+     */
+    public static File getPrearcSessionDirForRead(final UserI user, final String project, final String timestamp, final String session) throws Exception {
+        requireSessionCoordinates(user, timestamp, session);
+        return sessionDir(getPrearcDirForRead(user, project), timestamp, session);
+    }
+
+    private static void requireSessionCoordinates(final UserI user, final String timestamp, final String session) {
         if (user == null || timestamp == null || session == null) {
             throw new IllegalArgumentException("Invalid prearchive session: user %s; timestamp %s; session %s".formatted(
                     user, timestamp, session));
         }
-        return new File(new File(getPrearcDir(user, project, allowUnassigned), timestamp), session);
+    }
+
+    private static File sessionDir(final File prearcDir, final String timestamp, final String session) {
+        return new File(new File(prearcDir, timestamp), session);
     }
 
     public static final FileFilter isSessionGeneratedFileFilter = new FileFilter() {

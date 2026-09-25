@@ -315,7 +315,7 @@ public final class DicomDump extends SecureResource {
             CatCatalogI getCatalog(XnatResourcecatalogI r) {
                 CatalogUtils.CatalogData catalogData;
                 try {
-                    catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(this.x.getPrearchivepath(), r, false, this.x.getProject()
+                    catalogData = CatalogUtils.CatalogData.getExistingAndClean(this.x.getPrearchivepath(), r, false, this.x.getProject()
                     );
                 } catch (ServerException e) {
                     return null;
@@ -331,7 +331,7 @@ public final class DicomDump extends SecureResource {
                 String timestamp = (String) env.attrs.get("TIMESTAMP");
                 File sessionDIR;
                 File srcXML;
-                sessionDIR = PrearcUtils.getPrearcSessionDir(user, project, timestamp, experiment, false);
+                sessionDIR = PrearcUtils.getPrearcSessionDirForRead(user, project, timestamp, experiment);
                 srcXML = new File(sessionDIR.getAbsolutePath() + ".xml");
                 XnatImagesessiondataI x = PrearcTableBuilder.parseSession(srcXML);
                 this.x = x;

@@ -166,7 +166,7 @@ public class PrearcSessionResourceCatalogFiles extends PrearcSessionResourceCata
 		final String project = info.session.getProject();
 		final CatalogUtils.CatalogData catalogData;
 		try {
-			catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(info.session.getPrearchivepath(), res, false, project);
+			catalogData = CatalogUtils.CatalogData.getExistingAndClean(info.session.getPrearchivepath(), res, false, project);
 		} catch (ServerException e) {
 			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 			return null;

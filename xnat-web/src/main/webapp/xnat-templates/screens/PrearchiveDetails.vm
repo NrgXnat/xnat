@@ -17,6 +17,12 @@
 	#set($allowChangeProject=true)
 	<div class="alert">This session is in the Unassigned folder.  Move the session to a project to enable archiving.</div>
 #end
+## XNAT-8806: users who can only read this project's prearchive (e.g. all-data-access) get no modifying actions
+#if(!$canModify)
+	#set($allowArchive=false)
+	#set($allowChangeProject=false)
+	<div class="alert">You have read-only access to this session. Archiving, moving and deleting require edit access to its project.</div>
+#end
 
 ## used to create Change Project modal dialog
 <div id='move_project_dialog' style='visibility:hidden'>
@@ -89,9 +95,11 @@
 			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestMoveDialog()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Change Project</a>
         </li>
     #end
+	#if($canModify)
     <li class="yuimenuitem">
 			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestDelete()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Delete</a>
     </li>
+	#end
 
 	#endElementActionsBox()
 </div>
@@ -114,7 +122,9 @@
 					&nbsp;&nbsp;<button id="scanB3$$!{scanId}" onclick="XNAT.app.prearchiveActions.reviewFileDetails('$url', '$!{scanId}', '$res.getLabel()', '$!project')">Review File Details</button>
 					&nbsp;&nbsp;<button #if($res.getLabel()!="DICOM") class="hide_me" #end id="scanB4$$!{scanId}" onclick="XNAT.app.prearchiveActions.reviewDicomTags('$url', '$!{scanId}')">Review DICOM Tags</button>
 				#end
+				#if($canModify)
 				&nbsp;&nbsp;<button id="scanB2$$!{scanId}" onclick="XNAT.app.scanDeleter.requestDelete('$!{scanId}');">Delete Series</button>
+				#end
 			</td>
 		</tr>
 	#end
@@ -135,7 +145,9 @@
                             &nbsp;&nbsp;<button id="res1$!{resLabel}" onclick="XNAT.app.prearchiveActions.downloadResFiles('$url', '$!{resLabel}')">Download Files</button>
                         #end
                         &nbsp;&nbsp;<button id="res2$!{resLabel}" onclick="XNAT.app.prearchiveActions.reviewResFileDetails('$url', '$!{resLabel}', '$!project')">Review File Details</button>
+                        #if($canModify)
                         &nbsp;&nbsp;<button id="res3$$!{resLabel}" onclick="XNAT.app.scanDeleter.requestDelete('$!{resLabel}', false);">Delete Resource</button>
+                        #end
                     </td>
                 </tr>
             #end

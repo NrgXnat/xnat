@@ -320,6 +320,34 @@ public class CatalogUtils {
             return getOrCreateAndClean(rootPath, resource, includeFullPaths, project, null, null);
         }
 
+        /**
+         * As {@link #getOrCreateAndClean(String, XnatResourcecatalogI, boolean, String)} for callers that only read:
+         * the catalog is located with {@link CatalogUtils#findCatalogFile(String, XnatResourcecatalogI)}, a gzipped
+         * catalog is read in place, and a missing catalog is reported rather than created. Nothing is written.
+         *
+         * @throws ServerException if the resource has no catalog file, or it cannot be read.
+         */
+        @Nonnull
+        public static CatalogData getExistingAndClean(final String rootPath,
+                                                      final XnatResourcecatalogI resource,
+                                                      final boolean includeFullPaths,
+                                                      @Nullable final String project) throws ServerException {
+            final File catalogFile = findCatalogFile(rootPath, resource);
+            if (catalogFile == null) {
+                throw new ServerException("No catalog file for resource " + resource.getUri() + " under " + rootPath);
+            }
+            final XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog xr) ? xr : null;
+            final CatalogData catalogData = new CatalogData(catalogFile, catRes, project, null, false);
+            formalizeCatalog(catalogData.catBean, catalogData.catPath, catalogData.project, null, null);
+            if (includeFullPaths) {
+                CatCatalogMetafieldBean mf = new CatCatalogMetafieldBean();
+                mf.setName("CATALOG_LOCATION");
+                mf.setMetafield(catalogData.catPath);
+                catalogData.catBean.addMetafields_metafield(mf);
+            }
+            return catalogData;
+        }
+
         @Nonnull
         public static CatalogData getOrCreateAndClean(final String rootPath,
                                                       final XnatResourcecatalogI resource,
@@ -2200,8 +2228,23 @@ public class CatalogUtils {
     }
 
     @Nonnull
-    public static File getOrCreateCatalogFile(String rootPath, XnatResourcecatalogI resource, @Nullable String project)
-            throws ServerException {
+    /**
+     * Locates a resource's catalog file without touching the filesystem beyond existence checks: the plain catalog
+     * if present, otherwise its gzipped copy, otherwise null. Read-only callers use this instead of
+     * {@link #getOrCreateCatalogFile}, which creates a missing catalog and unzips a gzipped one in place.
+     */
+    @Nullable
+    public static File findCatalogFile(String rootPath, XnatResourcecatalogI resource) {
+        final String fullPath = catalogPath(rootPath, resource);
+        final File plain = new File(fullPath);
+        if (plain.exists()) {
+            return plain;
+        }
+        final File gzipped = new File(fullPath + ".gz");
+        return gzipped.exists() ? gzipped : null;
+    }
+
+    private static String catalogPath(String rootPath, XnatResourcecatalogI resource) {
         String fullPath = getFullPath(rootPath, resource);
         if (fullPath.endsWith("\\")) {
             fullPath = fullPath.substring(0, fullPath.length() - 1);
@@ -2209,6 +2252,12 @@ public class CatalogUtils {
         if (fullPath.endsWith("/")) {
             fullPath = fullPath.substring(0, fullPath.length() - 1);
         }
+        return fullPath;
+    }
+
+    public static File getOrCreateCatalogFile(String rootPath, XnatResourcecatalogI resource, @Nullable String project)
+            throws ServerException {
+        final String fullPath = catalogPath(rootPath, resource);
 
         File f = new File(fullPath);
         if (f.exists()) {

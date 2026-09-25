@@ -16,8 +16,11 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xdat.security.SecurityManager;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
@@ -41,6 +44,7 @@ import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcTableBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.services.messaging.archive.DirectArchiveRequest;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
@@ -52,7 +56,9 @@ import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
+import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xnat.utils.WorkflowUtils;
+import org.restlet.data.Status;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
@@ -70,13 +76,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static org.nrg.xft.event.XftItemEventI.CREATE;
 import static org.nrg.xft.event.XftItemEventI.UPDATE;
+import static org.nrg.xft.utils.FileUtils.MoveToCache;
+import static org.nrg.xft.utils.FileUtils.getMsTimestamp;
 import static org.nrg.xnat.archive.Operation.Rebuild;
 
 @Slf4j
@@ -131,8 +139,162 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     @Override
-    public void delete(long id, UserI user) throws InvalidPermissionException, NotFoundException {
-        directArchiveSessionHibernateService.delete(id, user);
+    public void delete(long id, UserI user, boolean force)
+            throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
+        final SessionData session = directArchiveSessionHibernateService.getSessionData(id);
+        if (!Permissions.canDeleteProject(user, session.getProject())) {
+            throw new InvalidPermissionException(session.getProject());
+        }
+        if (force && !Roles.isSiteAdmin(user)) {
+            throw new InvalidPermissionException("Only a site administrator can force the deletion of a direct archive session");
+        }
+        // Same guard as triggerArchive: files still landing in the directory would recreate it behind the delete
+        refuseWhileReceiving(session, false);
+
+        claimForDeletion(id, force);
+        // The importer decides the session is RECEIVING before it takes its file lock, so a file can still be on its
+        // way in when the claim lands; it re-checks the status under the lock, so a lock seen now is one that will
+        // either finish writing or back off. The claim stands: the next delete of this session will retry it.
+        refuseWhileReceiving(session, true);
+        try {
+            if (ownsSessionDirectory(session)) {
+                deleteSessionFiles(session);
+            } else {
+                log.info("Deleting DirectArchiveSession id={} {} without removing {} because the directory is not owned by this session alone",
+                        id, session.getSessionDataTriple(), session.getUrl());
+            }
+        } catch (Exception e) {
+            // The row stays DELETING: a half-removed directory must not be queued for build again, which ERROR would
+            // allow, and DELETING can be claimed again by the next delete and by nothing else.
+            log.error("Unable to delete files for DirectArchiveSession id={} at {}; leaving it DELETING for a retry", id, session.getUrl(), e);
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Unable to delete files for direct archive session id=" +
+                    id + " at " + session.getUrl() + "; the session stays claimed for deletion, retry the delete", e);
+        }
+        directArchiveSessionHibernateService.delete(id);
+    }
+
+    /** 409 while lock files show the importer at work; after the claim the message says the delete can be retried. */
+    private static void refuseWhileReceiving(SessionData session, boolean claimed) throws ClientException {
+        if (PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
+            if (claimed) {
+                log.info("DirectArchiveSession id={} {} was claimed for deletion while a file was still landing; leaving it DELETING for a retry",
+                        session.getId(), session.getSessionDataTriple());
+            }
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Cannot delete direct archive session " +
+                    session.getSessionDataTriple() + " while it is still receiving files" +
+                    (claimed ? "; it has been claimed for deletion and can be deleted once the files have landed" : ""));
+        }
+    }
+
+    /**
+     * Claims the session before anything on the filesystem is touched: the importer stops appending to a session that
+     * is no longer RECEIVING, the archive trigger only queues RECEIVING and ERROR sessions, and a session the archiver
+     * is already working on cannot be claimed unless the delete is forced.
+     */
+    private void claimForDeletion(long id, boolean force) throws NotFoundException, ClientException {
+        try {
+            directArchiveSessionHibernateService.setStatusToDeleting(id, force);
+        } catch (ArchivingException e) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void requireReceiving(SessionData session) throws ClientException {
+        final PrearcStatus status;
+        try {
+            status = directArchiveSessionHibernateService.getSessionData(session.getId()).getStatus();
+        } catch (NotFoundException e) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Direct archive session " +
+                    session.getSessionDataTriple() + " was deleted while this file was being received", e);
+        }
+        if (status != PrearcStatus.RECEIVING) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Direct archive session " +
+                    session.getSessionDataTriple() + " is no longer receiving files (" + status + ")");
+        }
+    }
+
+    /**
+     * The directory is this session's to remove only when no newer session at the same location is still alive and
+     * no archived experiment already owns it. The cheap row check runs first.
+     */
+    private boolean ownsSessionDirectory(SessionData session) {
+        return isWithinProjectArchive(session)
+               && !directArchiveSessionHibernateService.hasOtherSessionAtLocation(session.getUrl(), session.getId())
+               && !isArchivedExperimentDirectory(session);
+    }
+
+    /**
+     * The session url comes from the importer, which builds it from the session label without validating it, so a
+     * blank label yields the arcNNN directory itself and a label with path segments can leave the project archive.
+     * Only a directory at least two levels below the project's archive root (arcNNN/session) is ever removed; anything
+     * else, or a project that cannot be resolved, leaves the files alone.
+     */
+    private boolean isWithinProjectArchive(SessionData session) {
+        final XnatProjectdata project = BaseXnatProjectdata.getProjectByIDorAlias(session.getProject(), receivedFileUserProvider.get(), false);
+        if (project == null) {
+            log.warn("Not removing files for DirectArchiveSession id={} at {}: project {} could not be resolved", session.getId(), session.getUrl(), session.getProject());
+            return false;
+        }
+        final boolean removable = isRemovableSessionDirectory(Path.of(project.getRootArchivePath()), Path.of(session.getUrl()));
+        if (!removable) {
+            log.warn("Not removing files for DirectArchiveSession id={}: {} is not a session directory under the archive root {} of project {}",
+                     session.getId(), session.getUrl(), project.getRootArchivePath(), session.getProject());
+        }
+        return removable;
+    }
+
+    static boolean isRemovableSessionDirectory(Path archiveRoot, Path sessionDirectory) {
+        final Path root = archiveRoot.toAbsolutePath().normalize();
+        final Path dir  = sessionDirectory.toAbsolutePath().normalize();
+        return dir.startsWith(root) && dir.getNameCount() >= root.getNameCount() + 2;
+    }
+
+    /**
+     * A session's directory can belong to a saved experiment even though the session never completed: archive() saves
+     * the experiment before its final cleanup and a failed move to the prearchive leaves the errored row pointing at
+     * the archive directory, and a session received with an overwrite mode may have been appending to an archived
+     * experiment all along. The experiment label is the session name, or the folder name when the two differ.
+     */
+    private boolean isArchivedExperimentDirectory(SessionData session) {
+        final UserI user = receivedFileUserProvider.get();
+        return Stream.of(session.getName(), session.getFolderName())
+                     .filter(StringUtils::isNotBlank)
+                     .distinct()
+                     .anyMatch(label -> findArchivedExperiment(session.getProject(), label, user) != null);
+    }
+
+    @Nullable
+    private static XnatExperimentdata findArchivedExperiment(String project, String label, UserI user) {
+        return BaseXnatExperimentdata.GetExptByProjectIdentifier(project, label, user, false);
+    }
+
+    /**
+     * Removes the session XML and then the session directory the same way a prearchive delete does, honoring the
+     * backupDeletedToCache site preference. Both land under the same backup timestamp so a backed-up session can be
+     * restored as one unit.
+     */
+    private void deleteSessionFiles(SessionData session) throws IOException {
+        final String timestamp = getMsTimestamp();
+        removeIfPresent(sessionXmlPath(session.getUrl()).toFile(), timestamp);
+        removeIfPresent(new File(session.getUrl()), timestamp);
+        log.info("Deleted files for DirectArchiveSession id={} {} at {}", session.getId(), session.getSessionDataTriple(), session.getUrl());
+    }
+
+    /** MoveToCache reports nothing, so the file is checked afterwards. */
+    private static void removeIfPresent(File file, String timestamp) throws IOException {
+        if (!file.exists()) {
+            return;
+        }
+        MoveToCache(file, timestamp);
+        if (file.exists()) {
+            throw new IOException("Unable to remove " + file);
+        }
+    }
+
+    // The session XML sits next to the session directory as <directory>.xml
+    private static Path sessionXmlPath(String location) {
+        return Path.of(Path.of(location) + ".xml");
     }
 
     @Override
@@ -183,7 +345,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             }
         }
         if(!created) {
-            if(session.getStatus() != PrearcUtils.PrearcStatus.RECEIVING) {
+            if(session.getStatus() != PrearcStatus.RECEIVING) {
                 throw new ArchivingException("Cannot direct archive additional files for session " + session.getSessionDataTriple() +
                                              " because it is no longer in receiving state (" + session.getStatus() + ")");
             }
@@ -257,7 +419,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             setupScans(session, location);
             saveSession(session, workflow.buildEvent());
             PrearcSessionArchiver.postArchive(user, session, EMPTY_MAP);
-            Files.delete(Path.of(location + ".xml"));
+            Files.delete(sessionXmlPath(location));
         } catch (Exception e) {
             log.error("Unable to archive DirectArchiveSession id={}, attempting to move to prearchive", id, e);
             if (workflow != null) {
@@ -314,21 +476,86 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
     @Override
     public synchronized void triggerArchive(@Nonnull SessionData session) throws ClientException, ServerException {
-        Long id = session.getId();
-        if(id == null || PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
-            throw new ClientException("Refusing to trigger archive on DirectArchiveSession id=" + id +
-                                      " because it is still receiving new files or doesn't have an id");
+        queueForBuild(session, false);
+    }
+
+    @Override
+    public synchronized void triggerArchive(@Nonnull SessionData session, UserI user, boolean force)
+            throws InvalidPermissionException, ClientException, ServerException {
+        if (force && !Roles.isSiteAdmin(user)) {
+            throw new InvalidPermissionException("Only a site administrator can force a direct archive session back into the build queue");
         }
+        refuseIfArchivedExperimentOwnsDirectory(session);
+        queueForBuild(session, force);
+    }
+
+    /**
+     * A session that is not a merge and whose directory already belongs to a saved experiment is a leftover of an
+     * archive that failed after saving (or of a failed move to the prearchive). Archiving it again would either move
+     * the experiment's files into the prearchive or save a duplicate, so it is refused; deleting the session is the
+     * way out and keeps the files. Merge sessions write into an archived experiment's directory by design and are
+     * exempt. The scheduled trigger does not come through here.
+     */
+    private void refuseIfArchivedExperimentOwnsDirectory(SessionData session) throws ClientException, ServerException {
+        if (!isArchivedExperimentDirectory(session)) {
+            return;
+        }
+        final String overwriteMode;
         try {
-            directArchiveSessionHibernateService.setStatusToQueuedBuilding(id);
+            overwriteMode = directArchiveSessionHibernateService.getOverwriteMode(session.getId());
+        } catch (NotFoundException e) {
+            throw new ServerException("DirectArchiveSession id=" + session.getId() + " disappeared while checking its overwrite mode", e);
+        }
+        if (StringUtils.isBlank(overwriteMode)) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Refusing to queue DirectArchiveSession id=" + session.getId() +
+                                      " for building: an archived experiment already owns " + session.getUrl() +
+                                      "; delete the session instead (a forced delete keeps the files)");
+        }
+    }
+
+    private void queueForBuild(@Nonnull SessionData session, boolean force) throws ClientException, ServerException {
+        Long id = session.getId();
+        if (id == null) {
+            throw new ClientException("Refusing to trigger archive on a DirectArchiveSession that doesn't have an id");
+        }
+        if (PrearcUtils.isSessionReceiving(session.getSessionDataTriple())) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Refusing to trigger archive on DirectArchiveSession id=" + id +
+                                      " because it is still receiving new files");
+        }
+        final boolean queued;
+        try {
+            queued = directArchiveSessionHibernateService.setStatusToQueuedBuilding(id, force);
+        } catch (NotFoundException e) {
+            throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "DirectArchiveSession id=" + id + " no longer exists", e);
         } catch (Exception e) {
             throw new ServerException("Issue setting status to queued building for DirectArchiveSession id=" + id, e);
+        }
+        if (!queued) {
+            throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Refusing to trigger archive on DirectArchiveSession id=" + id +
+                                      " because it is not in a status that can be queued for building");
         }
         try {
             XDAT.sendJmsRequest(jmsTemplate, new DirectArchiveRequest(id));
         } catch (Exception e) {
-            directArchiveSessionHibernateService.setStatusBackToReceiving(id);
+            undoQueue(session, id, e);
             throw new ServerException("Issue submitting request for DirectArchiveSession id=" + id, e);
+        }
+    }
+
+    /**
+     * A session that was resting in RECEIVING goes back there, so the scheduled trigger retries it. Anything else,
+     * an ERROR retry or a forced retry of an in-flight row, is marked ERROR instead: putting it back to RECEIVING
+     * would reopen it to the importer and to the scheduled trigger without the decision that queued it.
+     */
+    private void undoQueue(SessionData session, long id, Exception cause) {
+        if (session.getStatus() == PrearcStatus.RECEIVING) {
+            directArchiveSessionHibernateService.setStatusBackToReceiving(id);
+            return;
+        }
+        try {
+            directArchiveSessionHibernateService.setStatusToError(id, cause);
+        } catch (NotFoundException e) {
+            log.warn("DirectArchiveSession id={} disappeared while recording a failed build request", id, e);
         }
     }
 
@@ -463,9 +690,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             // move files
             String archivePath = target.getUrl();
             FileUtils.moveDirectory(new File(archivePath), prearchivePath);
-            String xml = archivePath.replaceAll(Matcher.quoteReplacement(File.separator) + "$", "")
-                         + ".xml";
-            Path xmlSource = Path.of(xml);
+            Path xmlSource = sessionXmlPath(archivePath);
             Path xmlDest   = Path.of(prearchivePath.getParent(), prearchivePath.getName() + ".xml");
             if(Files.exists(xmlSource)) {
                 // Adjust prearchive path in xml to point to prearchive rather than archive and save
@@ -520,8 +745,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                               UserI user, String location,
                               String overwriteMode) throws Exception {
         // Look up the existing archived session from XNAT DB
-        XnatExperimentdata existing = BaseXnatExperimentdata
-                .GetExptByProjectIdentifier(target.getProject(), incomingSession.getLabel(), user, false);
+        XnatExperimentdata existing = findArchivedExperiment(target.getProject(), incomingSession.getLabel(), user);
 
         if (existing == null || !(existing instanceof XnatImagesessiondata existingSession)) {
             // Session was deleted between receive and archive -- treat as fresh archive
@@ -536,7 +760,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             setupScans(incomingSession, location);
             saveSession(incomingSession, workflow.buildEvent());
             PrearcSessionArchiver.postArchive(user, incomingSession, EMPTY_MAP);
-            Files.deleteIfExists(Path.of(location + ".xml"));
+            Files.deleteIfExists(sessionXmlPath(location));
             cleanupScans(incomingSession, location, workflow.buildEvent());
             directArchiveSessionHibernateService.delete(id);
             completeWorkflow(workflow);
@@ -593,7 +817,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         cleanupScans(existingSession, location, workflow.buildEvent());
 
         // Clean up the session XML
-        Files.deleteIfExists(Path.of(location + ".xml"));
+        Files.deleteIfExists(sessionXmlPath(location));
 
         // Delete the DirectArchiveSession tracking entry for this batch
         directArchiveSessionHibernateService.delete(id);

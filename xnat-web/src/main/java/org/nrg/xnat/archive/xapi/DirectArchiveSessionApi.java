@@ -2,6 +2,7 @@ package org.nrg.xnat.archive.xapi;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -61,23 +62,39 @@ public class DirectArchiveSessionApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(path="{id}", method = DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Delete direct archive session")
-    public ResponseEntity<Void> delete(@PathVariable long id) throws InvalidPermissionException, NotFoundException {
-        directArchiveSessionService.delete(id, getSessionUser());
+    @ApiOperation(value = "Delete direct archive session",
+                  notes = "Removes the session's tracking row and, when the archive directory belongs to this session " +
+                          "alone, its files. Refused with 409 while the session is receiving files or being archived. " +
+                          "A site admin may pass force=true to delete a session left in a queued, building or archiving " +
+                          "status; nothing verifies the archiver has given up on it, so forcing a session that is really " +
+                          "being archived can leave a half-saved experiment. Files still landing are refused regardless.")
+    public ResponseEntity<Void> delete(@PathVariable long id,
+                                       @ApiParam("Claim the session whatever its status (site admins only; see notes)")
+                                       @RequestParam(required = false, defaultValue = "false") boolean force)
+            throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
+        directArchiveSessionService.delete(id, getSessionUser(), force);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @XapiRequestMapping(path="{project}/{tag}/{name}", method = POST, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Trigger direct archive of session")
+    @ApiOperation(value = "Trigger direct archive of session",
+                  notes = "Queues the session for building. Refused with 409 unless the session is receiving or in " +
+                          "error, and always refused when an archived experiment already owns the session directory " +
+                          "(unless the session is an append/overwrite merge): delete the session instead. A site admin " +
+                          "may pass force=true to re-queue a session left queued, building or archiving, for example " +
+                          "by a node restart; nothing verifies that no worker is still processing it, so forcing a " +
+                          "session that is really being archived puts two workers on it.")
     public ResponseEntity<Void> triggerArchive(@Project @PathVariable String project,
                                                @PathVariable String tag,
-                                               @PathVariable String name)
+                                               @PathVariable String name,
+                                               @ApiParam("Re-queue the session whatever its status (site admins only; see notes)")
+                                               @RequestParam(required = false, defaultValue = "false") boolean force)
             throws ClientException, ServerException, NotFoundException, InvalidPermissionException {
         if (!permissionsService.getUserEditableProjects(getSessionUser()).contains(project)) {
             throw new InvalidPermissionException("User cannot trigger archive for project " + project);
         }
         SessionData sessionData = directArchiveSessionService.findByProjectTagName(project, tag, name);
-        directArchiveSessionService.triggerArchive(sessionData);
+        directArchiveSessionService.triggerArchive(sessionData, getSessionUser(), force);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -85,5 +102,14 @@ public class DirectArchiveSessionApi extends AbstractXapiRestController {
     @ExceptionHandler(value = {InvalidPermissionException.class})
     public String handlePermissions(final Exception e) {
         return e.getMessage();
+    }
+
+    /**
+     * The shared XAPI advice only honours a status carried by an exception annotation, so a {@link ClientException}
+     * would come back as a 500 whatever status the service put on it; answer with that status here.
+     */
+    @ExceptionHandler(ClientException.class)
+    public ResponseEntity<String> handleClientException(final ClientException e) {
+        return ResponseEntity.status(e.getStatus().getCode()).contentType(MediaType.TEXT_PLAIN).body(e.getMessage());
     }
 }

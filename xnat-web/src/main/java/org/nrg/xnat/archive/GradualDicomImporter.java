@@ -345,7 +345,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
             final File sessionFolder = new File(session.getUrl());
             final File outputFile = getSafeFile(sessionFolder, scan, name, dataset,
                     Boolean.parseBoolean((String) _parameters.get(RENAME_PARAM)));
-            outputFile.getParentFile().mkdirs();
 
             final PrearcUtils.PrearcFileLock lock;
             try {
@@ -359,12 +358,19 @@ public class GradualDicomImporter extends ImporterHandlerA {
             }
 
             try {
+                if (_directArchive) {
+                    // The status check in getOrCreate ran before this lock was taken. A delete claims the session and
+                    // then looks for locks, so only a check made under the lock guarantees the directory is not about
+                    // to be removed; nothing is created in the session directory until it passes (XNAT-7944).
+                    _directArchiveSessionService.requireReceiving(session);
+                }
+                outputFile.getParentFile().mkdirs();
                 try {
-                    // Split FMI from dataset before writing (dcm4che5 requires them separate for i/o)
-                    final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.splitFmiAndDataset(dataset);
+                    // dcm4che5 writes FMI and dataset separately. extractFmiFromDataset strips the FMI out of
+                    // `dataset` in place (see its Javadoc / XNAT-8719), so it is added back after the write for
+                    // any subsequent processing.
+                    final Dcm4cheConvert.SplitAttributes split = Dcm4cheConvert.extractFmiFromDataset(dataset);
                     write(split.fmi, split.onlyDataset, transferSyntaxUID, _parameters.get(SENDER_AE_TITLE_PARAM), bis, outputFile, source);
-                    // Re-merge FMI back into dataset for any subsequent processing
-                    //https://radiologics.atlassian.net/browse/XNAT-8719
                     dataset.addAll(split.fmi);
                 } catch (IOException e) {
                     throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);

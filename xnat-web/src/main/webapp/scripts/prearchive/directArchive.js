@@ -89,8 +89,9 @@ var XNAT = getObject(XNAT || {});
                     label: labelMap.status.label,
                     apply: function () {
                         const status = this[labelMap.status.column];
-                        if (status.match(/^error/i)) {
-                            const message = this['message'];
+                        // ERROR rows and rows a delete claimed but could not finish (DELETING) can be deleted (XNAT-7944)
+                        if (status.match(/^(error|deleting)/i)) {
+                            const message = this['message'] || '';
                             const project = this[labelMap.project.column];
                             const id = this['id'];
                             const statusSpan = spawn('span.text-error|title="' + message + '"', status);

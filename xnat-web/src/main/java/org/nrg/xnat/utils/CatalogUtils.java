@@ -200,8 +200,9 @@ public class CatalogUtils {
         private CatCatalogBean readCatalogBeanFromCatalogFile(final String catId) throws ServerException {
             CatCatalogBean cat = null;
             InputStream inputStream = null;
+            ThreadAndProcessFileLock fl = null;
             try {
-                final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, true);
+                fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, true);
                 fl.tryLock(2L, TimeUnit.MINUTES);
                 //log.trace("{} reader start: {}", System.currentTimeMillis(), fl.toString());
                 try (FileInputStream fis = new FileInputStream(catFile)) {
@@ -250,7 +251,10 @@ public class CatalogUtils {
             } catch (IOException e) {
                 log.error("Unable to obtain read lock for file: {}", catFile, e);
             } finally {
-                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+                // Only release our reference if we actually obtained one, otherwise we'd decrement another accessor's
+                if (fl != null) {
+                    ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+                }
             }
 
             if (cat == null) {
@@ -452,8 +456,8 @@ public class CatalogUtils {
             MessageDigest md5 = MessageDigest.getInstance(hashType);
 
             //read into buffer and update md5
+            ThreadAndProcessFileLock fl = null;
             try {
-                ThreadAndProcessFileLock fl = null;
                 if (needLock) {
                     fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, true);
                     fl.tryLock(10L, TimeUnit.SECONDS);
@@ -478,7 +482,7 @@ public class CatalogUtils {
             } catch (IOException e) {
                 log.error("Unable to obtain read lock for file {}", file.getAbsolutePath(), e);
             } finally {
-                if (needLock) ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
+                if (fl != null) ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
             }
         } catch(NoSuchAlgorithmException e){
             log.error("Unsupported hashing algorithm {}", hashType, e);
@@ -2167,9 +2171,9 @@ public class CatalogUtils {
 
         refreshAuditSummary(catalogData.catBean, auditSummary);
 
+        ThreadAndProcessFileLock fl = null;
         try {
-            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogData.catFile,
-                    false);
+            fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogData.catFile, false);
             fl.tryLock(10L, TimeUnit.SECONDS);
             //log.trace("{} writer start: {}", System.currentTimeMillis(), fl.toString());
             try {
@@ -2195,7 +2199,10 @@ public class CatalogUtils {
             log.error("Error writing catalog file {}", catalogData.catFile, e);
             throw e;
         } finally {
-            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogData.catFile);
+            // Only release our reference if we actually obtained one, otherwise we'd decrement another accessor's
+            if (fl != null) {
+                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogData.catFile);
+            }
         }
     }
 

@@ -164,10 +164,11 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                         id, session.getSessionDataTriple(), session.getUrl());
             }
         } catch (Exception e) {
-            // Leave the row behind in ERROR (which is deletable) rather than stuck in DELETING
-            directArchiveSessionHibernateService.setStatusToError(id, e);
+            // The row stays DELETING: a half-removed directory must not be queued for build again, which ERROR would
+            // allow, and DELETING can be claimed again by the next delete and by nothing else.
+            log.error("Unable to delete files for DirectArchiveSession id={} at {}; leaving it DELETING for a retry", id, session.getUrl(), e);
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, "Unable to delete files for direct archive session id=" +
-                    id + " at " + session.getUrl(), e);
+                    id + " at " + session.getUrl() + "; the session stays claimed for deletion, retry the delete", e);
         }
         directArchiveSessionHibernateService.delete(id);
     }

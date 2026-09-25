@@ -415,7 +415,9 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     }
 
     @Test
-    public void aFailedFileDeleteMarksTheSessionErrorAndKeepsTheRowForRetry() throws Exception {
+    public void aFailedFileDeleteLeavesTheSessionClaimedSoOnlyAnotherDeleteCanTouchIt() throws Exception {
+        // A half-removed directory must never be queued for build again (ERROR would allow that); DELETING can be
+        // re-claimed by the next delete and by nothing else.
         stubDeletableSession();
         // A read-only parent makes removing the session XML (and the directory) fail.
         assertThat(archiveDirectory.setWritable(false)).isTrue();
@@ -423,19 +425,20 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(ServerException.class);
 
         assertFilesIntact();
-        verify(hibernateService).setStatusToError(eq(SESSION_ID), any(IOException.class));
+        verify(hibernateService, never()).setStatusToError(anyLong(), any());
+        verify(hibernateService, never()).setStatusBackToReceiving(anyLong());
         verify(hibernateService, never()).delete(anyLong());
     }
 
     @Test
-    public void anUnexpectedFailureWhileDecidingOwnershipAlsoMarksTheSessionErrorInsteadOfLeavingItDeleting() throws Exception {
+    public void anUnexpectedFailureWhileDecidingOwnershipAlsoLeavesTheSessionClaimed() throws Exception {
         stubDeletableSession();
         when(hibernateService.hasOtherSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenThrow(new IllegalStateException("db down"));
 
         assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(ServerException.class);
 
         assertFilesIntact();
-        verify(hibernateService).setStatusToError(eq(SESSION_ID), any(IllegalStateException.class));
+        verify(hibernateService, never()).setStatusToError(anyLong(), any());
         verify(hibernateService, never()).delete(anyLong());
     }
 

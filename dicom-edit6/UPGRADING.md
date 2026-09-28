@@ -26,8 +26,9 @@ no `6.8` or `6.9` script versions; those numbers were library releases only.
   are re-encoded losslessly in their own syntax, and the pixels outside the rectangle are unchanged.
 - **Lossy objects come back uncompressed.** JPEG Baseline, lossy JPEG 2000 and the other lossy
   syntaxes are not re-encoded, since that would degrade the whole image to redact one rectangle.
-  Lossy Image Compression (0028,2110) is set to `01` and the method is recorded in (0028,2114). RLE
-  objects also come back uncompressed, because nothing can encode RLE.
+  Lossy Image Compression (0028,2110) is set to `01`, and the ratio (0028,2112) and method (0028,2114)
+  are recorded unless the object already records them. RLE objects also come back uncompressed,
+  because nothing can encode RLE.
 - **The fill value is used.** The region is filled with the value the script asks for; previously it
   was always filled with 0.
 - **The redaction is recorded once.** As before, Burned In Annotation (0028,0301) is set to `NO`, and

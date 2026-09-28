@@ -132,6 +132,12 @@ public class StreamingRectanglePixelEditHandlerTest {
                      "01", result.dataset.getString(Tag.LossyImageCompression));
         assertTrue("a lossy compression method should be recorded",
                    result.dataset.getString(Tag.LossyImageCompressionMethod) != null);
+        // Decoded bytes over the compressed bytes of every fragment after the offset table.
+        final double expectedRatio = (double) result.length()
+                                     / compressedLengthOf(resource("dicom/multi-frame/xa-jpeg1.dcm"));
+        assertEquals("the lossy compression ratio should be recorded",
+                     String.format(java.util.Locale.ROOT, "%.3f", expectedRatio),
+                     result.dataset.getString(Tag.LossyImageCompressionRatio));
         assertRedacted(RawPixels.of(resource("dicom/multi-frame/xa-jpeg1.dcm")), result,
                        new Rectangle2D.Float(20, 20, 60, 60), new Color(180, 180, 180), false);
     }
@@ -782,6 +788,20 @@ public class StreamingRectanglePixelEditHandlerTest {
         }
         dobj.releaseScratchFiles();
         return output;
+    }
+
+    private static long compressedLengthOf(File file) throws Exception {
+        try (DicomInputStream in = new DicomInputStream(file)) {
+            in.setIncludeBulkData(DicomInputStream.IncludeBulkData.URI);
+            final org.dcm4che3.data.Fragments fragments =
+                    (org.dcm4che3.data.Fragments) in.readDataset().getValue(Tag.PixelData);
+            long total = 0;
+            for (int i = 1; i < fragments.size(); i++) {
+                final Object fragment = fragments.get(i);
+                total += fragment instanceof byte[] ? ((byte[]) fragment).length : ((BulkData) fragment).longLength();
+            }
+            return total;
+        }
     }
 
     private static Attributes datasetOf(File file) throws Exception {

@@ -30,11 +30,11 @@ no `6.8` or `6.9` script versions; those numbers were library releases only.
   objects also come back uncompressed, because nothing can encode RLE.
 - **The fill value is used.** The region is filled with the value the script asks for; previously it
   was always filled with 0.
-- **De-identification attributes are no longer written.** Burned In Annotation (0028,0301) is left as
-  it was instead of being set to `NO`, and "Burned in text blacked out" and code 113101 "Clean Pixel
-  Data Option" are no longer added to De-identification Method (0012,0063) and De-identification
-  Method Code Sequence (0012,0064). A script that relies on them has to set them, for example
-  `(0028,0301) := "NO"`.
+- **The redaction is recorded once.** As before, Burned In Annotation (0028,0301) is set to `NO`, and
+  "Burned in text blacked out" and code 113101 "Clean Pixel Data Option" are added to
+  De-identification Method (0012,0063) and De-identification Method Code Sequence (0012,0064). They
+  are no longer added a second time when the object already carries them, and nothing is recorded
+  when the rectangle misses the image.
 - **Floating point pixel data is redacted.** Float Pixel Data and Double Float Pixel Data, as in a
   parametric map, used to pass through unchanged.
 - **Some objects are refused.** `alterPixels` fails on objects it cannot redact exactly, including

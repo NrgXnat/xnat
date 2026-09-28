@@ -9,6 +9,7 @@ import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerContext;
 import org.nrg.dicom.mizer.service.MizerService;
+import org.nrg.dicom.mizer.service.VersionString;
 import org.nrg.dicom.mizer.service.impl.MizerContextWithScript;
 import org.nrg.test.workers.resources.ResourceManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -39,6 +41,25 @@ public class VersionStringTest {
         final AnonymizationResult result = _service.anonymize(dicom, contexts);
 
         assertEquals( "fubar", dicom.getString( 0x00100666));
+    }
+
+    @Test
+    public void testVersion610() throws MizerException {
+        final DicomObjectI dicom          = DicomObjectFactory.newInstance(DICOM_TEST);
+        final Map<String, Object> elements = new HashMap<>();
+        final List<MizerContext> contexts  = Arrays.<MizerContext>asList(new MizerContextWithScript(0L, SCRIPT_V610, elements));
+
+        _service.anonymize(dicom, contexts);
+
+        assertEquals( "fubar", dicom.getString( 0x00100666));
+    }
+
+    @Test
+    public void testNewestVersionSortsAfter67AndSixTenIsNot61() {
+        // Collections.max over VersionString: a string sort would put 6.7 after 6.10.
+        final VersionString newest = new DE6Mizer().getMaxSupportedVersion();
+        assertTrue(newest.compareTo(new VersionString("6.7")) > 0);
+        assertNotEquals(new VersionString("6.1"), new VersionString("6.10"));
     }
 
     @Test
@@ -61,6 +82,9 @@ public class VersionStringTest {
 
     private static final String SCRIPT_V1 =
             "version \"6.7\"\n" +
+                    "(0010,0666) := \"fubar\"\n";
+    private static final String SCRIPT_V610 =
+            "version \"6.10\"\n" +
                     "(0010,0666) := \"fubar\"\n";
     private static final String SCRIPT_VUNK =
             "version \"6\"\n" +

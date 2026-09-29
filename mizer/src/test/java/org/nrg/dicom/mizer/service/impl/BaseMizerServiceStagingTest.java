@@ -145,9 +145,40 @@ public class BaseMizerServiceStagingTest {
         assertEquals("the staging directory should be empty once the batch is in place", 0, staging.list().length);
     }
 
+    /**
+     * The resolver reads the data roots from the site preferences, a database query each, so a batch
+     * asks it once per directory rather than once per file.
+     */
+    @Test
+    public void asksTheResolverOncePerDirectoryOfTheBatch() throws Exception {
+        final File firstScan  = temporaryFolder.newFolder("scan1");
+        final File secondScan = temporaryFolder.newFolder("scan2");
+        final List<File> files = Arrays.asList(copyOfFixture(firstScan, "1.dcm"), copyOfFixture(firstScan, "2.dcm"), copyOfFixture(secondScan, "3.dcm"));
+        final File          staging = temporaryFolder.newFolder("staging");
+        final AtomicInteger asked   = new AtomicInteger();
+        final BaseMizerService service = new BaseMizerService(Collections.singletonList(new TestMizer()));
+        service.setStagingDirectoryResolver(dicomFile -> {
+            asked.incrementAndGet();
+            return staging;
+        });
+
+        service.anonymize(files, "project", "subject", "session", 7L, SCRIPT, true, false);
+
+        assertEquals("the resolver should be asked once for each of the two directories", 2, asked.get());
+        for (final File file : files) {
+            assertTrue(file + " should have been anonymized in place", read(file).contains(Tag.DeidentificationMethodCodeSequence));
+        }
+    }
+
     private File copyOfFixture(final String name) throws Exception {
         final File copy = temporaryFolder.newFile(name);
         Files.copy(fixture().toPath(), copy.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        return copy;
+    }
+
+    private File copyOfFixture(final File directory, final String name) throws Exception {
+        final File copy = new File(directory, name);
+        Files.copy(fixture().toPath(), copy.toPath());
         return copy;
     }
 

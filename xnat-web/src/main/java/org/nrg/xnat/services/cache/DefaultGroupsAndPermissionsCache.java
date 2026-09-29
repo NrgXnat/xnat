@@ -917,12 +917,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             for (final String username : usernames) {
                 clearUserCache(username);
                 ACTIONS.forEach(a -> evictCacheMapPartition(CACHE_ACTIONS, a, username));
-                log.info("Initializing user group IDs cache entry for user '{}'", username);
-                updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
-                final List<String> groupIds = getCacheList(CACHE_USER_GROUPS, username, String.class);
-                log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
-                ACTIONS.forEach(a -> getActionElementDisplays(username, a));
-                getBrowseableElementDisplays(username);
+                log.debug("Evicted caches for user '{}', will rebuild lazily on next access", username);
             }
         }
         return false;

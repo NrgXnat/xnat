@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unchecked","rawtypes"})
 @JsonSerialize(using = GenericWrapperElementSerializer.class)
@@ -65,8 +66,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	private ArrayList<XFTFieldWrapper> directNoFilter = null;
 	private volatile ArrayList<SchemaElementI> _possibleExtenders = null;
 
-	private final static Map<String,GenericWrapperElement> ALL_ELEMENTS_CACHE = new HashMap<>();
-	private final static Map<String, String[]> XMLPATH_TABLES_CACHE = new HashMap<>();
+	private final static Map<String,GenericWrapperElement> ALL_ELEMENTS_CACHE = new ConcurrentHashMap<>();
+	private final static Map<String, String[]> XMLPATH_TABLES_CACHE = new ConcurrentHashMap<>();
 
 	// The builds of getReferencedElements() and getMetaFields() in progress on this thread, by element.
 	private final static ThreadLocal<Map<GenericWrapperElement, ArrayList>> REFERENCED_ELEMENTS_IN_PROGRESS = ThreadLocal.withInitial(IdentityHashMap::new);
@@ -88,7 +89,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	    {
 			try {
 	            gwe = (GenericWrapperElement) XFTMetaManager.GetWrappedElementByXMLType(GenericWrapperFactory.GetInstance(),t);
-	            ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(t.getFullForeignType().toLowerCase()), gwe);
+	            if (gwe != null) {
+	                ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(t.getFullForeignType().toLowerCase()), gwe);
+	            }
 	        } catch (RuntimeException e) {
 		        logger.error("GetElement:" + t.getFullForeignType().toLowerCase());
 	            logger.error("",e);
@@ -153,7 +156,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
             {
                 try {
                     gwe = (GenericWrapperElement) XFTMetaManager.GetWrappedElementByName(GenericWrapperFactory.GetInstance(),name);
-                    ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(name.toLowerCase()), gwe);
+                    if (gwe != null) {
+                        ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(name.toLowerCase()), gwe);
+                    }
                 } catch (RuntimeException e) {
                     logger.error("GetElement:" + name);
                     logger.error("",e);

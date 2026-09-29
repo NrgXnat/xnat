@@ -36,9 +36,12 @@ public abstract class Unpacker implements StatusProducerI {
      * Unpacks the given file in-place.
      *
      * @param file    The file to unpack.
+     *
+     * @return true if the file was successfully unpacked, false if unpacking failed (a FAILED status will
+     * have been published in that case).
      */
-    public void unpack(final File file) {
-        unpack(file, null);
+    public boolean unpack(final File file) {
+        return unpack(file, null);
     }
 
     /**
@@ -47,8 +50,11 @@ public abstract class Unpacker implements StatusProducerI {
      *
      * @param file        The file to unpack.
      * @param destination The destination for the unpacked files.
+     *
+     * @return true if the file was successfully unpacked, false if unpacking failed (a FAILED status will
+     * have been published in that case). Callers must check this before treating the unpack as successful.
      */
-    public abstract void unpack(final File file, final File destination);
+    public abstract boolean unpack(final File file, final File destination);
 
     /* (non-Javadoc)
      * @see org.nrg.StatusPublisher#addStatusListener(org.nrg.StatusListener)

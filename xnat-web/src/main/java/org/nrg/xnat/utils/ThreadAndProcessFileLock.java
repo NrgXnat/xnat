@@ -59,7 +59,12 @@ public class ThreadAndProcessFileLock {
     // file, along with the number of current accessors. Entries are only created, updated, and removed through the
     // atomic ConcurrentHashMap compute methods, so concurrent access to different files can't corrupt the map and the
     // lock and its accessor count can't get out of sync.
-    private final static ConcurrentMap<File, LockEntry> FILE_LOCKS = new ConcurrentHashMap<>();
+    //
+    // ConcurrentHashMap locks per table bin, and the table grows with the number of entries. The initial capacity makes
+    // sure it starts with at least as many bins as the 128-stripe lock this map replaced, so there's no more contention
+    // between unrelated files than before while only a few files are locked.
+    private final static int INITIAL_CAPACITY = 128;
+    private final static ConcurrentMap<File, LockEntry> FILE_LOCKS = new ConcurrentHashMap<>(INITIAL_CAPACITY);
 
     private static SiteConfigPreferences PREFERENCES;
 

@@ -32,7 +32,7 @@ public class Unzipper extends Unpacker {
     private final Logger logger = LoggerFactory.getLogger(Unzipper.class);
 
     @Override
-    public final void unpack(final File zipfile, final File destination) {
+    public final boolean unpack(final File zipfile, final File destination) {
         final FileInputStream fis;
         try {
             IOException ioexception = null;
@@ -72,10 +72,13 @@ public class Unzipper extends Unpacker {
         } catch (FileNotFoundException e) {
             publishFailure(zipfile, "unable to locate: " + e.getMessage());
             logger.error("could not find zipfile " + zipfile, e);
+            return false;
         } catch (IOException e) {
             publishFailure(zipfile, "unable to unpack " + zipfile + ": " + e.getMessage());
             logger.error("unable to unpack " + zipfile, e);
+            return false;
         }
+        return true;
     }
 
     private static final char notFileSeparator = '/' == File.separatorChar ? '\\' : '/';
@@ -93,11 +96,12 @@ public class Unzipper extends Unpacker {
         // This method used to catch its own IOException here and only report it via publishFailure, rather than
         // letting it propagate as the method's own "throws IOException" already promises. That swallowed the
         // path-traversal rejection below (and any other extraction failure): unpack(File, File) -- the only
-        // caller -- has its own correct, more specific failure handling built around this method actually
-        // throwing, but with the exception silently absorbed here it saw a normal return and published *success*
-        // right after calling this method, and the caller of that (PrearcImporter) would go on to delete the
-        // original archive and queue the partially-extracted, still-unsafe destination for import as if nothing
-        // had gone wrong.
+        // caller -- now turns a thrown IOException from here into a `false` return, and
+        // PrearcImporter.UnpackDispatcher.unpack() / PrearcImporter.run() check that return value before
+        // deleting the original archive and queuing the destination for import. With the exception silently
+        // absorbed here instead, unpack(File, File) would see a normal return and report success even though
+        // entries preceding the rejected one were already written to a partially-extracted, still-unsafe
+        // destination.
         for (ZipEntry ze = zipInputStream.getNextEntry(); ze != null; ze = zipInputStream.getNextEntry()) {
             final String name = ze.getName().replace(notFileSeparator, File.separatorChar);
             // Reject a path-traversal ("zip-slip") entry before anything is written for it: an entry name

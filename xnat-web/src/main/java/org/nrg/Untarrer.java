@@ -40,8 +40,10 @@ public class Untarrer extends Unpacker {
    * source file, so we don't bother.
    * @param file tar file to be unpacked
    * @param destination destination directory
+   *
+   * @return true if the file was successfully unpacked, false otherwise.
    */
-  public final void unpack(final File file, final File destination) {
+  public final boolean unpack(final File file, final File destination) {
     publishStatus(file, "unpacking");
 
     final Untar untar = new Untar();
@@ -55,9 +57,11 @@ public class Untarrer extends Unpacker {
       untar.execute();
       file.delete();
       publishStatus(file, "unpacked");
+      return true;
     } catch (BuildException e) {
       e.printStackTrace();
       publishFailure(file, e.getMessage());
+      return false;
     }
   }
 }

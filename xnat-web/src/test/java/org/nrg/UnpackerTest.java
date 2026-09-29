@@ -38,9 +38,10 @@ public class UnpackerTest {
         final Map<String,File> vals = new HashMap<String,File>();
 
         final Unpacker up = new Unpacker() {
-            public void unpack(final File file, final File destination) {
+            public boolean unpack(final File file, final File destination) {
                 vals.put("file", file);
                 vals.put("dest", destination);
+                return true;
             }
         };
 
@@ -58,9 +59,10 @@ public class UnpackerTest {
         final Map<Object,String> messages = new HashMap<Object,String>();
 
         final Unpacker up = new Unpacker() {
-            public void unpack(final File file, final File destination) {
+            public boolean unpack(final File file, final File destination) {
                 publishStatus(file, "unpacking");
                 publishStatus(destination, "into");
+                return true;
             }
         };
 
@@ -86,9 +88,10 @@ public class UnpackerTest {
         final Map<Object,Object> messages = new HashMap<Object,Object>();
 
         final Unpacker up = new Unpacker() {
-            public void unpack(final File file, final File destination) {
+            public boolean unpack(final File file, final File destination) {
                 publishStatus(file, file.getName());
                 publishStatus(destination, destination.getName());
+                return true;
             }
         };
 
@@ -138,9 +141,10 @@ public class UnpackerTest {
         final Map<Object,StatusMessage> messages = new HashMap<Object,StatusMessage>();
 
         final Unpacker up = new Unpacker() {
-            public void unpack(final File file, final File destination) {
+            public boolean unpack(final File file, final File destination) {
                 publishStatus(file, "unpacking");
                 publishStatus(destination, "into");
+                return true;
             }
         };
 
@@ -162,9 +166,10 @@ public class UnpackerTest {
         final Map<Object,StatusMessage> messages = new HashMap<Object,StatusMessage>();
 
         final Unpacker up = new Unpacker() {
-            public void unpack(final File file, final File destination) {
+            public boolean unpack(final File file, final File destination) {
                 publishWarning(file, "unpacking");
                 publishWarning(destination, "into");
+                return true;
             }
         };
 
@@ -186,9 +191,10 @@ public class UnpackerTest {
         final Map<Object,StatusMessage> messages = new HashMap<Object,StatusMessage>();
 
         final Unpacker up = new Unpacker() {
-            public void unpack(final File file, final File destination) {
+            public boolean unpack(final File file, final File destination) {
                 publishFailure(file, "unpacking");
                 publishFailure(destination, "into");
+                return false;
             }
         };
 
@@ -210,9 +216,10 @@ public class UnpackerTest {
         final Map<Object,StatusMessage> messages = new HashMap<Object,StatusMessage>();
 
         final Unpacker up = new Unpacker() {
-            public void unpack(final File file, final File destination) {
+            public boolean unpack(final File file, final File destination) {
                 publishSuccess(file, "unpacking");
                 publishSuccess(destination, "into");
+                return true;
             }
         };
 

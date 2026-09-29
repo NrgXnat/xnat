@@ -110,8 +110,9 @@ public class UnzipperTest {
 
     final Unzipper u = new Unzipper();
     u.addStatusListener(statuses::add);
-    u.unpack(zip, destination);
 
+    assertFalse("a failed unpack must report failure via its return value, not just via published status",
+                u.unpack(zip, destination));
     assertFalse("the traversal entry must never be written outside the destination",
                 new File(workingDir, "evil.txt").exists());
     assertTrue("a FAILED status must be published",

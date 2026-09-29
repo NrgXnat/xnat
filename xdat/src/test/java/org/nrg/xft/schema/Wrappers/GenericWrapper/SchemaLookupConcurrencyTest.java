@@ -1,7 +1,9 @@
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.nrg.framework.services.ContextService;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.meta.XFTMetaManager;
@@ -38,6 +40,14 @@ import static org.junit.Assert.assertTrue;
 public class SchemaLookupConcurrencyTest {
     private static final int THREADS = 8;
     private static final int ROUNDS  = 20;
+
+    @BeforeClass
+    public static void runWithoutSpring() {
+        // XFT looks up optional Spring beans through the static ContextService and loads schemas without them. A test
+        // earlier in the same JVM can leave its application context registered, and beans missing from that context
+        // then throw instead of being skipped.
+        ContextService.getInstance().setApplicationContext(null);
+    }
 
     @AfterClass
     public static void unloadSchema() {

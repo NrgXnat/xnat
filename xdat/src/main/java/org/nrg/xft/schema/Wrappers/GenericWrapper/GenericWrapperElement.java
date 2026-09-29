@@ -68,7 +68,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	private final static Map<String,GenericWrapperElement> ALL_ELEMENTS_CACHE = new HashMap<>();
 	private final static Map<String, String[]> XMLPATH_TABLES_CACHE = new HashMap<>();
 
-	private String _finalSqlName=null;
+	private volatile String _finalSqlName=null;
 	private String _finalFormattedName=null;
 	/**
 	 * Get GenericWrapperElement with a matching XMLType
@@ -1389,7 +1389,11 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * valid sql name for this element.
 	 * @return Returns the element's SQL name
 	 */
-	public synchronized String getSQLName() {
+	// Not synchronized: the value is a pure function of the wrapped schema element and is cached in a volatile
+	// field, so a race computes the same string twice at worst. This is the most frequent lock edge in the
+	// ViewManager class-monitor / element-monitor deadlock (ViewManager.getFieldElements() calls it while
+	// holding the ViewManager class lock); it must stay lock-free.
+	public String getSQLName() {
 	    if (_finalSqlName==null)
 	    {
 			String temp = "";

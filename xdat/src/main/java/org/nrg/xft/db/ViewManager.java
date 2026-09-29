@@ -924,7 +924,15 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public synchronized static Map<String, String> GetFieldMap(final GenericWrapperElement e, final String level, final boolean allowMultiples, final boolean isRoot)throws XFTInitException,ElementNotFoundException {
+	// Not synchronized: FIELD_MAPS/FIELD_NAMES are ConcurrentHashMaps and getFieldElements() builds its result
+	// locally before publishing it, so a reader never sees a partial entry. Two threads racing on the same
+	// uncached key compute the same result twice, which is harmless. The class-level monitor this used to take
+	// deadlocked against the GenericWrapperElement instance monitors: this method calls e.getSQLName() and
+	// e.getAllFieldNames() (instance-synchronized) while holding the class lock, and
+	// GenericWrapperElement.getReferencedElements()/getMetaFields() call GetFieldNames() while holding the
+	// instance lock. Do NOT replace this with computeIfAbsent(): GetFields() re-enters the same map for
+	// referenced elements, and ConcurrentHashMap rejects recursive updates.
+	public static Map<String, String> GetFieldMap(final GenericWrapperElement e, final String level, final boolean allowMultiples, final boolean isRoot)throws XFTInitException,ElementNotFoundException {
 		return getFieldElements(FIELD_MAPS, e, level, allowMultiples, isRoot);
 	}
 
@@ -1005,7 +1013,8 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public synchronized static List<String> GetFieldNames(GenericWrapperElement e,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException {
+	// Not synchronized: see GetFieldMap() above.
+	public static List<String> GetFieldNames(GenericWrapperElement e,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException {
 		return getFieldElements(FIELD_NAMES, e, level, allowMultiples, isRoot);
 	}
 	

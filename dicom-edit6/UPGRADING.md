@@ -24,18 +24,22 @@ no `6.8` or `6.9` script versions; those numbers were library releases only.
 - **The transfer syntax is kept.** An uncompressed object stays in its own syntax; previously every
   redacted object came back Explicit VR Little Endian. Lossless JPEG, JPEG-LS and JPEG 2000 objects
   are re-encoded losslessly in their own syntax, and the pixels outside the rectangle are unchanged.
+  If no encoder for the syntax is available, or encoding fails, the object comes back uncompressed
+  instead and a warning is logged.
 - **Lossy objects come back uncompressed.** JPEG Baseline, lossy JPEG 2000 and the other lossy
   syntaxes are not re-encoded, since that would degrade the whole image to redact one rectangle.
-  Lossy Image Compression (0028,2110) is set to `01`, and the ratio (0028,2112) and method (0028,2114)
-  are recorded unless the object already records them. RLE objects also come back uncompressed,
-  because nothing can encode RLE.
+  Lossy Image Compression (0028,2110) is set to `01`. The method (0028,2114) is recorded unless the
+  object already records one. The ratio (0028,2112) is recorded only if the object records none and
+  it pairs with a single method; an existing ratio is never changed. RLE objects also come back
+  uncompressed, because nothing can encode RLE.
 - **The fill value is used.** The region is filled with the value the script asks for; previously it
   was always filled with 0.
 - **The redaction is recorded once.** As before, Burned In Annotation (0028,0301) is set to `NO`, and
   "Burned in text blacked out" and code 113101 "Clean Pixel Data Option" are added to
   De-identification Method (0012,0063) and De-identification Method Code Sequence (0012,0064). They
-  are no longer added a second time when the object already carries them, and nothing is recorded
-  when the rectangle misses the image.
+  are no longer added a second time when the object already carries them. When the rectangle misses
+  the image, nothing is recorded and Burned In Annotation is left as it was; 6.9.1 removed it even
+  then.
 - **Floating point pixel data is redacted.** Float Pixel Data and Double Float Pixel Data, as in a
   parametric map, used to pass through unchanged.
 - **Some objects are refused.** `alterPixels` fails on objects it cannot redact exactly, including

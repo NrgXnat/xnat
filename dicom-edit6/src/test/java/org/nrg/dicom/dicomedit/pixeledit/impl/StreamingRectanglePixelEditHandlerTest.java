@@ -241,13 +241,36 @@ public class StreamingRectanglePixelEditHandlerTest {
 
     @Test
     public void recordsNothingWhenTheRectangleMissesTheImage() throws Exception {
+        // Burned In Annotation YES has to survive: 6.9.1 removed it even when nothing was redacted.
         final String     source = "dicom/single-frame/US-evle-mono2-8bits.dcm";
         final Attributes before = datasetOf(resource(source));
-        final Attributes after  = datasetOf(redact(source, new Rectangle2D.Float(5000, 5000, 10, 10), new Color(0, 0, 0)));
+        final Attributes after  = datasetOf(redact(source, new Rectangle2D.Float(5000, 5000, 10, 10), new Color(0, 0, 0),
+                                                   ds -> ds.setString(Tag.BurnedInAnnotation, VR.CS, "YES")));
 
-        assertNull(after.getString(Tag.BurnedInAnnotation));
+        assertEquals("YES", after.getString(Tag.BurnedInAnnotation));
         assertArrayEquals(before.getStrings(Tag.DeidentificationMethod), after.getStrings(Tag.DeidentificationMethod));
         assertTrue(cleanPixelDataCodes(after).isEmpty());
+    }
+
+    @Test
+    public void leavesAnExistingLossyCompressionRatioAlone() throws Exception {
+        final Attributes after = datasetOf(redact("dicom/multi-frame/xa-jpeg1.dcm", new Rectangle2D.Float(20, 20, 60, 60),
+                                                  new Color(180, 180, 180), ds -> {
+                    ds.setString(Tag.LossyImageCompressionMethod, VR.CS, "ISO_10918_1");
+                    ds.setString(Tag.LossyImageCompressionRatio, VR.DS, "12.5");
+                }));
+        assertArrayEquals(new String[]{"12.5"}, after.getStrings(Tag.LossyImageCompressionRatio));
+        assertArrayEquals(new String[]{"ISO_10918_1"}, after.getStrings(Tag.LossyImageCompressionMethod));
+    }
+
+    @Test
+    public void addsNoRatioThatWouldNotPairWithOneMethod() throws Exception {
+        // Two recorded compression steps and no ratios: one ratio would pair with the wrong step.
+        final Attributes after = datasetOf(redact("dicom/multi-frame/xa-jpeg1.dcm", new Rectangle2D.Float(20, 20, 60, 60),
+                                                  new Color(180, 180, 180),
+                                                  ds -> ds.setString(Tag.LossyImageCompressionMethod, VR.CS, "ISO_10918_1", "ISO_10918_1")));
+        assertNull(after.getStrings(Tag.LossyImageCompressionRatio));
+        assertArrayEquals(new String[]{"ISO_10918_1", "ISO_10918_1"}, after.getStrings(Tag.LossyImageCompressionMethod));
     }
 
     // The only guard against staged pixel files being left behind.
@@ -779,8 +802,15 @@ public class StreamingRectanglePixelEditHandlerTest {
     }
 
     private File redact(String resource, Rectangle2D rect, Color fill) throws Exception {
+        return redact(resource, rect, fill, ds -> { });
+    }
+
+    /** As {@link #redact(String, Rectangle2D, Color)}, after <b>setup</b> has edited the header. */
+    private File redact(String resource, Rectangle2D rect, Color fill, java.util.function.Consumer<Attributes> setup)
+            throws Exception {
         final DicomObjectI dobj = DicomObjectFactory.newInstance(resource(resource),
                                                                  DicomInputStream.IncludeBulkData.URI);
+        setup.accept(dobj.getAttributes());
         handler.process(rect, fill, dobj);
         final File output = temporaryFolder.newFile();
         try (OutputStream out = new FileOutputStream(output)) {

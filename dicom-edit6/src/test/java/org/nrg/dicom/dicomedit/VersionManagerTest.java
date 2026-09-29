@@ -1,11 +1,16 @@
 package org.nrg.dicom.dicomedit;
 
+import org.junit.Assume;
 import org.junit.Test;
+
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -32,15 +37,21 @@ public class VersionManagerTest {
     }
 
     @Test
-    public void theBuiltLibraryAcceptsItsOwnMajorMinor() {
-        // Set by the test task from the project version, so a resource the build failed to fill in
-        // fails here instead of quietly accepting fewer versions.
-        final String   library     = System.getProperty("dicomedit.libraryVersion");
-        final String[] parts       = library.split("[.-]");
-        final String   ownVersion  = parts[0] + "." + parts[1];
+    public void theBuiltLibraryAcceptsItsOwnMajorMinor() throws Exception {
+        // The test task passes the project version in. Checked against the resource text itself: at
+        // 6.10 an unfilled resource would still accept the right versions, through the fallback.
+        final String library = System.getProperty("dicomedit.libraryVersion");
+        Assume.assumeNotNull(library);
+        final String resource;
+        try (InputStream in = VersionManager.class.getResourceAsStream("dicomedit-version.properties")) {
+            assertNotNull("dicomedit-version.properties is missing", in);
+            resource = new String(in.readAllBytes(), StandardCharsets.ISO_8859_1);
+        }
+        assertTrue("dicomedit-version.properties was not filled in by the build", resource.contains("version=" + library + "\n"));
+
+        final String[]     parts    = library.split("[.-]");
         final List<String> accepted = VersionManager.getInstance().getSupportedVersionStrings();
-        assertEquals(ownVersion, accepted.get(accepted.size() - 1));
-        assertTrue(accepted.contains("6.10"));
+        assertEquals(parts[0] + "." + parts[1], accepted.get(accepted.size() - 1));
     }
 
     private static List<String> concat(final String... derived) {

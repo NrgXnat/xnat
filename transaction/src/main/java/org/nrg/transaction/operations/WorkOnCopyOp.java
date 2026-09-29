@@ -53,30 +53,16 @@ public final class WorkOnCopyOp<T> extends Transaction<T> {
 
     @Override
     public T run() throws TransactionException {
-        final T result = stage();
-        commit();
-        return result;
-    }
-
-    /**
-     * Runs the operation into the staged file without touching the source, so a caller working on
-     * several files can stage them all before putting any in place. {@link #rollback()} discards
-     * what this staged.
-     */
-    public T stage() throws TransactionException {
+        final T result;
         try {
             // A fixed-length name: prefixing the source's own name could push a long one past NAME_MAX.
             _callOnFile.setFile(new File(_tempDir, "staged-" + UUID.randomUUID()));
-            return _callOnFile.call();
+            result = _callOnFile.call();
         } catch (Throwable e) {
             throw new TransactionException(e);
         }
-    }
-
-    /** Puts what {@link #stage()} produced in the source's place, if it produced anything. */
-    public void commit() throws TransactionException {
         if (!_callOnFile.getFile().exists()) {
-            return;
+            return result;
         }
         try {
             replace(_callOnFile.getFile().toPath(), _source.toPath());
@@ -87,6 +73,7 @@ public final class WorkOnCopyOp<T> extends Transaction<T> {
             throw new TransactionException("Unable to replace " + _source + " with the staged version,"
                                            + " which is preserved at " + _callOnFile.getFile(), e);
         }
+        return result;
     }
 
     private static void replace(final Path staged, final Path source) throws IOException {

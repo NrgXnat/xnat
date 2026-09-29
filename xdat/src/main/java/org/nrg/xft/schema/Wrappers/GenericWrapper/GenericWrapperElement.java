@@ -93,8 +93,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	                ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(t.getFullForeignType().toLowerCase()), gwe);
 	            }
 	        } catch (RuntimeException e) {
-		        logger.error("GetElement:" + t.getFullForeignType().toLowerCase());
-	            logger.error("",e);
+	            logger.error("Unable to load the element {}", t.getFullForeignType(), e);
 	            throw new ElementNotFoundException(t.getFullForeignType().toLowerCase());
 	        }
 	    }
@@ -160,8 +159,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                         ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(name.toLowerCase()), gwe);
                     }
                 } catch (RuntimeException e) {
-                    logger.error("GetElement:" + name);
-                    logger.error("",e);
+                    logger.error("Unable to load the element {}", name, e);
                     throw new ElementNotFoundException(name);
                 }
             }

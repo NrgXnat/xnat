@@ -28,9 +28,11 @@ import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -310,6 +312,7 @@ public class BaseMizerService implements MizerService {
     @Override
     public List<AnonymizationResult> anonymize(List<File> dicomFiles, String project, String subject, String session, long scriptId, String script, boolean record, boolean ignoreRejection) throws MizerException {
         final List<WorkOnCopyOp<AnonymizationResult>> staged = new ArrayList<>();
+        final Map<File, File> stagingDirectories = new HashMap<>();
         boolean committed = false;
         try {
             List<AnonymizationResult> resultList = new ArrayList<>();
@@ -320,7 +323,7 @@ public class BaseMizerService implements MizerService {
             try {
                 for( File dicomFile: dicomFiles) {
                     final CallOnFile<AnonymizationResult> callOnFile = new AnonymizeCallOnFileWithPixels(dicomFile, mizer, context);
-                    final WorkOnCopyOp<AnonymizationResult> anonymizeOp = new WorkOnCopyOp<>(dicomFile, stagingDirectoryFor(dicomFile), callOnFile);
+                    final WorkOnCopyOp<AnonymizationResult> anonymizeOp = new WorkOnCopyOp<>(dicomFile, stagingDirectoryFor(dicomFile, stagingDirectories), callOnFile);
                     staged.add(anonymizeOp);
                     AnonymizationResult result = anonymizeOp.stage();
                     result.setAbsolutePath(dicomFile.getAbsolutePath());
@@ -360,6 +363,22 @@ public class BaseMizerService implements MizerService {
                 log.warn("Unable to remove a staged anonymization file", e);
             }
         }
+    }
+
+    /**
+     * The staging directory for a file of a batch, resolved once for each directory the batch touches
+     * rather than for each file. Resolving reads the data roots from the site preferences, a database
+     * query each, and checks the path on disk. Files in one directory are under the same data root, so
+     * they stage in the same place.
+     */
+    private File stagingDirectoryFor(final File dicomFile, final Map<File, File> resolvedByDirectory) throws MizerException {
+        final File directory = dicomFile.getAbsoluteFile().getParentFile();
+        File staging = resolvedByDirectory.get(directory);
+        if (staging == null) {
+            staging = stagingDirectoryFor(dicomFile);
+            resolvedByDirectory.put(directory, staging);
+        }
+        return staging;
     }
 
     private File stagingDirectoryFor(final File dicomFile) throws MizerException {

@@ -174,24 +174,30 @@ afterEvaluate {
 //
 // A module with its own version (dicom-edit6) can be a release while its dependencies are still
 // SNAPSHOTs, and a release published then can never be replaced. Skip it; the build that releases
-// the dependencies publishes it. Runs before the existing-artifact probe below.
+// the dependencies publishes it. In that release build nothing should still be a SNAPSHOT, so fail
+// instead. Runs before the existing-artifact probe below. Looks the publication up when it runs:
+// java-gradle-plugin sets it on its publish tasks only after they are configured.
 tasks.withType(PublishToMavenRepository).configureEach { publishTask ->
-    def pomFile = tasks.named("generatePomFileFor${publishTask.publication.name.capitalize()}Publication",
-                              GenerateMavenPom).get().destination
     onlyIf("release does not depend on SNAPSHOTs") { task ->
-        def pom = new XmlSlurper().parse(pomFile)
+        def pomTask = task.project.tasks.getByName("generatePomFileFor${task.publication.name.capitalize()}Publication")
+        def pom = new XmlSlurper().parse((pomTask as GenerateMavenPom).destination)
         if (pom.version.text().endsWith('-SNAPSHOT')) {
             return true
         }
         def snapshots = pom.dependencies.dependency
                            .findAll { it.version.text().endsWith('-SNAPSHOT') }
                            .collect { "${it.groupId.text()}:${it.artifactId.text()}:${it.version.text()}" }
-        if (snapshots) {
-            task.logger.warn("[publish] SKIP {}:{} — a release cannot depend on {}",
-                             pom.artifactId.text(), pom.version.text(), snapshots.join(', '))
-            return false
+        if (!snapshots) {
+            return true
         }
-        return true
+        def message = "${pom.artifactId.text()}:${pom.version.text()} — a release cannot depend on ${snapshots.join(', ')}"
+        if (!task.project.rootProject.version.toString().endsWith('-SNAPSHOT')) {
+            // Gradle reports only that the predicate failed, so say why before failing.
+            task.logger.error("[publish] FAIL {}", message)
+            throw new GradleException("[publish] ${message}")
+        }
+        task.logger.warn("[publish] SKIP {}", message)
+        return false
     }
 }
 

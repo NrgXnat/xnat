@@ -1398,10 +1398,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * valid sql name for this element.
 	 * @return Returns the element's SQL name
 	 */
-	// Not synchronized: the value is a pure function of the wrapped schema element and is cached in a volatile
-	// field, so a race computes the same string twice at worst. This is the most frequent lock edge in the
-	// ViewManager class-monitor / element-monitor deadlock (ViewManager.getFieldElements() calls it while
-	// holding the ViewManager class lock); it must stay lock-free.
+	// Not synchronized: the name depends only on the schema, so a race computes it twice at worst.
 	public String getSQLName() {
 	    if (_finalSqlName==null)
 	    {
@@ -2531,10 +2528,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * @return Returns the metaFields.
 	 */
 	public MetaFieldCollection getMetaFields() {
-		// Not synchronized: the build takes other elements' monitors (through ViewManager.GetFieldNames() and
-		// GetFieldForXMLPath()), and holding this element's meanwhile could deadlock with a thread building an element
-		// whose fields reach this one. Threads racing on a cold element build equal collections; a build that re-enters
-		// this element gets its partial collection, as it did under the monitor.
+		// Not synchronized: the build calls other elements' synchronized methods, and holding this element's monitor
+		// meanwhile can deadlock. A race builds equal collections; a re-entrant call on this thread gets the partial one.
 		MetaFieldCollection fields = metaFields;
 		if (fields == null)
 		{
@@ -4005,9 +4000,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 */
 	public ArrayList<SchemaElementI> getPossibleExtenders()
 	{
-	    // Not synchronized: the build takes every extension element's monitor through getExtendedElements(), and holding
-	    // this element's meanwhile could deadlock with an extender whose field build reaches this element. Threads racing
-	    // on a cold element build equal lists.
+	    // Not synchronized: the build takes every extension element's monitor, and holding this one meanwhile can deadlock.
 	    ArrayList<SchemaElementI> extenders = _possibleExtenders;
 	    if (extenders==null)
 	    {

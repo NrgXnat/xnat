@@ -146,14 +146,27 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     }
 
     @Test
-    public void singleArgumentQueueingMakesTheSameGuardedTransition() throws Exception {
-        status = PrearcStatus.RECEIVING;
-        service.setStatusToQueuedBuilding(SESSION_ID);
-        assertThat(status).isEqualTo(PrearcStatus.QUEUED_BUILDING);
+    public void singleArgumentQueueingMovesARestingSession() throws Exception {
+        for (final PrearcStatus from : Arrays.asList(PrearcStatus.RECEIVING, PrearcStatus.ERROR)) {
+            status = from;
 
-        status = PrearcStatus.DELETING;
-        service.setStatusToQueuedBuilding(SESSION_ID);
-        assertThat(status).isEqualTo(PrearcStatus.DELETING);
+            service.setStatusToQueuedBuilding(SESSION_ID);
+
+            assertThat(status).as("from %s", from).isEqualTo(PrearcStatus.QUEUED_BUILDING);
+        }
+    }
+
+    @Test
+    public void singleArgumentQueueingThrowsForASessionItCannotQueue() {
+        // Plugins built against 1.10.1 call build() straight after this; throwing stops them from building a session
+        // that is already queued, in flight or claimed by a delete, and their catch falls back to the scheduled trigger.
+        for (final PrearcStatus from : Arrays.asList(PrearcStatus.QUEUED_BUILDING, PrearcStatus.BUILDING, PrearcStatus.DELETING)) {
+            status = from;
+
+            assertThatThrownBy(() -> service.setStatusToQueuedBuilding(SESSION_ID)).as("from %s", from).isInstanceOf(IllegalStateException.class);
+
+            assertThat(status).as("from %s", from).isEqualTo(from);
+        }
         verify(dao, never()).update(any());
     }
 

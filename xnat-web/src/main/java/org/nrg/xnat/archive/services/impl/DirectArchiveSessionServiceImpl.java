@@ -139,6 +139,12 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     @Override
+    @Deprecated
+    public void delete(long id, UserI user) throws InvalidPermissionException, NotFoundException {
+        directArchiveSessionHibernateService.delete(id, user);
+    }
+
+    @Override
     public void delete(long id, UserI user, boolean force)
             throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
         final SessionData session = directArchiveSessionHibernateService.getSessionData(id);

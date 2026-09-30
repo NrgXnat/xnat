@@ -68,9 +68,13 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
 
     void setStatusToError(long id, Exception e) throws NotFoundException;
     /**
-     * Queues a session for building, as {@link #setStatusToQueuedBuilding(long, boolean)} without {@code force}; a
-     * session in any other status is left untouched. Stays {@code void}: plugins built against earlier 1.10.x
-     * releases link to this signature. Callers that need to know whether the session was queued use the overload.
+     * Queues a session for building, as {@link #setStatusToQueuedBuilding(long, boolean)} without {@code force}. Stays
+     * {@code void}: plugins built against earlier 1.10.x releases link to this signature. Callers that need to know
+     * whether the session was queued without catching an exception use the overload.
+     *
+     * @throws IllegalStateException when the session is in a status it cannot be queued from, e.g. already queued,
+     *                               being built or claimed by a delete; the session is left untouched. Callers that
+     *                               go on to build the session themselves must not do so.
      */
     void setStatusToQueuedBuilding(long id) throws NotFoundException;
 

@@ -16,6 +16,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import org.nrg.xnat.archive.ArchivingException;
+import org.nrg.xnat.archive.entities.DirectArchiveSession;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -135,6 +136,27 @@ public class DirectArchiveSessionStatusTransitionTest {
 
         assertThat(claimed).isFalse();
         assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.BUILDING);
+    }
+
+    /** A failure that names a file path can run past the 255 characters the message column holds. */
+    @Test
+    public void aFailedUploadMovesAReceivingSessionToErrorWithAReasonThatFitsItsColumn() throws Exception {
+        final long id = receivingSession(ROUNDS + 6).getId();
+
+        assertThat(service.setStatusToErrorIfReceiving(id, new Exception("x".repeat(400)))).isTrue();
+
+        final DirectArchiveSession failed = service.get(id);
+        assertThat(failed.getStatus()).isEqualTo(PrearcStatus.ERROR);
+        assertThat(failed.getMessage()).hasSize(255);
+    }
+
+    @Test
+    public void aFailedUploadLeavesASessionClaimedForDeletionAlone() throws Exception {
+        final long id = receivingSession(ROUNDS + 7).getId();
+        service.setStatusToDeleting(id, false);
+
+        assertThat(service.setStatusToErrorIfReceiving(id, new Exception("the upload broke"))).isFalse();
+        assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.DELETING);
     }
 
     @Test

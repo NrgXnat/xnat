@@ -81,7 +81,7 @@ public class HibernateDicomInboxImportRequestService extends AbstractHibernateEn
 
     public void complete(final DicomInboxImportRequest request, final String message, final String... parameters) {
         request.setStatus(Completed);
-        request.setResolution(message == null ? null : format(message, parameters));
+        request.setResolution(message == null ? null : resolution(message, parameters));
         update(request);
     }
 
@@ -90,8 +90,16 @@ public class HibernateDicomInboxImportRequestService extends AbstractHibernateEn
             throw new NrgServiceRuntimeException("No message set for failure of request, you must provide a reason for failures!");
         }
         request.setStatus(Failed);
-        request.setResolution(format(message, parameters));
+        request.setResolution(resolution(message, parameters));
         update(request);
+    }
+
+    /**
+     * The resolution column holds 255 characters, and a reason that names file paths can run longer: an update that
+     * failed on it would leave the request where it was, importing.
+     */
+    private static String resolution(final String message, final String... parameters) {
+        return StringUtils.abbreviate(format(message, parameters), 255);
     }
 
     private static String format(final String message, final String... parameters) {

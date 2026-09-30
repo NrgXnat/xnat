@@ -132,7 +132,7 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
         assertThat(sessionDirectory).doesNotExist();
         assertThat(new File(prearchiveDirectory, "1.dcm")).isFile();
         assertThat(Files.readString(new File(prearchiveDirectory, "logs/directArchive" + SESSION_ID + ".log").toPath()))
-                .contains("An upload into this session failed partway").contains("unable to read data from file");
+                .contains("An import into this session failed partway").contains("unable to read data from file");
         assertThat(recorded.get().getStatus()).isEqualTo(PrearcStatus.ERROR);
         assertThat(recorded.get().getUrl()).isEqualTo(prearchiveDirectory.getAbsolutePath());
         // Queued for a rebuild instead, the partial session would be archived after all.

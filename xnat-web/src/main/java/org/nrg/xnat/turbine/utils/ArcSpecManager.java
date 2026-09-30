@@ -11,7 +11,6 @@ package org.nrg.xnat.turbine.utils;
 
 import static org.nrg.xnat.turbine.utils.XNATUtils.setArcProjectPaths;
 
-import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
@@ -26,7 +25,6 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
-import org.restlet.util.DateUtils;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -65,20 +63,18 @@ public class ArcSpecManager {
     
     public synchronized static  ArcArchivespecification GetInstance(boolean dbInit){
         Date currentModDate=null;
-        try {
-            if((lastChecked+lastCheckedInterval<Calendar.getInstance().getTimeInMillis())) {
-                //rapid rechecking of this is expenseive and unnecessary.  Sometimes dozens of times per request.  Allow it to be cached for a bit.
-                currentModDate = (Date) PoolDBUtils.ReturnStatisticQuery("SELECT MAX(last_modified) AS last_modified FROM arc_archivespecification_meta_data", "last_modified", null, null);
-                lastChecked=Calendar.getInstance().getTimeInMillis();
-            }
-        } catch (SQLException e1) {
-            log.error("",e1);
-        } catch (Exception e1) {
-            log.error("",e1);
+        if((lastChecked+lastCheckedInterval<Calendar.getInstance().getTimeInMillis())) {
+            //rapid rechecking of this is expenseive and unnecessary.  Sometimes dozens of times per request.  Allow it to be cached for a bit.
+            currentModDate = specLastModified();
+            lastChecked=Calendar.getInstance().getTimeInMillis();
         }
 
-        if (arcSpec == null || (lastModified != null && currentModDate != null && DateUtils.before(lastModified, currentModDate))) {
-            lastModified = currentModDate;
+        // Any change of the time counts, not only a later one, so a time set back, as by a restored database, still
+        // reloads the specification.
+        if (arcSpec == null || (lastModified != null && currentModDate != null && currentModDate.getTime() != lastModified.getTime())) {
+            // Read before loading, so a change made during the load still moves the time past this one. The check above
+            // only runs once a minute, and a reload that took its null left the check comparing against nothing.
+            lastModified = currentModDate != null ? currentModDate : specLastModified();
             log.info("Initializing ArcSpec...");
             arcSpec = GetFreshInstance();
 
@@ -123,8 +119,9 @@ public class ArcSpecManager {
      * Records that the project's arc settings were saved. Unlike {@link #Reset()}, the cached specification is kept:
      * discarding it made the next lookup load every project, one query each, after every project was created. This
      * project's entry is dropped, so an arc project saved again is loaded whatever its last-modified time. A new
-     * project and the other projects are loaded as on every lookup, by their last-modified times.
-     * {@code archive_specification.xml} is rewritten in the background, at most once every
+     * project and the other projects are loaded as on every lookup, by their last-modified times. The save also moves
+     * the specification's own time, so every node still reloads the whole specification within a minute, once for all
+     * the saves in that minute. {@code archive_specification.xml} is rewritten in the background, at most once every
      * {@value #XML_REWRITE_DELAY_SECONDS} seconds however many projects change.
      */
     public static void arcProjectSaved(final String projectId) {
@@ -138,6 +135,16 @@ public class ArcSpecManager {
     /** The specification as cached, without loading one: taken under the lock, used outside it. */
     private synchronized static ArcArchivespecification cachedInstance() {
         return arcSpec;
+    }
+
+    /** The last time the specification or anything under it was saved, or null if that can't be read. */
+    private static Date specLastModified() {
+        try {
+            return (Date) PoolDBUtils.ReturnStatisticQuery("SELECT MAX(last_modified) AS last_modified FROM arc_archivespecification_meta_data", "last_modified", null, null);
+        } catch (Exception e) {
+            log.error("", e);
+            return null;
+        }
     }
 
     public synchronized static ArcArchivespecification initialize(final UserI user) throws Exception {

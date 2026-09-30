@@ -4,6 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.daos.DirectArchiveSessionDao;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
@@ -125,6 +128,16 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
+    @Deprecated
+    public void delete(long id, UserI user) throws InvalidPermissionException, NotFoundException {
+        final DirectArchiveSession das = get(id);
+        if (!Permissions.canDeleteProject(user, das.getProject())) {
+            throw new InvalidPermissionException(das.getProject());
+        }
+        delete(das);
+    }
+
+    @Override
     public void delete(long id) {
         // Idempotent: the row may already have been removed by a concurrent delete or by the importer
         final DirectArchiveSession das = retrieve(id);
@@ -139,8 +152,10 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
-    public boolean setStatusToQueuedBuilding(long id) throws NotFoundException {
-        return setStatusToQueuedBuilding(id, false);
+    public void setStatusToQueuedBuilding(long id) throws NotFoundException {
+        if (!setStatusToQueuedBuilding(id, false)) {
+            throw new IllegalStateException("DirectArchiveSession id=" + id + " is not in a status that can be queued for building");
+        }
     }
 
     @Override

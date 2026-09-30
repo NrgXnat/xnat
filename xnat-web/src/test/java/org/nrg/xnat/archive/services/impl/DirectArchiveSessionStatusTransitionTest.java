@@ -65,7 +65,7 @@ public class DirectArchiveSessionStatusTransitionTest {
         };
         final Callable<Boolean> queue = () -> {
             start.await();
-            return service.setStatusToQueuedBuilding(id);
+            return service.setStatusToQueuedBuilding(id, false);
         };
         final Future<Boolean> claimed = executor.submit(claim);
         final Future<Boolean> queued  = executor.submit(queue);

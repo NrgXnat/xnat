@@ -2,6 +2,8 @@ package org.nrg.xnat.archive.services;
 
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
+import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -11,6 +13,17 @@ import java.util.List;
 
 public interface DirectArchiveSessionHibernateService extends BaseHibernateService<DirectArchiveSession> {
     void touch(long id) throws NotFoundException;
+
+    /**
+     * Deletes the tracking row for a session, after checking the user can delete the session's project. Only the row
+     * is removed: the files are left in place and the session is not claimed first, so this can race the importer.
+     *
+     * @deprecated Kept so plugins built against earlier 1.10.x releases still link. Use
+     *             {@link DirectArchiveSessionService#delete(long, UserI)}, which also removes the session's files and
+     *             refuses a session that is still receiving or being archived.
+     */
+    @Deprecated
+    void delete(long id, UserI user) throws InvalidPermissionException, NotFoundException;
 
     SessionData findBySessionData(SessionData incoming);
 
@@ -55,15 +68,23 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
 
     void setStatusToError(long id, Exception e) throws NotFoundException;
     /**
-     * Queues a session for building. Allowed from RECEIVING and, so a failed archive can be retried, from ERROR.
+     * Queues a session for building, as {@link #setStatusToQueuedBuilding(long, boolean)} without {@code force}. Stays
+     * {@code void}: plugins built against earlier 1.10.x releases link to this signature. Callers that need to know
+     * whether the session was queued without catching an exception use the overload.
      *
-     * @return false, with the session left untouched, when it is in any other status, e.g. claimed by a delete
+     * @throws IllegalStateException when the session is in a status it cannot be queued from, e.g. already queued,
+     *                               being built or claimed by a delete; the session is left untouched. Callers that
+     *                               go on to build the session themselves must not do so.
      */
-    boolean setStatusToQueuedBuilding(long id) throws NotFoundException;
+    void setStatusToQueuedBuilding(long id) throws NotFoundException;
 
     /**
-     * As {@link #setStatusToQueuedBuilding(long)}; with {@code force} the session is re-queued from any status except
-     * a delete in progress, so that a session left queued, building or archiving by a dead worker can be retried.
+     * Queues a session for building. Allowed from RECEIVING and, so a failed archive can be retried, from ERROR. With
+     * {@code force} the session is re-queued from any status except a delete in progress, so that a session left
+     * queued, building or archiving by a dead worker can be retried.
+     *
+     * @return false, with the session left untouched, when it is in a status the transition is not allowed from, e.g.
+     *         claimed by a delete
      */
     boolean setStatusToQueuedBuilding(long id, boolean force) throws NotFoundException;
 

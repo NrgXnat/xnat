@@ -924,7 +924,10 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public synchronized static Map<String, String> GetFieldMap(final GenericWrapperElement e, final String level, final boolean allowMultiples, final boolean isRoot)throws XFTInitException,ElementNotFoundException {
+	// Not synchronized: the maps are ConcurrentHashMaps and getFieldElements() publishes a finished entry, so a race only
+	// builds it twice. A class lock here deadlocked against the element monitors this calls into. Don't switch to
+	// computeIfAbsent(): building an entry can re-enter these maps.
+	public static Map<String, String> GetFieldMap(final GenericWrapperElement e, final String level, final boolean allowMultiples, final boolean isRoot)throws XFTInitException,ElementNotFoundException {
 		return getFieldElements(FIELD_MAPS, e, level, allowMultiples, isRoot);
 	}
 
@@ -1005,7 +1008,8 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public synchronized static List<String> GetFieldNames(GenericWrapperElement e,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException {
+	// Not synchronized: see GetFieldMap() above.
+	public static List<String> GetFieldNames(GenericWrapperElement e,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException {
 		return getFieldElements(FIELD_NAMES, e, level, allowMultiples, isRoot);
 	}
 	

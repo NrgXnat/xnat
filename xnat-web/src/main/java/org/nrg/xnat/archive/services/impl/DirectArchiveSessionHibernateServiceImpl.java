@@ -139,8 +139,8 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
-    public boolean setStatusToQueuedBuilding(long id) throws NotFoundException {
-        return setStatusToQueuedBuilding(id, false);
+    public void setStatusToQueuedBuilding(long id) throws NotFoundException {
+        setStatusToQueuedBuilding(id, false);
     }
 
     @Override

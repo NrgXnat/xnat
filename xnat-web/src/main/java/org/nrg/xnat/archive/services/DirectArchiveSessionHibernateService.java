@@ -55,15 +55,19 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
 
     void setStatusToError(long id, Exception e) throws NotFoundException;
     /**
-     * Queues a session for building. Allowed from RECEIVING and, so a failed archive can be retried, from ERROR.
-     *
-     * @return false, with the session left untouched, when it is in any other status, e.g. claimed by a delete
+     * Queues a session for building, as {@link #setStatusToQueuedBuilding(long, boolean)} without {@code force}; a
+     * session in any other status is left untouched. Stays {@code void}: plugins built against earlier 1.10.x
+     * releases link to this signature. Callers that need to know whether the session was queued use the overload.
      */
-    boolean setStatusToQueuedBuilding(long id) throws NotFoundException;
+    void setStatusToQueuedBuilding(long id) throws NotFoundException;
 
     /**
-     * As {@link #setStatusToQueuedBuilding(long)}; with {@code force} the session is re-queued from any status except
-     * a delete in progress, so that a session left queued, building or archiving by a dead worker can be retried.
+     * Queues a session for building. Allowed from RECEIVING and, so a failed archive can be retried, from ERROR. With
+     * {@code force} the session is re-queued from any status except a delete in progress, so that a session left
+     * queued, building or archiving by a dead worker can be retried.
+     *
+     * @return false, with the session left untouched, when it is in a status the transition is not allowed from, e.g.
+     *         claimed by a delete
      */
     boolean setStatusToQueuedBuilding(long id, boolean force) throws NotFoundException;
 

@@ -13,6 +13,7 @@ import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.daos.DirectArchiveSessionDao;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
+import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -132,6 +133,25 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     }
 
     @Test
+    public void singleArgumentQueueingKeepsTheVoidSignaturePluginsLinkAgainst() throws Exception {
+        // Plugins compiled against XNAT 1.10.1 or earlier, such as xnat-dicomweb-plugin, link to
+        // void setStatusToQueuedBuilding(long); any other return type fails them with NoSuchMethodError.
+        assertThat(DirectArchiveSessionHibernateService.class.getMethod("setStatusToQueuedBuilding", long.class).getReturnType()).isEqualTo(void.class);
+    }
+
+    @Test
+    public void singleArgumentQueueingMakesTheSameGuardedTransition() throws Exception {
+        status = PrearcStatus.RECEIVING;
+        service.setStatusToQueuedBuilding(SESSION_ID);
+        assertThat(status).isEqualTo(PrearcStatus.QUEUED_BUILDING);
+
+        status = PrearcStatus.DELETING;
+        service.setStatusToQueuedBuilding(SESSION_ID);
+        assertThat(status).isEqualTo(PrearcStatus.DELETING);
+        verify(dao, never()).update(any());
+    }
+
+    @Test
     public void queueingARowThatIsGoneThrowsNotFound() {
         status = null;
 
@@ -163,7 +183,7 @@ public class DirectArchiveSessionHibernateServiceImplTest {
         for (final PrearcStatus from : Arrays.asList(PrearcStatus.RECEIVING, PrearcStatus.ERROR)) {
             status = from;
 
-            assertThat(service.setStatusToQueuedBuilding(SESSION_ID)).as("from %s", from).isTrue();
+            assertThat(service.setStatusToQueuedBuilding(SESSION_ID, false)).as("from %s", from).isTrue();
 
             assertThat(status).isEqualTo(PrearcStatus.QUEUED_BUILDING);
         }
@@ -174,7 +194,7 @@ public class DirectArchiveSessionHibernateServiceImplTest {
         // The archive trigger must not overwrite a session that a delete has just claimed.
         status = PrearcStatus.DELETING;
 
-        assertThat(service.setStatusToQueuedBuilding(SESSION_ID)).isFalse();
+        assertThat(service.setStatusToQueuedBuilding(SESSION_ID, false)).isFalse();
 
         assertThat(status).isEqualTo(PrearcStatus.DELETING);
         verify(dao, never()).update(any());

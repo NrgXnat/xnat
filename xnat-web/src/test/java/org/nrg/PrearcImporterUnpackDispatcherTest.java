@@ -54,6 +54,9 @@ public class PrearcImporterUnpackDispatcherTest {
      * A zip containing a safe entry followed by a path-traversal ("zip-slip") entry must be reported as a
      * failed unpack by the dispatcher, not just by Unzipper in isolation -- otherwise PrearcImporter.run()
      * would delete the original upload and queue the partially-extracted, still-unsafe destination for import.
+     * Unzipper scans the whole archive before extracting anything (the same atomic scan-then-extract guarantee
+     * ZipUtils/TarUtils already provide elsewhere in this project), so the safe entry must not be extracted
+     * either -- not just the malicious one rejected.
      */
     @Test
     public final void testDispatcherReportsFailureForMixedSafeAndMaliciousEntries() throws Exception {
@@ -78,8 +81,9 @@ public class PrearcImporterUnpackDispatcherTest {
                     ud.unpack(zip, dest));
         assertFalse("the traversal entry must never be written outside the destination",
                     new File(workingDir, "evil.txt").exists());
-        assertTrue("entries preceding the malicious one are still written before the rejection is detected",
-                   new File(dest, "safe.txt").isFile());
+        assertFalse("no entry may be extracted when the archive also contains a path-traversal entry -- the "
+                    + "whole upload is rejected atomically, not truncated at the malicious entry",
+                    new File(dest, "safe.txt").exists());
     }
 
     @Test

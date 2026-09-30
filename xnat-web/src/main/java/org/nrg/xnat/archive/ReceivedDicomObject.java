@@ -24,6 +24,7 @@ import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -199,7 +200,7 @@ final class ReceivedDicomObject implements Closeable {
             try (final FileOutputStream fos = new FileOutputStream(partial)) {
                 // After a partial read the rest of the stream, pixel data included, has not been
                 // parsed and is copied through as it arrived.
-                final long copied = DicomObjectWriter.write(dataset, fos, _whole ? null : _in);
+                final long copied = DicomObjectWriter.write(dataset, fos, _whole ? null : readingAsSource(_in));
                 if (!_whole) {
                     log.trace("copied {} additional bytes to {}", copied, outputFile);
                 }
@@ -213,6 +214,39 @@ final class ReceivedDicomObject implements Closeable {
             Files.deleteIfExists(partial.toPath());
         }
         LoggerFactory.getLogger("org.nrg.xnat.received").info("{}:{}", source, outputFile);
+    }
+
+    /**
+     * Thrown by {@link #write} when the rest of the object could not be read from the stream it arrived
+     * on, such as an upload cut off partway, as opposed to a failure writing it out.
+     */
+    static final class SourceReadException extends IOException {
+        SourceReadException(final IOException cause) {
+            super(cause.getMessage(), cause);
+        }
+    }
+
+    /** The rest of the stream, with its read failures reported as {@link SourceReadException}. */
+    private static InputStream readingAsSource(final InputStream in) {
+        return new FilterInputStream(in) {
+            @Override
+            public int read() throws IOException {
+                try {
+                    return super.read();
+                } catch (IOException e) {
+                    throw new SourceReadException(e);
+                }
+            }
+
+            @Override
+            public int read(final byte[] buffer, final int offset, final int length) throws IOException {
+                try {
+                    return super.read(buffer, offset, length);
+                } catch (IOException e) {
+                    throw new SourceReadException(e);
+                }
+            }
+        };
     }
 
     /**

@@ -26,7 +26,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.util.UUID;
 import java.util.function.Predicate;
+
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * A DICOM object arriving on an import stream, read once and written once.
@@ -170,19 +176,32 @@ final class ReceivedDicomObject implements Closeable {
      * @param source        who sent the object, for the receipt log.
      */
     void write(final Attributes dataset, final Object sourceAeTitle, final File outputFile, final String source) throws IOException {
-        try (final FileOutputStream fos = new FileOutputStream(outputFile)) {
-            // After a partial read the rest of the stream, pixel data included, has not been
-            // parsed and is copied through as it arrived.
-            final long copied = DicomObjectWriter.write(dataset, fos,
-                    fmi -> {
-                        if (null != sourceAeTitle) {
-                            fmi.setString(Tag.SourceApplicationEntityTitle, VR.AE, (String) sourceAeTitle);
-                        }
-                    },
-                    _whole ? null : _in);
-            if (!_whole) {
-                log.trace("copied {} additional bytes to {}", copied, outputFile);
+        // Written beside the output and renamed into place, so a write that fails partway leaves no
+        // truncated object in the session for its build to skip. A fixed-length name: one built from
+        // the object's could pass NAME_MAX.
+        final File partial = new File(outputFile.getParentFile(), ".received-" + UUID.randomUUID() + ".part");
+        try {
+            try (final FileOutputStream fos = new FileOutputStream(partial)) {
+                // After a partial read the rest of the stream, pixel data included, has not been
+                // parsed and is copied through as it arrived.
+                final long copied = DicomObjectWriter.write(dataset, fos,
+                        fmi -> {
+                            if (null != sourceAeTitle) {
+                                fmi.setString(Tag.SourceApplicationEntityTitle, VR.AE, (String) sourceAeTitle);
+                            }
+                        },
+                        _whole ? null : _in);
+                if (!_whole) {
+                    log.trace("copied {} additional bytes to {}", copied, outputFile);
+                }
             }
+            try {
+                Files.move(partial.toPath(), outputFile.toPath(), ATOMIC_MOVE, REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(partial.toPath(), outputFile.toPath(), REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(partial.toPath());
         }
         LoggerFactory.getLogger("org.nrg.xnat.received").info("{}:{}", source, outputFile);
     }

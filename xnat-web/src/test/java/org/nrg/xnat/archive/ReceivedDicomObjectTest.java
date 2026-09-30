@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -368,6 +369,31 @@ public class ReceivedDicomObjectTest {
         assertArrayEquals("pixels must survive the deflate round-trip", pixelData(deflated), pixelData(written));
     }
 
+    /**
+     * A stream that breaks partway through the pixel data -- a dropped association, a corrupt zip
+     * entry -- must not leave a truncated object for the session build to skip, nor truncate the copy
+     * a re-send of the same object is written over.
+     */
+    @Test
+    public void aStreamThatBreaksPartwayLeavesNoPartialObject() throws Exception {
+        final File session  = folder.newFolder("session");
+        final File output   = new File(session, "object.dcm");
+        final File existing = new File(session, "existing.dcm");
+        Files.copy(MR_FIXTURE.toPath(), existing.toPath());
+        final byte[] existingBytes = Files.readAllBytes(existing.toPath());
+
+        // Half way is past the header and inside the pixel data, which a partial read copies through during the write.
+        final long breakAt = MR_FIXTURE.length() / 2;
+        for (final File target : Arrays.asList(output, existing)) {
+            try (ReceivedDicomObject received = ReceivedDicomObject.read(breaksAfter(MR_FIXTURE, breakAt), null, ORDINARY_LAST_TAG, false)) {
+                assertThrows(IOException.class, () -> received.write(received.getDataset(), AE_TITLE, target, "test"));
+            }
+        }
+        assertFalse("a failed write must not leave a partial object", output.exists());
+        assertArrayEquals("a failed re-send must leave the earlier copy as it was", existingBytes, Files.readAllBytes(existing.toPath()));
+        assertEquals("nothing else should be left in the session", Collections.singletonList(existing.toPath()), filesUnder(session));
+    }
+
     /** What an inbox holding a README or a zero-byte file hands the importer: the stream never opens, and the source must still be closed. */
     @Test
     public void closesTheSourceWhenItCannotBeReadAsDicom() {
@@ -492,6 +518,31 @@ public class ReceivedDicomObjectTest {
 
     private static InputStream open(final File file) throws IOException {
         return new FileInputStream(file);
+    }
+
+    /** The file's first <b>limit</b> bytes, then the IOException a dropped association or a corrupt zip entry raises. */
+    private static InputStream breaksAfter(final File file, final long limit) throws IOException {
+        return new FilterInputStream(open(file)) {
+            private long _position;
+
+            @Override
+            public int read() throws IOException {
+                final byte[] one = new byte[1];
+                return read(one, 0, 1) < 0 ? -1 : one[0] & 0xff;
+            }
+
+            @Override
+            public int read(final byte[] buffer, final int offset, final int length) throws IOException {
+                if (_position >= limit) {
+                    throw new IOException("the stream broke after " + limit + " bytes");
+                }
+                final int count = super.read(buffer, offset, (int) Math.min(length, limit - _position));
+                if (count > 0) {
+                    _position += count;
+                }
+                return count;
+            }
+        };
     }
 
     private static Attributes readWhole(final File file) throws IOException {

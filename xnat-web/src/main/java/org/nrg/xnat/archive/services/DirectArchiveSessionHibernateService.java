@@ -2,6 +2,8 @@ package org.nrg.xnat.archive.services;
 
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
+import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -11,6 +13,17 @@ import java.util.List;
 
 public interface DirectArchiveSessionHibernateService extends BaseHibernateService<DirectArchiveSession> {
     void touch(long id) throws NotFoundException;
+
+    /**
+     * Deletes the tracking row for a session, after checking the user can delete the session's project. Only the row
+     * is removed: the files are left in place and the session is not claimed first, so this can race the importer.
+     *
+     * @deprecated Kept so plugins built against earlier 1.10.x releases still link. Use
+     *             {@link DirectArchiveSessionService#delete(long, UserI)}, which also removes the session's files and
+     *             refuses a session that is still receiving or being archived.
+     */
+    @Deprecated
+    void delete(long id, UserI user) throws InvalidPermissionException, NotFoundException;
 
     SessionData findBySessionData(SessionData incoming);
 

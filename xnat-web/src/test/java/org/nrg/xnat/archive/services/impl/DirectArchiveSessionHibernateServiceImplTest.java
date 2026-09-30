@@ -8,8 +8,13 @@ import java.util.Set;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.daos.DirectArchiveSessionDao;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
@@ -36,6 +41,7 @@ import static org.mockito.Mockito.when;
 public class DirectArchiveSessionHibernateServiceImplTest {
     private static final long   SESSION_ID = 42L;
     private static final String LOCATION   = "/data/xnat/archive/PROJ/arc001/SESSION_01";
+    private static final String PROJECT    = "PROJ";
 
     private DirectArchiveSessionDao                 dao;
     private DirectArchiveSessionHibernateServiceImpl service;
@@ -149,6 +155,42 @@ public class DirectArchiveSessionHibernateServiceImplTest {
         service.setStatusToQueuedBuilding(SESSION_ID);
         assertThat(status).isEqualTo(PrearcStatus.DELETING);
         verify(dao, never()).update(any());
+    }
+
+    @Test
+    public void userDeleteKeepsTheSignaturePluginsLinkAgainst() throws Exception {
+        // Removed by #62 and restored so plugins compiled against XNAT 1.10.1 still link to it.
+        assertThat(DirectArchiveSessionHibernateService.class.getMethod("delete", long.class, UserI.class).getReturnType()).isEqualTo(void.class);
+    }
+
+    @Test
+    public void userDeleteRefusesAUserWhoCannotDeleteTheProject() throws Exception {
+        final UserI                user    = mock(UserI.class);
+        final DirectArchiveSession session = sessionIn(SESSION_ID, PrearcStatus.RECEIVING);
+        session.setProject(PROJECT);
+        when(dao.retrieve(SESSION_ID)).thenReturn(session);
+
+        try (final MockedStatic<Permissions> permissions = Mockito.mockStatic(Permissions.class)) {
+            permissions.when(() -> Permissions.canDeleteProject(user, PROJECT)).thenReturn(false);
+
+            assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(InvalidPermissionException.class);
+        }
+        verify(dao, never()).delete(any());
+    }
+
+    @Test
+    public void userDeleteRemovesTheRowForAUserWhoCanDeleteTheProject() throws Exception {
+        final UserI                user    = mock(UserI.class);
+        final DirectArchiveSession session = sessionIn(SESSION_ID, PrearcStatus.RECEIVING);
+        session.setProject(PROJECT);
+        when(dao.retrieve(SESSION_ID)).thenReturn(session);
+
+        try (final MockedStatic<Permissions> permissions = Mockito.mockStatic(Permissions.class)) {
+            permissions.when(() -> Permissions.canDeleteProject(user, PROJECT)).thenReturn(true);
+
+            service.delete(SESSION_ID, user);
+        }
+        verify(dao).delete(session);
     }
 
     @Test

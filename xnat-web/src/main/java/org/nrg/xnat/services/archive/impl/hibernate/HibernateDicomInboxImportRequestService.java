@@ -54,7 +54,10 @@ public class HibernateDicomInboxImportRequestService extends AbstractHibernateEn
 
     @Override
     public DicomInboxImportRequest getDicomInboxImportRequest(final long id) {
-        return getDao().findById(id);
+        // The entity itself, not the lazy proxy findById loads: this transaction ends when the method returns, and a
+        // proxy read after it, by the status API or by the prearchive operations completing the request, throws
+        // "could not initialize proxy - no Session". A request that doesn't exist is null rather than a proxy.
+        return getDao().retrieve(id);
     }
 
     public void setStatus(final DicomInboxImportRequest request, final Status status) {

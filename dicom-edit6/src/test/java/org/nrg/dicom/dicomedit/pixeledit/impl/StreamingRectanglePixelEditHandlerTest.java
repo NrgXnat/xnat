@@ -273,6 +273,30 @@ public class StreamingRectanglePixelEditHandlerTest {
         assertArrayEquals(new String[]{"ISO_10918_1", "ISO_10918_1"}, after.getStrings(Tag.LossyImageCompressionMethod));
     }
 
+    @Test
+    public void appendsThisStepsMethodAfterAnEarlierDifferentOneWithoutARatio() throws Exception {
+        // An earlier JPEG 2000 step recorded without a ratio: this JPEG step gets its own method, and
+        // no ratio, which would otherwise pair with the JPEG 2000 step.
+        final Attributes after = datasetOf(redact("dicom/multi-frame/xa-jpeg1.dcm", new Rectangle2D.Float(20, 20, 60, 60),
+                                                  new Color(180, 180, 180),
+                                                  ds -> ds.setString(Tag.LossyImageCompressionMethod, VR.CS, "ISO_15444_1")));
+        assertArrayEquals(new String[]{"ISO_15444_1", "ISO_10918_1"}, after.getStrings(Tag.LossyImageCompressionMethod));
+        assertNull(after.getStrings(Tag.LossyImageCompressionRatio));
+    }
+
+    @Test
+    public void appendsMethodAndRatioAfterAnEarlierFullyRecordedStep() throws Exception {
+        final Attributes after = datasetOf(redact("dicom/multi-frame/xa-jpeg1.dcm", new Rectangle2D.Float(20, 20, 60, 60),
+                                                  new Color(180, 180, 180), ds -> {
+                    ds.setString(Tag.LossyImageCompressionMethod, VR.CS, "ISO_15444_1");
+                    ds.setString(Tag.LossyImageCompressionRatio, VR.DS, "10");
+                }));
+        assertArrayEquals(new String[]{"ISO_15444_1", "ISO_10918_1"}, after.getStrings(Tag.LossyImageCompressionMethod));
+        final String[] ratios = after.getStrings(Tag.LossyImageCompressionRatio);
+        assertEquals(2, ratios.length);
+        assertEquals("10", ratios[0]);
+    }
+
     // The only guard against staged pixel files being left behind.
     @Test
     public void deletesScratchFilesOnRelease() throws Exception {

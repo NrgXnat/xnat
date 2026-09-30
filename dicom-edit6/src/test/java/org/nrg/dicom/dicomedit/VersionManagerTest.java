@@ -4,14 +4,13 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Pins how the accepted script versions follow the library version.
@@ -38,16 +37,16 @@ public class VersionManagerTest {
 
     @Test
     public void theBuiltLibraryAcceptsItsOwnMajorMinor() throws Exception {
-        // The test task passes the project version in. Checked against the resource text itself: at
-        // 6.10 an unfilled resource would still accept the right versions, through the fallback.
+        // The test task passes the project version in. Checked against the resource itself: at 6.10
+        // an unfilled resource would still accept the right versions, through the fallback.
         final String library = System.getProperty("dicomedit.libraryVersion");
         Assume.assumeNotNull(library);
-        final String resource;
+        final Properties properties = new Properties();
         try (InputStream in = VersionManager.class.getResourceAsStream("dicomedit-version.properties")) {
             assertNotNull("dicomedit-version.properties is missing", in);
-            resource = new String(in.readAllBytes(), StandardCharsets.ISO_8859_1);
+            properties.load(in);
         }
-        assertTrue("dicomedit-version.properties was not filled in by the build", resource.contains("version=" + library + "\n"));
+        assertEquals("dicomedit-version.properties was not filled in by the build", library, properties.getProperty("version"));
 
         final String[]     parts    = library.split("[.-]");
         final List<String> accepted = VersionManager.getInstance().getSupportedVersionStrings();

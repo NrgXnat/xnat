@@ -28,10 +28,13 @@ no `6.8` or `6.9` script versions; those numbers were library releases only.
   instead and a warning is logged.
 - **Lossy objects come back uncompressed.** JPEG Baseline, lossy JPEG 2000 and the other lossy
   syntaxes are not re-encoded, since that would degrade the whole image to redact one rectangle.
-  Lossy Image Compression (0028,2110) is set to `01`. The method (0028,2114) is recorded unless the
-  object already records one. The ratio (0028,2112) is recorded only if the object records none and
-  it pairs with a single method; an existing ratio is never changed. RLE objects also come back
-  uncompressed, because nothing can encode RLE.
+  Lossy Image Compression (0028,2110) is set to `01`, and this compression step is added to the
+  history in Lossy Image Compression Method (0028,2114) and Ratio (0028,2112). Those pair up in
+  order, one value per step, and values already present are never changed. The method is added
+  unless the last one recorded is already this step's, and the ratio only when every earlier step has
+  one. The method uses the defined term for the source syntax, including HTJ2K (`ISO_15444_15`),
+  JPEG XL (`ISO_18181_1`) and the video syntaxes. RLE objects also come back uncompressed, because
+  nothing can encode RLE.
 - **The fill value is used.** The region is filled with the value the script asks for; previously it
   was always filled with 0.
 - **The redaction is recorded once.** As before, Burned In Annotation (0028,0301) is set to `NO`, and

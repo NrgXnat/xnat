@@ -24,8 +24,13 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -127,6 +132,12 @@ public class StreamingRectanglePixelEditHandlerTest {
                      "01", result.dataset.getString(Tag.LossyImageCompression));
         assertTrue("a lossy compression method should be recorded",
                    result.dataset.getString(Tag.LossyImageCompressionMethod) != null);
+        // Decoded bytes over the compressed bytes of every fragment after the offset table.
+        final double expectedRatio = (double) result.length()
+                                     / compressedLengthOf(resource("dicom/multi-frame/xa-jpeg1.dcm"));
+        assertEquals("the lossy compression ratio should be recorded",
+                     String.format(java.util.Locale.ROOT, "%.3f", expectedRatio),
+                     result.dataset.getString(Tag.LossyImageCompressionRatio));
         assertRedacted(RawPixels.of(resource("dicom/multi-frame/xa-jpeg1.dcm")), result,
                        new Rectangle2D.Float(20, 20, 60, 60), new Color(180, 180, 180), false);
     }
@@ -187,6 +198,79 @@ public class StreamingRectanglePixelEditHandlerTest {
         redactAndVerify("dicom/single-frame/US-evle-rgb-8bits.dcm",
                         new Rectangle2D.Float(200, 90, 500, 500), new Color(1, 2, 3),
                         UID.ExplicitVRLittleEndian);
+    }
+
+    // ------------------------------------------------------------------ de-identification record
+
+    @Test
+    public void recordsTheRedactionOnNativeAndCompressedObjects() throws Exception {
+        // The CT already carries a De-identification Method value, which has to survive; the JPEG 2000
+        // object carries none, and goes through the decode and re-encode path.
+        for (final String source : new String[]{"dicom/single-frame/CT-ivle-mono2-12bits.dcm",
+                                                "dicom/DE44/horos_jpg2k.dcm"}) {
+            final String[] before = datasetOf(resource(source)).getStrings(Tag.DeidentificationMethod);
+            final Attributes after = datasetOf(redact(source, new Rectangle2D.Float(10, 10, 20, 20), new Color(0, 0, 0)));
+
+            assertEquals(source, "NO", after.getString(Tag.BurnedInAnnotation));
+            final List<String> methods = Arrays.asList(after.getStrings(Tag.DeidentificationMethod));
+            if (before != null) {
+                assertTrue(source + ": existing methods kept", methods.containsAll(Arrays.asList(before)));
+            }
+            assertEquals(source, 1, methods.stream().filter("Burned in text blacked out"::equals).count());
+            assertEquals(source, Arrays.asList("113101 DCM Clean Pixel Data Option"), cleanPixelDataCodes(after));
+        }
+    }
+
+    @Test
+    public void recordsTheRedactionOnceWhenRedactingTwice() throws Exception {
+        final DicomObjectI dobj = DicomObjectFactory.newInstance(resource("dicom/single-frame/US-evle-mono2-8bits.dcm"),
+                                                                 DicomInputStream.IncludeBulkData.URI);
+        handler.process(new Rectangle2D.Float(10, 10, 20, 20), new Color(0, 0, 0), dobj);
+        handler.process(new Rectangle2D.Float(40, 40, 20, 20), new Color(0, 0, 0), dobj);
+        final File output = temporaryFolder.newFile();
+        try (OutputStream out = new FileOutputStream(output)) {
+            dobj.write(out);
+        }
+        dobj.releaseScratchFiles();
+
+        final Attributes after = datasetOf(output);
+        assertEquals(1, Arrays.stream(after.getStrings(Tag.DeidentificationMethod))
+                              .filter("Burned in text blacked out"::equals).count());
+        assertEquals(1, cleanPixelDataCodes(after).size());
+    }
+
+    @Test
+    public void recordsNothingWhenTheRectangleMissesTheImage() throws Exception {
+        // Burned In Annotation YES has to survive: 6.9.1 removed it even when nothing was redacted.
+        final String     source = "dicom/single-frame/US-evle-mono2-8bits.dcm";
+        final Attributes before = datasetOf(resource(source));
+        final Attributes after  = datasetOf(redact(source, new Rectangle2D.Float(5000, 5000, 10, 10), new Color(0, 0, 0),
+                                                   ds -> ds.setString(Tag.BurnedInAnnotation, VR.CS, "YES")));
+
+        assertEquals("YES", after.getString(Tag.BurnedInAnnotation));
+        assertArrayEquals(before.getStrings(Tag.DeidentificationMethod), after.getStrings(Tag.DeidentificationMethod));
+        assertTrue(cleanPixelDataCodes(after).isEmpty());
+    }
+
+    @Test
+    public void leavesAnExistingLossyCompressionRatioAlone() throws Exception {
+        final Attributes after = datasetOf(redact("dicom/multi-frame/xa-jpeg1.dcm", new Rectangle2D.Float(20, 20, 60, 60),
+                                                  new Color(180, 180, 180), ds -> {
+                    ds.setString(Tag.LossyImageCompressionMethod, VR.CS, "ISO_10918_1");
+                    ds.setString(Tag.LossyImageCompressionRatio, VR.DS, "12.5");
+                }));
+        assertArrayEquals(new String[]{"12.5"}, after.getStrings(Tag.LossyImageCompressionRatio));
+        assertArrayEquals(new String[]{"ISO_10918_1"}, after.getStrings(Tag.LossyImageCompressionMethod));
+    }
+
+    @Test
+    public void addsNoRatioThatWouldNotPairWithOneMethod() throws Exception {
+        // Two recorded compression steps and no ratios: one ratio would pair with the wrong step.
+        final Attributes after = datasetOf(redact("dicom/multi-frame/xa-jpeg1.dcm", new Rectangle2D.Float(20, 20, 60, 60),
+                                                  new Color(180, 180, 180),
+                                                  ds -> ds.setString(Tag.LossyImageCompressionMethod, VR.CS, "ISO_10918_1", "ISO_10918_1")));
+        assertNull(after.getStrings(Tag.LossyImageCompressionRatio));
+        assertArrayEquals(new String[]{"ISO_10918_1", "ISO_10918_1"}, after.getStrings(Tag.LossyImageCompressionMethod));
     }
 
     // The only guard against staged pixel files being left behind.
@@ -718,8 +802,15 @@ public class StreamingRectanglePixelEditHandlerTest {
     }
 
     private File redact(String resource, Rectangle2D rect, Color fill) throws Exception {
+        return redact(resource, rect, fill, ds -> { });
+    }
+
+    /** As {@link #redact(String, Rectangle2D, Color)}, after <b>setup</b> has edited the header. */
+    private File redact(String resource, Rectangle2D rect, Color fill, java.util.function.Consumer<Attributes> setup)
+            throws Exception {
         final DicomObjectI dobj = DicomObjectFactory.newInstance(resource(resource),
                                                                  DicomInputStream.IncludeBulkData.URI);
+        setup.accept(dobj.getAttributes());
         handler.process(rect, fill, dobj);
         final File output = temporaryFolder.newFile();
         try (OutputStream out = new FileOutputStream(output)) {
@@ -727,6 +818,38 @@ public class StreamingRectanglePixelEditHandlerTest {
         }
         dobj.releaseScratchFiles();
         return output;
+    }
+
+    private static long compressedLengthOf(File file) throws Exception {
+        try (DicomInputStream in = new DicomInputStream(file)) {
+            in.setIncludeBulkData(DicomInputStream.IncludeBulkData.URI);
+            final org.dcm4che3.data.Fragments fragments =
+                    (org.dcm4che3.data.Fragments) in.readDataset().getValue(Tag.PixelData);
+            long total = 0;
+            for (int i = 1; i < fragments.size(); i++) {
+                final Object fragment = fragments.get(i);
+                total += fragment instanceof byte[] ? ((byte[]) fragment).length : ((BulkData) fragment).longLength();
+            }
+            return total;
+        }
+    }
+
+    private static Attributes datasetOf(File file) throws Exception {
+        try (DicomInputStream in = new DicomInputStream(file)) {
+            in.setIncludeBulkData(DicomInputStream.IncludeBulkData.NO);
+            return in.readDataset();
+        }
+    }
+
+    /** Every Clean Pixel Data Option item in De-identification Method Code Sequence, as "value scheme meaning". */
+    private static List<String> cleanPixelDataCodes(Attributes ds) {
+        final org.dcm4che3.data.Sequence codes = ds.getSequence(Tag.DeidentificationMethodCodeSequence);
+        return codes == null ? java.util.Collections.emptyList()
+                             : codes.stream()
+                                    .filter(item -> "113101".equals(item.getString(Tag.CodeValue)))
+                                    .map(item -> item.getString(Tag.CodeValue) + " " + item.getString(Tag.CodingSchemeDesignator)
+                                                 + " " + item.getString(Tag.CodeMeaning))
+                                    .collect(Collectors.toList());
     }
 
     private static File resource(String name) throws Exception {

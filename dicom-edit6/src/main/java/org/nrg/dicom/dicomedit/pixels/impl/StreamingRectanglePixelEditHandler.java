@@ -3,6 +3,7 @@ package org.nrg.dicom.dicomedit.pixels.impl;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Fragments;
+import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
@@ -28,6 +29,9 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A {@link org.nrg.dicom.dicomedit.pixels.PixelEditHandler} that redacts a solid rectangle without
@@ -61,6 +65,9 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
     /** Where edited pixel data is staged. Sized for the pixel data, so not always suited to /tmp. */
     static final String SCRATCH_DIR_PROPERTY = "dicom.pixeledit.scratch.dir";
 
+    private static final String BURNED_IN_TEXT_BLACKED_OUT = "Burned in text blacked out";
+    private static final String CLEAN_PIXEL_DATA_OPTION    = "113101";
+
     @Override
     public void process(final Rectangle2D rect, final Color color, final DicomObjectI dobj) throws MizerException {
         final Attributes ds = dobj.getAttributes();
@@ -93,6 +100,38 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
             }
         } catch (IOException e) {
             throw new MizerException("Error editing rectangular pixel region.", e);
+        }
+        recordRedaction(dobj.getAttributes());
+    }
+
+    /**
+     * Records that burned-in text was blacked out, as the pixelmed handler did before 6.10.0: Burned
+     * In Annotation becomes NO, and De-identification Method and De-identification Method Code
+     * Sequence gain "Burned in text blacked out" and the Clean Pixel Data Option (DCM 113101) unless
+     * they already carry them. Called only once pixels have actually been edited.
+     */
+    static void recordRedaction(final Attributes ds) {
+        ds.setString(Tag.BurnedInAnnotation, VR.CS, "NO");
+
+        final String[]     existing = ds.getStrings(Tag.DeidentificationMethod);
+        final List<String> methods  = existing == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(existing));
+        if (!methods.contains(BURNED_IN_TEXT_BLACKED_OUT)) {
+            methods.add(BURNED_IN_TEXT_BLACKED_OUT);
+            ds.setString(Tag.DeidentificationMethod, VR.LO, methods.toArray(new String[0]));
+        }
+
+        Sequence codes = ds.getSequence(Tag.DeidentificationMethodCodeSequence);
+        if (codes == null) {
+            codes = ds.newSequence(Tag.DeidentificationMethodCodeSequence, 1);
+        }
+        final boolean recorded = codes.stream().anyMatch(item -> CLEAN_PIXEL_DATA_OPTION.equals(item.getString(Tag.CodeValue))
+                                                                 && "DCM".equals(item.getString(Tag.CodingSchemeDesignator)));
+        if (!recorded) {
+            final Attributes item = new Attributes(3);
+            item.setString(Tag.CodeValue, VR.SH, CLEAN_PIXEL_DATA_OPTION);
+            item.setString(Tag.CodingSchemeDesignator, VR.SH, "DCM");
+            item.setString(Tag.CodeMeaning, VR.LO, "Clean Pixel Data Option");
+            codes.add(item);
         }
     }
 

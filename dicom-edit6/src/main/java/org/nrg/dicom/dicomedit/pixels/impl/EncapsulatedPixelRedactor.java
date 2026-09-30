@@ -2,9 +2,11 @@ package org.nrg.dicom.dicomedit.pixels.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
+import org.dcm4che3.data.Fragments;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.data.Value;
 import org.dcm4che3.imageio.codec.Transcoder;
 import org.dcm4che3.imageio.codec.TransferSyntaxType;
 import org.dcm4che3.io.BulkDataDescriptor;
@@ -24,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Redacts a rectangle from encapsulated (compressed) pixel data.
@@ -91,6 +94,7 @@ final class EncapsulatedPixelRedactor {
             // Serialise the object as it stands. Header edits made by the script so far are in the
             // dataset, not in the file it was read from, so the source file will not do. Fragments
             // stream out of it, so this costs the compressed size.
+            final long compressedLength = compressedLength(ds);
             final File compressed = temporary(temporary);
             write(ds, compressed, sourceTs);
 
@@ -119,7 +123,7 @@ final class EncapsulatedPixelRedactor {
                 return;
             }
             if (lossy) {
-                recordLossyHistory(decodedDs, sourceTs);
+                recordLossyHistory(decodedDs, sourceTs, pixels.length(), compressedLength);
             }
             decodedDs.setString(Tag.TransferSyntaxUID, VR.UI, UID.ExplicitVRLittleEndian);
             replace(ds, decodedDs);
@@ -235,14 +239,52 @@ final class EncapsulatedPixelRedactor {
 
     /**
      * Records that the pixel data has been through lossy compression, as required when a lossy
-     * object is stored uncompressed.
+     * object is stored uncompressed. The method is written only if the object records none, since then
+     * the recorded one already describes this compression. Method and ratio values pair up in order,
+     * one per compression step, so the ratio is written only if the object records none and there is
+     * exactly one method for it to pair with. An existing ratio is never changed.
+     *
+     * @param decodedLength    bytes of decoded pixel data.
+     * @param compressedLength bytes of compressed pixel data, or a negative number if unknown, in
+     *                         which case no ratio is written.
      */
-    private static void recordLossyHistory(final Attributes ds, final String sourceTs) {
+    private static void recordLossyHistory(final Attributes ds, final String sourceTs,
+                                           final long decodedLength, final long compressedLength) {
         ds.setString(Tag.LossyImageCompression, VR.CS, "01");
         final String[] existing = ds.getStrings(Tag.LossyImageCompressionMethod);
         if (existing == null || existing.length == 0) {
             ds.setString(Tag.LossyImageCompressionMethod, VR.CS, lossyMethodOf(sourceTs));
         }
+        final String[] ratios  = ds.getStrings(Tag.LossyImageCompressionRatio);
+        final String[] methods = ds.getStrings(Tag.LossyImageCompressionMethod);
+        if ((ratios == null || ratios.length == 0) && methods != null && methods.length == 1 && compressedLength > 0) {
+            ds.setString(Tag.LossyImageCompressionRatio, VR.DS,
+                         String.format(Locale.ROOT, "%.3f", (double) decodedLength / compressedLength));
+        }
+    }
+
+    /**
+     * Bytes of compressed pixel data: every fragment after the Basic Offset Table. Negative if the
+     * value is not encapsulated fragments or a fragment's length cannot be read.
+     */
+    private static long compressedLength(final Attributes ds) {
+        final Object value = ds.getValue(Tag.PixelData);
+        if (!(value instanceof Fragments)) {
+            return -1;
+        }
+        final Fragments fragments = (Fragments) value;
+        long total = 0;
+        for (int i = 1; i < fragments.size(); i++) {
+            final Object fragment = fragments.get(i);
+            if (fragment instanceof byte[]) {
+                total += ((byte[]) fragment).length;
+            } else if (fragment instanceof BulkData) {
+                total += ((BulkData) fragment).longLength();
+            } else if (fragment != Value.NULL) {
+                return -1;
+            }
+        }
+        return total;
     }
 
     private static String lossyMethodOf(final String tsuid) {

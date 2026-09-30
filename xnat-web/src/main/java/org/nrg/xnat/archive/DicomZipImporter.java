@@ -202,7 +202,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
                     }
                     importEntry(new ZipEntryFileWriterWrapper(ze, zin), uris);
                 } catch (ClientException e) {
-                    if (ignoreUnparsable) {
+                    if (ignoreUnparsable && isUnparsable(e)) {
                         nonDcmException = e;
                     } else {
                         throw e;
@@ -229,7 +229,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
                         }
                         importEntry(new TarEntryFileWriterWrapper(ze, zin), uris);
                     } catch (ClientException e) {
-                        if (ignoreUnparsable) {
+                        if (ignoreUnparsable && isUnparsable(e)) {
                             nonDcmException = e;
                         } else {
                             throw e;
@@ -238,6 +238,15 @@ public final class DicomZipImporter extends ImporterHandlerA {
                 }
             }
         }
+    }
+
+    /**
+     * GradualDicomImporter reports every failure as a ClientException, but one caused by a ServerException, such as a
+     * failed write or a script or processor error, says nothing about the entry: it fails the upload even when
+     * unparsable entries are ignored.
+     */
+    private static boolean isUnparsable(final ClientException e) {
+        return !(e.getCause() instanceof ServerException);
     }
 
     private void updateStatus(Set<String> uris) {

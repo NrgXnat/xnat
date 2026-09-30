@@ -47,12 +47,9 @@ public class AnonymizeCallOnFileWithPixels extends CallOnFile<AnonymizationResul
     @Override
     public AnonymizationResult call() throws Exception {
         log.info("Preparing to anonymize file {} to {}", _dicomFile.getAbsolutePath(), getFile().getAbsolutePath());
-        // Read with IncludeBulkData.URI so pixel data stays in _dicomFile and is streamed straight
-        // through to the output on write. Reading it onto the heap costs a full copy of the object
-        // per concurrent anonymization, and outright fails above 2 GB where dcm4che cannot fit the
-        // value in a byte[]. Constructed from the File, not a stream, so the BulkData references
-        // point at _dicomFile rather than at a spooled copy.
-        final DicomObjectI dicomObject = DicomObjectFactory.newInstance(_dicomFile, DicomInputStream.IncludeBulkData.URI);
+        // Constructed from the File, not a stream, so that bulk data references, where there are
+        // any, point at _dicomFile rather than at a spooled copy.
+        final DicomObjectI dicomObject = DicomObjectFactory.newInstance(_dicomFile, bulkDataHandlingFor(_dicomFile.length()));
         try {
             final AnonymizationResult result = _mizer.anonymize(dicomObject, _mizerContext);
             // The staging file exists only once there is a successful result to write into it. A
@@ -73,6 +70,23 @@ public class AnonymizeCallOnFileWithPixels extends CallOnFile<AnonymizationResul
             dicomObject.releaseScratchFiles();
         }
     }
+
+    /**
+     * How to read an object of the given size. Up to {@link #WHOLE_READ_LIMIT} it is read onto the
+     * heap in one pass, as it always was. A larger one keeps its bulk data -- pixel data, and any
+     * other binary value over 64 bytes -- in the file, as references that the write streams from
+     * there: that bounds the heap an anonymization takes, and it is the only way to read an object
+     * over 2 GB at all, since dcm4che cannot fit such a value in a byte[]. References cost a small
+     * object dearly, though. The write opens the file again for every value, and for every fragment
+     * of encapsulated pixel data, which on network storage is a round trip or more each: an MR
+     * object with two private CSA headers opens its file four times instead of once.
+     */
+    static DicomInputStream.IncludeBulkData bulkDataHandlingFor(final long length) {
+        return length <= WHOLE_READ_LIMIT ? DicomInputStream.IncludeBulkData.YES : DicomInputStream.IncludeBulkData.URI;
+    }
+
+    /** The largest object read onto the heap, where each concurrent anonymization holds one. */
+    static final long WHOLE_READ_LIMIT = 64L << 20;
 
     private final File         _dicomFile;
     private final Mizer        _mizer;

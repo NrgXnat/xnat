@@ -10,6 +10,7 @@
 package org.nrg.xnat.archive;
 
 import com.google.common.collect.Sets;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -58,6 +59,7 @@ import static org.nrg.xnat.archive.GradualDicomImporter.isAutoArchive;
 import static org.nrg.xnat.archive.Operation.Rebuild;
 
 @ImporterHandler(handler = ImporterHandlerA.DICOM_ZIP_IMPORTER)
+@Slf4j
 public final class DicomZipImporter extends ImporterHandlerA {
 
     private static final String ACTION = "action";
@@ -106,6 +108,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
         try {
             importCompressedFile(fw, uris);
         } catch (ServerException | ClientException e) {
+            markFailed(uris, e);
             this.failed(e.getMessage(), true);
             throw e;
         }
@@ -132,6 +135,37 @@ public final class DicomZipImporter extends ImporterHandlerA {
             }
         }
         return new ArrayList<>(uris);
+    }
+
+    /**
+     * Marks the prearchive sessions this upload wrote into before it failed as {@code ERROR}, with the
+     * reason in each session's log. Left receiving, a half-written session looks like one still arriving,
+     * and unless the upload tool sent it, the idle-timeout rebuild builds it as though the upload had
+     * finished, then archives it where the project archives automatically. An upload of the same study
+     * still reopens it: a session in error takes more data.
+     */
+    private static void markFailed(final Set<String> uris, final Exception cause) {
+        for (final String uri : uris) {
+            if (!StringUtils.startsWith(uri, "/prearchive/")) {
+                continue;
+            }
+            // /prearchive/projects/<project>/<timestamp>/<session>, as xmlBuild reads it
+            final String[] elements  = uri.split(SLASH);
+            final String   project   = elements[3];
+            final String   timestamp = elements[4];
+            final String   folder    = elements[5];
+            try {
+                PrearcUtils.log(project, timestamp, folder, "An upload into this session failed partway, so it may be missing files. "
+                                                            + "Uploading the study again adds them. The upload failed with: " + cause.getMessage());
+                if (PrearcDatabase.setStatus(folder, timestamp, project, PrearcUtils.PrearcStatus.ERROR)) {
+                    log.warn("The upload failed after writing into {}, which is now marked ERROR: {}", uri, cause.getMessage());
+                } else {
+                    log.warn("The upload failed after writing into {}, which could not be marked ERROR", uri);
+                }
+            } catch (Exception e) {
+                log.warn("The upload failed after writing into {}, which could not be marked ERROR", uri, e);
+            }
+        }
     }
 
     private void importCompressedFile(FileWriterWrapperI fw, Set<String> uris) throws ServerException, ClientException {

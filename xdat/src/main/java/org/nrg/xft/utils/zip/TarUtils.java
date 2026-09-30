@@ -156,7 +156,8 @@ public class TarUtils implements ZipI {
     /**
      * Scans every entry of the specified tar (optionally gzipped, per {@link #_compressionMethod}) file and returns
      * the names of any entries whose relative path does not resolve within <b>destinationDir</b> once resolved
-     * against it.
+     * against it. The actual unsafe-entry check is {@link PathTraversalScanner#findPathTraversalEntries}, shared
+     * with {@code Unzipper} rather than duplicated per archive format.
      *
      * @param archiveFile    The tar file to scan.
      * @param destinationDir The directory the archive is intended to be extracted into.
@@ -167,17 +168,13 @@ public class TarUtils implements ZipI {
      * @throws IOException When an error occurs reading the archive.
      */
     private List<String> findPathTraversalEntries(final File archiveFile, final File destinationDir) throws IOException {
-        final List<String> unsafeEntries = new ArrayList<>();
         try (final InputStream fis = new FileInputStream(archiveFile);
              final TarInputStream tis = _compressionMethod == ZipOutputStream.DEFLATED ? new TarInputStream(new GZIPInputStream(fis)) : new TarInputStream(fis)) {
-            TarEntry te;
-            while ((te = tis.getNextEntry()) != null) {
-                if (!FileUtils.isCanonicalPath(destinationDir, te.getName())) {
-                    unsafeEntries.add(te.getName());
-                }
-            }
+            return PathTraversalScanner.findPathTraversalEntries(() -> {
+                final TarEntry te = tis.getNextEntry();
+                return te == null ? null : te.getName();
+            }, destinationDir);
         }
-        return unsafeEntries;
     }
 
     @Override

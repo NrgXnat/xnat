@@ -580,12 +580,9 @@ public class ZipUtils implements ZipI {
         try (zip) {
             final List<? extends ZipEntry> entries = Collections.list(zip.entries());
 
-            unsafeEntries = new ArrayList<>();
-            for (final ZipEntry entry : entries) {
-                if (!FileUtils.isCanonicalPath(destinationFolder, entry.getName())) {
-                    unsafeEntries.add(entry.getName());
-                }
-            }
+            final Iterator<? extends ZipEntry> entryIterator = entries.iterator();
+            unsafeEntries = PathTraversalScanner.findPathTraversalEntries(
+                    () -> entryIterator.hasNext() ? entryIterator.next().getName() : null, destinationFolder);
 
             if (unsafeEntries.isEmpty()) {
                 for (final ZipEntry entry : entries) {
@@ -659,15 +656,13 @@ public class ZipUtils implements ZipI {
      * gets written.
      */
     private Map<String, File> extractUsingZipInputStream(final File zipFile, final File destinationFolder, final String destination, final boolean overwrite, final EventMetaI ci, final IOFileFilter filter, final boolean moveExistingToHistory) throws IOException {
-        final List<String> unsafeEntries = new ArrayList<>();
+        final List<String> unsafeEntries;
         try (final InputStream fis = new FileInputStream(zipFile);
              final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fis))) {
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                if (!FileUtils.isCanonicalPath(destinationFolder, entry.getName())) {
-                    unsafeEntries.add(entry.getName());
-                }
-            }
+            unsafeEntries = PathTraversalScanner.findPathTraversalEntries(() -> {
+                final ZipEntry entry = zis.getNextEntry();
+                return entry == null ? null : entry.getName();
+            }, destinationFolder);
         }
         if (!unsafeEntries.isEmpty()) {
             rejectArchiveUpload(zipFile, "upload.zip", Path.of(destination), unsafeEntries);

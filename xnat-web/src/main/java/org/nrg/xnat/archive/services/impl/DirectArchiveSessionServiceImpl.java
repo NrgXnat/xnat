@@ -239,7 +239,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             // In ERROR, where the idle-timeout rebuild leaves it alone: queued for a rebuild instead, what may be only
             // part of the study would be archived after all.
             doPrearchiveMove(id, session, Rebuild, PrearcStatus.ERROR,
-                             new ArchivingException("An upload into this session failed partway, so it may be missing files", cause));
+                             new ArchivingException("An import into this session failed partway, so it may be missing files", cause));
         } catch (NotFoundException e) {
             log.warn("DirectArchiveSession id={} disappeared while handling a failed upload into it", id, e);
         }

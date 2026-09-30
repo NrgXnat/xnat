@@ -98,6 +98,7 @@ import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_GROUPS;
+import static org.nrg.xdat.security.helpers.Groups.REMOVED;
 import static org.nrg.xdat.security.helpers.Groups.USERS;
 import static org.nrg.xdat.security.helpers.Users.DEFAULT_GUEST_USERNAME;
 import static org.nrg.xnat.services.cache.extractors.DataExtractor.PARAM_DATA_TYPE;
@@ -886,6 +887,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                     if (hasOperation && properties.containsKey(USERS)) {
                         //noinspection unchecked
                         usernames.addAll((Collection<? extends String>) properties.get(USERS));
+                    }
+                    // A user added to a project group is taken out of that project's other groups first, which is reported here
+                    // rather than by an event of its own, so those groups' cached members are stale too.
+                    if (properties.containsKey(REMOVED)) {
+                        //noinspection unchecked
+                        ((Collection<String>) properties.get(REMOVED)).forEach(removed -> evict(CACHE_GROUPS, removed));
                     }
                     log.debug("Handling update group event with ID '{}' for users: {}", id, StringUtils.join(usernames, ", "));
                     return !groups.isEmpty();

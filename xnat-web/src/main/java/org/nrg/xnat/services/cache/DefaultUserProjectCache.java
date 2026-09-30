@@ -431,17 +431,24 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return true;
         }
 
-        final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
-        for (final String username : users) {
-            if (isAddOperation) {
-                userAccessLevels.computeIfAbsent(username, (key) -> new ArrayList<>()).add(access);
-            } else {
-                final List<AccessLevel> levels = userAccessLevels.get(username);
-                if (levels != null) {
-                    levels.remove(access);
+        // Adding a user to a project group takes them out of that project's other groups first, and the event reports
+        // those groups here rather than sending a removal event of its own.
+        //noinspection unchecked
+        final Collection<String> removedGroups = (Collection<String>) properties.get(Groups.REMOVED);
+        final List<AccessLevel>  removedLevels = new ArrayList<>();
+        if (removedGroups != null) {
+            for (final String removedGroup : removedGroups) {
+                final Pair<String, String> removedIdAndAccess = Groups.getProjectIdAndAccessFromGroupId(removedGroup);
+                if (StringUtils.equals(removedIdAndAccess.getLeft(), projectId)) {
+                    removedLevels.add(AccessLevel.getAccessLevel(removedIdAndAccess.getRight()));
+                } else if (StringUtils.isNotBlank(removedIdAndAccess.getLeft())) {
+                    refreshProjectCache(removedIdAndAccess.getLeft());
                 }
             }
         }
+
+        final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
+        applyMembershipChange(userAccessLevels, users, isAddOperation, access, removedLevels);
 
         try {
             cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
@@ -516,6 +523,33 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private boolean handleDataTypeProtocolEvent(final XftItemEventI event) {
         log.info("Got the {} event for the data-type protocol {}. This should only happen when changes to the protocol affected field definition groups that are non-project specific.", event.getAction(), event.getId());
         return true;
+    }
+
+    /**
+     * Applies one membership change to a project's per-user access levels. An addition first takes off the levels of
+     * the groups the user was moved out of, so promoting a member to owner leaves only the owner level behind, and a
+     * later removal from the owners leaves the user with no access.
+     *
+     * @param userAccessLevels The access levels for each user on the project, updated in place.
+     * @param users            The users the change applies to.
+     * @param isAddOperation   Whether the users were added to the group, rather than removed from it.
+     * @param access           The access level of the group the users were added to or removed from.
+     * @param removed          The access levels of the groups an addition moved the users out of.
+     */
+    static void applyMembershipChange(final Map<String, ArrayList<AccessLevel>> userAccessLevels, final Collection<String> users,
+                                      final boolean isAddOperation, final AccessLevel access, final Collection<AccessLevel> removed) {
+        for (final String username : users) {
+            if (isAddOperation) {
+                final List<AccessLevel> levels = userAccessLevels.computeIfAbsent(username, (key) -> new ArrayList<>());
+                removed.forEach(levels::remove);
+                levels.add(access);
+            } else {
+                final List<AccessLevel> levels = userAccessLevels.get(username);
+                if (levels != null) {
+                    levels.remove(access);
+                }
+            }
+        }
     }
 
     private Map<String, ArrayList<AccessLevel>> getUserAccessLevelsForProject(final String projectId) {

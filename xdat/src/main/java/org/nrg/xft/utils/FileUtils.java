@@ -49,10 +49,11 @@ import javax.annotation.Nullable;
 @SuppressWarnings({"RedundantThrows", "DuplicateThrows"})
 @Slf4j
 public  class FileUtils {
-    private static final String     TSDIR_SECONDS_FORMAT         = "yyyyMMdd_HHmmss";
-    private static final DateFormat TSDIR_SECONDS_FORMATTER      = new SimpleDateFormat(TSDIR_SECONDS_FORMAT);
-    private static final String     TSDIR_MILLISECONDS_FORMAT    = "yyyyMMdd_HHmmssSSS";
-    private static final DateFormat TSDIR_MILLISECONDS_FORMATTER = new SimpleDateFormat(TSDIR_MILLISECONDS_FORMAT);
+    private static final String                  TSDIR_SECONDS_FORMAT         = "yyyyMMdd_HHmmss";
+    private static final String                  TSDIR_MILLISECONDS_FORMAT    = "yyyyMMdd_HHmmssSSS";
+    // SimpleDateFormat is not thread-safe, and these format timestamps for concurrent requests, so each thread keeps one.
+    private static final ThreadLocal<DateFormat> TSDIR_SECONDS_FORMATTER      = ThreadLocal.withInitial(() -> new SimpleDateFormat(TSDIR_SECONDS_FORMAT));
+    private static final ThreadLocal<DateFormat> TSDIR_MILLISECONDS_FORMATTER = ThreadLocal.withInitial(() -> new SimpleDateFormat(TSDIR_MILLISECONDS_FORMAT));
 
     public static final int LARGE_DOWNLOAD = 1000 * 1024;
     public static final int SMALL_DOWNLOAD = 8 * 1024;
@@ -207,7 +208,7 @@ public  class FileUtils {
      * @return The formatted timestamp
      */
     public static String getMsTimestamp(final Date date) {
-        return TSDIR_MILLISECONDS_FORMATTER.format(date);
+        return TSDIR_MILLISECONDS_FORMATTER.get().format(date);
     }
 
     @SuppressWarnings("deprecation")
@@ -924,7 +925,7 @@ public  class FileUtils {
     }
 
     public static String getTimestamp(final Date date) {
-        return TSDIR_SECONDS_FORMATTER.format(date);
+        return TSDIR_SECONDS_FORMATTER.get().format(date);
     }
 
     public static String BuildRootHistoryPath() {

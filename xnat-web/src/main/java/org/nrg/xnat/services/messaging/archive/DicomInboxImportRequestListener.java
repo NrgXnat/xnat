@@ -25,6 +25,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.GradualDicomImporter;
+import org.nrg.xnat.archive.ImportFailures;
 import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.helpers.file.StoredFile;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
@@ -172,13 +173,22 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
          * Processes the folder specified by the session or path parameter, importing all the files located in the
          * folder and its subfolders.
          *
-         * @return A list of all the files that were imported into XNAT.
+         * @return The sessions the files were imported into, to be rebuilt. None when the import stopped at a failure:
+         *         those sessions are marked failed instead, since they may hold only part of a study.
          */
         @Override
         public List<String> call() {
             _service.setToImporting(_request);
             try {
                 Files.walkFileTree(_sessionPath.toPath(), WALKER_OPTIONS, Integer.MAX_VALUE, this);
+                if (_failure != null) {
+                    // Nothing is rebuilt, and the files stay in the inbox so the import can run again once the cause
+                    // is fixed: cleaning up would delete files that never reached XNAT.
+                    ImportFailures.markFailed(_fileUris, _failure);
+                    _service.fail(_request, "Stopped at {}, which failed on the server or could not be read; sessions it wrote into are marked ERROR and the files stay in the inbox: {}",
+                                  _sessionPath.toPath().relativize(_failedFile).toString(), Objects.toString(_failure.getMessage(), _failure.getClass().getSimpleName()));
+                    return Collections.emptyList();
+                }
                 if (_dicomFiles == 0) {
                     _service.fail(_request, "No valid DICOM files found for the specified session :" + _request.getSessionPath());
                 } else {
@@ -227,6 +237,10 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
 
         @Override
         public FileVisitResult visitFile(final Path file, final BasicFileAttributes attributes) {
+            if (!Files.isReadable(file)) {
+                // The importer would report it as not DICOM, and cleaning up would delete it unread.
+                return stop(file, new AccessDeniedException(file.toString()));
+            }
             try {
                 final GradualDicomImporter importer = new GradualDicomImporter(null, _user, new StoredFile(file.toFile(), false), _parameters);
                 importer.setIdentifier(getIdentifier());
@@ -235,20 +249,37 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                 }
                 _fileUris.addAll(importer.call());
                 _dicomFiles++;
-            } catch (ClientException | ServerException e) {
+            } catch (ClientException e) {
+                if (!ImportFailures.isUnparsable(e)) {
+                    return stop(file, e);
+                }
                 log.warn("An error occurred importing the file {} while processing the inbox session located at {}", file, _sessionPath.getAbsolutePath(), e);
+            } catch (ServerException e) {
+                return stop(file, e);
             }
             return FileVisitResult.CONTINUE;
         }
 
         @Override
         public FileVisitResult visitFileFailed(final Path file, final IOException exception) {
-            log.warn("An error occurred importing the file {} while processing the inbox session located at {}", file.toString(), _sessionPath.getAbsolutePath(), exception);
-            return FileVisitResult.CONTINUE;
+            // Never read, so it can't be told from a DICOM object, and cleaning up would delete it.
+            return stop(file, exception);
+        }
+
+        /** Stops the walk at a failure that is not the file's own, such as a write that failed on the server. */
+        private FileVisitResult stop(final Path file, final Exception cause) {
+            log.error("Importing the file {} failed, so the import of the inbox session located at {} stops", file, _sessionPath.getAbsolutePath(), cause);
+            _failedFile = file;
+            _failure    = cause;
+            return FileVisitResult.TERMINATE;
         }
 
         @Override
         public FileVisitResult postVisitDirectory(final Path folder, final IOException exception) {
+            if (exception != null) {
+                // The folder's listing broke off, so some of its files were never visited.
+                return stop(folder, exception);
+            }
             log.info("Finished visiting the folder {} while processing the inbox session located at {}", folder.toString(), _sessionPath.getAbsolutePath());
             return FileVisitResult.CONTINUE;
         }
@@ -263,6 +294,8 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
         private final UserI                          _user;
         private final Map<String, Object>            _parameters;
         private final File                           _sessionPath;
+        private       Path                           _failedFile;
+        private       Exception                      _failure;
     }
 
     private final DicomInboxImportRequestService                      _service;

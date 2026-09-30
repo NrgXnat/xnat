@@ -21,6 +21,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.fileExtraction.Format;
+import org.nrg.xnat.archive.services.DirectArchiveSessionService;
 import org.nrg.xnat.helpers.ArchiveEntryFileWriterWrapper;
 import org.nrg.xnat.helpers.PrearcImporterHelper;
 import org.nrg.xnat.helpers.TarEntryFileWriterWrapper;
@@ -138,29 +139,33 @@ public final class DicomZipImporter extends ImporterHandlerA {
     }
 
     /**
-     * Marks the prearchive sessions this upload wrote into before it failed as {@code ERROR}, with the
-     * reason in each session's log. Left receiving, a half-written session looks like one still arriving,
-     * and unless the upload tool sent it, the idle-timeout rebuild builds it as though the upload had
-     * finished, then archives it where the project archives automatically. An upload of the same study
-     * still reopens it: a session in error takes more data.
+     * Marks the sessions this upload wrote into before it failed, so nothing archives what may be only part of a
+     * study. A prearchive session is marked {@code ERROR}, with the reason in its log. Left receiving, it looks like
+     * one still arriving, and unless the upload tool sent it, the idle-timeout rebuild builds it as though the upload
+     * had finished, then archives it where the project archives automatically. An upload of the same study still
+     * reopens it: a session in error takes more data. A direct-archive session moves to the prearchive in
+     * {@code ERROR}, as it does when its build or archive fails.
      */
     private static void markFailed(final Set<String> uris, final Exception cause) {
         for (final String uri : uris) {
-            if (!StringUtils.startsWith(uri, "/prearchive/")) {
-                continue;
-            }
-            // /prearchive/projects/<project>/<timestamp>/<session>, as xmlBuild reads it
-            final String[] elements  = uri.split(SLASH);
-            final String   project   = elements[3];
-            final String   timestamp = elements[4];
-            final String   folder    = elements[5];
+            final String[] elements = uri.split(SLASH);
             try {
-                PrearcUtils.log(project, timestamp, folder, "An upload into this session failed partway, so it may be missing files. "
-                                                            + "Uploading the study again adds them. The upload failed with: " + cause.getMessage());
-                if (PrearcDatabase.setStatus(folder, timestamp, project, PrearcUtils.PrearcStatus.ERROR)) {
-                    log.warn("The upload failed after writing into {}, which is now marked ERROR: {}", uri, cause.getMessage());
-                } else {
-                    log.warn("The upload failed after writing into {}, which could not be marked ERROR", uri);
+                if (StringUtils.startsWith(uri, "/prearchive/")) {
+                    // /prearchive/projects/<project>/<timestamp>/<session>, as xmlBuild reads it
+                    final String project   = elements[3];
+                    final String timestamp = elements[4];
+                    final String folder    = elements[5];
+                    PrearcUtils.log(project, timestamp, folder, "An upload into this session failed partway, so it may be missing files. "
+                                                                + "Uploading the study again adds them. The upload failed with: " + cause.getMessage());
+                    if (PrearcDatabase.setStatus(folder, timestamp, project, PrearcUtils.PrearcStatus.ERROR)) {
+                        log.warn("The upload failed after writing into {}, which is now marked ERROR: {}", uri, cause.getMessage());
+                    } else {
+                        log.warn("The upload failed after writing into {}, which could not be marked ERROR", uri);
+                    }
+                } else if (StringUtils.startsWith(uri, "/xapi/direct-archive/")) {
+                    // /xapi/direct-archive/<project>/<tag>/<name>, as GradualDicomImporter returns it
+                    final DirectArchiveSessionService directArchive = XDAT.getContextService().getBean(DirectArchiveSessionService.class);
+                    directArchive.handleFailedUpload(directArchive.findByProjectTagName(elements[3], elements[4], elements[5]), cause);
                 }
             } catch (Exception e) {
                 log.warn("The upload failed after writing into {}, which could not be marked ERROR", uri, e);

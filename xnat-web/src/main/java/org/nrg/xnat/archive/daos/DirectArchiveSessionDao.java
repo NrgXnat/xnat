@@ -109,6 +109,19 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
     }
 
     /**
+     * As {@link #transitionStatus(long, PrearcStatus, Set)}, recording in the same statement why the session moved.
+     */
+    public int transitionStatus(final long id, final PrearcStatus target, final Set<PrearcStatus> allowed, final String message) {
+        return getSession().createQuery("update DirectArchiveSession set status = :target, message = :message, timestamp = :now where id = :id and status in (:allowed)")
+                .setParameter("target", target)
+                .setParameter("message", message)
+                .setParameter("now", new Date())
+                .setParameter("id", id)
+                .setParameterList("allowed", allowed)
+                .executeUpdate();
+    }
+
+    /**
      * Records that the session just received a file, touching only the timestamps. The importer calls this for every
      * file before it takes its file lock; writing the whole entity back here would put the status it had just read
      * over a delete's claim.

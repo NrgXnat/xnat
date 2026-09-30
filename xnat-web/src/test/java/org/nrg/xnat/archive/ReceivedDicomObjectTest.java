@@ -386,12 +386,23 @@ public class ReceivedDicomObjectTest {
         final long breakAt = MR_FIXTURE.length() / 2;
         for (final File target : Arrays.asList(output, existing)) {
             try (ReceivedDicomObject received = ReceivedDicomObject.read(breaksAfter(MR_FIXTURE, breakAt), null, ORDINARY_LAST_TAG, false)) {
-                assertThrows(IOException.class, () -> received.write(received.getDataset(), AE_TITLE, target, "test"));
+                // Reported as the source's failure, so the importer answers as for an unreadable object, not as for full storage.
+                assertThrows(ReceivedDicomObject.SourceReadException.class, () -> received.write(received.getDataset(), AE_TITLE, target, "test"));
             }
         }
         assertFalse("a failed write must not leave a partial object", output.exists());
         assertArrayEquals("a failed re-send must leave the earlier copy as it was", existingBytes, Files.readAllBytes(existing.toPath()));
         assertEquals("nothing else should be left in the session", Collections.singletonList(existing.toPath()), filesUnder(session));
+    }
+
+    /** A failure writing the object out is the server's, not the source's, so it must not read as a broken upload. */
+    @Test
+    public void aFailureWritingTheObjectOutIsNotASourceReadFailure() throws Exception {
+        final File output = new File(new File(folder.getRoot(), "missing"), "object.dcm");
+        try (ReceivedDicomObject received = ReceivedDicomObject.read(open(MR_FIXTURE), null, ORDINARY_LAST_TAG, false)) {
+            final IOException thrown = assertThrows(IOException.class, () -> received.write(received.getDataset(), AE_TITLE, output, "test"));
+            assertFalse("a failure writing the object out was reported as the source's", thrown instanceof ReceivedDicomObject.SourceReadException);
+        }
     }
 
     /** What an inbox holding a README or a zero-byte file hands the importer: the stream never opens, and the source must still be closed. */

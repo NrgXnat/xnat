@@ -382,6 +382,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
                 try {
                     received.write(dataset, _parameters.get(SENDER_AE_TITLE_PARAM), outputFile, source);
+                } catch (ReceivedDicomObject.SourceReadException e) {
+                    // The rest of the object could not be read from the upload: unparsable, like a header that cannot
+                    // be read, not a failure of the server's storage.
+                    throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, e.getCause());
                 } catch (IOException e) {
                     throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
                 }

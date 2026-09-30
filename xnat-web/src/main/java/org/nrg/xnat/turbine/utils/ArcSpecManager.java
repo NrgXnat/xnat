@@ -37,6 +37,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author timo
@@ -78,26 +82,11 @@ public class ArcSpecManager {
             log.info("Initializing ArcSpec...");
             arcSpec = GetFreshInstance();
 
-            try {
-                if (arcSpec != null) {
-                    final String cachePath = arcSpec.getGlobalCachePath();
-                    if (StringUtils.isNotBlank(cachePath)) {
-                        final File arcSpecFile       = new File(cachePath, "archive_specification.xml");
-                        final File arcSpecFileFolder = arcSpecFile.getParentFile();
-                        if (!arcSpecFileFolder.exists() && !arcSpecFileFolder.mkdirs()) {
-                            throw new RuntimeException("Failed to create working file " + arcSpecFile.getAbsolutePath() + ", please check permissions and file system.");
-                        }
-                        log.debug("Initializing arcspec to cache file {}", arcSpecFile.getAbsolutePath());
-                        try (FileWriter writer = new FileWriter(arcSpecFile)) {
-                            arcSpec.toXML(writer, true);
-                        }
-                    }
-                }
-            } catch (IllegalArgumentException | IOException | SAXException e) {
-                log.error("", e);
+            if (arcSpec != null) {
+                // In the background: writing the file loads every project, and this lock holds up every lookup.
+                xmlRewrites.request();
             }
 
-            log.debug("Done writing out arc spec.");
             if(dbInit) {
 	            try {
                     PrearcDatabase.initDatabase(XDAT.getBoolSiteConfigurationProperty("reloadPrearcDatabaseOnStartup", false));
@@ -128,6 +117,27 @@ public class ArcSpecManager {
 
     public synchronized static  void Reset(){
         arcSpec=null;
+    }
+
+    /**
+     * Records that the project's arc settings were saved. Unlike {@link #Reset()}, the cached specification is kept:
+     * discarding it made the next lookup load every project, one query each, after every project was created. This
+     * project's entry is dropped, so an arc project saved again is loaded whatever its last-modified time. A new
+     * project and the other projects are loaded as on every lookup, by their last-modified times.
+     * {@code archive_specification.xml} is rewritten in the background, at most once every
+     * {@value #XML_REWRITE_DELAY_SECONDS} seconds however many projects change.
+     */
+    public static void arcProjectSaved(final String projectId) {
+        final ArcArchivespecification spec = cachedInstance();
+        if (spec != null) {
+            spec.evictArcProject(projectId);
+        }
+        xmlRewrites.request();
+    }
+
+    /** The specification as cached, without loading one: taken under the lock, used outside it. */
+    private synchronized static ArcArchivespecification cachedInstance() {
+        return arcSpec;
     }
 
     public synchronized static ArcArchivespecification initialize(final UserI user) throws Exception {
@@ -215,5 +225,91 @@ public class ArcSpecManager {
     public static synchronized void save(ArcArchivespecification arcSpec, UserI user, EventDetails event) throws Exception {
         SaveItemHelper.unauthorizedSave(arcSpec, user, false, false, event);
         ArcSpecManager.Reset();
+    }
+
+    /**
+     * Writes the specification to {@code archive_specification.xml} in the global cache path, if one is set. Only the
+     * background rewrite calls this, on its one thread, so two writes never overlap.
+     */
+    private static void writeXml(final ArcArchivespecification spec) {
+        final String cachePath = spec.getGlobalCachePath();
+        if (StringUtils.isBlank(cachePath)) {
+            return;
+        }
+        final File arcSpecFile       = new File(cachePath, "archive_specification.xml");
+        final File arcSpecFileFolder = arcSpecFile.getParentFile();
+        if (!arcSpecFileFolder.exists() && !arcSpecFileFolder.mkdirs()) {
+            throw new RuntimeException("Failed to create working file " + arcSpecFile.getAbsolutePath() + ", please check permissions and file system.");
+        }
+        log.debug("Initializing arcspec to cache file {}", arcSpecFile.getAbsolutePath());
+        try (FileWriter writer = new FileWriter(arcSpecFile)) {
+            spec.toXML(writer, true);
+        } catch (IllegalArgumentException | IOException | SAXException e) {
+            log.error("", e);
+        }
+    }
+
+    /**
+     * Rewrites {@code archive_specification.xml} from a specification loaded for the purpose, outside the lock that
+     * {@link #GetInstance()} holds, so requests don't wait on it.
+     */
+    private static void rewriteXml() {
+        try {
+            final List<ArcArchivespecification> specs = ArcArchivespecification.getAllArcArchivespecifications(null, false);
+            if (!specs.isEmpty()) {
+                writeXml(specs.getFirst());
+            }
+        } catch (RuntimeException e) {
+            log.error("Unable to rewrite the archive specification XML", e);
+        }
+    }
+
+    /**
+     * Runs a task once, a delay after the first of any number of requests. A request made once the run has started gets
+     * another run, so every request is followed by a run that starts after it.
+     */
+    static final class DeferredRun {
+        DeferredRun(final ScheduledExecutorService executor, final Runnable task, final long delay, final TimeUnit unit) {
+            _executor = executor;
+            _task     = task;
+            _delay    = delay;
+            _unit     = unit;
+        }
+
+        void request() {
+            if (_pending.compareAndSet(false, true)) {
+                _executor.schedule(() -> {
+                    _pending.set(false);
+                    _task.run();
+                }, _delay, _unit);
+            }
+        }
+
+        private final AtomicBoolean            _pending = new AtomicBoolean();
+        private final ScheduledExecutorService _executor;
+        private final Runnable                 _task;
+        private final long                     _delay;
+        private final TimeUnit                 _unit;
+    }
+
+    static final long XML_REWRITE_DELAY_SECONDS = 10;
+
+    // Not final, so tests can put their own in its place.
+    static DeferredRun xmlRewrites = new DeferredRun(rewriteExecutor(1, TimeUnit.MINUTES), ArcSpecManager::rewriteXml, XML_REWRITE_DELAY_SECONDS, TimeUnit.SECONDS);
+
+    /**
+     * One daemon thread, which exits once it has been idle for the given time and starts again at the next request.
+     * Nothing stops it when the web application stops, so it exits on its own instead of holding the application's
+     * class loader after a redeploy.
+     */
+    static ScheduledThreadPoolExecutor rewriteExecutor(final long idle, final TimeUnit unit) {
+        final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, runnable -> {
+            final Thread thread = new Thread(runnable, "arc-spec-xml-rewrite");
+            thread.setDaemon(true);
+            return thread;
+        });
+        executor.setKeepAliveTime(idle, unit);
+        executor.allowCoreThreadTimeOut(true);
+        return executor;
     }
 }

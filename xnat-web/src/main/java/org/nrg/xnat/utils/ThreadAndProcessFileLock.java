@@ -206,9 +206,30 @@ public class ThreadAndProcessFileLock {
     }
 
     private String getCachePath() {
+        // Reading the preference is a database round trip, and every lock cycle read it (twice per catalog at
+        // archive time, hundreds of times per session). The path is read once and kept until the cachePath
+        // preference changes (CachePathHandlerMethod calls cachePathChanged, on every node when the distributed
+        // events plugin relays the change) or the preferences bean is replaced.
         final SiteConfigPreferences preferences = getSiteConfigPreferences();
-        return preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+        final CachedPath            cached      = CACHE_PATH;
+        if (cached != null && cached.preferences == preferences) {
+            return cached.path;
+        }
+        final String path = preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+        CACHE_PATH = new CachedPath(preferences, path);
+        return path;
     }
+
+    /**
+     * Forgets the cache path read from the preferences, so the next lock reads it again.
+     */
+    public static void cachePathChanged() {
+        CACHE_PATH = null;
+    }
+
+    private record CachedPath(SiteConfigPreferences preferences, String path) {}
+
+    private static volatile CachedPath CACHE_PATH;
 
     /**
      * Create the lock-file File corresponding to the provided file.

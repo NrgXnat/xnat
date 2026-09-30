@@ -578,6 +578,12 @@
     <logger name="org.nrg.xnat.received" additivity="false" level="INFO">
         <appender-ref ref="RECEIVED"/>
     </logger>
+    <!-- One summary line per session build, archive or direct archive, with the time spent in each
+         phase (org.nrg.xnat.utils.PhaseTimer). Its own logger, because the packages that do the work
+         are held at WARN above. -->
+    <logger name="org.nrg.xnat.ingest.timing" additivity="false" level="INFO">
+        <appender-ref ref="prearchive"/>
+    </logger>
     <logger name="org.springframework.core" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>
     </logger>

@@ -359,6 +359,7 @@ public class DICOMScanBuilder implements Callable<XnatImagescandataBean> {
         private final String                           scanID;
         private final RelativePathWriterFactory        catalogWriterFactory;
         private final       boolean       useRelativeCatalogPath;
+        private final       Boolean       separateSecondaryDicomOnArchive;
         private       final AtomicInteger nFrames = new AtomicInteger(-1);
 
         ResourceCatalogCollector(final DicomMetadataStore store,
@@ -366,13 +367,15 @@ public class DICOMScanBuilder implements Callable<XnatImagescandataBean> {
                                  final Map<DicomAttributeIndex, String> constraints,
                                  final String id,
                                  final RelativePathWriterFactory catalogWriterFactory,
-                                 final boolean useRelativeCatalogPath) {
+                                 final boolean useRelativeCatalogPath,
+                                 @Nullable final Boolean separateSecondaryDicomOnArchive) {
             this.store = store;
             this.uLog = uLog;
             this.constraints = constraints;
             this.scanID = id;
             this.catalogWriterFactory = catalogWriterFactory;
             this.useRelativeCatalogPath = useRelativeCatalogPath;
+            this.separateSecondaryDicomOnArchive = separateSecondaryDicomOnArchive;
         }
 
         public Callable<Integer> getFrameCountCallable() {
@@ -390,7 +393,8 @@ public class DICOMScanBuilder implements Callable<XnatImagescandataBean> {
                 if (null == scanDir) {
                     uLog.log("No common root available for files in scan " + scanID);
                 }
-                final CatalogBuilder builder = new CatalogBuilder(scanID, uLog, store, scanDir, constraints);
+                final CatalogBuilder builder = new CatalogBuilder(scanID, uLog, store, scanDir, constraints, false,
+                                                                  separateSecondaryDicomOnArchive);
                 final Collection<XnatResourcecatalogBean> resources = new ArrayList<>();
 
                 for (final Map.Entry<File, AbstractMap.SimpleEntry<XnatResourcecatalogBean, CatDcmcatalogBean>> me : builder.call().entrySet()) {
@@ -479,8 +483,28 @@ public class DICOMScanBuilder implements Callable<XnatImagescandataBean> {
                                              final List<XnatImagescandataBeanFactory> scanBeanFactoryClasses,
                                              final Map<Class<? extends XnatImagescandataBean>, Map<String, BeanBuilder>> scanBeanBuilders,
                                              final Map<Class<? extends XnatImagescandataBean>, AttrDefs> scanTypeAttrs) {
+        return fromStore(store, sessionLog, scanID, series, constraints, catalogWriterFactory, useRelativePath,
+                         scanBeanFactoryClasses, scanBeanBuilders, scanTypeAttrs, null);
+    }
+
+    /**
+     * As above, with the separateSecondaryDicomOnArchive site preference already read by the caller, so a
+     * session build reads it once rather than once per scan (null: the catalog builder reads it).
+     */
+    public static DICOMScanBuilder fromStore(final DicomMetadataStore store,
+                                             final MicroLog sessionLog,
+                                             final String scanID,
+                                             final Series series,
+                                             final Map<DicomAttributeIndex, String> constraints,
+                                             final RelativePathWriterFactory catalogWriterFactory,
+                                             final boolean useRelativePath,
+                                             final List<XnatImagescandataBeanFactory> scanBeanFactoryClasses,
+                                             final Map<Class<? extends XnatImagescandataBean>, Map<String, BeanBuilder>> scanBeanBuilders,
+                                             final Map<Class<? extends XnatImagescandataBean>, AttrDefs> scanTypeAttrs,
+                                             @Nullable final Boolean separateSecondaryDicomOnArchive) {
         final ResourceCatalogCollector collector = new ResourceCatalogCollector(store, sessionLog, constraints, scanID,
-                                                                                catalogWriterFactory, useRelativePath);
+                                                                                catalogWriterFactory, useRelativePath,
+                                                                                separateSecondaryDicomOnArchive);
         return new DICOMScanBuilder(store, sessionLog, scanID, series, collector,
                                     collector.getFrameCountCallable(), scanBeanFactoryClasses, scanBeanBuilders, scanTypeAttrs);
     }
@@ -496,7 +520,7 @@ public class DICOMScanBuilder implements Callable<XnatImagescandataBean> {
             throws IOException, SQLException {
         final Map<DicomAttributeIndex, String> constraints = Collections.emptyMap();
         final ResourceCatalogCollector collector = new ResourceCatalogCollector(store, sessionLog, constraints, scanID,
-                                                                                catalogWriterFactory, useRelativePath);
+                                                                                catalogWriterFactory, useRelativePath, null);
 
         final Series series = buildSeries(store);
 

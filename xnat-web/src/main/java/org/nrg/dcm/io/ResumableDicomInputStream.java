@@ -1,11 +1,15 @@
 package org.nrg.dcm.io;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.ItemPointer;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.BulkDataDescriptor;
 import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.util.StreamUtils;
+import org.nrg.dicom.mizer.objects.BufferedBulkDataCreator;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -13,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -80,39 +85,134 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * {@link IncludeBulkData#YES}, which costs heap per concurrent read and fails outright above 2 GiB --
      * dcm4che throws "tag value too large, must be less than 2Gib". {@link IncludeBulkData#URI URI} stores a
      * reference instead. When the source is a file the reference points into it, but here it is a stream, so
-     * dcm4che spools the value to a temporary file of its own. Nothing else owns those files and dcm4che does
-     * not remove them: the caller must pass {@link #getBulkDataFiles()} to {@link #deleteBulkDataFiles} once
-     * everything holding a reference is done with it.
+     * the value is spooled to a file and the reference points there. The spooling is
+     * {@link BufferedBulkDataCreator}'s rather than dcm4che's, which writes 2 KB at a time to an unbuffered
+     * stream and hands back references that read the same way: a gigabyte of pixel data would cost a million
+     * system calls each way. Here every value of an object goes into one spool file through a
+     * {@link DicomObjectFactory#BULK_DATA_BUFFER_SIZE} buffer, and the references read ahead by the same
+     * amount.
+     * <p>
+     * Nothing else owns the spool files and nothing else removes them: the caller must pass
+     * {@link #getSpoolFiles()} to {@link #deleteBulkDataFiles} once everything holding a reference is done
+     * with them. The spool is complete, flushed and closed, when the top-level dataset read returns.
      * <p>
      * The descriptor is restricted to the pixel data deliberately; see {@link #PIXEL_DATA_OF_ANY_FORM}.
      *
-     * Where they land is {@link #SCRATCH_DIR_PROPERTY configurable}.
+     * Where the spool lands is {@link #SCRATCH_DIR_PROPERTY configurable}.
      *
      * @param in the object's bytes.
      *
      * @return a resumable stream that references bulk data rather than loading it.
      *
-     * @throws IOException if the stream cannot be opened, or the configured scratch directory does not exist
-     *                     and cannot be created.
+     * @throws IOException if the stream cannot be opened. A configured scratch directory that does not exist
+     *                     and cannot be created fails the read instead, at the first value that has to be
+     *                     spooled.
      */
     public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in) throws IOException {
-        final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);
-        dis.setIncludeBulkData(IncludeBulkData.URI);
-        dis.setBulkDataDescriptor(PIXEL_DATA_OF_ANY_FORM);
-        dis.setBulkDataDirectory(scratchDirectory());
-        return dis;
+        return openWithBulkDataOffHeap(in, null, null);
     }
 
     /**
-     * A directory for dcm4che's spool files that only this user can read, under
-     * {@link #SCRATCH_DIR_PROPERTY} when it is set.
+     * As {@link #openWithBulkDataOffHeap(BufferedInputStream)}, for a stream that reads
+     * <b>sourceFile</b> from its first byte: bulk data is referenced straight into the file
+     * instead of copied to the spool, except under a Deflated transfer syntax, where stream
+     * positions are not file positions and the creator spools as it must. The references are
+     * followed when the object is written, so the file must outlive that write; nothing here
+     * alters or deletes it -- {@link #getSpoolFiles()} never includes it.
+     *
+     * @param in                       the object's bytes.
+     * @param sourceFile               the file the stream reads from its beginning, or null when the
+     *                                 source is not a file.
+     * @param negotiatedTransferSyntax the syntax the caller negotiated for a stream without file meta
+     *                                 information, such as a C-STORE's, or null. Only a deflated one
+     *                                 is used: dcm4che recognizes every other syntax from the first
+     *                                 element, but can't guess its way into an inflater. A stream that
+     *                                 starts with a preamble reads its own file meta information
+     *                                 either way.
+     *
+     * @return a resumable stream that references bulk data rather than loading it.
+     *
+     * @throws IOException if the stream cannot be opened. A configured scratch directory that does
+     *                     not exist and cannot be created fails the read instead, at the first value
+     *                     that has to be spooled.
+     */
+    public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in, final File sourceFile,
+                                                                    final String negotiatedTransferSyntax) throws IOException {
+        final ResumableDicomInputStream dis = BufferedBulkDataCreator.isDeflated(negotiatedTransferSyntax) && !hasPreamble(in)
+                                              ? new ResumableDicomInputStream(in, negotiatedTransferSyntax)
+                                              : new ResumableDicomInputStream(in);
+        dis.setIncludeBulkData(IncludeBulkData.URI);
+        dis.setBulkDataDescriptor(PIXEL_DATA_OF_ANY_FORM);
+        if (sourceFile != null) {
+            dis.setURI(sourceFile.toURI().toString());
+        }
+        // A method reference, not a call: scratchDirectory() stats the directory under a
+        // class-level lock, and the ordinary import stops short of the pixel data and spools
+        // nothing, so resolving it per object would be a serialized syscall for nothing. A
+        // configured directory that cannot be created still fails the read -- now when the first
+        // value has to be spooled rather than when the stream opens.
+        dis._creator = new BufferedBulkDataCreator(ResumableDicomInputStream::scratchDirectory);
+        dis.setBulkDataCreator(dis._creator);
+        return dis;
+    }
+
+    /** Whether <b>in</b> starts with a Part 10 file's 128-byte preamble and "DICM", leaving it where it was. */
+    private static boolean hasPreamble(final BufferedInputStream in) throws IOException {
+        final byte[] start = new byte[132];
+        in.mark(start.length);
+        try {
+            return StreamUtils.readAvailable(in, start, 0, start.length) == start.length
+                   && start[128] == 'D' && start[129] == 'I' && start[130] == 'C' && start[131] == 'M';
+        } finally {
+            in.reset();
+        }
+    }
+
+    /**
+     * The files bulk data was spooled to by a stream from {@link #openWithBulkDataOffHeap}: at most one, and
+     * none when the read never reached any bulk data, which is the ordinary case.
+     */
+    public List<File> getSpoolFiles() {
+        final List<File> files = _creator == null ? new ArrayList<>() : _creator.getSpoolFiles();
+        files.addAll(getBulkDataFiles());
+        return files;
+    }
+
+    /**
+     * Once the top-level read is done, the spool is closed so that everything written to it can be read back
+     * through the references. Nested reads, of sequence items, return here too, at a deeper level.
+     */
+    @Override
+    public void readAttributes(final Attributes attrs, final long len, final Predicate<DicomInputStream> stopPredicate) throws IOException {
+        super.readAttributes(attrs, len, stopPredicate);
+        if (level() == 0) {
+            closeSpool();
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            closeSpool();
+        } finally {
+            super.close();
+        }
+    }
+
+    private void closeSpool() throws IOException {
+        if (_creator != null) {
+            _creator.close();
+        }
+    }
+
+    /**
+     * A directory for spool files that only this user can read, under {@link #SCRATCH_DIR_PROPERTY} when it
+     * is set.
      * <p>
-     * Those files hold pixel data, and dcm4che creates them through the legacy {@code File.createTempFile},
-     * which takes its mode from the umask and typically leaves them rw-r--r-- where {@code Files.createTempFile}
-     * would give rw-------. Their own mode is not ours to set, so they go somewhere nobody else can list or
-     * open: createTempDirectory gives owner-only permissions and an unguessable name, which also rules out
-     * anyone planting a directory at a predictable path first. One per JVM, since it holds nothing once the
-     * files are released.
+     * Those files hold pixel data. They are created with owner-only permissions, and they go somewhere nobody
+     * else can list or open either: createTempDirectory gives owner-only permissions and an unguessable name,
+     * which also rules out anyone planting a directory at a predictable path first. One per JVM, since it
+     * holds nothing once the files are released.
      * <p>
      * A configured directory that cannot be created is an error rather than a fall back to the default: the
      * reason for setting it may be that the pixel data must not go there.
@@ -148,9 +248,9 @@ public final class ResumableDicomInputStream extends DicomInputStream {
     }
 
     /**
-     * Deletes the files dcm4che spooled bulk data to.
+     * Deletes the files bulk data was spooled to.
      *
-     * @param bulkDataFiles the spool files, as reported by {@link #getBulkDataFiles()}. Empty when the read
+     * @param bulkDataFiles the spool files, as reported by {@link #getSpoolFiles()}. Empty when the read
      *                      never reached any bulk data, which is the ordinary case.
      */
     public static void deleteBulkDataFiles(final List<File> bulkDataFiles) {
@@ -160,4 +260,6 @@ public final class ResumableDicomInputStream extends DicomInputStream {
             }
         }
     }
+
+    private BufferedBulkDataCreator _creator;
 }

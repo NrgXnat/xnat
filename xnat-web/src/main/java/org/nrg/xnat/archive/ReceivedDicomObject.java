@@ -107,6 +107,9 @@ final class ReceivedDicomObject implements Closeable {
             final boolean    readWhole      = whole || BufferedBulkDataCreator.isDeflated(transferSyntax);
             final Attributes dataset        = new Attributes();
             if (readWhole) {
+                // Scripts run on this dataset instead of on the written file, so it keeps off the heap
+                // everything reading that file would have: not only the pixel data.
+                dis.setBulkDataDescriptor(ResumableDicomInputStream.WHOLE_OBJECT_BULK_DATA);
                 dis.readAttributes(dataset, -1, WHOLE_OBJECT);
             } else {
                 // The last tag the caller needs, not a stop tag: dcm4che's stop tag is exclusive, so

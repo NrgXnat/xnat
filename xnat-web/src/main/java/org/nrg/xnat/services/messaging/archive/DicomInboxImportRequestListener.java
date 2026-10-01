@@ -161,7 +161,6 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
     private class DicomInboxImportRequestImporter extends ImporterHandlerA implements FileVisitor<Path> {
         DicomInboxImportRequestImporter(final UserI user, final DicomInboxImportRequestService service, final DicomInboxImportRequest request, final DicomObjectIdentifier<XnatProjectdata> identifier, final DicomFileNamer namer) throws FileNotFoundException {
             super(null, user);
-            _dicomFiles = 0;
             _service    = service;
             _request    = request;
             _user       = user;
@@ -314,6 +313,8 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
         private final UserI                          _user;
         private final Map<String, Object>            _parameters;
         private final File                           _sessionPath;
+        // Per import: the listener is a singleton, and inbox imports run concurrently.
+        private       int                            _dicomFiles;
         private       Path                           _failedFile;
         private       String                         _failedBecause;
         private       Exception                      _failure;
@@ -325,5 +326,4 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
     private final DicomInboxImportRequestService                      _service;
     private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;
     private final Map<String, DicomFileNamer>                         _namers;
-    private       int                                                 _dicomFiles;
 }

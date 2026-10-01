@@ -85,8 +85,9 @@ public class Untarrer extends Unpacker {
     untar.setSrc(file);
     untar.setOverwrite(false);
 
-    // Untar never overwrites an existing file, so only the files that don't exist yet are the ones it extracts.
-    // Note them now, so clearing the executable bit below never touches a file that was already there.
+    // With overwrite off, Untar skips an existing file only if it is at least as new as the tar entry; an older
+    // one is replaced. Only files that don't exist yet are noted here, so clearing the executable bit below never
+    // touches a file that was already there, including one Untar overwrites.
     final List<File> extractedFiles = new ArrayList<>();
     for (final String name : fileEntries) {
       final File extracted = new File(dest, name);

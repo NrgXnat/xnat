@@ -12,6 +12,7 @@ package org.nrg.xft.utils;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.springframework.core.io.Resource;
@@ -220,6 +221,44 @@ public class FileUtilsTest {
         assertThat(pathsFromFileToFile).isNotNull().isNotEmpty().hasSize(ENDING_PATHS.size()).containsExactlyElementsOf(ENDING_PATHS);
         assertThat(filesFromPathToPath).isNotNull().isNotEmpty().hasSize(ENDING_FILES.size()).containsExactlyElementsOf(ENDING_FILES);
         assertThat(filesFromFileToFile).isNotNull().isNotEmpty().hasSize(ENDING_FILES.size()).containsExactlyElementsOf(ENDING_FILES);
+    }
+
+    @Test
+    public void testIsCanonicalPathAcceptsSafeRelativePaths() throws IOException {
+        final File destinationDir = new File(dest, "archive");
+
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, "file1.txt"));
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, "subdir/file1.txt"));
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, "./subdir/../file1.txt"));
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, ""));
+    }
+
+    @Test
+    public void testIsCanonicalPathRejectsPathTraversal() throws IOException {
+        final File destinationDir = new File(dest, "archive");
+
+        Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "../evil.txt"));
+        Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "../../etc/passwd"));
+        Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "subdir/../../evil.txt"));
+    }
+
+    @Test
+    public void testBuildRootHistoryPathDoesNotThrowOutsideSpringContext() {
+        // XDAT.getSiteConfigPreferences() throws outside of a Spring context (as in this test), which this method
+        // must fall back from rather than propagate -- see FileUtils#BuildRootHistoryPath.
+        final String path = FileUtils.BuildRootHistoryPath();
+        assertThat(path).isNotBlank().endsWith(".history/");
+    }
+
+    @Test
+    public void testClearExecutable() throws Exception {
+        final File file = createFile(src, f[0], c[0]);
+        Assume.assumeTrue("test requires a file system that supports the executable permission bit", file.setExecutable(true, false));
+        Assert.assertTrue(file.canExecute());
+
+        FileUtils.clearExecutable(file);
+
+        Assert.assertFalse(file.canExecute());
     }
 
     private static List<List<String>> getUntranslatedCsvFileToList(final File file) throws IOException {

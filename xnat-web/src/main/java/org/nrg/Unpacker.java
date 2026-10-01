@@ -9,6 +9,7 @@
 package org.nrg;
 
 import java.io.File;
+import java.util.List;
 
 import org.nrg.framework.status.BasicStatusPublisher;
 import org.nrg.framework.status.StatusListenerI;
@@ -84,5 +85,18 @@ public abstract class Unpacker implements StatusProducerI {
 
     protected final void publishSuccess(final Object o, final String message) {
         publisher.publish(new StatusMessage(o, StatusMessage.Status.COMPLETED, message));
+    }
+
+    /**
+     * Publishes the failure for an archive rejected because one or more of its entries resolve outside of the
+     * destination directory, so every archive format reports a rejected upload the same way.
+     *
+     * @param o             The rejected archive.
+     * @param unsafeEntries The names of the entries that resolve outside of the destination directory.
+     */
+    protected final void publishRejection(final Object o, final List<String> unsafeEntries) {
+        publishFailure(o, "rejected: " + unsafeEntries.size()
+                + (unsafeEntries.size() == 1 ? " entry resolves" : " entries resolve")
+                + " outside of the destination directory: " + unsafeEntries);
     }
 }

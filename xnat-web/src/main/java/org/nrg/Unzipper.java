@@ -48,7 +48,7 @@ public class Unzipper extends Unpacker {
             zip = new ZipFile(zipfile);
         } catch (final FileNotFoundException e) {
             publishFailure(zipfile, "unable to locate: " + e.getMessage());
-            logger.error("could not find zipfile " + zipfile, e);
+            logger.error("could not find zipfile {}", zipfile, e);
             return false;
         } catch (final ZipException e) {
             // Some legitimate but non-standard archives (an empty file, certain legacy CP437-encoded entry
@@ -60,7 +60,7 @@ public class Unzipper extends Unpacker {
             return unpackUsingZipInputStream(zipfile, dest);
         } catch (final IOException e) {
             publishFailure(zipfile, "unable to unpack " + zipfile + ": " + e.getMessage());
-            logger.error("unable to unpack " + zipfile, e);
+            logger.error("unable to unpack {}", zipfile, e);
             return false;
         }
 
@@ -90,9 +90,7 @@ public class Unzipper extends Unpacker {
                 // guarantee ZipUtils.extractMapFromFile() and TarUtils's tar handling already provide for every
                 // other archive upload path in this project: an archive containing even one path-traversal entry
                 // must never result in its other, legitimate entries being written to disk.
-                publishFailure(zipfile, "rejected: " + unsafeEntries.size()
-                        + (unsafeEntries.size() == 1 ? " entry resolves" : " entries resolve")
-                        + " outside of the destination directory: " + unsafeEntries);
+                publishRejection(zipfile, unsafeEntries);
                 return false;
             }
 
@@ -103,7 +101,7 @@ public class Unzipper extends Unpacker {
             return true;
         } catch (final IOException e) {
             publishFailure(zipfile, "unable to unpack " + zipfile + ": " + e.getMessage());
-            logger.error("unable to unpack " + zipfile, e);
+            logger.error("unable to unpack {}", zipfile, e);
             return false;
         }
     }
@@ -147,18 +145,16 @@ public class Unzipper extends Unpacker {
             unsafeEntries = findPathTraversalEntriesByStreaming(zipfile, destination);
         } catch (FileNotFoundException e) {
             publishFailure(zipfile, "unable to locate: " + e.getMessage());
-            logger.error("could not find zipfile " + zipfile, e);
+            logger.error("could not find zipfile {}", zipfile, e);
             return false;
         } catch (IOException e) {
             publishFailure(zipfile, "unable to unpack " + zipfile + ": " + e.getMessage());
-            logger.error("unable to unpack " + zipfile, e);
+            logger.error("unable to unpack {}", zipfile, e);
             return false;
         }
 
         if (!unsafeEntries.isEmpty()) {
-            publishFailure(zipfile, "rejected: " + unsafeEntries.size()
-                    + (unsafeEntries.size() == 1 ? " entry resolves" : " entries resolve")
-                    + " outside of the destination directory: " + unsafeEntries);
+            publishRejection(zipfile, unsafeEntries);
             return false;
         }
 
@@ -167,8 +163,7 @@ public class Unzipper extends Unpacker {
             IOException ioexception = null;
             fis = new FileInputStream(zipfile);
             try {
-                final BufferedInputStream bis = new BufferedInputStream(fis);
-                try {
+                try (BufferedInputStream bis = new BufferedInputStream(fis)) {
                     final ZipInputStream zis = new ZipInputStream(bis);
                     try {
                         unpack(zipfile, zis, destination);
@@ -182,12 +177,8 @@ public class Unzipper extends Unpacker {
                             throw ioexception = null == ioexception ? e : ioexception;
                         }
                     }
-                } finally {
-                    try {
-                        bis.close();
-                    } catch (IOException e) {
-                        throw ioexception = null == ioexception ? e : ioexception;
-                    }
+                } catch (IOException e) {
+                    throw ioexception = null == ioexception ? e : ioexception;
                 }
             } finally {
                 try {
@@ -198,11 +189,11 @@ public class Unzipper extends Unpacker {
             }
         } catch (FileNotFoundException e) {
             publishFailure(zipfile, "unable to locate: " + e.getMessage());
-            logger.error("could not find zipfile " + zipfile, e);
+            logger.error("could not find zipfile {}", zipfile, e);
             return false;
         } catch (IOException e) {
             publishFailure(zipfile, "unable to unpack " + zipfile + ": " + e.getMessage());
-            logger.error("unable to unpack " + zipfile, e);
+            logger.error("unable to unpack {}", zipfile, e);
             return false;
         }
         return true;
@@ -239,7 +230,7 @@ public class Unzipper extends Unpacker {
                 throw new IOException("Zip entry \"" + ze.getName() + "\" resolves outside of the destination directory.");
             }
             final File   outfile = new File(destination, name);
-            logger.trace("extracting {} to {}", ze.getName(), outfile);
+            logger.trace("Unpacking {} to {}", ze.getName(), outfile);
             if (ze.isDirectory()) {
                 outfile.mkdirs();
                 continue;
@@ -250,17 +241,14 @@ public class Unzipper extends Unpacker {
 
             outfile.getParentFile().mkdirs();
             IOException            ioexception = null;
-            final FileOutputStream fos         = new FileOutputStream(outfile);
-            try {
-                ByteStreams.copy(zipInputStream, fos);
-            } catch (IOException e) {
-                throw ioexception = e;
-            } finally {
+            try (FileOutputStream fos = new FileOutputStream(outfile)) {
                 try {
-                    fos.close();
+                    ByteStreams.copy(zipInputStream, fos);
                 } catch (IOException e) {
-                    throw null == ioexception ? e : ioexception;
+                    throw ioexception = e;
                 }
+            } catch (IOException e) {
+                throw null == ioexception ? e : ioexception;
             }
             // Every extracted file is cleared of any executable bit its archive metadata may have carried, the
             // same as every other extraction entry point this project has (ZipUtils, TarUtils).

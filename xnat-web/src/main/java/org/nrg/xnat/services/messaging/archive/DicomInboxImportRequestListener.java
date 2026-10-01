@@ -112,7 +112,14 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                     log.debug(message.toString());
                 }
 
+                final List<String> directArchive = new ArrayList<>();
                 for (final String uri : uris) {
+                    if (StringUtils.startsWith(uri, DIRECT_ARCHIVE_URI)) {
+                        // Direct archive builds and archives the session itself once it has been idle, and a
+                        // prearchive rebuild can't parse its URI.
+                        directArchive.add(uri);
+                        continue;
+                    }
                     final Map<String, Object> properties = PrearcUtils.parseURI(uri);
                     final String              project    = (String) properties.get(URIManager.PROJECT_ID);
                     final String              timestamp  = (String) properties.get(PrearcUtils.PREARC_TIMESTAMP);
@@ -125,6 +132,10 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                     rebuildParameters.put(DicomInboxImportRequest.IMPORT_REQUEST_ID, request.getId());
 
                     PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(user, Operation.Rebuild, new PrearcSession(project, timestamp, session, rebuildParameters, user)));
+                }
+                if (!uris.isEmpty() && directArchive.size() == uris.size()) {
+                    // No prearchive operation is left to complete the request when it archives the session.
+                    _service.complete(request, "Imported into direct archive, which archives each session once it has been idle: {}", String.join(", ", directArchive));
                 }
             }
         } catch (FileNotFoundException e) {
@@ -297,6 +308,9 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
         private       Path                           _failedFile;
         private       Exception                      _failure;
     }
+
+    /** How GradualDicomImporter names a direct-archive session. */
+    private static final String DIRECT_ARCHIVE_URI = "/xapi/direct-archive/";
 
     private final DicomInboxImportRequestService                      _service;
     private final Map<String, DicomObjectIdentifier<XnatProjectdata>> _identifiers;

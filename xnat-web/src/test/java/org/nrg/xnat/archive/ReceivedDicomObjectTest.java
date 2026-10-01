@@ -4,6 +4,7 @@ import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
+import org.dcm4che3.data.VR;
 import org.dcm4che3.imageio.codec.Transcoder;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
@@ -75,6 +76,11 @@ public class ReceivedDicomObjectTest {
     private static final String REJECTING_SCRIPT = String.join("\n",
             "version \"6.1\"",
             "reject[]");
+    private static final String DELETING_BULK_DATA_SCRIPT = String.join("\n",
+            "version \"6.1\"",
+            "(0010,0010) := subject",
+            "- (0042,0011)",
+            "- (6000,3000)");
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -104,6 +110,35 @@ public class ReceivedDicomObjectTest {
             assertFalse("the spool should hold the pixel data while the object is open", filesUnder(scratch).isEmpty());
         }
         assertTrue("closing should delete everything spooled", filesUnder(scratch).isEmpty());
+    }
+
+    /**
+     * Pixel data is not the only bulk data. Anonymizing the written file -- the old way for site scripts,
+     * still the way for project scripts -- reads it with dcm4che's default descriptor, which references
+     * encapsulated documents, overlays, waveforms and the like rather than loading them. Running the script in
+     * memory instead must not put them on the heap, and must leave the same file. Regression: the whole read
+     * referenced only the pixel data.
+     */
+    @Test
+    public void wholeReadKeepsOtherBulkDataOffTheHeap() throws Exception {
+        final File withBulkData = withNonPixelBulkData(MR_FIXTURE);
+        try (ReceivedDicomObject received = ReceivedDicomObject.read(open(withBulkData), null, ORDINARY_LAST_TAG, true)) {
+            final Attributes dataset = received.getDataset();
+            assertReference("encapsulated document", dataset.getValue(Tag.EncapsulatedDocument));
+            assertReference("overlay data", dataset.getValue(Tag.OverlayData));
+            assertReference("waveform data", dataset.getNestedDataset(Tag.WaveformSequence).getValue(Tag.WaveformData));
+        }
+        assertTrue("closing should delete everything spooled", filesUnder(scratch).isEmpty());
+
+        final Attributes original = readWhole(withBulkData);
+        final Attributes written  = readWhole(write(withBulkData, null, true, "bulk-whole.dcm"));
+        assertArrayEquals(original.getBytes(Tag.EncapsulatedDocument), written.getBytes(Tag.EncapsulatedDocument));
+        assertArrayEquals(original.getBytes(Tag.OverlayData), written.getBytes(Tag.OverlayData));
+        assertArrayEquals(original.getNestedDataset(Tag.WaveformSequence).getBytes(Tag.WaveformData),
+                          written.getNestedDataset(Tag.WaveformSequence).getBytes(Tag.WaveformData));
+
+        assertSameResultEitherWay(withBulkData, SITE_SCRIPT);
+        assertSameResultEitherWay(withBulkData, DELETING_BULK_DATA_SCRIPT);
     }
 
     @Test
@@ -401,6 +436,39 @@ public class ReceivedDicomObjectTest {
             out.writeDataset(fmi, dataset);
         }
         return deflated;
+    }
+
+    /** The fixture with bulk data besides the pixel data: an encapsulated document, an overlay, and a waveform in its sequence. */
+    private File withNonPixelBulkData(final File source) throws IOException {
+        final File output = folder.newFile("bulk-" + source.getName());
+        final Attributes fmi;
+        final Attributes dataset;
+        try (DicomInputStream in = new DicomInputStream(source)) {
+            fmi     = in.readFileMetaInformation();
+            dataset = in.readDataset();
+        }
+        dataset.setBytes(Tag.EncapsulatedDocument, VR.OB, patterned(64 * 1024, 1));
+        dataset.setBytes(Tag.OverlayData, VR.OW, patterned(32 * 1024, 2));
+        final Attributes waveform = new Attributes();
+        waveform.setBytes(Tag.WaveformData, VR.OW, patterned(16 * 1024, 3));
+        dataset.newSequence(Tag.WaveformSequence, 1).add(waveform);
+        try (DicomOutputStream out = new DicomOutputStream(new FileOutputStream(output), UID.ExplicitVRLittleEndian)) {
+            out.writeDataset(fmi, dataset);
+        }
+        return output;
+    }
+
+    private static byte[] patterned(final int length, final int seed) {
+        final byte[] bytes = new byte[length];
+        for (int i = 0; i < length; i++) {
+            bytes[i] = (byte) (i * 31 + seed);
+        }
+        return bytes;
+    }
+
+    private static void assertReference(final String what, final Object value) {
+        assertTrue(what + " should be a reference, not a heap byte[], but was "
+                   + (value == null ? "null" : value.getClass().getName()), value instanceof BulkData);
     }
 
     /** The dataset alone, deflated in <b>transferSyntax</b> from its first byte, as a C-STORE carries it: no preamble, no file meta group. */

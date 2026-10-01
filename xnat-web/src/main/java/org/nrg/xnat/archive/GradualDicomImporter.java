@@ -82,6 +82,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings("ThrowFromFinallyBlock")
 @Slf4j
@@ -357,15 +358,26 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 // With the whole object in hand the scripts run against the dataset and the object is
                 // written once. After a partial read the header and the rest of the stream are written
                 // first and the scripts run against the file, as every import used to.
-                final DicomObjectI toAnonymize = received.isWhole() ? new DicomObjectFactory.MizerDicomObject(dataset) : null;
+                final AtomicReference<DicomObjectI> toAnonymize = received.isWhole() ? new AtomicReference<>(new DicomObjectFactory.MizerDicomObject(dataset)) : null;
                 if (toAnonymize != null) {
-                    processedObjects.add(toAnonymize);
-                    if (!applyScripts(context -> _mizer.anonymize(toAnonymize, context), session, isNew, outputFile)) {
+                    processedObjects.add(toAnonymize.get());
+                    final ScriptApplication inMemory = context -> {
+                        final AnonymizationResult result = _mizer.anonymize(toAnonymize.get(), context);
+                        // Carry on with the object the script returned, which is what the file path writes:
+                        // an anonymizer may hand back a new object rather than edit the one it was given.
+                        final DicomObjectI returned = result.getDicomObject();
+                        if (returned != null && returned != toAnonymize.get()) {
+                            toAnonymize.set(returned);
+                            processedObjects.add(returned);
+                        }
+                        return result;
+                    };
+                    if (!applyScripts(inMemory, session, isNew, outputFile)) {
                         return returnEmptyList();
                     }
                     // Write what the scripts left, re-read like every round above: a processor may give
                     // the wrapper a new dataset instead of editing this one.
-                    dataset = toAnonymize.getAttributes();
+                    dataset = toAnonymize.get().getAttributes();
                 }
 
                 try {

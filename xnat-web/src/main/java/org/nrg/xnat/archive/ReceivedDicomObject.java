@@ -189,12 +189,16 @@ final class ReceivedDicomObject implements Closeable {
      * @param source        who sent the object, for the receipt log.
      */
     void write(final Attributes dataset, final Object sourceAeTitle, final File outputFile, final String source) throws IOException {
-        // Written beside the output and renamed into place, so a write that fails partway leaves no
-        // truncated object in the session for its build to skip. A fixed-length name: one built from
-        // the object's could pass NAME_MAX.
-        final File partial = new File(outputFile.getParentFile(), ".received-" + UUID.randomUUID() + ".part");
+        // A new object is written straight to its name, and deleted if the write fails. A re-send over an existing
+        // object is written beside it and renamed into place, so a failed one leaves the earlier copy as it was. Only
+        // the re-send is renamed because a rename makes an NFS client drop the file's cached pages, and the session
+        // build that follows would read every object back from the server. The caller holds the object's prearchive
+        // file lock. A fixed-length name: one built from the object's could pass NAME_MAX.
+        final boolean replacing = outputFile.exists();
+        final File target = replacing ? new File(outputFile.getParentFile(), ".received-" + UUID.randomUUID() + ".part") : outputFile;
+        boolean written = false;
         try {
-            try (final FileOutputStream fos = new FileOutputStream(partial)) {
+            try (final FileOutputStream fos = new FileOutputStream(target)) {
                 // After a partial read the rest of the stream, pixel data included, has not been
                 // parsed and is copied through as it arrived.
                 final long copied = DicomObjectWriter.write(dataset, fos,
@@ -208,13 +212,18 @@ final class ReceivedDicomObject implements Closeable {
                     log.trace("copied {} additional bytes to {}", copied, outputFile);
                 }
             }
-            try {
-                Files.move(partial.toPath(), outputFile.toPath(), ATOMIC_MOVE, REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(partial.toPath(), outputFile.toPath(), REPLACE_EXISTING);
+            if (replacing) {
+                try {
+                    Files.move(target.toPath(), outputFile.toPath(), ATOMIC_MOVE, REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException e) {
+                    Files.move(target.toPath(), outputFile.toPath(), REPLACE_EXISTING);
+                }
             }
+            written = true;
         } finally {
-            Files.deleteIfExists(partial.toPath());
+            if (replacing || !written) {
+                Files.deleteIfExists(target.toPath());
+            }
         }
         LoggerFactory.getLogger("org.nrg.xnat.received").info("{}:{}", source, outputFile);
     }

@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -393,6 +395,46 @@ public class ReceivedDicomObjectTest {
         assertFalse("a failed write must not leave a partial object", output.exists());
         assertArrayEquals("a failed re-send must leave the earlier copy as it was", existingBytes, Files.readAllBytes(existing.toPath()));
         assertEquals("nothing else should be left in the session", Collections.singletonList(existing.toPath()), filesUnder(session));
+    }
+
+    /**
+     * A file cut short, such as one still being copied into the inbox, must be caught by the read wherever the cut
+     * falls: in the pixel data, where a file-backed read only skips over the value and the skip can run past the end
+     * of the file, or in the header. A stream cut short is caught the same way. A partial read would copy either
+     * through as far as it goes.
+     */
+    @Test
+    public void aFileCutShortIsCaughtByTheWholeRead() throws Exception {
+        final byte[] whole = Files.readAllBytes(MR_FIXTURE.toPath());
+        for (final double fraction : new double[]{0.999, 0.8, 0.32, 0.05}) {
+            final File cut = folder.newFile("cut-" + fraction + ".dcm");
+            Files.write(cut.toPath(), Arrays.copyOf(whole, (int) (whole.length * fraction)));
+            assertThrows(fraction + " of the file, read from it", ReceivedDicomObject.TruncatedObjectException.class,
+                         () -> ReceivedDicomObject.read(open(cut), null, ORDINARY_LAST_TAG, true, cut).close());
+            assertThrows(fraction + " of the file, read as a stream", ReceivedDicomObject.TruncatedObjectException.class,
+                         () -> ReceivedDicomObject.read(open(cut), null, ORDINARY_LAST_TAG, true).close());
+        }
+        assertTrue("nothing should be left spooled", filesUnder(scratch).isEmpty());
+    }
+
+    /** Something that isn't DICOM at all must not be taken for a DICOM object cut short, whatever the read makes of it. */
+    @Test
+    public void aSourceThatIsNotDicomIsNotTakenForOneCutShort() throws Exception {
+        final File text = folder.newFile("README.txt");
+        Files.write(text.toPath(), "Scans from the MR suite, copied in on Tuesday.\n".getBytes(StandardCharsets.UTF_8));
+        // A Finder metadata file starts with a short binary header, then its records.
+        final byte[] records = new byte[4096];
+        new Random(42).nextBytes(records);
+        System.arraycopy(new byte[]{0, 0, 0, 1, 'B', 'u', 'd', '1'}, 0, records, 0, 8);
+        final File binary = folder.newFile(".DS_Store");
+        Files.write(binary.toPath(), records);
+        for (final File notDicom : Arrays.asList(text, binary)) {
+            try (ReceivedDicomObject ignored = ReceivedDicomObject.read(open(notDicom), null, ORDINARY_LAST_TAG, true, notDicom)) {
+                // Read without complaint: the importer's own checks reject it later, as they always have.
+            } catch (IOException e) {
+                assertFalse(notDicom.getName() + " was taken for a DICOM object cut short: " + e, e instanceof ReceivedDicomObject.TruncatedObjectException);
+            }
+        }
     }
 
     /** A failure writing the object out is the server's, not the source's, so it must not read as a broken upload. */

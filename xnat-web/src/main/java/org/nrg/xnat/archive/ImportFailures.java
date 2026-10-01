@@ -39,6 +39,20 @@ public final class ImportFailures {
     }
 
     /**
+     * Whether the object ends before its last value does: a Part 10 file cut short, such as one still being copied.
+     * GradualDicomImporter reports it as unreadable like any other object it can't read, and the zip importer
+     * skips it as such under Ignore-Unparsable, but it is DICOM, so the inbox stops at it and keeps the file.
+     */
+    public static boolean endsEarly(final Throwable e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ReceivedDicomObject.TruncatedObjectException) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Marks the sessions an import wrote into before it failed. A prearchive session is marked {@code ERROR}, with the
      * reason in its log. Left receiving, it looks like one still arriving, and unless the upload tool sent it, the
      * idle-timeout rebuild builds it as though the import had finished, then archives it where the project archives

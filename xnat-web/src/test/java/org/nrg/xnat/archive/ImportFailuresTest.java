@@ -16,6 +16,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -73,6 +74,15 @@ public class ImportFailuresTest {
         assertTrue("an object that can't be read", ImportFailures.isUnparsable(new ClientException("unable to read DICOM object", new IOException("not DICOM"))));
         assertTrue("a refusal", ImportFailures.isUnparsable(new ClientException("no longer receiving files")));
         assertFalse("a failed write", ImportFailures.isUnparsable(new ClientException("unable to read DICOM object", new ServerException("disk full"))));
+    }
+
+    @Test
+    public void anObjectCutShortEndsEarlyButTheZipImporterStillSkipsIt() {
+        final ClientException cutShort = new ClientException("unable to read DICOM object", new ReceivedDicomObject.TruncatedObjectException("ends 10 bytes short"));
+        assertTrue(ImportFailures.endsEarly(cutShort));
+        assertTrue("Ignore-Unparsable still skips it in a zip", ImportFailures.isUnparsable(cutShort));
+        assertFalse("an object that isn't DICOM", ImportFailures.endsEarly(new ClientException("unable to read DICOM object", new IOException("Not a DICOM stream"))));
+        assertFalse("a stream that runs out with nothing to say it was DICOM", ImportFailures.endsEarly(new ClientException("unable to read DICOM object", new EOFException())));
     }
 
     @Test

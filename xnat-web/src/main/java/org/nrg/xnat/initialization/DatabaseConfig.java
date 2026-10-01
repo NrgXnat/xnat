@@ -20,6 +20,7 @@ import org.hibernate.engine.jdbc.internal.Formatter;
 import org.nrg.framework.beans.Beans;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.xnat.node.services.impl.NodeLockConnectionSettings;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -91,6 +92,20 @@ public class DatabaseConfig {
     public String dbUsername(final Environment environment) {
         final Properties properties = Beans.getNamespacedProperties(environment, "datasource", true);
         return properties.getProperty("username");
+    }
+
+    /**
+     * The driver, URL and credentials the {@link org.nrg.xnat.node.services.impl.PostgresNodeLockService node lock
+     * service} uses for its dedicated lock connection. These are the same values the application data source is
+     * configured with, defaults included, so the lock connection goes through the same driver as the pool.
+     *
+     * @return The lock connection settings.
+     */
+    @Bean
+    public NodeLockConnectionSettings nodeLockConnectionSettings() {
+        final Properties properties = Beans.getNamespacedProperties(_environment, "datasource", true);
+        setDefaultDatasourceProperties(properties);
+        return new NodeLockConnectionSettings(properties.getProperty("driver"), properties.getProperty("url"), properties.getProperty("username"), properties.getProperty("password"));
     }
 
     private DataSource getProxiedDataSource(final DataSource dataSource, final Properties properties) {

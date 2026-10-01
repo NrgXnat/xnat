@@ -548,6 +548,12 @@
     <logger name="org.nrg.xnat.node" additivity="false" level="WARN">
         <appender-ref ref="tasks"/>
     </logger>
+    <!-- Node lock events (elected, demoted, stepped down, lock connection lost/restored, tick timeout) are INFO
+         and are what an operator checks on a multi-node install, so they go to tasks.log with the rest of the
+         node package. -->
+    <logger name="org.nrg.xnat.node.services.impl.PostgresNodeLockService" additivity="false" level="INFO">
+        <appender-ref ref="tasks"/>
+    </logger>
     <logger name="org.springframework.ldap" additivity="false" level="ERROR">
         <appender-ref ref="security"/>
     </logger>

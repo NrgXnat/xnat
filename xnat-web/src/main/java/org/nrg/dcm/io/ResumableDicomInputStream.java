@@ -59,6 +59,18 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      */
     static final BulkDataDescriptor PIXEL_DATA_OF_ANY_FORM = ResumableDicomInputStream::isPixelData;
 
+    /**
+     * For a read of the whole object: {@link #PIXEL_DATA_OF_ANY_FORM} plus everything
+     * {@link BulkDataDescriptor#DEFAULT} matches -- overlays, waveforms, spectroscopy data, encapsulated
+     * documents, palette colour lookup tables. Reading an object from its file has always referenced those
+     * rather than loaded them, so a whole read holds no more on the heap than anonymizing the written file
+     * did. The objection that keeps them out of {@link #PIXEL_DATA_OF_ANY_FORM} is the ordinary partial
+     * read, which never reaches most of them; a whole read spools its pixel data anyway, into the same file.
+     */
+    public static final BulkDataDescriptor WHOLE_OBJECT_BULK_DATA = (itemPointers, privateCreator, tag, vr, length) ->
+            isPixelData(itemPointers, privateCreator, tag, vr, length)
+            || BulkDataDescriptor.DEFAULT.isBulkData(itemPointers, privateCreator, tag, vr, length);
+
     private static boolean isPixelData(final List<ItemPointer> itemPointers, final String privateCreator,
                                        final int tag, final VR vr, final int length) {
         return Tag.PixelData == tag || Tag.FloatPixelData == tag || Tag.DoubleFloatPixelData == tag;

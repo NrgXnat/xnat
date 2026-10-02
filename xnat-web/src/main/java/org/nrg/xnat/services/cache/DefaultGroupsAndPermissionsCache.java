@@ -98,6 +98,7 @@ import static org.nrg.xdat.security.PermissionCriteria.dumpCriteriaList;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ACCESS_GROUP;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_ADMIN_GROUP;
 import static org.nrg.xdat.security.helpers.Groups.ALL_DATA_GROUPS;
+import static org.nrg.xdat.security.helpers.Groups.REMOVED;
 import static org.nrg.xdat.security.helpers.Groups.USERS;
 import static org.nrg.xdat.security.helpers.Users.DEFAULT_GUEST_USERNAME;
 import static org.nrg.xnat.services.cache.extractors.DataExtractor.PARAM_DATA_TYPE;
@@ -139,6 +140,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
 
     private final ReentrantLock _totalCountsLock = new ReentrantLock();
     private final AtomicBoolean _totalCountsDirty = new AtomicBoolean(false);
+    private final CoalescingRunner _userCacheRebuilds = new CoalescingRunner();
 
     private static final List<String> USER_CACHES                          = Arrays.asList(CACHE_ACCESS_MANAGERS,
             CACHE_BROWSEABLES,
@@ -745,11 +747,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             switch (action) {
                 case EVENT_CREATE:
                     log.debug("New project created with ID {}, caching new instance", id);
-                    for (final String owner : getProjectOwners(id)) {
-                        if (getActionElementDisplays(owner, ACTION_CREATE).stream().noneMatch(CONTAINS_MR_SESSION)) {
-                            initActionElementDisplays(owner, true);
-                        }
-                    }
+                    getProjectOwners(id).forEach(this::rebuildUserCaches);
 
                     final boolean created = !getGroups(xsiType, id).isEmpty();
                     final String access = Permissions.getProjectAccess(_template, id);
@@ -890,6 +888,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                         //noinspection unchecked
                         usernames.addAll((Collection<? extends String>) properties.get(USERS));
                     }
+                    // A user added to a project group is taken out of that project's other groups first, which is reported here
+                    // rather than by an event of its own, so those groups' cached members are stale too.
+                    if (properties.containsKey(REMOVED)) {
+                        //noinspection unchecked
+                        ((Collection<String>) properties.get(REMOVED)).forEach(removed -> evict(CACHE_GROUPS, removed));
+                    }
                     log.debug("Handling update group event with ID '{}' for users: {}", id, StringUtils.join(usernames, ", "));
                     return !groups.isEmpty();
 
@@ -914,16 +918,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             log.warn("While handling action {}, I couldn't find a group for type {} ID {}.", action, xsiType, id, e);
         } finally {
             USER_CACHES.forEach(a -> evict(a, usernames));
-            for (final String username : usernames) {
-                clearUserCache(username);
-                ACTIONS.forEach(a -> evictCacheMapPartition(CACHE_ACTIONS, a, username));
-                log.info("Initializing user group IDs cache entry for user '{}'", username);
-                updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
-                final List<String> groupIds = getCacheList(CACHE_USER_GROUPS, username, String.class);
-                log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
-                ACTIONS.forEach(a -> getActionElementDisplays(username, a));
-                getBrowseableElementDisplays(username);
-            }
+            usernames.forEach(this::rebuildUserCaches);
         }
         return false;
     }
@@ -1032,6 +1027,31 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         }
 
         return cachedRelatedGroups;
+    }
+
+    /**
+     * Evicts the user's caches, then rebuilds their group IDs, actions and browseables. A rebuild walks every group
+     * the user is in for each secured data type and action. For someone in many groups that takes longer than the gap
+     * between a new project's events, so rebuilds for one user run one at a time, and events that arrive during one
+     * share a single further rebuild.
+     */
+    private void rebuildUserCaches(final String username) {
+        evictUserCaches(username);
+        _userCacheRebuilds.run(username, () -> {
+            // A rebuild that was running when this was asked for may have cached data from before the change.
+            evictUserCaches(username);
+            log.info("Initializing user group IDs cache entry for user '{}'", username);
+            updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
+            final List<String> groupIds = getCacheList(CACHE_USER_GROUPS, username, String.class);
+            log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
+            ACTIONS.forEach(a -> getActionElementDisplays(username, a));
+            getBrowseableElementDisplays(username);
+        });
+    }
+
+    private void evictUserCaches(final String username) {
+        clearUserCache(username);
+        ACTIONS.forEach(a -> evictCacheMapPartition(CACHE_ACTIONS, a, username));
     }
 
     private Map<String, List<ElementDisplay>> initActionElementDisplays(final String username) {

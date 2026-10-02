@@ -106,7 +106,7 @@ public class DBAction {
     // the build/merge/archive laps; only saves slow enough to matter are reported.
     private static final Logger TIMING              = LoggerFactory.getLogger("org.nrg.xnat.ingest.timing");
     private static final long   TIMING_THRESHOLD_MS = 250;
-    private static final int    TRIGGER_PIPELINE    = 50;   // update_ls commands per multi-statement round trip
+    static final int            TRIGGER_PIPELINE    = 50;   // update_ls commands per multi-statement round trip
 
     // SimpleDateFormat is not thread-safe and costs a pattern compile to build; ValueParser formats a timestamp
     // for every date-time property of every item stored, so each thread keeps one.
@@ -3374,6 +3374,15 @@ public class DBAction {
             commands.add("SET LOCAL synchronous_commit TO ON;");
         }
 
+        ExecuteTriggerCommands(commands, dbname, username);
+        log.debug("Processed {} triggers in {} ms", commands.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);
+    }
+
+    /**
+     * Runs the update trigger commands of a save. Package-private so the pipelining and its fallback can be tested
+     * against a real database without building XFT items.
+     */
+    static void ExecuteTriggerCommands(final List<String> commands, final String dbname, final String username) {
         //process modification triggers
         // In pipelines of up to TRIGGER_PIPELINE commands: the driver sends a multi-statement string in one round
         // trip and the server runs it as one implicit transaction. A 200-scan session has 400 of these, each a
@@ -3401,7 +3410,6 @@ public class DBAction {
                 }
             }
         }
-        log.debug("Processed {} triggers in {} ms", commands.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);
     }
 
     private static final Map<String, String> SEQUENCES = new HashMap<>();

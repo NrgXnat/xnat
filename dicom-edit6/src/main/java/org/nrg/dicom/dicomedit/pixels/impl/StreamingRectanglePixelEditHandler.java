@@ -10,6 +10,7 @@ import org.dcm4che3.data.Value;
 import org.dcm4che3.imageio.codec.TransferSyntaxType;
 import org.dcm4che3.util.StreamUtils;
 import org.nrg.dicom.mizer.exceptions.MizerException;
+import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,7 +133,7 @@ public class StreamingRectanglePixelEditHandler extends SimpleRectanglePixelEdit
                 // costs a syscall per row of the image. A megabyte measured faster than both 64 KB
                 // and 4 MB, and faster than reading whole frames on every geometry tried.
                 final int    lineLength = (int) geometry.lineLength;
-                final byte[] buffer     = new byte[lineLength * Math.max(1, (1 << 20) / lineLength)];
+                final byte[] buffer     = new byte[lineLength * Math.max(1, DicomObjectFactory.BULK_DATA_BUFFER_SIZE / lineLength)];
                 long         lineIndex  = 0;
                 // Until the value is consumed, rather than until NumberOfFrames is reached: pixel
                 // data longer than the frame count accounts for still has to be redacted, or those

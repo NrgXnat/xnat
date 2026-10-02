@@ -27,8 +27,10 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -368,6 +371,82 @@ public class ReceivedDicomObjectTest {
         assertArrayEquals("pixels must survive the deflate round-trip", pixelData(deflated), pixelData(written));
     }
 
+    /**
+     * A stream that breaks partway through the pixel data -- a dropped association, a corrupt zip
+     * entry -- must not leave a truncated object for the session build to skip, nor truncate the copy
+     * a re-send of the same object is written over.
+     */
+    @Test
+    public void aStreamThatBreaksPartwayLeavesNoPartialObject() throws Exception {
+        final File session  = folder.newFolder("session");
+        final File output   = new File(session, "object.dcm");
+        final File existing = new File(session, "existing.dcm");
+        Files.copy(MR_FIXTURE.toPath(), existing.toPath());
+        final byte[] existingBytes = Files.readAllBytes(existing.toPath());
+
+        // Half way is past the header and inside the pixel data, which a partial read copies through during the write.
+        final long breakAt = MR_FIXTURE.length() / 2;
+        for (final File target : Arrays.asList(output, existing)) {
+            try (ReceivedDicomObject received = ReceivedDicomObject.read(breaksAfter(MR_FIXTURE, breakAt), null, ORDINARY_LAST_TAG, false)) {
+                // Reported as the source's failure, so the importer answers as for an unreadable object, not as for full storage.
+                assertThrows(ReceivedDicomObject.SourceReadException.class, () -> received.write(received.getDataset(), AE_TITLE, target, "test"));
+            }
+        }
+        assertFalse("a failed write must not leave a partial object", output.exists());
+        assertArrayEquals("a failed re-send must leave the earlier copy as it was", existingBytes, Files.readAllBytes(existing.toPath()));
+        assertEquals("nothing else should be left in the session", Collections.singletonList(existing.toPath()), filesUnder(session));
+    }
+
+    /**
+     * A file cut short, such as one still being copied into the inbox, must be caught by the read wherever the cut
+     * falls: in the pixel data, where a file-backed read only skips over the value and the skip can run past the end
+     * of the file, or in the header. A stream cut short is caught the same way. A partial read would copy either
+     * through as far as it goes.
+     */
+    @Test
+    public void aFileCutShortIsCaughtByTheWholeRead() throws Exception {
+        final byte[] whole = Files.readAllBytes(MR_FIXTURE.toPath());
+        for (final double fraction : new double[]{0.999, 0.8, 0.32, 0.05}) {
+            final File cut = folder.newFile("cut-" + fraction + ".dcm");
+            Files.write(cut.toPath(), Arrays.copyOf(whole, (int) (whole.length * fraction)));
+            assertThrows(fraction + " of the file, read from it", ReceivedDicomObject.TruncatedObjectException.class,
+                         () -> ReceivedDicomObject.read(open(cut), null, ORDINARY_LAST_TAG, true, cut).close());
+            assertThrows(fraction + " of the file, read as a stream", ReceivedDicomObject.TruncatedObjectException.class,
+                         () -> ReceivedDicomObject.read(open(cut), null, ORDINARY_LAST_TAG, true).close());
+        }
+        assertTrue("nothing should be left spooled", filesUnder(scratch).isEmpty());
+    }
+
+    /** Something that isn't DICOM at all must not be taken for a DICOM object cut short, whatever the read makes of it. */
+    @Test
+    public void aSourceThatIsNotDicomIsNotTakenForOneCutShort() throws Exception {
+        final File text = folder.newFile("README.txt");
+        Files.write(text.toPath(), "Scans from the MR suite, copied in on Tuesday.\n".getBytes(StandardCharsets.UTF_8));
+        // A Finder metadata file starts with a short binary header, then its records.
+        final byte[] records = new byte[4096];
+        new Random(42).nextBytes(records);
+        System.arraycopy(new byte[]{0, 0, 0, 1, 'B', 'u', 'd', '1'}, 0, records, 0, 8);
+        final File binary = folder.newFile(".DS_Store");
+        Files.write(binary.toPath(), records);
+        for (final File notDicom : Arrays.asList(text, binary)) {
+            try (ReceivedDicomObject ignored = ReceivedDicomObject.read(open(notDicom), null, ORDINARY_LAST_TAG, true, notDicom)) {
+                // Read without complaint: the importer's own checks reject it later, as they always have.
+            } catch (IOException e) {
+                assertFalse(notDicom.getName() + " was taken for a DICOM object cut short: " + e, e instanceof ReceivedDicomObject.TruncatedObjectException);
+            }
+        }
+    }
+
+    /** A failure writing the object out is the server's, not the source's, so it must not read as a broken upload. */
+    @Test
+    public void aFailureWritingTheObjectOutIsNotASourceReadFailure() throws Exception {
+        final File output = new File(new File(folder.getRoot(), "missing"), "object.dcm");
+        try (ReceivedDicomObject received = ReceivedDicomObject.read(open(MR_FIXTURE), null, ORDINARY_LAST_TAG, false)) {
+            final IOException thrown = assertThrows(IOException.class, () -> received.write(received.getDataset(), AE_TITLE, output, "test"));
+            assertFalse("a failure writing the object out was reported as the source's", thrown instanceof ReceivedDicomObject.SourceReadException);
+        }
+    }
+
     /** What an inbox holding a README or a zero-byte file hands the importer: the stream never opens, and the source must still be closed. */
     @Test
     public void closesTheSourceWhenItCannotBeReadAsDicom() {
@@ -492,6 +571,31 @@ public class ReceivedDicomObjectTest {
 
     private static InputStream open(final File file) throws IOException {
         return new FileInputStream(file);
+    }
+
+    /** The file's first <b>limit</b> bytes, then the IOException a dropped association or a corrupt zip entry raises. */
+    private static InputStream breaksAfter(final File file, final long limit) throws IOException {
+        return new FilterInputStream(open(file)) {
+            private long _position;
+
+            @Override
+            public int read() throws IOException {
+                final byte[] one = new byte[1];
+                return read(one, 0, 1) < 0 ? -1 : one[0] & 0xff;
+            }
+
+            @Override
+            public int read(final byte[] buffer, final int offset, final int length) throws IOException {
+                if (_position >= limit) {
+                    throw new IOException("the stream broke after " + limit + " bytes");
+                }
+                final int count = super.read(buffer, offset, (int) Math.min(length, limit - _position));
+                if (count > 0) {
+                    _position += count;
+                }
+                return count;
+            }
+        };
     }
 
     private static Attributes readWhole(final File file) throws IOException {

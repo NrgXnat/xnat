@@ -106,6 +106,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
         try {
             importCompressedFile(fw, uris);
         } catch (ServerException | ClientException e) {
+            ImportFailures.markFailed(uris, e);
             this.failed(e.getMessage(), true);
             throw e;
         }
@@ -168,7 +169,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
                     }
                     importEntry(new ZipEntryFileWriterWrapper(ze, zin), uris);
                 } catch (ClientException e) {
-                    if (ignoreUnparsable) {
+                    if (ignoreUnparsable && ImportFailures.isUnparsable(e)) {
                         nonDcmException = e;
                     } else {
                         throw e;
@@ -195,7 +196,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
                         }
                         importEntry(new TarEntryFileWriterWrapper(ze, zin), uris);
                     } catch (ClientException e) {
-                        if (ignoreUnparsable) {
+                        if (ignoreUnparsable && ImportFailures.isUnparsable(e)) {
                             nonDcmException = e;
                         } else {
                             throw e;

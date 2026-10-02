@@ -221,6 +221,31 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         }
     }
 
+    @Override
+    public void handleFailedUpload(SessionData session, Exception cause) {
+        final long id = session.getId();
+        try {
+            // Claimed before anything on the filesystem is touched, as a delete is: from here the importer refuses the
+            // next file of any upload into this session, and the archive trigger no longer queues it.
+            if (!directArchiveSessionHibernateService.setStatusToErrorIfReceiving(id, cause)) {
+                return;
+            }
+            final boolean stillLanding = PrearcUtils.isSessionReceiving(session.getSessionDataTriple());
+            if (stillLanding || !ownsSessionDirectory(session)) {
+                log.warn("An upload into DirectArchiveSession id={} {} failed; leaving it in ERROR at {} because {}", id, session.getSessionDataTriple(), session.getUrl(),
+                         stillLanding ? "a file of another upload is still landing there" : "the directory is not this session's alone", cause);
+                return;
+            }
+            log.warn("An upload into DirectArchiveSession id={} {} failed; moving it to the prearchive", id, session.getSessionDataTriple(), cause);
+            // In ERROR, where the idle-timeout rebuild leaves it alone: queued for a rebuild instead, what may be only
+            // part of the study would be archived after all.
+            doPrearchiveMove(id, session, Rebuild, PrearcStatus.ERROR,
+                             new ArchivingException("An import into this session failed partway, so it may be missing files", cause));
+        } catch (NotFoundException e) {
+            log.warn("DirectArchiveSession id={} disappeared while handling a failed upload into it", id, e);
+        }
+    }
+
     /**
      * The directory is this session's to remove only when no newer session at the same location is still alive and
      * no archived experiment already owns it. The cheap row check runs first.

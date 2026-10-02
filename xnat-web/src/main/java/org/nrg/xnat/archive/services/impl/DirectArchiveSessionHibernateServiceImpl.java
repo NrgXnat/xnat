@@ -152,6 +152,17 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
+    public boolean setStatusToErrorIfReceiving(long id, Exception e) throws NotFoundException {
+        // The message column holds 255 characters, and a failure that names a file path can run longer; an update
+        // that failed on it would leave the session receiving.
+        if (getDao().transitionStatus(id, PrearcStatus.ERROR, EnumSet.of(PrearcStatus.RECEIVING), StringUtils.abbreviate(e.getMessage(), 255)) == 1) {
+            return true;
+        }
+        log.warn("Leaving DirectArchiveSession id={} in status {}: it is no longer receiving", id, get(id).getStatus());
+        return false;
+    }
+
+    @Override
     public void setStatusToQueuedBuilding(long id) throws NotFoundException {
         if (!setStatusToQueuedBuilding(id, false)) {
             throw new IllegalStateException("DirectArchiveSession id=" + id + " is not in a status that can be queued for building");

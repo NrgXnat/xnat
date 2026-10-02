@@ -936,7 +936,8 @@ public class ViewManager {
 		if (!elementMap.containsKey(fieldElementKey)) {
 			final String fullXMLName = element.getFullXMLName();
 			log.info("No entry found for element key {}: element {}, level {}, multiples {}, isRoot {}", fieldElementKey, fullXMLName, level, allowMultiples, isRoot);
-			final Map<String, String> fieldMap   = new HashMap<>();
+			// Concurrent: GetViewColumnName() adds aliases to the cached map from request threads.
+			final Map<String, String> fieldMap   = new ConcurrentHashMap<>();
 			final List<String>        fieldNames = new ArrayList<>();
 
 			final List<String[]> fields = new ArrayList<>();

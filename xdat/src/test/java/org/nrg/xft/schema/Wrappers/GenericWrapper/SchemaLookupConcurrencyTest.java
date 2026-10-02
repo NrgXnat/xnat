@@ -19,10 +19,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CyclicBarrier;
@@ -40,6 +42,7 @@ import static org.junit.Assert.assertTrue;
 public class SchemaLookupConcurrencyTest {
     private static final int THREADS = 8;
     private static final int ROUNDS  = 20;
+    private static final int ALIAS_ROUNDS = 200;
 
     @BeforeClass
     public static void runWithoutSpring() {
@@ -128,6 +131,52 @@ public class SchemaLookupConcurrencyTest {
             });
             awaitWorkers(workers, errors, round);
         }
+    }
+
+    /**
+     * GetViewColumnName() adds an alias to the cached field map for every spelling of a path that isn't the map's own
+     * key, such as "xdat:user.login" for "xdat:user/login". Threads resolving new spellings at once all write to the one
+     * cached map, and nothing clears that map, so an entry a race drops stays missing until a restart.
+     */
+    @Test(timeout = 300_000)
+    public void concurrentAliasesKeepEveryFieldMapEntry() throws Exception {
+        loadSchema();
+        final GenericWrapperElement user     = GenericWrapperElement.GetElement("xdat:user");
+        final Map<String, String>   fields   = new HashMap<>(ViewManager.GetFieldMap(user, ViewManager.ACTIVE, true, true));
+        final Map<String, String>   expected = new HashMap<>(fields);
+        final Set<String>           aliases  = new LinkedHashSet<>();
+        for (final Map.Entry<String, String> field : fields.entrySet()) {
+            for (final String alias : spellings(field.getKey())) {
+                if (field.getValue().equals(ViewManager.GetViewColumnName(user, alias, ViewManager.ACTIVE, true, true))) {
+                    aliases.add(alias);
+                    expected.put(alias.toLowerCase(), field.getValue());
+                }
+            }
+        }
+
+        for (int round = 1; round <= ALIAS_ROUNDS; round++) {
+            ViewManager.FIELD_MAPS.clear();
+            ViewManager.FIELD_NAMES.clear();
+            ViewManager.GetFieldMap(user, ViewManager.ACTIVE, true, true);
+            final Queue<Throwable> errors = new ConcurrentLinkedQueue<>();
+            final List<Thread> workers = startWorkers(new ArrayList<>(aliases), round, errors, (index, order) -> {
+                for (final String alias : order) {
+                    ViewManager.GetViewColumnName(user, alias, ViewManager.ACTIVE, true, true);
+                }
+            });
+            awaitWorkers(workers, errors, round);
+            assertEquals("the field map after round " + round, new TreeMap<>(expected), new TreeMap<>(ViewManager.GetFieldMap(user, ViewManager.ACTIVE, true, true)));
+        }
+    }
+
+    // Other spellings of a path that standardize to it: dots or an @ for a separator, and a leading slash.
+    private static List<String> spellings(final String path) {
+        final List<String> spellings = new ArrayList<>(List.of(path.replace('/', '.'), "/" + path));
+        for (int separator = path.indexOf('/'); separator >= 0; separator = path.indexOf('/', separator + 1)) {
+            spellings.add(path.substring(0, separator) + '.' + path.substring(separator + 1));
+            spellings.add(path.substring(0, separator) + '@' + path.substring(separator + 1));
+        }
+        return spellings;
     }
 
     private interface Work {

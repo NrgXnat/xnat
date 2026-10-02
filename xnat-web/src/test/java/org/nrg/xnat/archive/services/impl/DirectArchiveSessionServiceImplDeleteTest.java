@@ -37,6 +37,7 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
+import org.nrg.xnat.archive.services.DirectArchiveSessionService;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -165,9 +166,27 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         assertThat(sessionXml).doesNotExist();
     }
 
+    @Test
+    public void userDeleteKeepsTheSignaturePluginsCompileAgainst() throws Exception {
+        // Plugins rebuilt against 1.10.2 must still compile when they handle only the exceptions 1.10.1 declared.
+        assertThat(DirectArchiveSessionService.class.getMethod("delete", long.class, UserI.class).getExceptionTypes())
+                .containsExactlyInAnyOrder(InvalidPermissionException.class, NotFoundException.class);
+    }
+
+    @Test
+    public void userDeleteRemovesOnlyTheRowAsIn1101() throws Exception {
+        stubDeletableSession();
+
+        service.delete(SESSION_ID, user);
+
+        verify(hibernateService).delete(SESSION_ID, user);
+        verify(hibernateService, never()).setStatusToDeleting(anyLong(), anyBoolean());
+        assertFilesIntact();
+    }
+
     /** The row goes but the directory is not this session's to remove. */
     private void assertDeleteKeepsFilesAndRemovesRow() throws Exception {
-        service.delete(SESSION_ID, user);
+        service.delete(SESSION_ID, user, false);
 
         assertFilesIntact();
         verify(hibernateService).delete(SESSION_ID);
@@ -177,7 +196,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     public void deletingAClaimedSessionRemovesDirectoryXmlAndRow() throws Exception {
         stubDeletableSession();
 
-        service.delete(SESSION_ID, user);
+        service.delete(SESSION_ID, user, false);
 
         assertFilesGone();
         verify(hibernateService).delete(SESSION_ID);
@@ -188,7 +207,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         when(hibernateService.getSessionData(SESSION_ID)).thenReturn(sessionIn(PrearcStatus.ARCHIVING));
         doThrow(new ArchivingException("not deletable")).when(hibernateService).setStatusToDeleting(SESSION_ID, false);
 
-        assertThatThrownBy(() -> service.delete(SESSION_ID, user))
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user, false))
                 .isInstanceOfSatisfying(ClientException.class,
                                         e -> assertThat(e.getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
 
@@ -203,7 +222,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         stubDeletableSession();
         mockedPrearcUtils.when(() -> PrearcUtils.isSessionReceiving(any())).thenReturn(true);
 
-        assertThatThrownBy(() -> service.delete(SESSION_ID, user))
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user, false))
                 .isInstanceOfSatisfying(ClientException.class,
                                         e -> assertThat(e.getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
 
@@ -219,7 +238,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         stubDeletableSession();
         mockedPrearcUtils.when(() -> PrearcUtils.isSessionReceiving(any())).thenReturn(false, true);
 
-        assertThatThrownBy(() -> service.delete(SESSION_ID, user))
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user, false))
                 .isInstanceOfSatisfying(ClientException.class,
                                         e -> assertThat(e.getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT));
 
@@ -300,7 +319,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         stubDeletableSession();
         mockedPermissions.when(() -> Permissions.canDeleteProject(user, PROJECT)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(InvalidPermissionException.class);
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user, false)).isInstanceOf(InvalidPermissionException.class);
 
         assertFilesIntact();
         verify(hibernateService, never()).setStatusToDeleting(anyLong(), anyBoolean());
@@ -344,7 +363,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         session.setUrl(archiveDirectory.getAbsolutePath());
         stubDeletableSession(session);
 
-        service.delete(SESSION_ID, user);
+        service.delete(SESSION_ID, user, false);
 
         assertThat(archiveDirectory).isDirectory();
         assertFilesIntact();
@@ -359,7 +378,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         session.setUrl(new File(archiveDirectory, "../../../elsewhere").getPath());
         stubDeletableSession(session);
 
-        service.delete(SESSION_ID, user);
+        service.delete(SESSION_ID, user, false);
 
         assertThat(new File(outside, "keep.txt")).isFile();
         verify(hibernateService).delete(SESSION_ID);
@@ -400,7 +419,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         FileUtils.deleteDirectory(sessionDirectory);
         assertThat(sessionXml.delete()).isTrue();
 
-        service.delete(SESSION_ID, user);
+        service.delete(SESSION_ID, user, false);
 
         verify(hibernateService).delete(SESSION_ID);
     }
@@ -409,7 +428,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     public void deletingAnUnknownIdThrowsNotFound() throws Exception {
         when(hibernateService.getSessionData(SESSION_ID)).thenThrow(new NotFoundException("nope"));
 
-        assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user, false)).isInstanceOf(NotFoundException.class);
 
         verify(hibernateService, never()).delete(anyLong());
     }
@@ -422,7 +441,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         // A read-only parent makes removing the session XML (and the directory) fail.
         assertThat(archiveDirectory.setWritable(false)).isTrue();
 
-        assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(ServerException.class);
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user, false)).isInstanceOf(ServerException.class);
 
         assertFilesIntact();
         verify(hibernateService, never()).setStatusToError(anyLong(), any());
@@ -435,7 +454,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         stubDeletableSession();
         when(hibernateService.hasOtherSessionAtLocation(sessionDirectory.getAbsolutePath(), SESSION_ID)).thenThrow(new IllegalStateException("db down"));
 
-        assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(ServerException.class);
+        assertThatThrownBy(() -> service.delete(SESSION_ID, user, false)).isInstanceOf(ServerException.class);
 
         assertFilesIntact();
         verify(hibernateService, never()).setStatusToError(anyLong(), any());
@@ -448,7 +467,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         final File cacheRoot = temporaryFolder.newFolder("cache");
         stubBackupToCache(cacheRoot);
 
-        service.delete(SESSION_ID, user);
+        service.delete(SESSION_ID, user, false);
 
         assertFilesGone();
         final Path deleted = cacheRoot.toPath().resolve("DELETED");

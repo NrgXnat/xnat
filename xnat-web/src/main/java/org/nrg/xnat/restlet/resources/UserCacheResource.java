@@ -18,6 +18,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.services.cache.UserDataCache;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.utils.zip.TarUtils;
+import org.nrg.xft.utils.zip.UnsafeArchiveException;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.FileWriterWrapper;
@@ -468,8 +469,13 @@ public class UserCacheResource extends SecureResource {
 	
 	   try {
 	    	zipper.extract(is,dirString);
+	   } catch (UnsafeArchiveException e) {
+			// Surface the rejection reason specifically -- lumping it into the generic message below would hide a
+			// deliberate path-traversal rejection behind what looks like an ordinary corrupt-file error.
+			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "FILE:  " + fileName + " - " + e.getMessage());
+			return false;
 	   } catch (Exception e) {
-		   
+
 			this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,"FILE:  " + fileName +
 							" - Archive file is corrupt or not a valid archive archive file type.");
 			return false;

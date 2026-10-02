@@ -67,6 +67,16 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
     void setStatusToDeleting(long id, boolean force) throws NotFoundException, ArchivingException;
 
     void setStatusToError(long id, Exception e) throws NotFoundException;
+
+    /**
+     * Moves a session that is still RECEIVING to ERROR, recording why, as one conditional update. A session that has
+     * moved on, e.g. queued for building or claimed by a delete, is left as it is. Once moved, the importer no longer
+     * appends files to it and the archive trigger no longer queues it.
+     *
+     * @return whether the session was moved
+     */
+    boolean setStatusToErrorIfReceiving(long id, Exception e) throws NotFoundException;
+
     /**
      * Queues a session for building, as {@link #setStatusToQueuedBuilding(long, boolean)} without {@code force}. Stays
      * {@code void}: plugins built against earlier 1.10.x releases link to this signature. Callers that need to know

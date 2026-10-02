@@ -2,9 +2,11 @@ package org.nrg.dicom.dicomedit.pixels.impl;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
+import org.dcm4che3.data.Fragments;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.data.Value;
 import org.dcm4che3.imageio.codec.Transcoder;
 import org.dcm4che3.imageio.codec.TransferSyntaxType;
 import org.dcm4che3.io.BulkDataDescriptor;
@@ -23,7 +25,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Redacts a rectangle from encapsulated (compressed) pixel data.
@@ -91,6 +95,7 @@ final class EncapsulatedPixelRedactor {
             // Serialise the object as it stands. Header edits made by the script so far are in the
             // dataset, not in the file it was read from, so the source file will not do. Fragments
             // stream out of it, so this costs the compressed size.
+            final long compressedLength = compressedLength(ds);
             final File compressed = temporary(temporary);
             write(ds, compressed, sourceTs);
 
@@ -119,7 +124,7 @@ final class EncapsulatedPixelRedactor {
                 return;
             }
             if (lossy) {
-                recordLossyHistory(decodedDs, sourceTs);
+                recordLossyHistory(decodedDs, sourceTs, pixels.length(), compressedLength);
             }
             decodedDs.setString(Tag.TransferSyntaxUID, VR.UI, UID.ExplicitVRLittleEndian);
             replace(ds, decodedDs);
@@ -236,28 +241,98 @@ final class EncapsulatedPixelRedactor {
     /**
      * Records that the pixel data has been through lossy compression, as required when a lossy
      * object is stored uncompressed.
+     * <p>
+     * Lossy Image Compression Method and Ratio pair up in order, one value per compression step, and
+     * values already present are never changed. This step's method is appended unless the last one
+     * recorded is already this step's, as when the encoder wrote the method itself. A ratio is
+     * appended only when every earlier step has one, so it cannot end up beside the wrong method.
+     *
+     * @param decodedLength    bytes of decoded pixel data.
+     * @param compressedLength bytes of compressed pixel data, or a negative number if unknown, in
+     *                         which case no ratio is written.
      */
-    private static void recordLossyHistory(final Attributes ds, final String sourceTs) {
+    private static void recordLossyHistory(final Attributes ds, final String sourceTs,
+                                           final long decodedLength, final long compressedLength) {
         ds.setString(Tag.LossyImageCompression, VR.CS, "01");
-        final String[] existing = ds.getStrings(Tag.LossyImageCompressionMethod);
-        if (existing == null || existing.length == 0) {
-            ds.setString(Tag.LossyImageCompressionMethod, VR.CS, lossyMethodOf(sourceTs));
+        final String       method  = lossyMethodOf(sourceTs);
+        final List<String> methods = valuesOf(ds, Tag.LossyImageCompressionMethod);
+        final List<String> ratios  = valuesOf(ds, Tag.LossyImageCompressionRatio);
+        if (methods.isEmpty() || !method.equals(methods.get(methods.size() - 1))) {
+            methods.add(method);
+            ds.setString(Tag.LossyImageCompressionMethod, VR.CS, methods.toArray(new String[0]));
+        }
+        if (ratios.size() == methods.size() - 1 && compressedLength > 0) {
+            ratios.add(String.format(Locale.ROOT, "%.3f", (double) decodedLength / compressedLength));
+            ds.setString(Tag.LossyImageCompressionRatio, VR.DS, ratios.toArray(new String[0]));
         }
     }
 
-    private static String lossyMethodOf(final String tsuid) {
-        final TransferSyntaxType type = TransferSyntaxType.forUID(tsuid);
-        if (type == null) {
-            return "ISO_10918_1";
+    /**
+     * Bytes of compressed pixel data: every fragment after the Basic Offset Table. Negative if the
+     * value is not encapsulated fragments or a fragment's length cannot be read.
+     */
+    private static long compressedLength(final Attributes ds) {
+        final Object value = ds.getValue(Tag.PixelData);
+        if (!(value instanceof Fragments)) {
+            return -1;
         }
-        switch (type) {
-            case JPEG_2000:
-                return "ISO_15444_1";
-            case JPEG_LS:
+        final Fragments fragments = (Fragments) value;
+        long total = 0;
+        for (int i = 1; i < fragments.size(); i++) {
+            final Object fragment = fragments.get(i);
+            if (fragment instanceof byte[]) {
+                total += ((byte[]) fragment).length;
+            } else if (fragment instanceof BulkData) {
+                total += ((BulkData) fragment).longLength();
+            } else if (fragment != Value.NULL) {
+                return -1;
+            }
+        }
+        return total;
+    }
+
+    private static List<String> valuesOf(final Attributes ds, final int tag) {
+        final String[] values = ds.getStrings(tag);
+        return values == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(values));
+    }
+
+    /**
+     * The Lossy Image Compression Method defined term (PS3.3 C.7.6.1.1.5.1) for a lossy transfer
+     * syntax. Keyed by UID rather than {@link TransferSyntaxType}, which files HTJ2K under JPEG 2000
+     * and every video syntax under MPEG.
+     */
+    static String lossyMethodOf(final String tsuid) {
+        switch (tsuid) {
+            case UID.JPEGLSNearLossless:
                 return "ISO_14495_1";
-            case MPEG:
+            case UID.JPEG2000:
+            case UID.JPEG2000MC:
+                return "ISO_15444_1";
+            case UID.HTJ2K:
+                return "ISO_15444_15";
+            case UID.JPEGXL:
+                return "ISO_18181_1";
+            case UID.MPEG2MPML:
+            case UID.MPEG2MPMLF:
+            case UID.MPEG2MPHL:
+            case UID.MPEG2MPHLF:
                 return "ISO_13818_2";
+            case UID.MPEG4HP41:
+            case UID.MPEG4HP41F:
+            case UID.MPEG4HP41BD:
+            case UID.MPEG4HP41BDF:
+            case UID.MPEG4HP422D:
+            case UID.MPEG4HP422DF:
+            case UID.MPEG4HP423D:
+            case UID.MPEG4HP423DF:
+            case UID.MPEG4HP42STEREO:
+            case UID.MPEG4HP42STEREOF:
+                return "ISO_14496_10";
+            case UID.HEVCMP51:
+            case UID.HEVCM10P51:
+                return "ISO_23008_2";
             default:
+                // Lossy JPEG, and JPEG XL recompression of a JPEG, whose loss is the JPEG's.
                 return "ISO_10918_1";
         }
     }

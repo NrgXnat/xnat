@@ -6,6 +6,21 @@ plugins {
 group = 'org.nrg.dicom'
 version = libs.versions.dicom.edit6.get()
 
+// VersionManager accepts this library's major.minor as the newest script language version, and reads
+// it from a resource filled in here. Only the minor can move that way: a new major version of the
+// language needs its own Mizer, the way DicomEdit 4 and 6 have theirs.
+def libraryVersion = version.toString()
+if (!libraryVersion.startsWith('6.')) {
+    throw new GradleException("dicom-edit6 ${libraryVersion} is not a 6.x version. A new major version "
+                              + "of the DicomEdit language needs its own Mizer, not a version bump.")
+}
+tasks.named('processResources') {
+    inputs.property('libraryVersion', libraryVersion)
+    filesMatching('org/nrg/dicom/dicomedit/dicomedit-version.properties') {
+        expand(version: libraryVersion)
+    }
+}
+
 sourceSets {
     main {
         antlr {
@@ -92,4 +107,6 @@ test {
     // redacted, which costs several GB of scratch and a minute or two. Opt in with
     // -PlargeObjectTests, the same switch mizer's LargeDicomObjectTest uses.
     systemProperty 'test.largeObjects', project.hasProperty('largeObjectTests')
+    // What the generated resource should say, so a test can tell it was generated.
+    systemProperty 'dicomedit.libraryVersion', libraryVersion
 }

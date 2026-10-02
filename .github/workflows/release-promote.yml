@@ -146,6 +146,14 @@ jobs:
             git add gradle/libs.versions.toml
           fi
 
+          # A release must not depend on a SNAPSHOT. The publish task refuses such a POM in a release
+          # build, but only after the tag below is pushed, leaving a tag with nothing published. Stop
+          # here instead, before anything is committed, merged or tagged.
+          if grep -nE '^[^#]*SNAPSHOT' gradle.properties gradle/libs.versions.toml; then
+            echo "::error::Release ${RELEASE_VERSION} still names a SNAPSHOT version (above). Fix the RC branch and re-run."
+            exit 1
+          fi
+
           git commit -m "chore(release): finalize ${RELEASE_VERSION}"
           git push origin "HEAD:${RC_BRANCH}"
 

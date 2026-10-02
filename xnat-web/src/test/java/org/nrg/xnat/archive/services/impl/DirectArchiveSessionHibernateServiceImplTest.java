@@ -8,11 +8,17 @@ import java.util.Set;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.daos.DirectArchiveSessionDao;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
+import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +41,7 @@ import static org.mockito.Mockito.when;
 public class DirectArchiveSessionHibernateServiceImplTest {
     private static final long   SESSION_ID = 42L;
     private static final String LOCATION   = "/data/xnat/archive/PROJ/arc001/SESSION_01";
+    private static final String PROJECT    = "PROJ";
 
     private DirectArchiveSessionDao                 dao;
     private DirectArchiveSessionHibernateServiceImpl service;
@@ -132,6 +139,74 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     }
 
     @Test
+    public void singleArgumentQueueingKeepsTheVoidSignaturePluginsLinkAgainst() throws Exception {
+        // Plugins compiled against XNAT 1.10.1 or earlier, such as xnat-dicomweb-plugin, link to
+        // void setStatusToQueuedBuilding(long); any other return type fails them with NoSuchMethodError.
+        assertThat(DirectArchiveSessionHibernateService.class.getMethod("setStatusToQueuedBuilding", long.class).getReturnType()).isEqualTo(void.class);
+    }
+
+    @Test
+    public void singleArgumentQueueingMovesARestingSession() throws Exception {
+        for (final PrearcStatus from : Arrays.asList(PrearcStatus.RECEIVING, PrearcStatus.ERROR)) {
+            status = from;
+
+            service.setStatusToQueuedBuilding(SESSION_ID);
+
+            assertThat(status).as("from %s", from).isEqualTo(PrearcStatus.QUEUED_BUILDING);
+        }
+    }
+
+    @Test
+    public void singleArgumentQueueingThrowsForASessionItCannotQueue() {
+        // Plugins built against 1.10.1 call build() straight after this; throwing stops them from building a session
+        // that is already queued, in flight or claimed by a delete, and their catch falls back to the scheduled trigger.
+        for (final PrearcStatus from : Arrays.asList(PrearcStatus.QUEUED_BUILDING, PrearcStatus.BUILDING, PrearcStatus.DELETING)) {
+            status = from;
+
+            assertThatThrownBy(() -> service.setStatusToQueuedBuilding(SESSION_ID)).as("from %s", from).isInstanceOf(IllegalStateException.class);
+
+            assertThat(status).as("from %s", from).isEqualTo(from);
+        }
+        verify(dao, never()).update(any());
+    }
+
+    @Test
+    public void userDeleteKeepsTheSignaturePluginsLinkAgainst() throws Exception {
+        // Removed by #62 and restored so plugins compiled against XNAT 1.10.1 still link to it.
+        assertThat(DirectArchiveSessionHibernateService.class.getMethod("delete", long.class, UserI.class).getReturnType()).isEqualTo(void.class);
+    }
+
+    @Test
+    public void userDeleteRefusesAUserWhoCannotDeleteTheProject() throws Exception {
+        final UserI                user    = mock(UserI.class);
+        final DirectArchiveSession session = sessionIn(SESSION_ID, PrearcStatus.RECEIVING);
+        session.setProject(PROJECT);
+        when(dao.retrieve(SESSION_ID)).thenReturn(session);
+
+        try (final MockedStatic<Permissions> permissions = Mockito.mockStatic(Permissions.class)) {
+            permissions.when(() -> Permissions.canDeleteProject(user, PROJECT)).thenReturn(false);
+
+            assertThatThrownBy(() -> service.delete(SESSION_ID, user)).isInstanceOf(InvalidPermissionException.class);
+        }
+        verify(dao, never()).delete(any());
+    }
+
+    @Test
+    public void userDeleteRemovesTheRowForAUserWhoCanDeleteTheProject() throws Exception {
+        final UserI                user    = mock(UserI.class);
+        final DirectArchiveSession session = sessionIn(SESSION_ID, PrearcStatus.RECEIVING);
+        session.setProject(PROJECT);
+        when(dao.retrieve(SESSION_ID)).thenReturn(session);
+
+        try (final MockedStatic<Permissions> permissions = Mockito.mockStatic(Permissions.class)) {
+            permissions.when(() -> Permissions.canDeleteProject(user, PROJECT)).thenReturn(true);
+
+            service.delete(SESSION_ID, user);
+        }
+        verify(dao).delete(session);
+    }
+
+    @Test
     public void queueingARowThatIsGoneThrowsNotFound() {
         status = null;
 
@@ -163,7 +238,7 @@ public class DirectArchiveSessionHibernateServiceImplTest {
         for (final PrearcStatus from : Arrays.asList(PrearcStatus.RECEIVING, PrearcStatus.ERROR)) {
             status = from;
 
-            assertThat(service.setStatusToQueuedBuilding(SESSION_ID)).as("from %s", from).isTrue();
+            assertThat(service.setStatusToQueuedBuilding(SESSION_ID, false)).as("from %s", from).isTrue();
 
             assertThat(status).isEqualTo(PrearcStatus.QUEUED_BUILDING);
         }
@@ -174,7 +249,7 @@ public class DirectArchiveSessionHibernateServiceImplTest {
         // The archive trigger must not overwrite a session that a delete has just claimed.
         status = PrearcStatus.DELETING;
 
-        assertThat(service.setStatusToQueuedBuilding(SESSION_ID)).isFalse();
+        assertThat(service.setStatusToQueuedBuilding(SESSION_ID, false)).isFalse();
 
         assertThat(status).isEqualTo(PrearcStatus.DELETING);
         verify(dao, never()).update(any());

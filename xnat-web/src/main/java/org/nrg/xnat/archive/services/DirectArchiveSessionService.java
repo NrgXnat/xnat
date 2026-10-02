@@ -17,21 +17,29 @@ public interface DirectArchiveSessionService {
     void delete(SessionData session);
 
     /**
+     * Deletes the tracking row for a session, after checking the user can delete the session's project, as
+     * {@link DirectArchiveSessionHibernateService#delete(long, UserI)} does. Only the row is removed: the files are
+     * left in place and the session is not claimed first, so this can race the importer.
+     *
+     * @deprecated Kept with its 1.10.1 signature and behavior so plugins built against earlier 1.10.x releases still
+     *             link and compile. Use {@link #delete(long, UserI, boolean)}, which also removes the session's files
+     *             and refuses a session that is still receiving or being archived.
+     */
+    @Deprecated
+    void delete(long id, UserI sessionUser) throws InvalidPermissionException, NotFoundException;
+
+    /**
      * Deletes a direct archive session on behalf of a user: the tracking row and, when the session directory belongs
      * to this session alone, the files received into it along with the session XML. Refused with a 409
      * {@link ClientException} while the session is still receiving files or the archiver is working on it; if the
-     * files cannot be removed the row is left in ERROR and a {@link ServerException} is thrown.
-     */
-    default void delete(long id, UserI sessionUser) throws InvalidPermissionException, NotFoundException, ClientException, ServerException {
-        delete(id, sessionUser, false);
-    }
-
-    /**
-     * As {@link #delete(long, UserI)}; with {@code force}, which only a site admin may set, the session is claimed
-     * whatever its status. This is for rows left in a queued, building or archiving status by a failure or a restart,
-     * which nothing else moves on. Nothing checks that the archiver has really given up: forcing a session that is
-     * still being built or archived can leave a half-saved experiment or a build failing on missing files, so check
-     * the row's timestamp and the logs first. Files still landing are refused whatever the flag says.
+     * files cannot be removed the row is left in DELETING, so only another delete can pick it up, and a
+     * {@link ServerException} is thrown.
+     * <p>
+     * With {@code force}, which only a site admin may set, the session is claimed whatever its status. This is for
+     * rows left in a queued, building or archiving status by a failure or a restart, which nothing else moves on.
+     * Nothing checks that the archiver has really given up: forcing a session that is still being built or archived
+     * can leave a half-saved experiment or a build failing on missing files, so check the row's timestamp and the logs
+     * first. Files still landing are refused whatever the flag says.
      */
     void delete(long id, UserI sessionUser, boolean force) throws InvalidPermissionException, NotFoundException, ClientException, ServerException;
 

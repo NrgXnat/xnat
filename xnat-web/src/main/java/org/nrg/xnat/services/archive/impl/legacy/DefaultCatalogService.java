@@ -67,6 +67,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
+import org.nrg.xft.utils.zip.UnsafeArchiveException;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.archive.ResourceData;
 import org.nrg.xnat.exceptions.UnsupportedRemoteFilesOperationException;
@@ -514,9 +515,9 @@ public class DefaultCatalogService implements CatalogService {
         File         parentDir    = resourceData.getItem().getExpectedCurrentDirectory();
         Files.createDirectories(parentDir.toPath());
         File lockFile = new File(parentDir.toString(), ".resourcecheck" + label);
+        // Get the lock outside the try so we don't release a reference we never obtained
+        final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile, false);
         try {
-            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile,
-                                                                                                     false);
             fl.tryLock(2L, TimeUnit.MINUTES);
             try {
                 // Test if catalog already exists
@@ -1154,6 +1155,12 @@ public class DefaultCatalogService implements CatalogService {
                     } else {
                         FileUtils.copyFileToDirectory(file, destination);
                     }
+                } catch (UnsafeArchiveException e) {
+                    // The archive was deliberately rejected (a path-traversal / "zip-slip" entry), not a genuine
+                    // extraction failure -- never fall back to copying it in verbatim below, or the rejection is
+                    // pointless: the (still fully intact, unextracted) archive would land in the archive tree anyway
+                    // and the caller would see success.
+                    throw e;
                 } catch (IOException e) {
                     log.error("Error copying {} to {}, attempting to copy as input stream", resource.getFilename(),
                             destination, e);
@@ -1559,25 +1566,31 @@ public class DefaultCatalogService implements CatalogService {
 
         if (resource instanceof XnatResourcecatalog resourcecatalog) {
             File lockFile = new File(resourcecatalog.getUri() + ".refresh");
+            ThreadAndProcessFileLock fl = null;
             try {
-                final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile,
-                                                                                                         false);
+                fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile, false);
                 fl.tryLock(30L, TimeUnit.SECONDS);
-                final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
-                        resourcecatalog, projectId);
                 try {
-                    CatalogUtils.refreshAndWriteCatalog(catalogData, user, resourceMap, now, addUnreferencedFiles,
-                            removeMissingFiles, populateStats, checksums);
-                } catch (Exception e) {
-                    throw new ServerException("An error occurred writing the catalog file " +
-                            catalogData.catFile.getAbsolutePath(), e);
+                    // Inside the try so the lock is released if loading the catalog fails
+                    final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreate(projectPath,
+                            resourcecatalog, projectId);
+                    try {
+                        CatalogUtils.refreshAndWriteCatalog(catalogData, user, resourceMap, now, addUnreferencedFiles,
+                                removeMissingFiles, populateStats, checksums);
+                    } catch (Exception e) {
+                        throw new ServerException("An error occurred writing the catalog file " +
+                                catalogData.catFile.getAbsolutePath(), e);
+                    }
                 } finally {
                     fl.unlock();
                 }
             } catch (IOException e) {
                 log.error("Unable to obtain lock for catalog refresh: {}", resource.getLabel(), e);
             } finally {
-                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(lockFile);
+                // Only release our reference if we actually obtained one, otherwise we'd decrement another accessor's
+                if (fl != null) {
+                    ThreadAndProcessFileLock.removeThreadAndProcessFileLock(lockFile);
+                }
             }
         } else if (populateStats) {
             if (CatalogUtils.populateStats(resource, projectPath)) {

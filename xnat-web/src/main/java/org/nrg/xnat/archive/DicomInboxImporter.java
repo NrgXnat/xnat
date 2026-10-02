@@ -17,6 +17,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.zip.TarUtils;
+import org.nrg.xft.utils.zip.UnsafeArchiveException;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
@@ -99,8 +100,16 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 					} else {
 						throw new ClientException("Couldn't obtain zipper for archive file - " + pFn);
 					}
-				} catch (IOException e) {
-					throw new ClientException("Couldn't unzip archive file - " + pFn);
+				} catch (UnsafeArchiveException e) {
+                    // Surface the rejection reason specifically
+                    log.error("Unsafe zip archive file, could not unzip - {}", e);
+                    throw new ClientException(e.getMessage());
+                } catch (IOException e) {
+					// e.getMessage() isn't safe to forward to the client as-is: it can come from Ant's Expand task,
+					// java.util.zip, or a raw OS I/O error, any of which may embed a local server file path. Log the
+					// full detail server-side and keep the client-facing message generic.
+					log.error("Couldn't unzip archive file - {}", pFn, e);
+					throw new ClientException("Couldn't unzip archive file - " + pFn + ". See the server log for details.");
 				}
     		}
     		dirName = dirName + "_1";

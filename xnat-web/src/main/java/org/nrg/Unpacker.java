@@ -9,6 +9,7 @@
 package org.nrg;
 
 import java.io.File;
+import java.util.List;
 
 import org.nrg.framework.status.BasicStatusPublisher;
 import org.nrg.framework.status.StatusListenerI;
@@ -36,9 +37,12 @@ public abstract class Unpacker implements StatusProducerI {
      * Unpacks the given file in-place.
      *
      * @param file    The file to unpack.
+     *
+     * @return true if the file was successfully unpacked, false if unpacking failed (a FAILED status will
+     * have been published in that case).
      */
-    public void unpack(final File file) {
-        unpack(file, null);
+    public boolean unpack(final File file) {
+        return unpack(file, null);
     }
 
     /**
@@ -47,8 +51,11 @@ public abstract class Unpacker implements StatusProducerI {
      *
      * @param file        The file to unpack.
      * @param destination The destination for the unpacked files.
+     *
+     * @return true if the file was successfully unpacked, false if unpacking failed (a FAILED status will
+     * have been published in that case). Callers must check this before treating the unpack as successful.
      */
-    public abstract void unpack(final File file, final File destination);
+    public abstract boolean unpack(final File file, final File destination);
 
     /* (non-Javadoc)
      * @see org.nrg.StatusPublisher#addStatusListener(org.nrg.StatusListener)
@@ -78,5 +85,18 @@ public abstract class Unpacker implements StatusProducerI {
 
     protected final void publishSuccess(final Object o, final String message) {
         publisher.publish(new StatusMessage(o, StatusMessage.Status.COMPLETED, message));
+    }
+
+    /**
+     * Publishes the failure for an archive rejected because one or more of its entries resolve outside of the
+     * destination directory, so every archive format reports a rejected upload the same way.
+     *
+     * @param o             The rejected archive.
+     * @param unsafeEntries The names of the entries that resolve outside of the destination directory.
+     */
+    protected final void publishRejection(final Object o, final List<String> unsafeEntries) {
+        publishFailure(o, "rejected: " + unsafeEntries.size()
+                + (unsafeEntries.size() == 1 ? " entry resolves" : " entries resolve")
+                + " outside of the destination directory: " + unsafeEntries);
     }
 }

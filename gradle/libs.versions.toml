@@ -4,7 +4,7 @@
 
 activemq = "5.16.7"
 activemq-protobuf = "1.1"
-ant = "1.9.8"
+ant = "1.10.18"
 antlr3 = "3.5.3"
 antlr4 = "4.13.2"
 aopalliance = "1.0"

@@ -28,6 +28,7 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2WebMvc;
 
+import javax.servlet.ServletContext;
 import java.util.Collections;
 import java.util.Locale;
 
@@ -38,13 +39,14 @@ import java.util.Locale;
 @Slf4j
 public class RestApiConfig {
     @Bean
-    public Docket api(final XnatAppInfo info, final MessageSource messageSource) {
+    public Docket api(final XnatAppInfo info, final MessageSource messageSource, final ServletContext servletContext) {
         log.debug("Initializing the Swagger Docket object");
         // TODO: When updating to Swagger 2.5.0 or later, remove the pathMapping("/xapi") call at the end.
         return new Docket(DocumentationType.SWAGGER_2).select()
                                                       .apis(RequestHandlerSelectors.withClassAnnotation(XapiRestController.class))
                                                       .paths(PathSelectors.any())
                                                       .build()
+                                                      .pathProvider(new ContextPathStrippingPathProvider(servletContext.getContextPath()))
                                                       .apiInfo(apiInfo(info, messageSource));
     }
 

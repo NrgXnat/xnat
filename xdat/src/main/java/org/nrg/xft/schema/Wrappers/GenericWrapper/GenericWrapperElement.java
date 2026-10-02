@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unchecked","rawtypes"})
 @JsonSerialize(using = GenericWrapperElementSerializer.class)
@@ -46,6 +47,11 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 
 	private ArrayList allFields = null;
+	// Derived schema metadata, computed once per element (the schema is fixed once loaded). The getters hand
+	// out copies, so callers that alter what they get keep seeing fresh collections as they always did.
+	private volatile ArrayList uniqueFieldsCache          = null;
+	private volatile Hashtable uniqueCompositeFieldsCache = null;
+	private final    Map<String, GenericWrapperField> nonMultipleDataFieldCache = new ConcurrentHashMap<>();
 	private ArrayList<Object[]> allFieldNames = null;
 	private ArrayList allFieldsWAddIns = null;
 	private ArrayList<GenericWrapperField> directFields = null;
@@ -808,6 +814,22 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
      * @return GenericWrapperField
      */
     public GenericWrapperField getNonMultipleDataField(String name)
+        throws ElementNotFoundException, XFTInitException {
+        // Every match below is case-insensitive, so the answer is a function of the lower-cased name. Hits are
+        // remembered (a field, once found first, stays first: add-ins are appended after the data fields);
+        // misses are looked up again, since add-in fields can still appear while the schema is being set up.
+        final String key = name.toLowerCase();
+        GenericWrapperField field = nonMultipleDataFieldCache.get(key);
+        if (field == null) {
+            field = findNonMultipleDataField(name);
+            if (field != null) {
+                nonMultipleDataFieldCache.put(key, field);
+            }
+        }
+        return field;
+    }
+
+    private GenericWrapperField findNonMultipleDataField(String name)
         throws ElementNotFoundException, XFTInitException {
 
         //CHECK NON REFERENCE FIELDS
@@ -1955,6 +1977,20 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * @return ArrayList of GenericWrapperFields
 	 */
 	public Hashtable getUniqueCompositeFields() {
+		Hashtable cached = uniqueCompositeFieldsCache;
+		if (cached == null) {
+			cached = computeUniqueCompositeFields();
+			uniqueCompositeFieldsCache = cached;
+		}
+		// A copy one level deep: callers iterate the lists and may alter them, as they always could.
+		final Hashtable copy = new Hashtable();
+		for (final Object key : cached.keySet()) {
+			copy.put(key, new ArrayList((ArrayList) cached.get(key)));
+		}
+		return copy;
+	}
+
+	private Hashtable computeUniqueCompositeFields() {
 	    Hashtable hash = new Hashtable();
 
 	    if (!this.getAddin().equalsIgnoreCase("history"))
@@ -2046,6 +2082,15 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * @return ArrayList of SQLFields
 	 */
 	public ArrayList getUniqueFields() {
+		ArrayList cached = uniqueFieldsCache;
+		if (cached == null) {
+			cached = computeUniqueFields();
+			uniqueFieldsCache = cached;
+		}
+		return new ArrayList(cached);
+	}
+
+	private ArrayList computeUniqueFields() {
 		ArrayList al = new ArrayList();
 
 		Iterator iter = this.getAllFields(false, false).iterator();

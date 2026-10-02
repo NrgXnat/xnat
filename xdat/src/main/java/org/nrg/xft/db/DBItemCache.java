@@ -12,6 +12,7 @@ package org.nrg.xft.db;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.collections.SavedItemCollection;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -21,8 +22,10 @@ import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,10 +34,10 @@ import java.util.Map;
  */
 public class DBItemCache {
     private static final Logger         logger      = LoggerFactory.getLogger(DBItemCache.class);
-    private              ItemCollection saved       = new ItemCollection();
+    private              ItemCollection saved       = new SavedItemCollection();   // indexed for StoreItem's lookups
     private              ItemCollection removed     = new ItemCollection();
     private              ItemCollection preexisting = new ItemCollection();
-    private              ItemCollection dbTrigger   = new ItemCollection();
+    private              ItemCollection dbTrigger   = new SavedItemCollection();   // indexed for StoreItem's contains() per root item
     private              ItemCollection modified    = new ItemCollection();
 
     private ArrayList<String> sql = new ArrayList<>();
@@ -145,7 +148,31 @@ public class DBItemCache {
         saved.clear();
         removed.clear();
         preexisting.clear();
+        sequenceValues.clear();
+        sequenceBatch.clear();
     }
+
+    /**
+     * The next value of an item's sequence. A transaction storing many items of one type fetched every value
+     * with its own round trip (a 200-scan session: some 800 of them); the values are now fetched in batches
+     * that grow with use within the transaction (1, then 4, then 16), so a lone insert still costs one value
+     * and a large session a round trip per sixteen items per table. Values fetched and not used are lost,
+     * which sequences always allowed; the cap keeps the gap a save can leave in a table's ids under sixteen.
+     */
+    public Object nextSequenceValue(final PoolDBUtils con, final String db, final String table, final String pk, final String sequence) throws Exception {
+        final String  key    = db + "|" + table + "|" + pk + "|" + sequence;
+        Deque<Object> values = sequenceValues.get(key);
+        if (values == null || values.isEmpty()) {
+            final int batch = sequenceBatch.getOrDefault(key, 1);
+            values = new ArrayDeque<>(con.getNextIDs(db, table, pk, sequence, batch));
+            sequenceValues.put(key, values);
+            sequenceBatch.put(key, Math.min(batch * 4, 16));
+        }
+        return values.poll();
+    }
+
+    private final Map<String, Deque<Object>> sequenceValues = new HashMap<>();
+    private final Map<String, Integer>       sequenceBatch  = new HashMap<>();
 
     public String toString() {
         return this.sql.toString();

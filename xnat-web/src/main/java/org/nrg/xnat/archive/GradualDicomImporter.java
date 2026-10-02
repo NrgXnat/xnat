@@ -120,9 +120,26 @@ public class GradualDicomImporter extends ImporterHandlerA {
         return false;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private ImportScope _scope;
+
+    /**
+     * Sets the scope this object's import reads its settings in: the scope of the association, uploaded archive
+     * or inbox request the object belongs to. Without one the import reads its settings for itself.
+     */
+    public void setScope(final ImportScope scope) {
+        _scope = scope;
+    }
+
     @Override
     public List<String> call() throws ClientException {
+        final ImportScope scope = _scope != null ? _scope : new ImportScope();
+        try (ImportScope.Binding ignored = scope.bind()) {
+            return importObject();
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private List<String> importObject() throws ClientException {
         final String name = _fileWriter.getName();
         final XnatProjectdata project;
         final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
@@ -386,7 +403,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
                 }
 
-                if (XDAT.getSiteConfigPreferences().getEnableNativeDicomPreCompression()) {
+                if (nativeDicomPreCompressionEnabled()) {
                     NativeDicomPreCompressor.preCompressIfNeeded(outputFile, transferSyntaxUID);
                 }
 
@@ -418,6 +435,14 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 processed.releaseScratchFiles();
             }
         }
+    }
+
+    /**
+     * The enableNativeDicomPreCompression site preference, read once per import scope: reading a preference is
+     * a database round trip, and this one was read for every object received.
+     */
+    private static boolean nativeDicomPreCompressionEnabled() {
+        return ImportScope.scoped("site.enableNativeDicomPreCompression", () -> XDAT.getSiteConfigPreferences().getEnableNativeDicomPreCompression());
     }
 
     /**

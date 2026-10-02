@@ -63,18 +63,22 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	private TorqueElement te = null;
 
-	private MetaFieldCollection metaFields = null;
+	private volatile MetaFieldCollection metaFields = null;
 
-	private ArrayList referencedElements = null;
+	private volatile ArrayList referencedElements = null;
 	private ArrayList<ArrayList> extendedElements = null;
 
 	private ArrayList<XFTFieldWrapper> directNoFilter = null;
-	private ArrayList<SchemaElementI> _possibleExtenders = null;
+	private volatile ArrayList<SchemaElementI> _possibleExtenders = null;
 
-	private final static Map<String,GenericWrapperElement> ALL_ELEMENTS_CACHE = new HashMap<>();
-	private final static Map<String, String[]> XMLPATH_TABLES_CACHE = new HashMap<>();
+	private final static Map<String,GenericWrapperElement> ALL_ELEMENTS_CACHE = new ConcurrentHashMap<>();
+	private final static Map<String, String[]> XMLPATH_TABLES_CACHE = new ConcurrentHashMap<>();
 
-	private String _finalSqlName=null;
+	// The builds of getReferencedElements() and getMetaFields() in progress on this thread, by element.
+	private final static ThreadLocal<Map<GenericWrapperElement, ArrayList>> REFERENCED_ELEMENTS_IN_PROGRESS = ThreadLocal.withInitial(IdentityHashMap::new);
+	private final static ThreadLocal<Map<GenericWrapperElement, MetaFieldCollection>> META_FIELDS_IN_PROGRESS = ThreadLocal.withInitial(IdentityHashMap::new);
+
+	private volatile String _finalSqlName=null;
 	private String _finalFormattedName=null;
 	/**
 	 * Get GenericWrapperElement with a matching XMLType
@@ -90,10 +94,11 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	    {
 			try {
 	            gwe = (GenericWrapperElement) XFTMetaManager.GetWrappedElementByXMLType(GenericWrapperFactory.GetInstance(),t);
-	            ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(t.getFullForeignType().toLowerCase()), gwe);
+	            if (gwe != null) {
+	                ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(t.getFullForeignType().toLowerCase()), gwe);
+	            }
 	        } catch (RuntimeException e) {
-		        logger.error("GetElement:" + t.getFullForeignType().toLowerCase());
-	            logger.error("",e);
+	            logger.error("Unable to load the element {}", t.getFullForeignType(), e);
 	            throw new ElementNotFoundException(t.getFullForeignType().toLowerCase());
 	        }
 	    }
@@ -155,10 +160,11 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
             {
                 try {
                     gwe = (GenericWrapperElement) XFTMetaManager.GetWrappedElementByName(GenericWrapperFactory.GetInstance(),name);
-                    ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(name.toLowerCase()), gwe);
+                    if (gwe != null) {
+                        ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(name.toLowerCase()), gwe);
+                    }
                 } catch (RuntimeException e) {
-                    logger.error("GetElement:" + name);
-                    logger.error("",e);
+                    logger.error("Unable to load the element {}", name, e);
                     throw new ElementNotFoundException(name);
                 }
             }
@@ -1411,7 +1417,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * valid sql name for this element.
 	 * @return Returns the element's SQL name
 	 */
-	public synchronized String getSQLName() {
+	// Not synchronized: the name depends only on the schema, so a race computes it twice at worst.
+	public String getSQLName() {
 	    if (_finalSqlName==null)
 	    {
 			String temp = "";
@@ -2562,10 +2569,19 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * @return Returns the metaFields.
 	 */
-	public synchronized MetaFieldCollection getMetaFields() {
-		if (metaFields == null)
+	public MetaFieldCollection getMetaFields() {
+		// Not synchronized: the build calls other elements' synchronized methods, and holding this element's monitor
+		// meanwhile can deadlock. A race builds equal collections; a re-entrant call on this thread gets the partial one.
+		MetaFieldCollection fields = metaFields;
+		if (fields == null)
 		{
-			metaFields = new MetaFieldCollection();
+			final Map<GenericWrapperElement, MetaFieldCollection> inProgress = META_FIELDS_IN_PROGRESS.get();
+			if (inProgress.containsKey(this))
+			{
+				return inProgress.get(this);
+			}
+			fields = new MetaFieldCollection();
+			inProgress.put(this, fields);
 			try {
 				Iterator iter = ViewManager.GetFieldNames(this,ViewManager.QUARANTINE,false,true).iterator();
 				while (iter.hasNext())
@@ -2588,17 +2604,19 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						mf.setReferenceIdField(true);
 					}
 
-					metaFields.addField(mf);
+					fields.addField(mf);
 				}
 			} catch (XFTInitException e) {
 				logger.error("",e);
 			} catch (ElementNotFoundException e) {
 				logger.error("",e);
+			} finally {
+				inProgress.remove(this);
 			}
-
+			metaFields = fields;
 		}
 
-		return metaFields;
+		return fields;
 	}
 
 	public static ArrayList GetUniqueValuesForField(String xmlPath) throws Exception
@@ -3805,11 +3823,19 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * Returns SchemaElementI and XMLPath for each referenced element
 	 * @return ArrayList of ArrayLists(SchemaElementI,Sting)
 	 */
-	public synchronized ArrayList getReferencedElements()
+	public ArrayList getReferencedElements()
 	{
-	    if (this.referencedElements==null)
+	    // Not synchronized, for the same reasons as getMetaFields().
+	    ArrayList elements = referencedElements;
+	    if (elements==null)
 	    {
-	        this.referencedElements = new ArrayList();
+	        final Map<GenericWrapperElement, ArrayList> inProgress = REFERENCED_ELEMENTS_IN_PROGRESS.get();
+	        if (inProgress.containsKey(this))
+	        {
+	            return inProgress.get(this);
+	        }
+	        elements = new ArrayList();
+	        inProgress.put(this, elements);
 
 	        ArrayList checked = new ArrayList();
 	        try {
@@ -3846,7 +3872,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                                         ArrayList sub = new ArrayList();
                                         sub.add(e);
                                         sub.add(s);
-                                        referencedElements.add(sub);
+                                        elements.add(sub);
                                     }
                                 }
                             } catch (FieldNotFoundException e1) {
@@ -3859,12 +3885,13 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                 logger.error("",e);
             } catch (ElementNotFoundException e) {
                 logger.error("",e);
+            } finally {
+                inProgress.remove(this);
             }
-	        referencedElements.trimToSize();
-
-
+	        elements.trimToSize();
+	        referencedElements = elements;
 	    }
-	    return referencedElements;
+	    return elements;
 	}
 
 	public List<String> getExtendedXSITypes(){
@@ -4013,11 +4040,13 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	/**
 	 * @return ArrayList of SchemaElementI(s)
 	 */
-	public synchronized ArrayList<SchemaElementI> getPossibleExtenders()
+	public ArrayList<SchemaElementI> getPossibleExtenders()
 	{
-	    if (_possibleExtenders==null)
+	    // Not synchronized: the build takes every extension element's monitor, and holding this one meanwhile can deadlock.
+	    ArrayList<SchemaElementI> extenders = _possibleExtenders;
+	    if (extenders==null)
 	    {
-	        _possibleExtenders = new ArrayList<>();
+	        extenders = new ArrayList<>();
 
 	        try {
                 Iterator iter= XFTMetaManager.GetElementNames().iterator();
@@ -4037,7 +4066,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                                     SchemaElementI e = (SchemaElementI)child.getFirst();
                                     if (e.getFullXMLName().equals(this.getFullXMLName()))
                                     {
-                                        _possibleExtenders.add(gwe);
+                                        extenders.add(gwe);
                                         break;
                                     }
                                 }
@@ -4052,8 +4081,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
             } catch (XFTInitException e) {
                 logger.error("",e);
             }
+	        _possibleExtenders = extenders;
 	    }
-	    return _possibleExtenders;
+	    return extenders;
 	}
 
     public boolean isExtensionOf(GenericWrapperElement foreign){

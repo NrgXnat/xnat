@@ -2,6 +2,7 @@ package org.nrg.dicom.dicomedit.mizer;
 
 import org.nrg.dicom.dicomedit.DE6Script;
 import org.nrg.dicom.dicomedit.BaseScriptApplicator;
+import org.nrg.dicom.dicomedit.VersionManager;
 import org.nrg.dicom.mizer.exceptions.MizerContextException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.*;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Handle anonymization with DicomEdit v6 contexts.
@@ -30,8 +30,7 @@ import java.util.stream.Stream;
 @Component
 public class DE6Mizer extends AbstractMizer {
 
-    // keep in sync with VersionManager.
-    private static final List<VersionString> supportedVersions = Stream.of("6.0", "6.1", "6.2", "6.3", "6.4", "6.5", "6.6", "6.7").map(VersionString::new).collect(Collectors.toList());
+    private static final List<VersionString> supportedVersions = VersionManager.getInstance().getSupportedVersionStrings().stream().map(VersionString::new).collect(Collectors.toList());
     private static final Logger              logger            = LoggerFactory.getLogger(DE6Mizer.class);
 
     private final Map<MizerContextWithScript, BaseScriptApplicator> _contextMap;

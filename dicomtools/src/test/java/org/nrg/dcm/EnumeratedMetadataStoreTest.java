@@ -19,6 +19,8 @@ import org.apache.tools.ant.taskdefs.Delete;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.TransferCapability;
+import org.hsqldb.DatabaseManager;
+import org.hsqldb.lib.HsqlArrayList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +34,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -194,6 +200,29 @@ public class EnumeratedMetadataStoreTest {
 
         store.close();
         assertEquals(0, store.getSize());
+    }
+
+    @Test
+    public void holdsOneConnectionOpenBetweenQueries() throws IOException, SQLException {
+        // Every query opens and closes its own connection; only a connection held for the store's
+        // lifetime stops HSQLDB syncing its log to disk after each of them (Database.closeIfLast).
+        try (final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(TAGS, FileURIOpener.getInstance())) {
+            assertEquals(0, store.getSize());   // a query has come and gone
+            final HsqlArrayList<?> uris = DatabaseManager.getDatabaseURIs();
+            String uri = null;
+            for (int i = 0; i < uris.size(); i++) {
+                if (uris.get(i).toString().contains("org.nrg.dcm.db")) {
+                    uri = uris.get(i).toString();
+                }
+            }
+            assertNotNull("the store's database is registered with HSQLDB", uri);
+            try (final Connection probe = DriverManager.getConnection("jdbc:hsqldb:" + uri, "sa", "");
+                 final Statement statement = probe.createStatement();
+                 final ResultSet sessions = statement.executeQuery("SELECT COUNT(*) FROM INFORMATION_SCHEMA.SYSTEM_SESSIONS")) {
+                assertTrue(sessions.next());
+                assertEquals("the store's anchor connection plus this probe", 2, sessions.getInt(1));
+            }
+        }
     }
 
     @Test

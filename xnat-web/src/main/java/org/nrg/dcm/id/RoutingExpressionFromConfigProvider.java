@@ -5,6 +5,7 @@ import org.apache.commons.lang.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.services.ConfigService;
 import org.nrg.xdat.XDAT;
+import org.nrg.xnat.archive.ImportScope;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -32,6 +33,13 @@ public class RoutingExpressionFromConfigProvider implements RoutingExpressionPro
 
     @Override
     public List<String> provide(CompositeDicomObjectIdentifier.ExtractorType type) {
+        // Every received object asks for the project, subject, session and auto-archive rules in turn, and each
+        // ask was a config-service read (several database round trips). Within one import scope (the objects
+        // of one association, one uploaded archive, one inbox request) each set of rules is read once.
+        return new ArrayList<>(ImportScope.scoped(getClass().getName() + ":" + type, () -> List.copyOf(readRules(type))));
+    }
+
+    private List<String> readRules(CompositeDicomObjectIdentifier.ExtractorType type) {
         List<String> rules = new ArrayList<>();
         String config = null;
         switch (type) {

@@ -206,21 +206,30 @@ tasks.withType(PublishToMavenRepository).configureEach { publishTask ->
 // JFrog libs-release-local rejects redeploys with HTTP 409. Modules with
 // independent, non-SNAPSHOT versions (e.g. dicom-edit6 6.9.0) hit this on
 // every CI run after the first one, breaking the whole `./gradlew publish`.
-// HEAD-probe the main jar before publishing; if it already exists, skip
-// that module's publish task so the rest of the build keeps moving.
+// HEAD-probe each publication's POM before publishing; if it already exists,
+// skip that publication so the rest of the build keeps moving.
+//
+// Probes the publication's own coordinates, not the project's: extattr,
+// dicom-image-utils, xdat and xnat-web publish under other artifactIds or
+// groups, and xnat-data-builder's Gradle plugin marker has coordinates of its
+// own. Probing the project's jar sent those to a URL that never exists (so a
+// re-publish 403s), and made the marker skip itself as soon as the module jar
+// was up. Probes the POM because every publication has one; the marker has no
+// jar. Looks the publication up when it runs, as the SNAPSHOT guard above does.
 //
 // SNAPSHOT versions are never probed (their repo allows redeploys).
 tasks.withType(PublishToMavenRepository).configureEach { publishTask ->
-    onlyIf("artifact not already present in Artifactory") {
-        if (project.version.toString().endsWith('-SNAPSHOT')) {
+    onlyIf("artifact not already present in Artifactory") { task ->
+        def pub = task.publication
+        if (pub.version.endsWith('-SNAPSHOT')) {
             return true
         }
-        def repo = publishTask.repository
+        def repo = task.repository
         def repoUrl = repo.url.toString().replaceAll('/$', '')
-        def groupPath = project.group.toString().replace('.', '/')
-        def jarUrl = "${repoUrl}/${groupPath}/${project.name}/${project.version}/${project.name}-${project.version}.jar"
+        def coordinates = "${pub.groupId}:${pub.artifactId}:${pub.version}"
+        def pomUrl = "${repoUrl}/${pub.groupId.replace('.', '/')}/${pub.artifactId}/${pub.version}/${pub.artifactId}-${pub.version}.pom"
 
-        def conn = new URL(jarUrl).openConnection() as HttpURLConnection
+        def conn = new URL(pomUrl).openConnection() as HttpURLConnection
         conn.requestMethod = 'HEAD'
         conn.connectTimeout = 10_000
         conn.readTimeout = 10_000
@@ -233,18 +242,17 @@ tasks.withType(PublishToMavenRepository).configureEach { publishTask ->
         try {
             def code = conn.responseCode
             if (code == 200) {
-                logger.warn("[publish] SKIP {}:{} — already exists at {}",
-                            project.name, project.version, jarUrl)
+                logger.warn("[publish] SKIP {} — already exists at {}", coordinates, pomUrl)
                 return false
             }
             if (code != 404) {
                 logger.warn("[publish] HEAD {} returned {} — proceeding anyway",
-                            jarUrl, code)
+                            pomUrl, code)
             }
             return true
         } catch (Exception e) {
             logger.warn("[publish] HEAD probe failed for {} ({}) — proceeding anyway",
-                        jarUrl, e.message)
+                        pomUrl, e.message)
             return true   // network glitch shouldn't block publish; let PUT decide
         } finally {
             conn.disconnect()

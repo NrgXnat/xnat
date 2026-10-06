@@ -10,8 +10,10 @@ name: Release - Promote RC to Main
 #   trigger_build    - dispatch build/publish on target_main (and target_develop if synced)
 #
 # Produces:
-#   - RC branch with -RC-SNAPSHOT suffixes stripped (release version strings)
-#   - target_main fast-merged (--no-ff) with RC + tag <RELEASE_VERSION> (no v prefix)
+#   - target_main merged (--no-ff) with the RC plus a finalize commit that strips the
+#     -RC-SNAPSHOT suffixes, and tag <RELEASE_VERSION> (no v prefix), pushed atomically
+#   - the RC branch on origin left as it was (still -RC-SNAPSHOT): a release version never
+#     exists off target_main, so only target_main's build publishes the release
 #   - target_develop dicom-edit6 conditionally bumped to the new release value
 
 on:
@@ -125,9 +127,10 @@ jobs:
           git config user.name  "xnat-release[bot]"
           git config user.email "321183387+xnat-release[bot]@users.noreply.github.com"
 
-      - name: Finalize RC branch (strip -RC-SNAPSHOT)
+      # Commits locally only. The next step merges this commit into target_main and pushes that;
+      # the RC branch on origin is never updated, so it never holds a release version.
+      - name: Finalize release version (strip -RC-SNAPSHOT, local commit)
         env:
-          RC_BRANCH:           ${{ inputs.rc_branch }}
           RC_VERSION:          ${{ steps.vars.outputs.rc_version }}
           RELEASE_VERSION:     ${{ steps.vars.outputs.release_version }}
           RC_DCMEDIT:          ${{ steps.vars.outputs.rc_dcmedit }}
@@ -155,7 +158,6 @@ jobs:
           fi
 
           git commit -m "chore(release): finalize ${RELEASE_VERSION}"
-          git push origin "HEAD:${RC_BRANCH}"
 
       - name: Merge RC into target_main and tag
         env:
@@ -169,13 +171,18 @@ jobs:
           git switch "${TARGET_MAIN}"
           git pull --ff-only origin "${TARGET_MAIN}"
 
-          # --no-ff to create an explicit merge commit on release boundary;
-          # set -e + no -X strategy → fail fast on conflict (release manager intervenes)
-          git merge --no-ff "origin/${RC_BRANCH}" -m "release: ${RELEASE_VERSION}"
+          # Merges the local RC branch, which holds the finalize commit (actions/checkout created it
+          # with -B). --no-ff gives an explicit merge commit on the release boundary.
+          # target_main holds the previous release's finalize commit, which target_develop never
+          # receives, so its version= line conflicts with every RC cut from target_develop: take the
+          # RC's side (-X theirs). A conflict git cannot settle alone, such as modify/delete, still
+          # fails here, before anything is pushed (release manager intervenes).
+          git merge --no-ff -X theirs "${RC_BRANCH}" -m "release: ${RELEASE_VERSION}"
 
           git tag "${RELEASE_VERSION}"   # no 'v' prefix (matches legacy tagSourceCode.py)
-          git push origin "${TARGET_MAIN}"
-          git push origin "refs/tags/${RELEASE_VERSION}"
+          # Atomic: target_main and the tag land together or not at all. A rejected push (branch
+          # protection, a lock) leaves origin as it was, so the run can simply be re-run.
+          git push --atomic origin "${TARGET_MAIN}" "refs/tags/${RELEASE_VERSION}"
 
       - name: Sync target_develop dicom-edit6 (conditional)
         id: sync
@@ -261,7 +268,7 @@ jobs:
             echo ""
             echo "**Tag**: [\`${RELEASE_VERSION}\`](${SERVER_URL}/${REPOSITORY}/releases/tag/${RELEASE_VERSION})"
             echo "**${TARGET_MAIN}**: [HEAD](${SERVER_URL}/${REPOSITORY}/tree/${TARGET_MAIN})"
-            echo "**${RC_BRANCH}**: kept (finalized to release strings; available for future patches)"
+            echo "**${RC_BRANCH}**: unchanged (still -RC-SNAPSHOT; the finalize commit is on ${TARGET_MAIN} only)"
             echo ""
             echo "| file | value |"
             echo "|------|-------|"

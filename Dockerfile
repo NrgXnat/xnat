@@ -75,10 +75,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # -----------------------------------------------------------------------------
 # OpenCV native for dcm4che's image codecs.
 #
-# dcm4che 5 resolves every JPEG-family transfer syntax to the OpenCV-backed ImageIO plugins in
-# org.dcm4che:dcm4che-imageio-opencv, which is Java glue over this binary. Without it, anything
-# decoding compressed pixel data -- snapshots, thumbnails, montages, and redaction by the
-# alterPixels anonymization function -- fails with "No Reader for format: jpeg2000-cv registered".
+# dcm4che 5 decodes JPEG-family pixel data with the ImageIO readers in
+# org.dcm4che:dcm4che-imageio-opencv, which call this library. Without it, snapshots, thumbnails,
+# montages and alterPixels redaction of JPEG-family data fail with
+# "UnsatisfiedLinkError: 'long org.opencv.core.Mat.n_Mat(int, int, int)'", and Native DICOM
+# Pre-Compression is skipped. "No Reader for format: jpeg2000-cv registered" means the jar is
+# missing, not this library.
 #
 # It is fetched rather than copied from the build context because the context is assembled by the
 # reusable CI workflow and carries only the WAR. /usr/java/packages/lib is already on the JVM's

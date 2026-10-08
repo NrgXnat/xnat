@@ -57,7 +57,7 @@ Redacting compressed pixel data needs the OpenCV native library (`libopencv_java
 `java.library.path`. Without it, `alterPixels` fails on every JPEG-family object with "Unable to
 transcode pixel data from ... A codec for the transfer syntax is required to redact pixels in a
 compressed object.", caused by an `UnsatisfiedLinkError`. Uncompressed and RLE objects do not need
-it. The XNAT image installs the native; [mirroring-opencv-codecs.md](../docs/mirroring-opencv-codecs.md)
+it. The XNAT image installs the native; [installing-opencv-native.md](../docs/installing-opencv-native.md)
 covers installing it anywhere else.
 
 Redaction stages pixel data in scratch files under `java.io.tmpdir`, or under the directory named by

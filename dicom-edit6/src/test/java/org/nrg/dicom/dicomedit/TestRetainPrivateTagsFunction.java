@@ -9,6 +9,9 @@
 
 package org.nrg.dicom.dicomedit;
 
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Sequence;
+import org.dcm4che3.data.VR;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
@@ -32,6 +35,7 @@ public class TestRetainPrivateTagsFunction {
     private static final File de11 = _resourceManager.getTestResourceFile("dicom/IM_0001");
     private static final File FILE4 = _resourceManager.getTestResourceFile("dicom/1.2.840.113717.2.21733635.1-3-2-7b04bw.dcm");
     private static final File FILE0 = _resourceManager.getTestResourceFile("dicom/0.dcm");
+    private static final File SIEMENS_CSA = _resourceManager.getTestResourceFile("dicom/1.MR.head_DHead.4.1.20061214.091206.156000.1632817982.dcm.gz");
 
     /**
      * 1. retain-tagPath arguments can be specified as a string.
@@ -216,6 +220,124 @@ public class TestRetainPrivateTagsFunction {
         assertEquals(appHdrType.initialValue, appHdrType.valueFrom(dobj));
         assertTrue(dobj.contains(appHdrInfo));
         assertEquals("", dobj.getString(appHdrInfo));
+    }
+
+    /**
+     * Retained Siemens CSA headers keep their exact bytes. They are binary OB values that are not valid UTF-8.
+     *
+     * retainPrivateTags[ (0029,{SIEMENS CSA HEADER}XX)]
+     *
+     * @throws MizerException unexpected exception
+     */
+    @Test
+    public void testRetainedCsaHeadersKeepTheirBytes() throws MizerException {
+        DicomObjectI original = DicomObjectFactory.newInstance(SIEMENS_CSA);
+        int imageHeaderInfo = original.resolvePrivateTag(0x00291010, "SIEMENS CSA HEADER", false);
+        int seriesHeaderInfo = original.resolvePrivateTag(0x00291020, "SIEMENS CSA HEADER", false);
+        assertTrue(original.contains(imageHeaderInfo));
+        assertTrue(original.contains(seriesHeaderInfo));
+
+        String script = "retainPrivateTags[ (0029,{SIEMENS CSA HEADER}XX)]";
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        AnonymizationResult result = sa.apply(DicomObjectFactory.newInstance(SIEMENS_CSA));
+        assertFalse(result instanceof AnonymizationResultError);
+        DicomObjectI dobj = result.getDicomObject();
+
+        assertArrayEquals(original.getBytes(imageHeaderInfo), dobj.getBytes(imageHeaderInfo));
+        assertArrayEquals(original.getBytes(seriesHeaderInfo), dobj.getBytes(seriesHeaderInfo));
+    }
+
+    /**
+     * Retained private values keep their exact bytes and VR, at the root and in a sequence item.
+     *
+     * retainPrivateTags[ (0029,{p1}XX)]
+     * <pre>
+     * (0029,0010) LO [p1] Private Creator Data Element    retain
+     * (0029,1001) OB binary, not valid UTF-8              retain
+     * (0029,1002) OW binary                               retain
+     * (0029,1003) UN binary                               retain
+     * (0029,1004) FD 1/3                                  retain
+     * (0029,1040) SQ #-1 [1 item] ?                       retain
+     *   >ITEM #1:
+     *   >(0029,0010) LO [p1] Private Creator              retain
+     *   >(0029,1041) OB binary, not valid UTF-8           retain
+     * </pre>
+     *
+     * @throws MizerException unexpected exception
+     * @throws IOException     unexpected exception
+     */
+    @Test
+    public void testRetainedBinaryValuesKeepTheirBytes() throws MizerException, IOException {
+        byte[] ob = {0x53, 0x56, 0x31, 0x30, 0x00, (byte) 0xC0, 0x3F, (byte) 0x80, (byte) 0xFF, 0x01};
+        byte[] ow = {(byte) 0xFF, (byte) 0xFE, 0x00, (byte) 0x80};
+        byte[] un = {0x00, (byte) 0x9F, (byte) 0x92, (byte) 0x96};
+
+        Attributes attrs = new Attributes();
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.setBytes(0x00291001, VR.OB, ob);
+        attrs.setBytes(0x00291002, VR.OW, ow);
+        attrs.setBytes(0x00291003, VR.UN, un);
+        attrs.setDouble(0x00291004, VR.FD, 1.0 / 3.0);
+        Sequence seq = attrs.newSequence(0x00291040, 1);
+        Attributes item = new Attributes();
+        item.setString(0x00290010, VR.LO, "p1");
+        item.setBytes(0x00291041, VR.OB, ob);
+        seq.add(item);
+        byte[] fd = attrs.getBytes(0x00291004);
+
+        String script = "retainPrivateTags[ (0029,{p1}XX)]";
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        AnonymizationResult result = sa.apply(new DicomObjectFactory.MizerDicomObject(attrs));
+        assertFalse(result instanceof AnonymizationResultError);
+
+        assertArrayEquals(ob, attrs.getBytes(0x00291001));
+        assertArrayEquals(ow, attrs.getBytes(0x00291002));
+        assertArrayEquals(un, attrs.getBytes(0x00291003));
+        assertArrayEquals(fd, attrs.getBytes(0x00291004));
+        assertEquals(VR.OB, attrs.getVR(0x00291001));
+        assertEquals(VR.OW, attrs.getVR(0x00291002));
+        assertEquals(VR.UN, attrs.getVR(0x00291003));
+        assertEquals(VR.FD, attrs.getVR(0x00291004));
+        Attributes retainedItem = attrs.getNestedDataset(0x00291040);
+        assertNotNull(retainedItem);
+        assertArrayEquals(ob, retainedItem.getBytes(0x00291041));
+        assertEquals(VR.OB, retainedItem.getVR(0x00291041));
+    }
+
+    /**
+     * Public values are not rewritten. Leading and trailing spaces are kept as they were.
+     *
+     * retainPrivateTags[]
+     * <pre>
+     * (0010,0010) PN [t1 ] Patient's Name                 retain
+     * (0020,0011) IS [ 5] Series Number                   retain
+     * (0029,0010) LO [p1] Private Creator Data Element    delete
+     * (0029,1001) LO [p1_0] ?                             delete
+     * </pre>
+     *
+     * @throws MizerException unexpected exception
+     * @throws IOException     unexpected exception
+     */
+    @Test
+    public void testPublicValuesAreNotRewritten() throws MizerException, IOException {
+        byte[] patientName = "t1 ".getBytes();
+        byte[] seriesNumber = " 5".getBytes();
+
+        Attributes attrs = new Attributes();
+        attrs.setBytes(0x00100010, VR.PN, patientName);
+        attrs.setBytes(0x00200011, VR.IS, seriesNumber);
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.setString(0x00291001, VR.LO, "p1_0");
+
+        String script = "retainPrivateTags[]";
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        AnonymizationResult result = sa.apply(new DicomObjectFactory.MizerDicomObject(attrs));
+        assertFalse(result instanceof AnonymizationResultError);
+
+        assertArrayEquals(patientName, attrs.getBytes(0x00100010));
+        assertArrayEquals(seriesNumber, attrs.getBytes(0x00200011));
+        assertFalse(attrs.contains(0x00290010));
+        assertFalse(attrs.contains(0x00291001));
     }
 
     /**

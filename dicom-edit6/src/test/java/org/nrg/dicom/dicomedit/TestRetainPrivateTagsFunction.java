@@ -159,6 +159,66 @@ public class TestRetainPrivateTagsFunction {
     }
 
     /**
+     * A private element with an empty binary value does not fail the function. The private sequence follows Siemens
+     * MEDCOM Application Header Sequence, whose items declare their own creator and carry an OB Application Header Info.
+     *
+     * retainPrivateTags[ (0029,{SIEMENS MEDCOM HEADER}XX)]
+     * <pre>
+     * (0010,0010) PN #2 [t1] Patient's Name                          retain
+     * (0019,0010) LO #2 [p1] Private Creator Data Element            delete
+     * (0019,1000) LO #4 [p1_0] ?                                     delete
+     * (0029,0010) LO #22 [SIEMENS MEDCOM HEADER] Private Creator     retain
+     * (0029,1040) SQ #-1 [1 item] ApplicationHeaderSequence          retain
+     *   >ITEM #1:
+     *   >(0029,0010) LO #22 [SIEMENS MEDCOM HEADER] Private Creator  retain
+     *   >(0029,1041) CS #16 [SOM 5 TIMESTAMPS] ApplicationHeaderType retain
+     *   >(0029,1044) OB #0 [] ApplicationHeaderInfo                  retain
+     * </pre>
+     *
+     * @throws MizerException unexpected exception
+     */
+    @Test
+    public void testEmptyPrivateBinaryValueInSequenceItem() throws MizerException {
+        TestTag t1 = new TestTag(0x00100010, "t1");
+        TestTag p1 = new TestTag(0x00190010, "p1");
+        TestTag p1_0 = new TestTag(0x00191000, "p1_0");
+        TestTag medcom = new TestTag(0x00290010, "SIEMENS MEDCOM HEADER");
+        TestTag appHdrSeq = new TestTag(0x00291040, "appHdrSeq");
+        TestSeqTag appHdrMedcom = new TestSeqTag(new int[]{0x00291040, 0, 0x00290010}, "SIEMENS MEDCOM HEADER");
+        TestSeqTag appHdrType = new TestSeqTag(new int[]{0x00291040, 0, 0x00291041}, "SOM 5 TIMESTAMPS");
+        int[] appHdrInfo = new int[]{0x00291040, 0, 0x00291044};
+
+        DicomObjectI dobj = DicomObjectFactory.newInstance();
+
+        dobj.putString(t1.tag, t1.initialValue);
+        dobj.putString(p1.tag, p1.initialValue);
+        dobj.putString(p1_0.tag, p1_0.initialValue);
+        dobj.putString(medcom.tag, medcom.initialValue);
+        dobj.putString(appHdrSeq.tag, appHdrSeq.initialValue);
+        dobj.putString(appHdrMedcom.tag, appHdrMedcom.initialValue);
+        dobj.putString(appHdrType.tag, appHdrType.initialValue);
+        dobj.getItem(new int[]{0x00291040, 0}).putBytes(0x00291044, "OB", new byte[0]);
+
+        assertTrue(dobj.contains(appHdrInfo));
+
+        String script = "retainPrivateTags[ (0029,{SIEMENS MEDCOM HEADER}XX)]";
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        AnonymizationResult result = sa.apply(dobj);
+        assertFalse(result instanceof AnonymizationResultError);
+        dobj = result.getDicomObject();
+
+        assertTrue(dobj.contains(t1.tag));
+        assertFalse(dobj.contains(p1.tag));
+        assertFalse(dobj.contains(p1_0.tag));
+        assertTrue(dobj.contains(medcom.tag));
+        assertTrue(dobj.contains(appHdrSeq.tag));
+        assertEquals(appHdrMedcom.initialValue, appHdrMedcom.valueFrom(dobj));
+        assertEquals(appHdrType.initialValue, appHdrType.valueFrom(dobj));
+        assertTrue(dobj.contains(appHdrInfo));
+        assertEquals("", dobj.getString(appHdrInfo));
+    }
+
+    /**
      * 1. retain-tagPath arguments can be specified as a tagPath.
      * 2. retain all tags in a specific private block in root DICOM object.
      *

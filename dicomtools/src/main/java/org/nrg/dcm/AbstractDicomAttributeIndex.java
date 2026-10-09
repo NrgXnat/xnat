@@ -16,6 +16,44 @@ import org.nrg.dicomtools.utilities.DicomUtils;
 import java.util.*;
 
 public abstract class AbstractDicomAttributeIndex implements DicomAttributeIndex {
+
+    /**
+     * The tag at which a path enters the object: its first element.
+     * <p>
+     * That is the only element a stop tag gates. Reading a top-level sequence brings its items with it whatever
+     * the stop tag says, so a tag nested inside one needs no wider a window than the sequence itself -- and a
+     * nested tag sorting above its own sequence would otherwise widen every read for nothing.
+     *
+     * @return the entry tag, or 0 for a path that names none.
+     */
+    protected static int entryTagOf(final int... path) {
+        return 0 == path.length ? 0 : path[0];
+    }
+
+    /**
+     * As above. A null entry is a sequence wildcard rather than a tag, so a path beginning with one names no
+     * entry tag.
+     */
+    protected static int entryTagOf(final Integer... path) {
+        return 0 == path.length || null == path[0] ? 0 : path[0];
+    }
+
+    /**
+     * The highest {@link #entryTagOf entry tag} among these paths, compared unsigned.
+     * <p>
+     * A max across paths, not along one: the paths are alternative places the same attribute may sit, and the
+     * read has to reach whichever the object turns out to use.
+     */
+    protected static int highestEntryTag(final Collection<Integer[]> paths) {
+        int highest = 0;
+        for (final Integer[] path : paths) {
+            final int entry = entryTagOf(path);
+            if (Integer.compareUnsigned(entry, highest) > 0) {
+                highest = entry;
+            }
+        }
+        return highest;
+    }
     protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private static int compare(final Integer[] a0, final Integer[] a1) {

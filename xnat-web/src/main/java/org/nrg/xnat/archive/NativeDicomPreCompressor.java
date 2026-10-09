@@ -16,6 +16,7 @@ import org.dcm4che3.data.UID;
 import org.dcm4che3.imageio.codec.ImageWriterFactory;
 import org.dcm4che3.imageio.codec.Transcoder;
 import org.dcm4che3.io.DicomInputStream;
+import org.nrg.dicom.dicomedit.pixels.ImageWriters;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -78,7 +79,10 @@ public final class NativeDicomPreCompressor {
             compressFile(outputFile);
             log.info("Successfully pre-compressed {} to encapsulated format", outputFile.getName());
             return true;
-        } catch (Exception e) {
+        } catch (Exception | LinkageError e) {
+            // LinkageError too: the JPEG 2000 writer is backed by a native library, and where that
+            // is not installed it fails as an Error. Without this the Error passes straight through
+            // and fails the import, rather than skipping pre-compression as the message promises.
             log.warn("Pre-compression failed for {}, anonymization will proceed with original file",
                     outputFile.getName(), e);
             return false;
@@ -151,19 +155,13 @@ public final class NativeDicomPreCompressor {
 
     private static String findAvailableCompressedSyntax() {
         // Try JPEG 2000 Lossless with default (OpenCV) writer
-        if (isWriterAvailable(UID.JPEG2000Lossless)) {
+        if (ImageWriters.isAvailable(UID.JPEG2000Lossless)) {
             log.info("DICOM pre-compression: using JPEG 2000 Lossless (default writer)");
             return UID.JPEG2000Lossless;
         }
 
-        // Default writer (OpenCV) not available; register jai_imageio J2K writer
-        if (tryRegisterJaiJ2kWriter()) {
-            log.info("DICOM pre-compression: registered jai_imageio J2KImageWriter for JPEG 2000 Lossless");
-            return UID.JPEG2000Lossless;
-        }
-
         // Fallback: JPEG Lossless SV1 (unlikely without OpenCV, but try)
-        if (isWriterAvailable(UID.JPEGLosslessSV1)) {
+        if (ImageWriters.isAvailable(UID.JPEGLosslessSV1)) {
             log.info("DICOM pre-compression: using JPEG Lossless SV1 as fallback");
             return UID.JPEGLosslessSV1;
         }
@@ -172,35 +170,4 @@ public final class NativeDicomPreCompressor {
                 "No image writer available for DICOM pre-compression (tried JPEG 2000 Lossless and JPEG Lossless SV1)");
     }
 
-    private static boolean isWriterAvailable(final String tsuid) {
-        try {
-            final ImageWriterFactory.ImageWriterParam param = ImageWriterFactory.getImageWriterParam(tsuid);
-            if (param == null) {
-                return false;
-            }
-            final javax.imageio.ImageWriter writer = ImageWriterFactory.getImageWriter(param);
-            writer.dispose();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private static boolean tryRegisterJaiJ2kWriter() {
-        try {
-            Class.forName("com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageWriterSpi");
-        } catch (ClassNotFoundException e) {
-            log.debug("jai_imageio J2KImageWriterSpi not on classpath");
-            return false;
-        }
-
-        ImageWriterFactory.getDefault().put(UID.JPEG2000Lossless,
-                new ImageWriterFactory.ImageWriterParam(
-                        "jpeg2000",
-                        "com.sun.media.imageioimpl.plugins.jpeg2000.J2KImageWriter",
-                        (String) null,
-                        new String[0]));
-
-        return isWriterAvailable(UID.JPEG2000Lossless);
-    }
 }

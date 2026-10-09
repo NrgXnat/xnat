@@ -604,4 +604,31 @@ public interface DicomObjectI {
     Attributes getAttributes();
 
     SpecificCharacterSet getSpecificCharacterSet();
+
+    /**
+     * Tie the lifetime of a bulk data file to this object.
+     * <p>
+     * When bulk data is held on disk rather than on the heap, some of the files it lives in are
+     * owned by this object &mdash; the edited pixel data a pixel edit handler produces, for
+     * instance. Those files must survive until after the last {@link #write}, and be removed once
+     * the object is finished with. Registering them here delegates both to
+     * {@link #releaseScratchFiles()}.
+     * <p>
+     * The source DICOM file itself is <em>not</em> a scratch file and must never be registered.
+     *
+     * @param file a file holding bulk data owned by this object.
+     */
+    default void registerScratchFile(File file) {
+        // no-op for implementations that keep all values on the heap
+    }
+
+    /**
+     * Delete every file registered through {@link #registerScratchFile(File)}.
+     * <p>
+     * The object's bulk data values are unusable afterwards, so call this only once the object
+     * has been written out and will not be written again.
+     */
+    default void releaseScratchFiles() {
+        // no-op for implementations that keep all values on the heap
+    }
 }

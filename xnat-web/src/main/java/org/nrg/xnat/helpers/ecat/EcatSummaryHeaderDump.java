@@ -18,11 +18,9 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -36,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Supplier;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
@@ -62,8 +59,6 @@ public final class EcatSummaryHeaderDump {
     /** The files. */
     private final Iterable<File> files; // path to the ecat file
     
-    /** The fields. */
-    private final Map<Integer,Set<String>> fields;
 
     
     /** The map. */
@@ -82,18 +77,7 @@ public final class EcatSummaryHeaderDump {
      * @param files the files
      */
     EcatSummaryHeaderDump(Iterable<File> files) {
-        this(files, Collections.<Integer,Set<String>>emptyMap());
-    }
-
-    /**
-     * Instantiates a new ecat multi header dump.
-     *
-     * @param files the files
-     * @param fields2 the fields2
-     */
-    public EcatSummaryHeaderDump(Iterable<File> files, Map<Integer, Set<String>> fields2) {
     	this.files = files;
-        this.fields = ImmutableMap.copyOf(fields2);
 	}
 
 	/**

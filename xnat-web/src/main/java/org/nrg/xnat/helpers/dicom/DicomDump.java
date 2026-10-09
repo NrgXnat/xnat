@@ -315,7 +315,7 @@ public final class DicomDump extends SecureResource {
             CatCatalogI getCatalog(XnatResourcecatalogI r) {
                 CatalogUtils.CatalogData catalogData;
                 try {
-                    catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(this.x.getPrearchivepath(), r, false, this.x.getProject()
+                    catalogData = CatalogUtils.CatalogData.getExistingAndClean(this.x.getPrearchivepath(), r, false, this.x.getProject()
                     );
                 } catch (ServerException e) {
                     return null;
@@ -331,7 +331,7 @@ public final class DicomDump extends SecureResource {
                 String timestamp = (String) env.attrs.get("TIMESTAMP");
                 File sessionDIR;
                 File srcXML;
-                sessionDIR = PrearcUtils.getPrearcSessionDir(user, project, timestamp, experiment, false);
+                sessionDIR = PrearcUtils.getPrearcSessionDirForRead(user, project, timestamp, experiment);
                 srcXML = new File(sessionDIR.getAbsolutePath() + ".xml");
                 XnatImagesessiondataI x = PrearcTableBuilder.parseSession(srcXML);
                 this.x = x;
@@ -531,7 +531,8 @@ public final class DicomDump extends SecureResource {
         abstract Iterable<File> getFiles(Env env, UserI user, CatFilterWithPath filter, int enough) throws Exception;
     }
 
-    private static ImmutableMap<Integer, Set<String>> getFields(String[] fieldVals) {
+    // package-private so the tag parsing can be tested directly
+    static ImmutableMap<Integer, Set<String>> getFields(String[] fieldVals) {
         ImmutableMap.Builder<Integer, Set<String>> fieldsb = ImmutableMap.builder();
         for (final String field : fieldVals) {
             final String[] parts = field.split(":");
@@ -539,15 +540,9 @@ public final class DicomDump extends SecureResource {
             final Set<String> subs = Sets.newHashSet();
             subs.addAll(Arrays.asList(parts).subList(1, parts.length));
 
-            int tag;
-            try {
-                tag = TagUtils.forName(tag_s);
-            } catch (IllegalArgumentException e) {
-                try {
-                    tag = Integer.parseUnsignedInt(tag_s, 16);
-                } catch (NumberFormatException e1) {
-                    throw new IllegalArgumentException("not a valid DICOM attribute tag: " + tag_s, e1);
-                }
+            final int tag = AttributeTags.forName(tag_s);
+            if (AttributeTags.NOT_RESOLVED == tag) {
+                throw new IllegalArgumentException("not a valid DICOM attribute tag: " + tag_s);
             }
             fieldsb.put(tag, subs);
         }

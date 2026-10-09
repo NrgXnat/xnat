@@ -760,8 +760,12 @@ public class TestDeleteStatement {
     private static int[] pcreator = {0x00130010};
     private static int[] p = {0x00131000};
 
+    // 0x00100017 must stay an element the DICOM standard has not assigned: these constants are
+    // placeholders for "some element inside a sequence item", not real attributes. This was
+    // 0x00100011 until dcm4che 5.35.0 picked up a dictionary in which the standard had assigned
+    // it as PersonNamesToUseSequence, VR SQ, and setting a string value on it stopped working.
     private static int[] p0a = {0x00131010,0,0x00100010};
-    private static int[] p0b = {0x00131010,0,0x00100011};
+    private static int[] p0b = {0x00131010,0,0x00100017};
     private static int[] p1a = {0x00131010,1,0x00100010};
     private static int[] p1b = {0x00131010,1,0x0010001b};
 

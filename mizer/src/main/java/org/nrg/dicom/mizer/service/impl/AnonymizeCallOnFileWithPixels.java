@@ -7,13 +7,12 @@ import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
 import org.nrg.dicom.mizer.objects.DicomObjectFactory;
+import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.Mizer;
 import org.nrg.dicom.mizer.service.MizerContext;
 import org.nrg.transaction.operations.CallOnFile;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -50,19 +49,25 @@ public class AnonymizeCallOnFileWithPixels extends CallOnFile<AnonymizationResul
     @Override
     public AnonymizationResult call() throws Exception {
         log.info("Preparing to anonymize file {} to {}", _dicomFile.getAbsolutePath(), getFile().getAbsolutePath());
-        try (final FileInputStream file = new FileInputStream(_dicomFile);
-             final BufferedInputStream buffer = new BufferedInputStream(file);
-             final DicomInputStream dicom = new DicomInputStream(buffer);
-             final FileOutputStream output = new FileOutputStream(getFile())) {
-
-            final AnonymizationResult result = _mizer.anonymize(DicomObjectFactory.newInstance(dicom), _mizerContext);
+        // Read with IncludeBulkData.URI so pixel data stays in _dicomFile and is streamed straight
+        // through to the output on write. Reading it onto the heap costs a full copy of the object
+        // per concurrent anonymization, and outright fails above 2 GB where dcm4che cannot fit the
+        // value in a byte[]. Constructed from the File, not a stream, so the BulkData references
+        // point at _dicomFile rather than at a spooled copy.
+        final DicomObjectI dicomObject = DicomObjectFactory.newInstance(_dicomFile, DicomInputStream.IncludeBulkData.URI);
+        try (final FileOutputStream output = new FileOutputStream(getFile())) {
+            final AnonymizationResult result = _mizer.anonymize(dicomObject, _mizerContext);
             if (!(result instanceof AnonymizationResultReject) && !(result instanceof AnonymizationResultError)) {
-                result.getDicomObject().write( output);
+                result.getDicomObject().write(output);
             }
             result.releaseObjectFromMemory();
             return result;
         } catch (DicomStreamException e) {
             throw new IOException(e);
+        } finally {
+            // Safe here and not before: the write above has completed, and WorkOnCopyOp does not
+            // replace _dicomFile until we return.
+            dicomObject.releaseScratchFiles();
         }
     }
 

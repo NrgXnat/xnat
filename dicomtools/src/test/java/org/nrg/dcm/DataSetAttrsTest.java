@@ -33,6 +33,15 @@ public class DataSetAttrsTest {
 
     private static final String sequenceName = "*tfl3d1_ns";
 
+    /** Carries a private block on each side of the pixel data. */
+    private static final String AFTER_PIXEL_DATA_RESOURCE = "dataSetAttrs/tagAfterPixelData.dcm";
+
+    /** A sequence at a low tag holding a private tag far above it. */
+    private static final String NESTED_RESOURCE = "dataSetAttrs/tagNestedInSequence.dcm";
+
+    private static final DicomAttributeIndex BEFORE_PIXEL_DATA = new FixedDicomAttributeIndex(0x00191050);
+    private static final DicomAttributeIndex AFTER_PIXEL_DATA  = new FixedDicomAttributeIndex(0xF2151050);
+
     @Test
     public final void testDataSetAttrsFileSetOfInteger() throws IOException,URISyntaxException {
         Set<DicomAttributeIndex> attrs = Sets.newHashSet();
@@ -63,5 +72,98 @@ public class DataSetAttrsTest {
         dsa = DataSetAttrs.create(url.toURI(), attrs, FileURIOpener.getInstance());
         assertNotNull(dsa);
         assertEquals(sequenceName, dsa.get(SEQUENCE_NAME));
+    }
+
+    /**
+     * A private group &gt;= 0x8000 sorts after the pixel data, so an index pointing at one is only readable if the
+     * window reaches past it. Without that the attribute comes back empty with no error.
+     */
+    @Test
+    public final void readsAnAttributeThatSortsAfterThePixelData()
+            throws IOException, ConversionFailureException, URISyntaxException {
+        final Set<DicomAttributeIndex> attrs = Sets.newHashSet(BEFORE_PIXEL_DATA, AFTER_PIXEL_DATA);
+
+        final URL url = getClass().getClassLoader().getResource(AFTER_PIXEL_DATA_RESOURCE);
+        assertNotNull(url);
+        final DataSetAttrs dsa = DataSetAttrs.create(url.toURI(), attrs, FileURIOpener.getInstance());
+
+        assertEquals("before pixel data", dsa.get(BEFORE_PIXEL_DATA));
+        assertEquals("after pixel data", dsa.get(AFTER_PIXEL_DATA));
+    }
+
+    /** The window is the highest tag asked for, not a fixed one: ordinary attributes stop well short. */
+    @Test
+    public final void readsOnlyAsFarAsTheAttributesAsked() {
+        // SequenceName (0018,0024) is the highest of the three, and well below the pixel data.
+        assertEquals(Tag.SequenceName,
+                     DataSetAttrs.stopTagFor(Sets.newHashSet(SEQUENCE_NAME, ACQUISITION_DATE, OPERATORS_NAME)));
+    }
+
+    /**
+     * An index that does not know its own bound reports the tag before the pixel data, which is where the read
+     * always stopped -- so one such index in the set keeps the window open for all of them.
+     */
+    @Test
+    public final void keepsTheOldWindowForAnIndexThatDoesNotKnowItsBound() {
+        final DicomAttributeIndex unbounded = new DicomAttributeIndex() {
+            public String getAttributeName(final org.dcm4che3.data.Attributes attributes) { return "unbounded"; }
+            public String getColumnName() { return "unbounded"; }
+            public Integer[] getPath(final org.dcm4che3.data.Attributes context) { return new Integer[0]; }
+            public String getString(final org.dcm4che3.data.Attributes attributes) { return null; }
+            public String getString(final org.dcm4che3.data.Attributes attributes, final String defaultValue) { return defaultValue; }
+            public String[] getStrings(final org.dcm4che3.data.Attributes attributes) { return new String[0]; }
+        };
+
+        assertEquals(Tag.PixelData - 1, unbounded.getMaxTag());
+        assertEquals(Tag.PixelData - 1, DataSetAttrs.stopTagFor(Sets.newHashSet(SEQUENCE_NAME, unbounded)));
+    }
+
+    /**
+     * The caller adds one to get an exclusive stop tag, so a bound of 0xFFFFFFFF would wrap to 0 and dcm4che
+     * would stop at the first element -- every file empty. A DICOM mapping can name that tag: parseDicomTag
+     * accepts the whole unsigned range.
+     */
+    @Test
+    public final void doesNotLetTheStopTagWrapToZero() {
+        final DicomAttributeIndex highest = new FixedDicomAttributeIndex(0xFFFFFFFF);
+
+        final int stopTag = DataSetAttrs.stopTagFor(Sets.newHashSet(highest));
+
+        assertEquals("stepped back so the exclusive stop tag cannot wrap", 0xFFFFFFFE, stopTag);
+        assertEquals("and that exclusive stop tag reads to the end", -1, stopTag + 1);
+    }
+
+    /**
+     * The bound for a nested index is the sequence it enters, not the tag inside it -- and that is enough,
+     * because reading a sequence element brings its items with it whatever the stop tag says. This is the
+     * assertion that makes the narrower bound safe rather than merely smaller.
+     */
+    @Test
+    public final void reachesANestedAttributeFromItsSequencesBound() throws Exception {
+        final DicomAttributeIndex nested =
+                new FixedDicomAttributeIndex("nested", Tag.ReferencedImageSequence, 0, 0xF2151050);
+
+        assertEquals("bounded at the sequence, not the tag within it",
+                     Tag.ReferencedImageSequence, DataSetAttrs.stopTagFor(Sets.newHashSet(nested)));
+
+        final URL url = getClass().getClassLoader().getResource(NESTED_RESOURCE);
+        assertNotNull(url);
+        final DataSetAttrs dsa = DataSetAttrs.create(url.toURI(), Sets.newHashSet(nested),
+                                                    FileURIOpener.getInstance());
+
+        assertEquals("and the value inside the sequence is still found", "deep value", dsa.get(nested));
+    }
+
+    /** Asking for nothing reads as far as it always did rather than not at all. */
+    @Test
+    public final void readsTheOldWindowWhenNothingIsAskedFor() {
+        assertEquals(Tag.PixelData - 1, DataSetAttrs.stopTagFor(Sets.newHashSet()));
+    }
+
+    /** ... and must move, unsigned, for one that reaches beyond it. */
+    @Test
+    public final void widensTheWindowForAnAttributeAfterThePixelData() {
+        assertEquals(0xF2151050,
+                     DataSetAttrs.stopTagFor(Sets.newHashSet(SEQUENCE_NAME, AFTER_PIXEL_DATA)));
     }
 }

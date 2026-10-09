@@ -159,8 +159,7 @@ public final class PrearcImporter implements StatusProducerI, Runnable {
             final String name = f.getName();
             for (Map.Entry<String, Unpacker> me : unpackers.entrySet()) {
                 if (name.endsWith(me.getKey())) {
-                    me.getValue().unpack(f, dest);
-                    return true;
+                    return me.getValue().unpack(f, dest);
                 }
             }
             return false;

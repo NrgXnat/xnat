@@ -100,25 +100,27 @@ xnat/
 
 # Build the deployable WAR
 ./gradlew :xnat-web:war
-ls -lh xnat-web/build/libs/xnat-web-1.10.0.war
+ls -lh xnat-web/build/libs/xnat-web-1.10.2.war
 ```
 
 ## Branches
 
 | Branch | Purpose | Version |
 |--------|---------|---------|
-| `main` | Latest release (advances via fast-forward on each release) | 1.10.0 |
+| `main` | Latest release (each release candidate is merged in and tagged) | 1.10.2 |
+| `releases/<version>-rc` | Release candidate, cut from `develop` and promoted to `main` | `<version>-RC-SNAPSHOT` |
 | `releases/1.9.3.4` | 1.9.3.4 release reference | 1.9.3.4 |
 | `releases/1.9.3.5` | 1.9.3.5 release reference | 1.9.3.5 |
-| `develop` | Active development | 1.10.1-SNAPSHOT |
+| `develop` | Active development | 1.10.3-SNAPSHOT |
 
-Release tags `1.9.3.4` and `1.10.0` are reachable from `main`; tag `1.9.3.5` is reachable from `releases/1.9.3.5`.
+Release tags `1.9.3.4`, `1.10.0`, `1.10.1` and `1.10.2` are reachable from `main`; tag `1.9.3.5` is reachable from `releases/1.9.3.5`.
 
 ## Documentation
 
 - [Contributing](./CONTRIBUTING.md) — build architecture, development workflow, branch strategy
 - [FAQ](./docs/faq.md) — dependency management, build troubleshooting, common tasks
 - [Plugin Migration Guide](./docs/plugin-migration-guide.md) — how to adapt external XNAT plugins to build against this monorepo
+- [Upgrading DicomEdit 6](./dicom-edit6/UPGRADING.md) — script, runtime and API changes in each dicom-edit6 release
 
 ## Miscellaneous
 

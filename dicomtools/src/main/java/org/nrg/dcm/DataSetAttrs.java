@@ -41,7 +41,50 @@ public final class DataSetAttrs implements Iterable<DicomAttributeIndex> {
     public static <T> DataSetAttrs create(final T resource,
                                           final Collection<DicomAttributeIndex> tags,
                                           Opener<T> opener) throws IOException {
-        return new DataSetAttrs(DicomUtils.read(opener.open(resource), Tag.PixelData - 1), tags);
+        return new DataSetAttrs(DicomUtils.read(opener.open(resource), stopTagFor(tags)), tags);
+    }
+
+    /**
+     * The largest bound this can return. A caller turns the bound into an exclusive stop tag by adding one, and
+     * one more than 0xFFFFFFFF is zero -- which dcm4che reads as "stop at the first element", so every file would
+     * come back empty. Only a DICOM mapping can name a tag that high, since parseDicomTag accepts the whole
+     * unsigned range, and (FFFF,FFFF) is not a legal tag in any case. Capping here reads to the end of the
+     * object instead.
+     */
+    private static final int HIGHEST_STOP_TAG = 0xFFFFFFFE;
+
+    /**
+     * How far to read for these indices: the last tag any of them may ask for.
+     * <p>
+     * A fixed stop tag cannot serve both ends of this. An index may point at a tag sorting after the pixel data --
+     * a private group &gt;= 0x8000, for instance -- and the read has to reach it or the attribute comes back empty
+     * with no error; a store whose indices all stop early should not read past them for nothing. So it is the
+     * highest bound the indices report, and an index that cannot report one asks for
+     * {@link DicomAttributeIndex#getMaxTag() the tag before the pixel data}, which holds the window open for the
+     * rest of the set.
+     * <p>
+     * For a session builder store the bound is (5200,9230): DicomAttributes.chain reaches into the per-frame
+     * functional groups, and every modality's attributes are registered on every store, so those sequences are
+     * what holds the window open.
+     *
+     * @param tags the indices the store will query.
+     *
+     * @return the last tag to read, compared unsigned.
+     */
+    static int stopTagFor(final Collection<DicomAttributeIndex> tags) {
+        int stopTag = 0;
+        for (final DicomAttributeIndex index : tags) {
+            final int maxTag = index.getMaxTag();
+            if (Integer.compareUnsigned(maxTag, stopTag) > 0) {
+                stopTag = maxTag;
+            }
+        }
+        if (0 == stopTag) {
+            // Nothing was asked for. Read to the pixel data rather than not at all, so a caller that queries an
+            // index it never declared still finds it.
+            return Tag.PixelData - 1;
+        }
+        return Integer.compareUnsigned(stopTag, HIGHEST_STOP_TAG) > 0 ? HIGHEST_STOP_TAG : stopTag;
     }
 
     /*

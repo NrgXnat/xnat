@@ -10,7 +10,6 @@
  */
 package org.nrg.xnat.helpers.ecat;
 
-import com.google.common.collect.ImmutableMap;
 
 import org.nrg.ecat.Header;
 import org.nrg.ecat.MainHeader;
@@ -38,18 +37,12 @@ public final class EcatHeaderDump {
 
     private final Logger logger = LoggerFactory.getLogger(EcatHeaderDump.class);
     private final String file; // path to the ECAT file
-    private final Map<Integer,Set<String>> fields;
 
     /**
      * @param file Path to the ECAT file
      */
-    EcatHeaderDump(final String file, final Map<Integer,Set<String>> fields) {
-        this.file = file;
-        this.fields = ImmutableMap.copyOf(fields);
-    }
-    
     EcatHeaderDump(final String file) {
-        this(file, Collections.<Integer,Set<String>>emptyMap());
+        this.file = file;
     }
 
   

@@ -5,8 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,7 +23,42 @@ public class VersionManager {
     private        List<String>   supportedVersionStrings;
 
     private VersionManager() {
-        supportedVersionStrings = Arrays.asList("6.0", "6.1", "6.2", "6.3", "6.4", "6.5", "6.6", "6.7");
+        supportedVersionStrings = supportedVersionStrings(readLibraryVersion());
+    }
+
+    /**
+     * The script versions a library of the given version accepts: 6.0 to 6.7, which predate the
+     * rule, then every minor from 6.10 up to the library's own. 6.8 and 6.9 were library releases
+     * only and were never language versions. A patch release adds nothing, and a version that cannot
+     * be read accepts up to 6.10.
+     *
+     * @param libraryVersion the dicom-edit6 version, such as 6.11.0 or 6.11.0-SNAPSHOT.
+     *
+     * @return the accepted version strings, oldest first.
+     */
+    static List<String> supportedVersionStrings(final String libraryVersion) {
+        final List<String> versions = new ArrayList<>(Arrays.asList("6.0", "6.1", "6.2", "6.3", "6.4", "6.5", "6.6", "6.7"));
+        final Matcher      matcher  = LIBRARY_VERSION.matcher(StringUtils.defaultString(libraryVersion));
+        final int          minor    = matcher.find() ? Math.max(Integer.parseInt(matcher.group(1)), FIRST_DERIVED_MINOR) : FIRST_DERIVED_MINOR;
+        for (int each = FIRST_DERIVED_MINOR; each <= minor; each++) {
+            versions.add("6." + each);
+        }
+        return Collections.unmodifiableList(versions);
+    }
+
+    private static String readLibraryVersion() {
+        try (InputStream in = VersionManager.class.getResourceAsStream(LIBRARY_VERSION_RESOURCE)) {
+            if (in == null) {
+                logger.warn("{} is missing, so script versions are accepted only up to 6.{}", LIBRARY_VERSION_RESOURCE, FIRST_DERIVED_MINOR);
+                return null;
+            }
+            final Properties properties = new Properties();
+            properties.load(in);
+            return properties.getProperty("version");
+        } catch (IOException e) {
+            logger.warn("Could not read {}, so script versions are accepted only up to 6.{}", LIBRARY_VERSION_RESOURCE, FIRST_DERIVED_MINOR, e);
+            return null;
+        }
     }
 
     /**
@@ -124,5 +162,8 @@ public class VersionManager {
         return matcher.find() ? matcher.group("version") : null;
     }
 
+    private static final String  LIBRARY_VERSION_RESOURCE = "dicomedit-version.properties";
+    private static final Pattern LIBRARY_VERSION          = Pattern.compile("^6\\.(\\d+)");
+    private static final int     FIRST_DERIVED_MINOR      = 10;
     private static final Pattern PATTERN = Pattern.compile("^version \"(?<version>[\\d][\\d.]+)\"$", Pattern.MULTILINE);
 }

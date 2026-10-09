@@ -56,6 +56,11 @@ public class TestAlterPixelsFunction {
             Path f = Files.createTempFile(Paths.get("/tmp"),"de6", ".dcm");
             try (FileOutputStream os = new FileOutputStream(f.toFile())) {
                 result_dobj.write(os);
+            } finally {
+                // The redacted pixels live in a scratch file that write() reads from, so it can
+                // only go afterwards. Without this the run leaves one behind every time.
+                result_dobj.releaseScratchFiles();
+                Files.deleteIfExists(f);
             }
         }
         catch( IOException | MizerException e) {

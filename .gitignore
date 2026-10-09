@@ -25,3 +25,8 @@ bin/
 .DS_Store
 Thumbs.db
 .claude/
+# Editor swap and backup files
+*.swp
+*.swo
+*~
+.*.sw[a-p]

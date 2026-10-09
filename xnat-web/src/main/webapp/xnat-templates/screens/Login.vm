@@ -135,7 +135,12 @@ $page.setTitle("$siteId - Please Login")
 $page.setBgColor($ui.bgcolor)
 $page.addAttribute("onLoad", "document.getElementById('username').focus();")
 
+## Dependency for markdown parsing (provides the global marked() function)
 <script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
+## DOMPurify sanitizes the HTML that marked() produces. The bundled marked is from 2013 and does no
+## URI scheme filtering, so a link like [text](javascript:alert(1)) renders as a live javascript: href.
+## Every marked() result MUST be passed through DOMPurify.sanitize() before being inserted into the DOM.
+<script src="$content.getURI("scripts/lib/dompurify/purify.min.js")"></script>
 
 <!--[if lte IE 8]>
 <div id="ie8_error" class="error" style="display:none;margin-bottom:4em;background-image:none;z-index:9">
@@ -150,7 +155,13 @@ $page.addAttribute("onLoad", "document.getElementById('username').focus();")
 <![endif]-->
 
 #if($siteConfig.siteWideAlertStatus != "0" && $siteConfig.siteWideAlertStatus != "off")
-<div class="$siteConfig.siteWideAlertType" style="margin-bottom: 2em;" data-status="$siteConfig.siteWideAlertStatus">$siteConfig.siteWideAlertMessage</div>
+## $!esc.html() is required here: Velocity does not escape references by default and no
+## reference-insertion event handler is configured, so these admin-settable preferences would
+## otherwise be written to the page as raw HTML. It would be better to register a global
+## EscapeHtmlReference eventhandler.referenceinsertion handler in TurbineResources.properties
+## so that every reference is escaped by default, but that requires auditing the templates that
+## intentionally emit HTML, so escape at the reference for now.
+<div class="$!esc.html($siteConfig.siteWideAlertType)" style="margin-bottom: 2em;" data-status="$!esc.html($siteConfig.siteWideAlertStatus)">$!esc.html($siteConfig.siteWideAlertMessage)</div>
 #end
 
 <div id="login_area">
@@ -171,7 +182,9 @@ $page.addAttribute("onLoad", "document.getElementById('username').focus();")
             </div>
             #if($siteConfig.siteDescriptionType == "Text")
                 <div id="siteDescription"></div>
-                <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
+                ## $!esc.html() prevents the description from closing this textarea and injecting markup
+                ## (e.g. "</textarea><img src=x onerror=...>"). See the note above on the global handler.
+                <textarea id="siteDescriptionMd" style="display: none;">$!esc.html($siteConfig.siteDescriptionText)</textarea>
             #else
                 #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
                     #parse($siteConfig.siteDescriptionPage)
@@ -260,7 +273,9 @@ $page.addAttribute("onLoad", "document.getElementById('username').focus();")
         <div id="login_welcome" class="login-box-container-flex">
             #if($siteConfig.siteDescriptionType == "Text")
                 <div id="siteDescription"></div>
-                <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.siteDescriptionText</textarea>
+                ## $!esc.html() prevents the description from closing this textarea and injecting markup
+                ## (e.g. "</textarea><img src=x onerror=...>"). See the note above on the global handler.
+                <textarea id="siteDescriptionMd" style="display: none;">$!esc.html($siteConfig.siteDescriptionText)</textarea>
             #else
                 #if($turbineUtils.resourceExists($siteConfig.siteDescriptionPage))
                     #parse($siteConfig.siteDescriptionPage)
@@ -286,7 +301,10 @@ $page.addAttribute("onLoad", "document.getElementById('username').focus();")
     $(function () {
 
         var mdtext = $('#siteDescriptionMd').text();
-        var markedText = marked(mdtext);
+        // marked() does not filter URI schemes, so its output must be sanitized before it reaches
+        // the DOM. Without this, a site description of "[text](javascript:alert(1))" renders a
+        // clickable link that executes script on the unauthenticated login page.
+        var markedText = DOMPurify.sanitize(marked(mdtext));
         $('#siteDescription').html(markedText);
 
         $('#login_form').on('submit', function (e) {

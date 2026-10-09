@@ -1,6 +1,7 @@
 package org.nrg.xnat.archive.entities;
 
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.annotations.DynamicUpdate;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -12,6 +13,7 @@ import java.util.Date;
 
 @Slf4j
 @Entity
+@DynamicUpdate
 @Table(uniqueConstraints = @UniqueConstraint(columnNames={"project", "name", "tag"}))
 public class DirectArchiveSession extends AbstractHibernateEntity {
     @Serial

@@ -200,8 +200,9 @@ public class CatalogUtils {
         private CatCatalogBean readCatalogBeanFromCatalogFile(final String catId) throws ServerException {
             CatCatalogBean cat = null;
             InputStream inputStream = null;
+            ThreadAndProcessFileLock fl = null;
             try {
-                final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, true);
+                fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, true);
                 fl.tryLock(2L, TimeUnit.MINUTES);
                 //log.trace("{} reader start: {}", System.currentTimeMillis(), fl.toString());
                 try (FileInputStream fis = new FileInputStream(catFile)) {
@@ -250,7 +251,10 @@ public class CatalogUtils {
             } catch (IOException e) {
                 log.error("Unable to obtain read lock for file: {}", catFile, e);
             } finally {
-                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+                // Only release our reference if we actually obtained one, otherwise we'd decrement another accessor's
+                if (fl != null) {
+                    ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+                }
             }
 
             if (cat == null) {
@@ -318,6 +322,34 @@ public class CatalogUtils {
                                                       final boolean includeFullPaths,
                                                       @Nullable final String project) throws ServerException {
             return getOrCreateAndClean(rootPath, resource, includeFullPaths, project, null, null);
+        }
+
+        /**
+         * As {@link #getOrCreateAndClean(String, XnatResourcecatalogI, boolean, String)} for callers that only read:
+         * the catalog is located with {@link CatalogUtils#findCatalogFile(String, XnatResourcecatalogI)}, a gzipped
+         * catalog is read in place, and a missing catalog is reported rather than created. Nothing is written.
+         *
+         * @throws ServerException if the resource has no catalog file, or it cannot be read.
+         */
+        @Nonnull
+        public static CatalogData getExistingAndClean(final String rootPath,
+                                                      final XnatResourcecatalogI resource,
+                                                      final boolean includeFullPaths,
+                                                      @Nullable final String project) throws ServerException {
+            final File catalogFile = findCatalogFile(rootPath, resource);
+            if (catalogFile == null) {
+                throw new ServerException("No catalog file for resource " + resource.getUri() + " under " + rootPath);
+            }
+            final XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog xr) ? xr : null;
+            final CatalogData catalogData = new CatalogData(catalogFile, catRes, project, null, false);
+            formalizeCatalog(catalogData.catBean, catalogData.catPath, catalogData.project, null, null);
+            if (includeFullPaths) {
+                CatCatalogMetafieldBean mf = new CatCatalogMetafieldBean();
+                mf.setName("CATALOG_LOCATION");
+                mf.setMetafield(catalogData.catPath);
+                catalogData.catBean.addMetafields_metafield(mf);
+            }
+            return catalogData;
         }
 
         @Nonnull
@@ -452,8 +484,8 @@ public class CatalogUtils {
             MessageDigest md5 = MessageDigest.getInstance(hashType);
 
             //read into buffer and update md5
+            ThreadAndProcessFileLock fl = null;
             try {
-                ThreadAndProcessFileLock fl = null;
                 if (needLock) {
                     fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, true);
                     fl.tryLock(10L, TimeUnit.SECONDS);
@@ -478,7 +510,7 @@ public class CatalogUtils {
             } catch (IOException e) {
                 log.error("Unable to obtain read lock for file {}", file.getAbsolutePath(), e);
             } finally {
-                if (needLock) ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
+                if (fl != null) ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
             }
         } catch(NoSuchAlgorithmException e){
             log.error("Unsupported hashing algorithm {}", hashType, e);
@@ -2167,9 +2199,9 @@ public class CatalogUtils {
 
         refreshAuditSummary(catalogData.catBean, auditSummary);
 
+        ThreadAndProcessFileLock fl = null;
         try {
-            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogData.catFile,
-                    false);
+            fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogData.catFile, false);
             fl.tryLock(10L, TimeUnit.SECONDS);
             //log.trace("{} writer start: {}", System.currentTimeMillis(), fl.toString());
             try {
@@ -2195,13 +2227,31 @@ public class CatalogUtils {
             log.error("Error writing catalog file {}", catalogData.catFile, e);
             throw e;
         } finally {
-            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogData.catFile);
+            // Only release our reference if we actually obtained one, otherwise we'd decrement another accessor's
+            if (fl != null) {
+                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogData.catFile);
+            }
         }
     }
 
     @Nonnull
-    public static File getOrCreateCatalogFile(String rootPath, XnatResourcecatalogI resource, @Nullable String project)
-            throws ServerException {
+    /**
+     * Locates a resource's catalog file without touching the filesystem beyond existence checks: the plain catalog
+     * if present, otherwise its gzipped copy, otherwise null. Read-only callers use this instead of
+     * {@link #getOrCreateCatalogFile}, which creates a missing catalog and unzips a gzipped one in place.
+     */
+    @Nullable
+    public static File findCatalogFile(String rootPath, XnatResourcecatalogI resource) {
+        final String fullPath = catalogPath(rootPath, resource);
+        final File plain = new File(fullPath);
+        if (plain.exists()) {
+            return plain;
+        }
+        final File gzipped = new File(fullPath + ".gz");
+        return gzipped.exists() ? gzipped : null;
+    }
+
+    private static String catalogPath(String rootPath, XnatResourcecatalogI resource) {
         String fullPath = getFullPath(rootPath, resource);
         if (fullPath.endsWith("\\")) {
             fullPath = fullPath.substring(0, fullPath.length() - 1);
@@ -2209,6 +2259,12 @@ public class CatalogUtils {
         if (fullPath.endsWith("/")) {
             fullPath = fullPath.substring(0, fullPath.length() - 1);
         }
+        return fullPath;
+    }
+
+    public static File getOrCreateCatalogFile(String rootPath, XnatResourcecatalogI resource, @Nullable String project)
+            throws ServerException {
+        final String fullPath = catalogPath(rootPath, resource);
 
         File f = new File(fullPath);
         if (f.exists()) {

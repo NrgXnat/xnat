@@ -196,14 +196,20 @@ public class CatalogBuilder implements Callable<Map<File, AbstractMap.SimpleEntr
             final CatDcmcatalogBean secondary = new CatDcmcatalogBean();
             for (final URI uri : secondaryFiles.keySet()) {
                 final CatDcmentryBean entry = new CatDcmentryBean();
-                for (final ExtAttrValue val : SessionBuilder.setValues(entry, fileValues.get(uri), "URI", "instanceNumber", "numFrames")) {
+                // instanceNumber is no longer skipped: it is set from the object like any other attribute,
+                // as the primary catalog already does. Snapshots are rendered from this catalog too, and
+                // without it the montage had no order to draw the objects in.
+                for (final ExtAttrValue val : SessionBuilder.setValues(entry, fileValues.get(uri), "URI", "numFrames")) {
                     if ("URI".equals(val.getName())) {
                         String relativePath = secondaryFiles.get(uri);
                         if (relativePath != null) {
                             entry.setUri(relativePath);
                         }
                     }
-                    // ignore instanceNumber, numFrames, as they don't really apply to secondary files
+                    // numFrames stays out of dimensions_z. ImageFileAttributes does not collect Rows or
+                    // Columns, so the builder cannot tell an image from a report here, and would record a
+                    // frame per report for a catalog holding no slices at all -- which reads as a count
+                    // rather than as its absence, and would stop the reader counting them properly.
                 }
                 secondary.addEntries_entry(entry);
             }

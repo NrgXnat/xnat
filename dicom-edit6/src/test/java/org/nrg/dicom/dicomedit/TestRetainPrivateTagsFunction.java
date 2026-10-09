@@ -1488,10 +1488,14 @@ public class TestRetainPrivateTagsFunction {
 
     private final static int[] PATIENT_NAME     = {0x00100010};
 
+    // 0x00100017 must stay an element the DICOM standard has not assigned: these constants are
+    // placeholders for "some element inside a sequence item", not real attributes. This was
+    // 0x00100011 until dcm4che 5.35.0 picked up a dictionary in which the standard had assigned
+    // it as PersonNamesToUseSequence, VR SQ, and setting a string value on it stopped working.
     private final static int[] SEQ1_1           = {0x00080066,0,0x00100010};
-    private final static int[] SEQ1_2           = {0x00080066,0,0x00100011};
+    private final static int[] SEQ1_2           = {0x00080066,0,0x00100017};
     private final static int[] SEQ1_SEQ1_1      = {0x00080066,0,0x00100020,0,0x00100010};
-    private final static int[] SEQ1_SEQ1_2      = {0x00080066,0,0x00100020,0,0x00100011};
+    private final static int[] SEQ1_SEQ1_2      = {0x00080066,0,0x00100020,0,0x00100017};
 
 
     private final static int[] SPI_RELEASE_1_ID9      = {0x00090010};

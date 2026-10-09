@@ -91,19 +91,26 @@ public class Anonymizer {
                 }
             } else {
                 AnonymizationResult result = applicator.apply(inFile);
-                if (result instanceof AnonymizationResultReject) {
-                    logger.info("File rejected: %s", inFile.getAbsolutePath());
-                }
-                else if (result instanceof AnonymizationResultError) {
-                    logger.error("Error processing %s", inFile.getAbsolutePath(), String.join("\n", result.getMessages()));
-                } else {
-                    File parent = outFile.getAbsoluteFile().getParentFile();
-                    if (!parent.exists()) {
-                        Files.createDirectories(parent.toPath());
+                try {
+                    if (result instanceof AnonymizationResultReject) {
+                        logger.info("File rejected: %s", inFile.getAbsolutePath());
                     }
-                    try (FileOutputStream out = new FileOutputStream(outFile)) {
-                        result.getDicomObject().write(out);
+                    else if (result instanceof AnonymizationResultError) {
+                        logger.error("Error processing %s", inFile.getAbsolutePath(), String.join("\n", result.getMessages()));
+                    } else {
+                        File parent = outFile.getAbsoluteFile().getParentFile();
+                        if (!parent.exists()) {
+                            Files.createDirectories(parent.toPath());
+                        }
+                        try (FileOutputStream out = new FileOutputStream(outFile)) {
+                            result.getDicomObject().write(out);
+                        }
                     }
+                } finally {
+                    // A pixel edit stages the redacted frames in a scratch file that the object
+                    // reads from on write, so it cannot be released until after the write. Nothing
+                    // else deletes it, and over a directory of objects that is one file apiece.
+                    result.getDicomObject().releaseScratchFiles();
                 }
             }
         }

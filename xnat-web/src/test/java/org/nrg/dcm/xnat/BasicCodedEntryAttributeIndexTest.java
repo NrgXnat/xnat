@@ -110,4 +110,25 @@ public class BasicCodedEntryAttributeIndexTest {
 		final DicomAttributeIndex dai0 = new BasicCodedEntryAttributeIndex(new Integer[]{0x00400260}, "99CZM", "1.0");
 		assertArrayEquals(new String[]{"Macular Cube 512x128"}, dai0.getStrings(attributes));
 	}
+
+	/**
+	 * A stop tag only gates top-level elements, so the bound is the sequence this enters. The value tag is read
+	 * out of a nested context -- getStrings resolves it against getNestedContexts -- so it is reachable once the
+	 * sequence is read and must not widen the window. Here it is numerically lower anyway; the second case is the
+	 * one that would have been wrong.
+	 */
+	@Test
+	public void boundsAtTheSequenceRatherThanTheValueTag() {
+		assertEquals(0x00400260,
+		             new BasicCodedEntryAttributeIndex(new Integer[]{0x00400260}, "99CZM", "1.0", "CZM_1_0",
+		                                               0x00080104).getMaxTag());
+	}
+
+	/** A value tag above its own sequence must still not widen the window. */
+	@Test
+	public void boundsAtTheSequenceEvenWhenTheValueTagSortsHigher() {
+		assertEquals(0x00080100,
+		             new BasicCodedEntryAttributeIndex(new Integer[]{0x00080100}, "99CZM", "1.0", "CZM_1_0",
+		                                               0xF2151050).getMaxTag());
+	}
 }

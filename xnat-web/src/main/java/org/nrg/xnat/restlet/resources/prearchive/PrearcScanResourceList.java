@@ -84,7 +84,7 @@ public class PrearcScanResourceList extends PrearcSessionResourceA {
         String prearchivePath = info.session.getPrearchivepath();
         for (final XnatAbstractresourceI res : scan.getFile()) {
 			try {
-				final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(prearchivePath,
+				final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getExistingAndClean(prearchivePath,
 						(XnatResourcecatalogI) res, false, project);
 				CatalogUtils.Stats stats = CatalogUtils.getFileStats(catalogData.catBean, catalogData.catPath,
 						catalogData.project);

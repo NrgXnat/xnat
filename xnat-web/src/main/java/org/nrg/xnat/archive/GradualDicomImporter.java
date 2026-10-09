@@ -454,7 +454,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
         } catch (ClientException e) {
             throw e;
         } catch (Throwable t) {
-            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);
+            String msg = String.join(": ","unable to read DICOM object " + name, t.getMessage());
+            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, msg, t);
         } finally {
             // Only safe here, and for the same reason as the spool files below: the dataset holds
             // references into the staged pixels and write() reads them.

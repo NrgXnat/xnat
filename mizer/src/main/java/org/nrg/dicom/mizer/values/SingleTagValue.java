@@ -55,10 +55,11 @@ public final class SingleTagValue extends AbstractMizerValue {
             throws ScriptEvaluationException {
         try {
             Attributes attrs = dicomObject.getAttributes();
-            String value = attrs.getString((int)_tag); 
+            String value = attrs.getString((int)_tag);
             return value;
         } catch (Exception e) {
-            throw new ScriptEvaluationException(e);
+            throw new ScriptEvaluationException(
+                    "Error reading tag " + TagUtils.toString((int) _tag) + ": " + e.getMessage(), e);
         }
     }
 

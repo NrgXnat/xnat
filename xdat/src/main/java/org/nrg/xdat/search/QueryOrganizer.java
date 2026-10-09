@@ -1359,13 +1359,19 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     fieldPath = fieldPath.substring(14);
                 }
 
-                String temp = XftStringUtils.cleanColumnName(StringUtils.replace(fieldPath, ".", "_"));
-                if (! selected.contains(temp.toLowerCase()))
+                // The key into selected/tables must stay the full cleaned name: addSubqueryToJoin()
+                // registered this subquery's join under exactly that key. Only the emitted SQL
+                // alias is shortened — the same treatment XftStringUtils.CreateAlias() already
+                // gives ordinary columns — so that Postgres' 63-byte truncation cannot collapse
+                // two long pipeline names onto one column name (XNAT-6374).
+                String key  = XftStringUtils.cleanColumnName(StringUtils.replace(fieldPath, ".", "_"));
+                String temp = XftStringUtils.formatPostgreSQLIdentifier(key);
+                if (! selected.contains(key.toLowerCase()))
                 {
-                    selected.add(temp.toLowerCase());
-                    String alias = temp;
-                    if(tables.containsKey(temp)){
-                        alias = tables.get(temp);
+                    selected.add(key.toLowerCase());
+                    String alias = key;
+                    if(tables.containsKey(key)){
+                        alias = tables.get(key);
                     }
                     SchemaElement se = SchemaElement.GetElement(elementName);
                     SQLQueryField df = (SQLQueryField) se.getDisplayField(fieldPath.substring(0, fieldPath.indexOf(".")));
@@ -1379,7 +1385,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                             sb.append(", ").append(fieldPath).append(" AS ").append(temp);
                         }
                     }else{
-                        alias = XftStringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp;
+                        alias = XftStringUtils.formatPostgreSQLIdentifier(XftStringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp);
                         if (counter++==0)
                         {
                             sb.append(se.getSQLName()).append(".").append(temp).append(" AS ").append(alias);

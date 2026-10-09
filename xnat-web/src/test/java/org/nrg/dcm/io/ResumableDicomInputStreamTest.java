@@ -3,6 +3,7 @@ package org.nrg.dcm.io;
 import com.google.common.io.ByteStreams;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.BulkData;
+import org.dcm4che3.data.Fragments;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
@@ -40,8 +41,7 @@ import static org.junit.Assert.assertTrue;
  * Covers {@link ResumableDicomInputStream#openWithBulkDataOffHeap}, which exists for XNAT-7933: the importer's
  * read window is sized from the identifier's tags, so an identifier configured with a private tag in a group
  * &gt;= 0x8000 now reads past (7FE0,0010) where it never used to. These cover what that costs -- the pixel data
- * must not land on the heap, the bytes written must not change, and the files dcm4che spools instead must not
- * be left behind.
+ * must not land on the heap, the bytes written must not change, and the spool files must not be left behind.
  */
 public class ResumableDicomInputStreamTest {
 
@@ -72,7 +72,7 @@ public class ResumableDicomInputStreamTest {
         assertTrue("pixel data should be a reference, not a heap byte[], but was "
                    + (pixelData == null ? "null" : pixelData.getClass().getName()),
                    pixelData instanceof BulkData);
-        assertEquals("dcm4che should report the file it spooled to", 1, spooled.size());
+        assertEquals("the stream should report the file it spooled to", 1, spooled.size());
 
         ResumableDicomInputStream.deleteBulkDataFiles(spooled);
     }
@@ -166,7 +166,8 @@ public class ResumableDicomInputStreamTest {
 
     /**
      * Falling back to java.io.tmpdir would defeat the reason for configuring a directory, which may be that
-     * the pixel data must not go there.
+     * the pixel data must not go there. The failure comes when a value actually has to be spooled: the
+     * directory is resolved then, and not on the ordinary read that never reaches the pixel data.
      */
     @Test
     public void failsRatherThanFallingBackWhenTheDirectoryCannotBeCreated() throws Exception {
@@ -174,13 +175,32 @@ public class ResumableDicomInputStreamTest {
         System.setProperty(ResumableDicomInputStream.SCRATCH_DIR_PROPERTY,
                            new File(blocker, "scratch").getAbsolutePath());
 
-        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(FIXTURE))) {
-            ResumableDicomInputStream.openWithBulkDataOffHeap(bis);
+        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(FIXTURE));
+             final ResumableDicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis)) {
+            dis.readFileMetaInformation();
+            dis.readAttributes(new Attributes(), -1, -1);
             fail("expected an IOException naming the directory it could not create");
         } catch (IOException expected) {
             assertTrue("the message should name the directory, but was: " + expected.getMessage(),
                        expected.getMessage().contains("scratch"));
         }
+    }
+
+    /**
+     * The spool directory is resolved under a class-level lock, so an ordinary import -- which stops short
+     * of the pixel data and spools nothing -- must not touch it at all.
+     */
+    @Test
+    public void ordinaryReadNeverResolvesTheSpoolDirectory() throws Exception {
+        final File unusable = folder.newFile("would-fail-if-resolved");
+        System.setProperty(ResumableDicomInputStream.SCRATCH_DIR_PROPERTY,
+                           new File(unusable, "scratch").getAbsolutePath());
+
+        final List<File> spooled = new ArrayList<>();
+        final Attributes dataset = read(Tag.SeriesInstanceUID + 1, spooled);
+
+        assertTrue("the ordinary window should read identifying tags", dataset.contains(Tag.SeriesInstanceUID));
+        assertTrue("an ordinary read must spool nothing", spooled.isEmpty());
     }
 
     /**
@@ -242,9 +262,9 @@ public class ResumableDicomInputStreamTest {
     }
 
     /**
-     * The files dcm4che spools hold pixel data, so nobody but this user should be able to read them. dcm4che
-     * creates them through the legacy File.createTempFile, which takes its mode from the umask, so the
-     * directory has to be what keeps them private.
+     * The spool files hold pixel data, so nobody but this user should be able to read them: the files
+     * themselves, and the directory they sit in, which is what keeps dcm4che's own spool files private
+     * when it does the spooling.
      */
     @Test
     public void spoolsSomewhereOnlyTheOwnerCanRead() throws Exception {
@@ -255,8 +275,75 @@ public class ResumableDicomInputStreamTest {
 
         assertEquals("the spool directory should be owner-only",
                      PosixFilePermissions.fromString("rwx------"), Files.getPosixFilePermissions(directory));
+        assertEquals("the spool file should be owner-only",
+                     PosixFilePermissions.fromString("rw-------"), Files.getPosixFilePermissions(spooled.get(0).toPath()));
 
         ResumableDicomInputStream.deleteBulkDataFiles(spooled);
+    }
+
+    /**
+     * Encapsulated pixel data arrives as fragments, and dcm4che asks for each one separately. They all go into
+     * the one spool file, at the right offsets, and come back out to make the same object.
+     */
+    @Test
+    public void spoolsEveryFragmentOfEncapsulatedPixelData() throws Exception {
+        final File encapsulated = encapsulatedFixture();
+        final List<File> spooled = new ArrayList<>();
+        final File written = folder.newFile("encapsulated-out.dcm");
+        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(encapsulated));
+             final ResumableDicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis)) {
+            final Attributes fmi = dis.readFileMetaInformation();
+            final Attributes dataset = new Attributes();
+            dis.readAttributes(dataset, -1, -1);
+            spooled.addAll(dis.getSpoolFiles());
+
+            final Object pixelData = dataset.getValue(Tag.PixelData);
+            assertTrue("encapsulated pixel data should read as fragments", pixelData instanceof Fragments);
+            final Fragments fragments = (Fragments) pixelData;
+            assertEquals("offset table plus three frames", 4, fragments.size());
+            for (int i = 1; i < fragments.size(); i++) {
+                assertTrue("fragment " + i + " should be a spool reference", fragments.get(i) instanceof BulkData);
+            }
+            assertEquals("every fragment should share one spool file", 1, spooled.size());
+
+            try (final DicomOutputStream out = new DicomOutputStream(written)) {
+                out.writeDataset(fmi, dataset);
+            }
+        }
+        assertArrayEquals("the object must come back out of the spool exactly as it went in",
+                          Files.readAllBytes(encapsulated.toPath()), Files.readAllBytes(written.toPath()));
+
+        ResumableDicomInputStream.deleteBulkDataFiles(spooled);
+        assertFalse(spooled.get(0).exists());
+    }
+
+    /** An object with three fragments of (not actually compressed) encapsulated pixel data. No codec needed. */
+    private File encapsulatedFixture() throws IOException {
+        final Attributes dataset = new Attributes();
+        dataset.setString(Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);
+        dataset.setString(Tag.SOPInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498.401");
+        dataset.setString(Tag.StudyInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498.402");
+        dataset.setString(Tag.SeriesInstanceUID, VR.UI, "1.2.826.0.1.3680043.8.498.403");
+        dataset.setInt(Tag.Rows, VR.US, 8);
+        dataset.setInt(Tag.Columns, VR.US, 8);
+        dataset.setInt(Tag.BitsAllocated, VR.US, 8);
+        dataset.setInt(Tag.SamplesPerPixel, VR.US, 1);
+        dataset.setString(Tag.PhotometricInterpretation, VR.CS, "MONOCHROME2");
+        dataset.setInt(Tag.NumberOfFrames, VR.IS, 3);
+        final Fragments fragments = dataset.newFragments(Tag.PixelData, VR.OB, 4);
+        fragments.add(new byte[0]);
+        for (int frame = 1; frame <= 3; frame++) {
+            final byte[] fragment = new byte[1000 + 2 * frame];
+            for (int i = 0; i < fragment.length; i++) {
+                fragment[i] = (byte) (frame * 37 + i);
+            }
+            fragments.add(fragment);
+        }
+        final File file = folder.newFile("encapsulated.dcm");
+        try (final DicomOutputStream out = new DicomOutputStream(file)) {
+            out.writeDataset(dataset.createFileMetaInformation(UID.JPEGBaseline8Bit), dataset);
+        }
+        return file;
     }
 
     /** Reads the fixture through the importer's own stream configuration, up to stopTag. */
@@ -266,7 +353,7 @@ public class ResumableDicomInputStreamTest {
             dis.readFileMetaInformation();
             final Attributes dataset = new Attributes();
             dis.readAttributes(dataset, -1, stopTag);
-            spooled.addAll(dis.getBulkDataFiles());
+            spooled.addAll(dis.getSpoolFiles());
             return dataset;
         }
     }
@@ -278,14 +365,14 @@ public class ResumableDicomInputStreamTest {
     private File reassemble(final boolean offHeap, final List<File> spooled, final String name) throws Exception {
         final File output = folder.newFile(name);
         try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(FIXTURE));
-             final DicomInputStream dis = offHeap
+             final ResumableDicomInputStream dis = offHeap
                                           ? ResumableDicomInputStream.openWithBulkDataOffHeap(bis)
                                           : new ResumableDicomInputStream(bis)) {
             Attributes fmi = dis.readFileMetaInformation();
             final String transferSyntaxUID = dis.getTransferSyntax();
             final Attributes dataset = new Attributes();
             dis.readAttributes(dataset, -1, HIGH_GROUP_WINDOW);
-            spooled.addAll(dis.getBulkDataFiles());
+            spooled.addAll(dis.getSpoolFiles());
             dis.reset();
 
             if (null == fmi || !fmi.contains(Tag.TransferSyntaxUID)) {

@@ -2,6 +2,7 @@ package org.nrg.dicom.mizer.objects;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Sequence;
+import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 
@@ -174,6 +175,25 @@ public class Dcm4cheConvert {
     @Deprecated
     public static SplitAttributes splitFmiAndDataset(Attributes dataset) {
         return extractFmiFromDataset(dataset);
+    }
+
+    /**
+     * Merges the file meta information into the dataset, so processors and scripts see a complete
+     * object, synthesizing the meta group from the dataset first when the source carried none -- a
+     * DIMSE stream has no meta group -- or what it carried names no transfer syntax.
+     *
+     * @param dataset        the dataset to merge into.
+     * @param fmi            the file meta information the source carried, or null.
+     * @param transferSyntax the transfer syntax to synthesize a meta group with when needed.
+     *
+     * @return the meta group that was merged.
+     */
+    public static Attributes mergeFileMetaInformation(final Attributes dataset, final Attributes fmi, final String transferSyntax) {
+        final Attributes merged = fmi == null || !fmi.contains(Tag.TransferSyntaxUID)
+                                  ? dataset.createFileMetaInformation(transferSyntax)
+                                  : fmi;
+        dataset.addAll(merged);
+        return merged;
     }
 
 }

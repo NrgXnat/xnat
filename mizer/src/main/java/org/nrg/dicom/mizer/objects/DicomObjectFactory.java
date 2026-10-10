@@ -370,7 +370,7 @@ public class DicomObjectFactory {
                 VR vr = dataset.getVR(tag);
                 if (BYTES_VRS.contains(vr)) {
                     byte[] byteResult =getBytes(tag);
-                    if (byteResult[byteResult.length-1]==0) {
+                    if (byteResult.length > 0 && byteResult[byteResult.length-1]==0) {
                         byteResult = Arrays.copyOf(byteResult, byteResult.length-1);
                     }
                     return  new String[]{new String(byteResult,StandardCharsets.UTF_8)};

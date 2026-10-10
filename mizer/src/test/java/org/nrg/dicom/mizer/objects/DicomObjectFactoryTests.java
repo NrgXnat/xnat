@@ -1,6 +1,8 @@
 package org.nrg.dicom.mizer.objects;
 
+import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -348,6 +350,19 @@ public class DicomObjectFactoryTests {
     public void getBytes() {
         DicomObjectI dobj = createDicomObject_All_VRs();
         assertEquals(OB_VM1.encodedValue, encodeHex(dobj.getBytes(OB_VM1.tag)));
+    }
+
+    @Test
+    public void getStringOfEmptyBinaryValue() {
+        Attributes attrs = new Attributes();
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.setBytes(0x00291010, VR.OB, new byte[0]);
+        attrs.setBytes(0x00291011, VR.OW, new byte[0]);
+        attrs.setNull(0x00291012, VR.UC);
+        DicomObjectI dobj = new DicomObjectFactory.MizerDicomObject(attrs);
+        assertEquals("", dobj.getString(0x00291010));
+        assertEquals("", dobj.getString(0x00291011));
+        assertEquals("", dobj.getString(0x00291012));
     }
 
     @Test

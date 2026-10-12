@@ -40,6 +40,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -49,6 +51,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.nrg.xdat.preferences.HandlePetMr.SEPARATE_PET_MR;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.*;
 
@@ -167,32 +171,39 @@ public class XNATSessionBuilder implements Callable<Boolean> {
             }
         }
 
+        boolean built = false;
         for (final BuilderConfig bc : BUILDER_CLASSES) {
-            switch (bc.getCode()) {
-                case DICOM:
-                    buildDicomSession();
-                    break;
+            built = writeAtomically(xml, output -> {
+                switch (bc.getCode()) {
+                    case DICOM:
+                        return buildDicomSession(output);
 
-                case ECAT:
-                    buildPetSession();
-                    break;
+                    case ECAT:
+                        return buildPetSession(output);
 
-                default:
-                    buildCustomSession(bc);
-            }
-
-            if (xml.exists() && xml.length() > 0) {
+                    default:
+                        return buildCustomSession(bc, output);
+                }
+            });
+            if (built) {
                 break;
             }
         }
+        if (!built) {
+            // No builder produced a session: leave the XML empty, as the builders' writers always did.
+            Files.write(xml.toPath(), new byte[0]);
+        }
 
-        if (resources != null && !resources.isEmpty()) {
+        if (built && resources != null && !resources.isEmpty()) {
             try {
-                XnatImagesessiondataBean postSession = PrearcTableBuilder.parseSession(xml);
+                final XnatImagesessiondataBean postSession = PrearcTableBuilder.parseSession(xml);
                 postSession.setResources_resource((ArrayList<XnatAbstractresourceBean>) resources);
-                try (FileWriter fw = new FileWriter(xml)) {
-                    postSession.toXML(fw);
-                }
+                writeAtomically(xml, output -> {
+                    try (final FileWriter fw = new FileWriter(output)) {
+                        postSession.toXML(fw);
+                    }
+                    return true;
+                });
             } catch (Exception e) {
                 log.error("Unable to add resources to xml {} after rebuild", xml, e);
             }
@@ -201,9 +212,44 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         return Boolean.TRUE;
     }
 
-    private void buildCustomSession(final BuilderConfig builderConfig) throws IOException {
+    /**
+     * Writes a file beside {@code target} and moves it over {@code target} only when the writer
+     * finished and wrote something, so a build that fails partway, gives up, or runs alongside
+     * another never leaves a truncated session XML for the next reader.
+     *
+     * @return Whether {@code target} was replaced.
+     */
+    static <E extends Exception> boolean writeAtomically(final File target, final SessionXmlWriter<E> writer) throws E, IOException {
+        // A fixed-length name: one built from the session's could pass NAME_MAX.
+        final File attempt = new File(target.getParentFile(), ".session-xml-" + UUID.randomUUID() + ".tmp");
+        try {
+            if (!writer.write(attempt) || attempt.length() == 0) {
+                return false;
+            }
+            try {
+                Files.move(attempt.toPath(), target.toPath(), ATOMIC_MOVE, REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(attempt.toPath(), target.toPath(), REPLACE_EXISTING);
+            }
+            return true;
+        } finally {
+            Files.deleteIfExists(attempt.toPath());
+        }
+    }
+
+    @FunctionalInterface
+    interface SessionXmlWriter<E extends Exception> {
+        /**
+         * Writes a session XML to {@code output}.
+         *
+         * @return False if the writer gave up partway, so what it wrote is not a session.
+         */
+        boolean write(File output) throws E;
+    }
+
+    private boolean buildCustomSession(final BuilderConfig builderConfig, final File output) throws IOException {
         //this is currently unused... and probably should be re-written.  It was a first pass.
-        try (final FileWriter fileWriter = new FileWriter(xml)) {
+        try (final FileWriter fileWriter = new FileWriter(output)) {
             final Constructor<? extends SessionBuilder> constructor = builderConfig.sessionBuilderClass.getConstructor(PARAMETER_TYPES);
             try {
                 final SessionBuilder sessionBuilder = constructor.newInstance(dir, fileWriter);
@@ -212,17 +258,20 @@ public class XNATSessionBuilder implements Callable<Boolean> {
                 sessionBuilder.run();
             } catch (IllegalArgumentException | InstantiationException | InvocationTargetException | IllegalAccessException e) {
                 log.error("An error occurred trying to build the non-DICOM non-ECAT session", e);
+                return false;
             }
         } catch (SecurityException | NoSuchMethodException e) {
             log.error("An error occurred trying to build the specified session builder class", e);
+            return false;
         } catch (IOException e) {
             log.warn("unable to process session directory {}", dir, e);
             throw e;
         }
+        return true;
     }
 
-    private void buildPetSession() throws IOException {
-        try (final FileWriter fw = new FileWriter(xml)) {
+    private boolean buildPetSession(final File output) throws IOException {
+        try (final FileWriter fw = new FileWriter(output)) {
             //hard coded implementation for ECAT
             final PETSessionBuilder petSessionBuilder = new PETSessionBuilder(dir, fw, params.get(PROJECT_PARAM));
             log.debug("assigning session params for ECAT session builder from {}", params);
@@ -236,9 +285,10 @@ public class XNATSessionBuilder implements Callable<Boolean> {
             log.warn("unable to process session directory {}", dir, e);
             throw e;
         }
+        return true;
     }
 
-    private void buildDicomSession() throws IOException {
+    private boolean buildDicomSession(final File output) throws IOException {
         // Hard-coded implementation for DICOM.
         // Turn the parameters into an array of XnatAttrDef.Constant attribute definitions
         final boolean createPetMrAsPet = HandlePetMr.get(params.get(SEPARATE_PET_MR)) == HandlePetMr.Pet;
@@ -248,7 +298,7 @@ public class XNATSessionBuilder implements Callable<Boolean> {
         // The constructor is the whole-directory walk and header parse; run() assembles the session,
         // builds the catalogs, moves the files into their scan directories and writes the XML.
         final PhaseTimer timer = new PhaseTimer();
-        try (final FileWriter fileWriter = new FileWriter(xml);
+        try (final FileWriter fileWriter = new FileWriter(output);
              final DICOMSessionBuilder dicomSessionBuilder = new DICOMSessionBuilder(dir, fileWriter, attrDefs)) {
             timer.lap("scan-files");
             @SuppressWarnings("unchecked") final List<String> excludedFields = XDAT.getContextService().getBean("excludedDicomImportFields", List.class);
@@ -272,9 +322,12 @@ public class XNATSessionBuilder implements Callable<Boolean> {
             throw e;
         } catch (SQLException e) {
             log.error("unable to process session directory {}", dir, e);
+            return false;
         } catch (Throwable e) {
             log.error("An unexpected error occurred trying to process session directory {}", dir, e);
+            return false;
         }
+        return true;
     }
 
     private static ExecutorService getExecutor() {

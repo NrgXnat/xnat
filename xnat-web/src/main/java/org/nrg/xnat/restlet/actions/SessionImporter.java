@@ -26,6 +26,7 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.FinishImageUpload;
 import org.nrg.xnat.helpers.PrearcImporterHelper;
+import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.merge.SiteWideAnonymizer;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.helpers.uri.URIManager;
@@ -267,7 +268,13 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 
                 this.processing("Performing anonymization");
                 final SiteWideAnonymizer   siteWideAnonymizer = new SiteWideAnonymizer(imageSession, true, false);
-                List<AnonymizationResult> anonResults = siteWideAnonymizer.call();
+                // A failed site script removes the session from the prearchive. The delete erases its files, or moves them
+                // under the cache when the site sets backupDeletedToCache.
+                final List<AnonymizationResult> anonResults = SessionImportSiteAnonymization.run(siteWideAnonymizer::call,
+                        () -> PrearcDatabase.deleteSession(session.getFolderName(), session.getTimestamp(), session.getProject()));
+                // An object the site script rejects must not be archived. The merge and direct archive
+                // delete what their scripts reject; this import has to delete what this one rejects.
+                MergeUtils.deleteRejectedFiles(log, anonResults, imageSession.getProject());
                 if (!(anonResults.isEmpty() || anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance))){
                     // rebuild XML
                     XnatSubjectdata s = imageSession.getSubjectData();
@@ -293,12 +300,14 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                     return urls;
                 }
             } catch (Exception e) {
-                resetStatus(sessions);
-                if (e instanceof ClientException exception && Status.CLIENT_ERROR_CONFLICT.equals(exception.getStatus())) {
-                    //if this failed due to a conflict
-                    PrearcDatabase.setStatus(session.getSessionDir().getName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.CONFLICT);
-                } else {
-                    PrearcDatabase.setStatus(session.getSessionDir().getName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.ERROR);
+                if (!(e instanceof SessionImportSiteAnonymization.SessionRemovedException)) {
+                    resetStatus(sessions);
+                    if (e instanceof ClientException exception && Status.CLIENT_ERROR_CONFLICT.equals(exception.getStatus())) {
+                        //if this failed due to a conflict
+                        PrearcDatabase.setStatus(session.getSessionDir().getName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.CONFLICT);
+                    } else {
+                        PrearcDatabase.setStatus(session.getSessionDir().getName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.ERROR);
+                    }
                 }
                 throw e;
             }

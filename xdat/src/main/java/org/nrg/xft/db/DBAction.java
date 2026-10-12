@@ -42,7 +42,10 @@ import org.nrg.xft.security.SecurityManagerI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xft.utils.SaveLaps;
 import org.nrg.xft.utils.XftStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -99,6 +102,16 @@ public class DBAction {
     public static final String NEGATIVE_INFINITY_ABBR_CAPS = "-INF";
     public static final String EQUALS_NULL = "= NULL";
 
+    // Same logger as xnat-web's PhaseTimer (routed to the prearchive log at INFO), so a save's parts land beside
+    // the build/merge/archive laps; only saves slow enough to matter are reported.
+    private static final Logger TIMING              = LoggerFactory.getLogger("org.nrg.xnat.ingest.timing");
+    private static final long   TIMING_THRESHOLD_MS = 250;
+    static final int            TRIGGER_PIPELINE    = 50;   // update_ls commands per multi-statement round trip
+
+    // SimpleDateFormat is not thread-safe and costs a pattern compile to build; ValueParser formats a timestamp
+    // for every date-time property of every item stored, so each thread keeps one.
+    private static final ThreadLocal<SimpleDateFormat> DATE_TIME_FORMAT = ThreadLocal.withInitial(() -> new SimpleDateFormat(YYYY_MM_DD_HH_MM_SS_SSS));
+
     /**
      * This method is used to insert/update an item into the database.
      *
@@ -117,17 +130,21 @@ public class DBAction {
      * @return updated XFTItem
      */
     public static boolean StoreItem(XFTItem item, UserI user, boolean checkForDuplicates, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, SecurityManagerI securityManager, EventMetaI c) throws Exception {
-        long        localStartTime = Calendar.getInstance().getTimeInMillis();
+        final long  started        = Calendar.getInstance().getTimeInMillis();
+        long        localStartTime = started;
+        SaveLaps.reset();
         DBItemCache cache          = new DBItemCache(user, c);
         item = StoreItem(item, user, checkForDuplicates, new ArrayList(), quarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
 
-        log.debug("prepare-sql: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+        final long prepareMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+        log.debug("prepare-sql: {} ms", prepareMs);
         localStartTime = Calendar.getInstance().getTimeInMillis();
 
         if (!cache.getSQL().equals("") && !cache.getSQL().equals("[]")) {
             Quarantine(item, user, quarantine, overrideQuarantine, cache);
 
-            log.debug("quarantine-sql: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+            final long quarantineMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+            log.debug("quarantine-sql: {} ms", quarantineMs);
             localStartTime = Calendar.getInstance().getTimeInMillis();
 
             PoolDBUtils con;
@@ -144,16 +161,28 @@ public class DBAction {
                 log.debug("***** {} REMOVED ITEMS *******", cache.getRemoved().size());
                 PerformUpdateTriggers(cache, username, xdat_user_id, false);
             }
-            log.debug("pre-triggers: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+            final long preTriggersMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+            log.debug("pre-triggers: {} ms", preTriggersMs);
             localStartTime = Calendar.getInstance().getTimeInMillis();
             con = new PoolDBUtils();
+            final int statements = cache.getStatements().size();   // sendBatch resets the cache
             con.sendBatch(cache, item.getDBName(), username);
             log.debug("Item modifications stored. {} modified elements. {} SQL statements.", cache.getDBTriggers().size(), cache.getStatements().size());
-            log.debug("store: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+            final long storeMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+            log.debug("store: {} ms", storeMs);
             localStartTime = Calendar.getInstance().getTimeInMillis();
             PerformUpdateTriggers(cache, username, xdat_user_id, false);
-            log.debug("post-triggers: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
-            log.debug("Total: {} ms", Calendar.getInstance().getTimeInMillis() - localStartTime);
+            final long postTriggersMs = Calendar.getInstance().getTimeInMillis() - localStartTime;
+            log.debug("post-triggers: {} ms", postTriggersMs);
+            final long totalMs = Calendar.getInstance().getTimeInMillis() - started;
+            log.debug("Total: {} ms", totalMs);
+            if (totalMs >= TIMING_THRESHOLD_MS) {
+                // one line per slow save on the ingest timing logger, so an archive's save lap can be split into
+                // its parts from the log alone: the SELECTs that build the statements, the batch, the triggers
+                TIMING.info("Stored {} ({} statements, {} trigger items): prepare-sql {} ms, quarantine {} ms, pre-triggers {} ms, store {} ms, post-triggers {} ms, total {} ms; prepare-sql laps (own time): {}",
+                            item.getXSIType(), statements, cache.getDBTriggers().size(),
+                            prepareMs, quarantineMs, preTriggersMs, storeMs, postTriggersMs, totalMs, SaveLaps.summary());
+            }
             return true;
         } else {
             log.info("Pre-existing item found without modifications");
@@ -259,8 +288,17 @@ public class DBAction {
      *
      * @return The updated database item cache with the stored item.
      */
-    @SuppressWarnings("UnusedParameters")
     private static XFTItem StoreItem(XFTItem item, UserI user, boolean checkForDuplicates, ArrayList storedRelationships, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, DBItemCache cache, SecurityManagerI securityManager, boolean allowFieldMatching) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return storeItemImpl(item, user, checkForDuplicates, storedRelationships, quarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, allowFieldMatching);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.STORE_ITEM, started);
+        }
+    }
+
+    @SuppressWarnings("UnusedParameters")
+    private static XFTItem storeItemImpl(XFTItem item, UserI user, boolean checkForDuplicates, ArrayList storedRelationships, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, DBItemCache cache, SecurityManagerI securityManager, boolean allowFieldMatching) throws Exception {
         boolean isNew = true;
         try {
             String login = null;
@@ -309,7 +347,9 @@ public class DBAction {
 
             if (hasPK) {
                 //HAS ASSIGNED PK
+                final long pkLookup = SaveLaps.start();
                 ItemCollection al = item.getPkMatches(false);
+                SaveLaps.add(SaveLaps.Lap.PK_MATCHES, pkLookup);
                 if (al.size() > 0) {
                     isNew = false;
                     //ITEM EXISTS
@@ -345,7 +385,9 @@ public class DBAction {
                     }
                 } else {
                     if (item.hasUniques()) {
+                        final long uniqueLookup = SaveLaps.start();
                         ItemCollection temp = item.getUniqueMatches(false);
+                        SaveLaps.add(SaveLaps.Lap.UNIQUE_MATCHES, uniqueLookup);
                         if (temp.size() > 0) {
                             isNew = false;
                             XFTItem duplicate = (XFTItem) temp.get(0);
@@ -412,7 +454,9 @@ public class DBAction {
                                     GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                                     XFTItem             meta = (XFTItem) item.getProperty(f);
                                     if (meta == null) {
-                                        meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                        final long metaStart = SaveLaps.start();
+                                    meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                    SaveLaps.add(SaveLaps.Lap.META, metaStart);
                                         assert meta != null;
 
                                         StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -450,7 +494,9 @@ public class DBAction {
                                 GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                                 XFTItem             meta = (XFTItem) item.getProperty(f);
                                 if (meta == null) {
+                                    final long metaStart = SaveLaps.start();
                                     meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                    SaveLaps.add(SaveLaps.Lap.META, metaStart);
                                     assert meta != null;
 
                                     StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -499,7 +545,9 @@ public class DBAction {
             } else {
                 //HAS NO PK
                 if (item.hasUniques()) {
+                    final long uniqueLookup = SaveLaps.start();
                     ItemCollection temp = item.getUniqueMatches(false);
+                    SaveLaps.add(SaveLaps.Lap.UNIQUE_MATCHES, uniqueLookup);
                     if (temp.size() > 0) {
                         isNew = false;
                         XFTItem duplicate = (XFTItem) temp.get(0);
@@ -540,7 +588,9 @@ public class DBAction {
                                 GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                                 XFTItem             meta = (XFTItem) item.getProperty(f);
                                 if (meta == null) {
+                                    final long metaStart = SaveLaps.start();
                                     meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                    SaveLaps.add(SaveLaps.Lap.META, metaStart);
                                     assert meta != null;
 
                                     StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -627,7 +677,9 @@ public class DBAction {
                             GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                             XFTItem             meta = (XFTItem) item.getProperty(f);
                             if (meta == null) {
+                                final long metaStart = SaveLaps.start();
                                 meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                                SaveLaps.add(SaveLaps.Lap.META, metaStart);
                                 assert meta != null;
 
                                 StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -663,7 +715,9 @@ public class DBAction {
                         GenericWrapperField f    = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
                         XFTItem             meta = (XFTItem) item.getProperty(f);
                         if (meta == null) {
+                            final long metaStart = SaveLaps.start();
                             meta = XFTItem.NewMetaDataElement(user, item.getXSIType(), localQuarantine, cache.getModTime(), cache.getChangeId());
+                            SaveLaps.add(SaveLaps.Lap.META, metaStart);
                             assert meta != null;
 
                             StoreItem(meta, user, true, localQuarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, false);
@@ -781,6 +835,15 @@ public class DBAction {
      * @throws InvalidValueException    When an invalid value is specified for item properties.
      */
     private static boolean HasNewFields(final XFTItem oldI, final XFTItem newI, final boolean allowItemOverwrite) throws XFTInitException, ElementNotFoundException, InvalidValueException {
+        final long started = SaveLaps.start();
+        try {
+            return hasNewFieldsImpl(oldI, newI, allowItemOverwrite);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.HAS_NEW_FIELDS, started);
+        }
+    }
+
+    private static boolean hasNewFieldsImpl(final XFTItem oldI, final XFTItem newI, final boolean allowItemOverwrite) throws XFTInitException, ElementNotFoundException, InvalidValueException {
         Hashtable   newHash      = newI.getProps();
         Hashtable   oldHashClone = (Hashtable) oldI.getProps().clone();
         Enumeration enumer       = newHash.keys();
@@ -1184,6 +1247,15 @@ public class DBAction {
     }
 
     private static boolean StoreSingleRefs(XFTItem item, boolean storeSubItems, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, DBItemCache cache, SecurityManagerI securityManager, boolean allowFieldMatching) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return storeSingleRefsImpl(item, storeSubItems, user, quarantine, overrideQuarantine, allowItemOverwrite, cache, securityManager, allowFieldMatching);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.SINGLE_REFS, started);
+        }
+    }
+
+    private static boolean storeSingleRefsImpl(XFTItem item, boolean storeSubItems, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite, DBItemCache cache, SecurityManagerI securityManager, boolean allowFieldMatching) throws Exception {
         boolean hasNoIdentifier = false;
         //save single refs
         GenericWrapperField ext = null;
@@ -1389,6 +1461,15 @@ public class DBAction {
     }
 
     private static ItemI StoreMultipleRefs(XFTItem item, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval, DBItemCache cache, SecurityManagerI securityManager) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return storeMultipleRefsImpl(item, user, quarantine, overrideQuarantine, allowItemRemoval, cache, securityManager);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.MULTI_REFS, started);
+        }
+    }
+
+    private static ItemI storeMultipleRefsImpl(XFTItem item, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval, DBItemCache cache, SecurityManagerI securityManager) throws Exception {
 //		save multiple refs
         Iterator mRefs = item.getGenericSchemaElement().getMultiReferenceFields().iterator();
 
@@ -1658,6 +1739,15 @@ public class DBAction {
     }
 
     private static boolean StoreMapping(XFTManyToManyReference mapping, CriteriaCollection criteria, String login, DBItemCache cache) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return storeMappingImpl(mapping, criteria, login, cache);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.MAPPING, started);
+        }
+    }
+
+    private static boolean storeMappingImpl(XFTManyToManyReference mapping, CriteriaCollection criteria, String login, DBItemCache cache) throws Exception {
         final XFTTable table = TableSearch.GetMappingTable(mapping, criteria, login);
 
         if (table.getNumRows() > 0) {
@@ -1720,8 +1810,17 @@ public class DBAction {
      *
      * @return The item after insertion.
      */
-    @SuppressWarnings("ConstantConditions")
     public static XFTItem InsertItem(XFTItem item, String login, DBItemCache cache, boolean allowInvalidValues) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return insertItemImpl(item, login, cache, allowInvalidValues);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.INSERT, started);
+        }
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private static XFTItem insertItemImpl(XFTItem item, String login, DBItemCache cache, boolean allowInvalidValues) throws Exception {
         item.modified = true;
         item.assignDefaultValues();
 
@@ -1729,7 +1828,9 @@ public class DBAction {
         final PoolDBUtils           con     = new PoolDBUtils();
         if (element.isAutoIncrement()) {
             if (!item.hasPK()) {
-                Object key = con.getNextID(element.getDbName(), element.getSQLName(), item.getPkNames().getFirst(), element.getSequenceName());
+                final long nextId = SaveLaps.start();
+                Object key = cache.nextSequenceValue(con, element.getDbName(), element.getSQLName(), item.getPkNames().getFirst(), element.getSequenceName());
+                SaveLaps.add(SaveLaps.Lap.NEXT_ID, nextId);
                 if (key != null) {
                     item.setFieldValue(item.getPkNames().getFirst(), key);
                 }
@@ -1961,6 +2062,15 @@ public class DBAction {
      *
      */
     private static XFTItem UpdateItem(final XFTItem oldI, final XFTItem newI, final UserI user, final boolean quarantine, final boolean overrideQuarantine, final DBItemCache cache, final boolean storeNULLS) throws Exception {
+        final long started = SaveLaps.start();
+        try {
+            return updateItemImpl(oldI, newI, user, quarantine, overrideQuarantine, cache, storeNULLS);
+        } finally {
+            SaveLaps.add(SaveLaps.Lap.UPDATE, started);
+        }
+    }
+
+    private static XFTItem updateItemImpl(final XFTItem oldI, final XFTItem newI, final UserI user, final boolean quarantine, final boolean overrideQuarantine, final DBItemCache cache, final boolean storeNULLS) throws Exception {
         // MARK MODIFIED AS TRUE
         StoreHistoryAndMeta(oldI, newI, user, overrideQuarantine ? quarantine : oldI.getStatus().equals(ViewManager.QUARANTINE), cache);
 
@@ -2357,9 +2467,7 @@ public class DBAction {
             }
 
             if (d != null) {
-                SimpleDateFormat df = new SimpleDateFormat(YYYY_MM_DD_HH_MM_SS_SSS);
-
-                return toStringWrap(df.format(d));
+                return toStringWrap(DATE_TIME_FORMAT.get().format(d));
             } else {
                 return toStringWrap(XftStringUtils.CleanForSQLValue(object.toString()));
             }
@@ -3266,18 +3374,42 @@ public class DBAction {
             commands.add("SET LOCAL synchronous_commit TO ON;");
         }
 
+        ExecuteTriggerCommands(commands, dbname, username);
+        log.debug("Processed {} triggers in {} ms", commands.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);
+    }
+
+    /**
+     * Runs the update trigger commands of a save. Package-private so the pipelining and its fallback can be tested
+     * against a real database without building XFT items.
+     */
+    static void ExecuteTriggerCommands(final List<String> commands, final String dbname, final String username) {
         //process modification triggers
-        for (final String command : commands) {
-            try {
-                PoolDBUtils.ExecuteNonSelectQuery(command, dbname, username);
-            } catch (RuntimeException ignored) {
-            } catch (SQLException e) {
-                log.error("An SQL exception occurred trying to execute the command: \"{}\"", command, e);
-            } catch (Exception e) {
-                log.error("An unexpected exception occurred trying to execute the command: \"{}\"", command, e);
+        // In pipelines of up to TRIGGER_PIPELINE commands: the driver sends a multi-statement string in one round
+        // trip and the server runs it as one implicit transaction. A 200-scan session has 400 of these, each a
+        // pooled connection and a round trip on its own. Should any statement fail, the server rolls its pipeline
+        // back and that pipeline's commands run one at a time, exactly as they always did, so one bad trigger
+        // still stops only itself. The pipeline must see every error (ExecuteOrThrow): the tolerant executor the
+        // single commands use would take a rolled-back pipeline for a success.
+        for (final List<String> pipeline : Lists.partition(commands, TRIGGER_PIPELINE)) {
+            if (pipeline.size() > 1) {
+                try {
+                    PoolDBUtils.ExecuteOrThrow(pipeline.stream().map(command -> StringUtils.removeEnd(command.trim(), ";")).collect(Collectors.joining(";\n")));
+                    continue;
+                } catch (Exception e) {
+                    log.warn("Running {} triggers as one statement failed ({}); running them one at a time", pipeline.size(), e.getMessage());
+                }
+            }
+            for (final String command : pipeline) {
+                try {
+                    PoolDBUtils.ExecuteNonSelectQuery(command, dbname, username);
+                } catch (RuntimeException ignored) {
+                } catch (SQLException e) {
+                    log.error("An SQL exception occurred trying to execute the command: \"{}\"", command, e);
+                } catch (Exception e) {
+                    log.error("An unexpected exception occurred trying to execute the command: \"{}\"", command, e);
+                }
             }
         }
-        log.debug("Processed {} triggers in {} ms", commands.size(), Calendar.getInstance().getTimeInMillis() - localStartTime);
     }
 
     private static final Map<String, String> SEQUENCES = new HashMap<>();

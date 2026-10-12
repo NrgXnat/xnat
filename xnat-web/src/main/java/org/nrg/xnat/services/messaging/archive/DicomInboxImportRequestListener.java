@@ -25,6 +25,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.GradualDicomImporter;
+import org.nrg.xnat.archive.ImportScope;
 import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.helpers.file.StoredFile;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
@@ -230,6 +231,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
             try {
                 final GradualDicomImporter importer = new GradualDicomImporter(null, _user, new StoredFile(file.toFile(), false), _parameters);
                 importer.setIdentifier(getIdentifier());
+                importer.setScope(_scope);
                 if (null != getNamer()) {
                     importer.setNamer(getNamer());
                 }
@@ -257,6 +259,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
 
         private final Set<String> _folderUris = new LinkedHashSet<>();
         private final Set<String> _fileUris   = new LinkedHashSet<>();
+        private final ImportScope _scope      = new ImportScope();   // the request's files read their settings once
 
         private final DicomInboxImportRequestService _service;
         private final DicomInboxImportRequest        _request;

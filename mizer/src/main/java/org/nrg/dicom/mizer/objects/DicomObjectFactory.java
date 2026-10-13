@@ -1174,7 +1174,7 @@ public class DicomObjectFactory {
                 if (dataset.getString(org.dcm4che3.data.Tag.SOPInstanceUID) == null) {
                     dataset.setString(org.dcm4che3.data.Tag.SOPInstanceUID, VR.UI, UIDUtils.createUID());
                 }
-                DicomObjectWriter.write(dataset, os, null, null);
+                DicomObjectWriter.write(dataset, os, null);
             } catch (IOException e) {
                 throw new MizerException(e);
             }

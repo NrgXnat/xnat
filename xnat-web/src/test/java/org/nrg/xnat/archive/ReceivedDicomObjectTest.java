@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeNoException;
@@ -76,6 +77,12 @@ public class ReceivedDicomObjectTest {
     private static final String REJECTING_SCRIPT = String.join("\n",
             "version \"6.1\"",
             "reject[]");
+    private static final String DELETING_SOURCE_AE_TITLE_SCRIPT = String.join("\n",
+            "version \"6.1\"",
+            "- (0002,0016)");
+    private static final String REWRITING_SOURCE_AE_TITLE_SCRIPT = String.join("\n",
+            "version \"6.1\"",
+            "(0002,0016) := \"SCRUBBED\"");
     private static final String DELETING_BULK_DATA_SCRIPT = String.join("\n",
             "version \"6.1\"",
             "(0010,0010) := subject",
@@ -174,6 +181,14 @@ public class ReceivedDicomObjectTest {
         for (final File fixture : fixtures()) {
             assertSameResultEitherWay(fixture, SITE_SCRIPT);
         }
+    }
+
+    @Test
+    public void aScriptCanRemoveOrRewriteTheSourceAeTitle() throws Exception {
+        assertSameResultEitherWay(MR_FIXTURE, DELETING_SOURCE_AE_TITLE_SCRIPT);
+        assertNull("the script removed the sender's AE title", sourceAeTitleOf(new File(folder.getRoot(), "in-memory-" + MR_FIXTURE.getName())));
+        assertSameResultEitherWay(MR_FIXTURE, REWRITING_SOURCE_AE_TITLE_SCRIPT);
+        assertEquals("the script rewrote the sender's AE title", "SCRUBBED", sourceAeTitleOf(new File(folder.getRoot(), "in-memory-" + MR_FIXTURE.getName())));
     }
 
     @Test
@@ -288,7 +303,8 @@ public class ReceivedDicomObjectTest {
             assertTrue("the reference should point into the source file, not at a spool copy",
                        ((BulkData) pixelData).getURI().startsWith(source.toURI().toString()));
             assertTrue("nothing should be spooled for a file-backed read", filesUnder(scratch).isEmpty());
-            received.write(received.getDataset(), AE_TITLE, output, "test");
+            ReceivedDicomObject.stampSourceAeTitle(received.getDataset(), AE_TITLE);
+            received.write(received.getDataset(), output, "test");
         }
         assertArrayEquals("the source must come through the read, write and close untouched",
                           sourceBytes, Files.readAllBytes(source.toPath()));
@@ -311,7 +327,8 @@ public class ReceivedDicomObjectTest {
             assertTrue("pixel data should be a reference, not a heap byte[]", pixelData instanceof BulkData);
             assertFalse("a Deflated file's offsets are not file offsets, so the reference must not point into it",
                         ((BulkData) pixelData).getURI().startsWith(deflated.toURI().toString()));
-            received.write(received.getDataset(), AE_TITLE, output, "test");
+            ReceivedDicomObject.stampSourceAeTitle(received.getDataset(), AE_TITLE);
+            received.write(received.getDataset(), output, "test");
         }
         assertArrayEquals("the source must be untouched", sourceBytes, Files.readAllBytes(deflated.toPath()));
         assertArrayEquals("pixels must survive the spooled read", pixelData(MR_FIXTURE), pixelData(output));
@@ -330,7 +347,8 @@ public class ReceivedDicomObjectTest {
             final File output   = new File(folder.getRoot(), "whole-" + transferSyntax + ".dcm");
             try (ReceivedDicomObject received = ReceivedDicomObject.read(open(deflated), null, ORDINARY_LAST_TAG, false)) {
                 assertTrue(transferSyntax + " must force the whole read even when a partial one was asked for", received.isWhole());
-                received.write(received.getDataset(), AE_TITLE, output, "test");
+                ReceivedDicomObject.stampSourceAeTitle(received.getDataset(), AE_TITLE);
+                received.write(received.getDataset(), output, "test");
             }
             assertArrayEquals(transferSyntax + ": pixels must survive the round trip", pixelData(MR_FIXTURE), pixelData(output));
         }
@@ -350,7 +368,8 @@ public class ReceivedDicomObjectTest {
             final File output = new File(folder.getRoot(), "negotiated-" + transferSyntax + ".dcm");
             try (ReceivedDicomObject received = ReceivedDicomObject.read(open(bare), transferSyntax, ORDINARY_LAST_TAG, false)) {
                 assertTrue(transferSyntax + " must force the whole read even when a partial one was asked for", received.isWhole());
-                received.write(received.getDataset(), AE_TITLE, output, "test");
+                ReceivedDicomObject.stampSourceAeTitle(received.getDataset(), AE_TITLE);
+                received.write(received.getDataset(), output, "test");
             }
             try (DicomInputStream in = new DicomInputStream(output)) {
                 assertEquals(transferSyntax + ": the written object must keep the negotiated syntax",
@@ -395,11 +414,12 @@ public class ReceivedDicomObjectTest {
         final File inMemory = new File(folder.getRoot(), "in-memory-" + fixture.getName());
         final List<DicomObjectI> wrappers = new ArrayList<>();
         try (ReceivedDicomObject received = ReceivedDicomObject.read(open(fixture), null, ORDINARY_LAST_TAG, true)) {
+            ReceivedDicomObject.stampSourceAeTitle(received.getDataset(), AE_TITLE);
             final DicomObjectI wrapper = wrap(received.getDataset());
             wrappers.add(wrapper);
             final AnonymizationResult memoryResult = mizer.anonymize(wrapper, context(script));
             assertTrue(fixture.getName() + ": " + memoryResult.getMessage(), memoryResult instanceof AnonymizationResultSuccess);
-            received.write(received.getDataset(), AE_TITLE, inMemory, "test");
+            received.write(received.getDataset(), inMemory, "test");
         } finally {
             wrappers.forEach(DicomObjectI::releaseScratchFiles);
         }
@@ -409,10 +429,17 @@ public class ReceivedDicomObjectTest {
         assertTrue("nothing should be left in the spool", filesUnder(scratch).isEmpty());
     }
 
+    private static String sourceAeTitleOf(final File file) throws IOException {
+        try (DicomInputStream input = new DicomInputStream(file)) {
+            return input.readFileMetaInformation().getString(Tag.SourceApplicationEntityTitle);
+        }
+    }
+
     private File write(final File fixture, final String transferSyntax, final boolean whole, final String name) throws IOException {
         final File output = new File(folder.getRoot(), name);
         try (ReceivedDicomObject received = ReceivedDicomObject.read(open(fixture), transferSyntax, ORDINARY_LAST_TAG, whole)) {
-            received.write(received.getDataset(), AE_TITLE, output, "test");
+            ReceivedDicomObject.stampSourceAeTitle(received.getDataset(), AE_TITLE);
+            received.write(received.getDataset(), output, "test");
         }
         return output;
     }

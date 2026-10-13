@@ -153,7 +153,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         // cleanup runs after the whole import), and the read still spools when the transfer syntax
         // demands it.
         final File sourceFile = _fileWriter instanceof StoredFile ? ((StoredFile) _fileWriter).getStored() : null;
-        try (final ReceivedDicomObject received = ReceivedDicomObject.read(_fileWriter.getInputStream(), _transferSyntax, lastTag, anonymizeOnReceive, sourceFile)) {
+        try (final ReceivedDicomObject received = ReceivedDicomObject.read(_fileWriter.getInputStream(), _transferSyntax, lastTag, true, sourceFile)) {
             log.debug("Read {} of {}", received.isWhole() ? "the whole object, to anonymize before writing" : "the identifying header", name);
             final String transferSyntaxUID = received.getTransferSyntax();
             Attributes dataset = received.getDataset();

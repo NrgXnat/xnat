@@ -60,7 +60,7 @@ public class ExtractorFromRuleProvider implements ExtractorProvider {
     @Nullable
     public Extractor parseDicomRuleToExtractor( final String rule) {
         // Extractors are immutable and stateless, and a rule's text parses to the same extractor every time, so
-        // each distinct rule is compiled once rather than once per received object.
+        // each distinct rule is compiled once rather than once per received instance.
         return _extractors.computeIfAbsent(rule, this::compileExtractor);
     }
 

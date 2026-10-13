@@ -15,14 +15,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 
 /**
- * The settings one import reads once. XNAT receives DICOM objects in batches (the objects of one C-STORE
- * association, the entries of one uploaded archive, the files of one inbox request) and read the routing
- * rules, the enabled archive processors and a site preference from the database again for every object. The
- * owner of a batch creates a scope and gives it to each object's {@link GradualDicomImporter}, which binds it
- * to the thread while it runs; the readers under the importer ask {@link #scoped} for a value and compute it
- * the first time only. A setting changed while a batch is under way therefore applies from the next
- * association or request, not part-way through one, on this node and on every other. Without a scope on the
- * thread a reader reads as it always did.
+ * The settings one import reads once. XNAT receives DICOM instances in batches (the instances of one C-STORE
+ * association, the entries of one uploaded archive, the files of one inbox request), and every instance needs
+ * the routing rules, the enabled archive processors and a site preference, each a database read. The owner of
+ * a batch creates a scope and gives it to each instance's {@link GradualDicomImporter}, which binds it to the
+ * thread while it runs; the readers under the importer ask {@link #scoped} for a value and compute it the first
+ * time only. A setting changed while a batch is under way therefore applies from the next association or
+ * request, not part-way through one, on this node and on every other. Without a scope on the thread a reader
+ * reads every time.
  */
 public final class ImportScope {
     private static final ThreadLocal<ImportScope> CURRENT = new ThreadLocal<>();

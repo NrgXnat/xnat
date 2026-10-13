@@ -27,11 +27,11 @@ import java.util.TreeMap;
 /**
  * The items one database transaction has stored so far (see {@code DBItemCache.getSaved()}), kept so that
  * {@code DBAction.StoreItem} can tell an item it has already stored from a new one. StoreItem asks that of
- * every item it walks, and the plain {@link ItemCollection} answers by comparing the probe with every stored
- * item, so a session of 200 scans compared some forty thousand pairs, each pair reading and formatting the
- * items' key fields. This collection indexes its items by their primary-key values and by the keys of
+ * every item it walks. The plain {@link ItemCollection} answers by comparing the probe with every stored item,
+ * each comparison reading and formatting the items' key fields, so its cost grows with the square of the
+ * number of items. This collection indexes its items by their primary-key values and by the keys of
  * {@link ItemUniqueEquality#uniqueKeys}, finds the few candidates that could match and confirms each with the
- * same comparison the scan used, so its answers are the scan's answers: a probe with no primary-key values
+ * same comparison the scan uses, so its answers are the scan's answers: a probe with no primary-key values
  * matches nothing by primary key (as {@code ItemPKEquality.doCheck} says), a probe matches by unique values only
  * an item sharing one of its keys, the first match in insertion order wins, and where the keys cannot speak for
  * the comparison (a field that cannot be read) the scan is performed. Extension-aware lookups
@@ -235,7 +235,7 @@ public class SavedItemCollection extends ItemCollection {
         }
         if (keys.isEmpty()) {
             // No unique field with a value and no complete unique composite: doCheck matches nothing, as the
-            // scan's own hasUniques() gate concluded before comparing (it read the same properties again).
+            // scan's own hasUniques() check concludes before it compares (it reads the same properties).
             return null;
         }
         // Candidates in the order the scan would have reached them: items sharing a key, then any item whose

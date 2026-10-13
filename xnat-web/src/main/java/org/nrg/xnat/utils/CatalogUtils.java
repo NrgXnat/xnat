@@ -252,7 +252,7 @@ public class CatalogUtils {
             InputStream inputStream = null;
             try {
                 // One read of the file serves both the parse and the checksum the writer later compares
-                // against; a catalog is small, and on a network mount the second read was mostly latency.
+                // against; a catalog is small, and on a network mount a second read would be mostly latency.
                 final byte[] bytes = Files.readAllBytes(catFile.toPath());
                 if (catFile.getName().endsWith(".gz")) {
                     inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes));
@@ -2252,10 +2252,9 @@ public class CatalogUtils {
     /**
      * Reads a catalog, lets {@code change} alter it and, when {@code change} returns true, writes it back, all under
      * one exclusive lock on the catalog file. The archive does this for every catalog of a freshly archived session
-     * ({@code PrearcUtils.cleanupScans}), and reading under a shared lock then writing under an exclusive one cost
-     * each catalog two lock-file cycles on the network mount plus a checksum pass to catch a writer slipping in
-     * between; holding the exclusive lock from the read to the write removes the second cycle and the need for that
-     * guard. The catalog file is created if it does not exist, as {@link CatalogData#getOrCreate} would.
+     * ({@code PrearcUtils.cleanupScans}). Holding the exclusive lock from the read to the write takes one lock-file
+     * cycle, and no writer can slip in between, so the write needs no checksum comparison with what was read. The
+     * catalog file is created if it does not exist, as {@link CatalogData#getOrCreate} would.
      *
      * @param catFile            The catalog file.
      * @param catRes             The catalog resource, if known.

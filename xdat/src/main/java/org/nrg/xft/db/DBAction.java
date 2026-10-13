@@ -102,11 +102,11 @@ public class DBAction {
     public static final String NEGATIVE_INFINITY_ABBR_CAPS = "-INF";
     public static final String EQUALS_NULL = "= NULL";
 
-    // Same logger as xnat-web's PhaseTimer (routed to the prearchive log at INFO), so a save's parts land beside
-    // the build/merge/archive laps; only saves slow enough to matter are reported.
-    private static final Logger TIMING              = LoggerFactory.getLogger("org.nrg.xnat.ingest.timing");
-    private static final long   TIMING_THRESHOLD_MS = 250;
-    static final int            TRIGGER_PIPELINE    = 50;   // update_ls commands per multi-statement round trip
+    // Same logger as xnat-web's PhaseTimer (routed to the prearchive log), so a save's parts land beside the
+    // build/merge/archive laps when it is set to DEBUG; only saves slow enough to matter are reported.
+    private static final Logger TIMING                  = LoggerFactory.getLogger("org.nrg.xnat.ingest.timing");
+    private static final long   TIMING_THRESHOLD_MS     = 250;
+    static final int            TRIGGERS_PER_ROUND_TRIP = 50;   // update_ls commands per multi-statement round trip
 
     // SimpleDateFormat is not thread-safe and costs a pattern compile to build; ValueParser formats a timestamp
     // for every date-time property of every item stored, so each thread keeps one.
@@ -176,10 +176,11 @@ public class DBAction {
             log.debug("post-triggers: {} ms", postTriggersMs);
             final long totalMs = Calendar.getInstance().getTimeInMillis() - started;
             log.debug("Total: {} ms", totalMs);
-            if (totalMs >= TIMING_THRESHOLD_MS) {
-                // one line per slow save on the ingest timing logger, so an archive's save lap can be split into
-                // its parts from the log alone: the SELECTs that build the statements, the batch, the triggers
-                TIMING.info("Stored {} ({} statements, {} trigger items): prepare-sql {} ms, quarantine {} ms, pre-triggers {} ms, store {} ms, post-triggers {} ms, total {} ms; prepare-sql laps (own time): {}",
+            if (totalMs >= TIMING_THRESHOLD_MS && TIMING.isDebugEnabled()) {
+                // At DEBUG, one line per slow save on the ingest timing logger, so an archive's save lap can be split
+                // into its parts from the log alone: the SELECTs that build the statements, the batch, the triggers.
+                // Any XFT save can be slow, not only an archive's, so this stays off unless asked for.
+                TIMING.debug("Stored {} ({} statements, {} trigger items): prepare-sql {} ms, quarantine {} ms, pre-triggers {} ms, store {} ms, post-triggers {} ms, total {} ms; prepare-sql laps (own time): {}",
                             item.getXSIType(), statements, cache.getDBTriggers().size(),
                             prepareMs, quarantineMs, preTriggersMs, storeMs, postTriggersMs, totalMs, SaveLaps.summary());
             }
@@ -3379,27 +3380,27 @@ public class DBAction {
     }
 
     /**
-     * Runs the update trigger commands of a save. Package-private so the pipelining and its fallback can be tested
+     * Runs the update trigger commands of a save. Package-private so the batching and its fallback can be tested
      * against a real database without building XFT items.
      */
     static void ExecuteTriggerCommands(final List<String> commands, final String dbname, final String username) {
         //process modification triggers
-        // In pipelines of up to TRIGGER_PIPELINE commands: the driver sends a multi-statement string in one round
+        // In batches of up to TRIGGERS_PER_ROUND_TRIP commands: the driver sends a multi-statement string in one round
         // trip and the server runs it as one implicit transaction. A 200-scan session has 400 of these, each a
-        // pooled connection and a round trip on its own. Should any statement fail, the server rolls its pipeline
-        // back and that pipeline's commands run one at a time, exactly as they always did, so one bad trigger
-        // still stops only itself. The pipeline must see every error (ExecuteOrThrow): the tolerant executor the
-        // single commands use would take a rolled-back pipeline for a success.
-        for (final List<String> pipeline : Lists.partition(commands, TRIGGER_PIPELINE)) {
-            if (pipeline.size() > 1) {
+        // pooled connection and a round trip on its own. Should any statement fail, the server rolls its batch
+        // back and that batch's commands run one at a time, exactly as they always did, so one bad trigger
+        // still stops only itself. The batch must see every error (ExecuteOrThrow): the tolerant executor the
+        // single commands use would take a rolled-back batch for a success.
+        for (final List<String> batch : Lists.partition(commands, TRIGGERS_PER_ROUND_TRIP)) {
+            if (batch.size() > 1) {
                 try {
-                    PoolDBUtils.ExecuteOrThrow(pipeline.stream().map(command -> StringUtils.removeEnd(command.trim(), ";")).collect(Collectors.joining(";\n")));
+                    PoolDBUtils.ExecuteOrThrow(batch.stream().map(command -> StringUtils.removeEnd(command.trim(), ";")).collect(Collectors.joining(";\n")));
                     continue;
                 } catch (Exception e) {
-                    log.warn("Running {} triggers as one statement failed ({}); running them one at a time", pipeline.size(), e.getMessage());
+                    log.warn("Running {} triggers as one statement failed ({}); running them one at a time", batch.size(), e.getMessage());
                 }
             }
-            for (final String command : pipeline) {
+            for (final String command : batch) {
                 try {
                     PoolDBUtils.ExecuteNonSelectQuery(command, dbname, username);
                 } catch (RuntimeException ignored) {

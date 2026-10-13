@@ -32,16 +32,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * A save's update triggers run in pipelines of {@link DBAction#TRIGGER_PIPELINE} statements, each one round trip
- * and one implicit transaction. When any statement in a pipeline fails, the pipeline must leave nothing behind and
+ * A save's update triggers run in batches of {@link DBAction#TRIGGERS_PER_ROUND_TRIP} statements, each one round trip
+ * and one implicit transaction. When any statement in a batch fails, the batch must leave nothing behind and
  * its statements must then run one at a time, so the failing trigger stops only itself. Each trigger here marks its
- * row and records the transaction it ran in, which shows what ran, how often, and whether it ran in a pipeline.
+ * row and records the transaction it ran in, which shows what ran, how often, and whether it ran in a batch.
  * Needs Docker; skipped without it.
  */
-public class TriggerPipelineTest {
-    private static final int PIPELINE = DBAction.TRIGGER_PIPELINE;
-    private static final int TRIGGERS = 2 * PIPELINE + 20;   // two full pipelines and a short third
-    private static final int FAILING  = PIPELINE + 25;       // in the middle of the second pipeline
+public class PerformUpdateTriggersTest {
+    private static final int BATCH = DBAction.TRIGGERS_PER_ROUND_TRIP;
+    private static final int TRIGGERS = 2 * BATCH + 20;   // two full batches and a short third
+    private static final int FAILING  = BATCH + 25;       // in the middle of the second batch
 
     private static PostgreSQLContainer<?> postgres;
     private static DataSource             dataSource;
@@ -94,14 +94,14 @@ public class TriggerPipelineTest {
     }
 
     @Test
-    public void pipelinesThatSucceedRunAsOneTransactionEach() throws SQLException {
+    public void batchesThatSucceedRunAsOneTransactionEach() throws SQLException {
         DBAction.ExecuteTriggerCommands(commands(-1, null), null, "test");
 
         final Map<Integer, List<Long>> calls = calls();
         for (int id = 1; id <= TRIGGERS; id++) {
             assertEquals("trigger " + id + " should run exactly once", 1, calls.getOrDefault(id, List.of()).size());
         }
-        assertEquals("every pipeline should be one transaction", 3, distinctTransactions(calls, 1, TRIGGERS));
+        assertEquals("every batch should be one transaction", 3, distinctTransactions(calls, 1, TRIGGERS));
         assertEquals(TRIGGERS, modifiedRows().size());
     }
 
@@ -111,8 +111,8 @@ public class TriggerPipelineTest {
     }
 
     /**
-     * The pipeline has to run through the executor that throws on every error: through the tolerant one, this
-     * failure would be logged and swallowed, the server would still roll the pipeline back, and the other triggers
+     * The batch has to run through the executor that throws on every error: through the tolerant one, this
+     * failure would be logged and swallowed, the server would still roll the batch back, and the other triggers
      * in it would be lost without a word.
      */
     @Test
@@ -129,16 +129,16 @@ public class TriggerPipelineTest {
             if (id == FAILING) {
                 assertFalse("the failing trigger should have no effect", calls.containsKey(id) || modified.contains(id));
             } else {
-                // Exactly once: the statements of the failed pipeline that ran before the failure were rolled back
+                // Exactly once: the statements of the failed batch that ran before the failure were rolled back
                 // with it, so running them again one at a time does not run them twice.
                 assertEquals("trigger " + id + " should run exactly once", 1, calls.getOrDefault(id, List.of()).size());
                 assertTrue("trigger " + id + " should have marked its row", modified.contains(id));
             }
         }
-        assertEquals("the first pipeline should be one transaction", 1, distinctTransactions(calls, 1, PIPELINE));
-        assertEquals("the failed pipeline's triggers should each run on their own", PIPELINE - 1,
-                     distinctTransactions(calls, PIPELINE + 1, 2 * PIPELINE));
-        assertEquals("the last pipeline should be one transaction", 1, distinctTransactions(calls, 2 * PIPELINE + 1, TRIGGERS));
+        assertEquals("the first batch should be one transaction", 1, distinctTransactions(calls, 1, BATCH));
+        assertEquals("the failed batch's triggers should each run on their own", BATCH - 1,
+                     distinctTransactions(calls, BATCH + 1, 2 * BATCH));
+        assertEquals("the last batch should be one transaction", 1, distinctTransactions(calls, 2 * BATCH + 1, TRIGGERS));
     }
 
     private static List<String> commands(final int failing, final String failingFunction) {

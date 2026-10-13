@@ -277,7 +277,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
 
         @Override
         public FileVisitResult visitFileFailed(final Path file, final IOException exception) {
-            // Never read, so it can't be told from a DICOM object, and cleaning up would delete it.
+            // Never read, so it can't be told from a DICOM instance, and cleaning up would delete it.
             return stop(file, "could not be read", exception);
         }
 

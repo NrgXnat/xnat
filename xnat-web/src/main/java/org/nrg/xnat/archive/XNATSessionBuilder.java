@@ -189,7 +189,7 @@ public class XNATSessionBuilder implements Callable<Boolean> {
             }
         }
         if (!built) {
-            // No builder produced a session: leave the XML empty, as the builders' writers always did.
+            // No builder produced a session: leave the XML empty.
             Files.write(xml.toPath(), new byte[0]);
         }
 

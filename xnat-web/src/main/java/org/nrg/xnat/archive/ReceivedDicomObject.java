@@ -125,7 +125,11 @@ final class ReceivedDicomObject implements Closeable {
             return new ReceivedDicomObject(in, dis, dataset, transferSyntax, readWhole);
         } catch (IOException | RuntimeException e) {
             // Nothing is going to own the spool files if the read fails.
-            discard(dis);
+            try {
+                discard(dis);
+            } catch (IOException suppressed) {
+                e.addSuppressed(suppressed);
+            }
             throw e;
         }
     }

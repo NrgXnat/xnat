@@ -407,7 +407,7 @@ public class ReceivedDicomObjectTest {
         for (final File target : Arrays.asList(output, existing)) {
             try (ReceivedDicomObject received = ReceivedDicomObject.read(breaksAfter(MR_FIXTURE, breakAt), null, ORDINARY_LAST_TAG, false)) {
                 // Reported as the source's failure, so the importer answers as for an unreadable instance, not as for full storage.
-                assertThrows(ReceivedDicomObject.SourceReadException.class, () -> received.write(received.getDataset(), AE_TITLE, target, "test"));
+                assertThrows(ReceivedDicomObject.SourceReadException.class, () -> received.write(received.getDataset(), target, "test"));
             }
         }
         assertFalse("a failed write must not leave a partial object", output.exists());
@@ -460,7 +460,7 @@ public class ReceivedDicomObjectTest {
     public void aFailureWritingTheObjectOutIsNotASourceReadFailure() throws Exception {
         final File output = new File(new File(folder.getRoot(), "missing"), "object.dcm");
         try (ReceivedDicomObject received = ReceivedDicomObject.read(open(MR_FIXTURE), null, ORDINARY_LAST_TAG, false)) {
-            final IOException thrown = assertThrows(IOException.class, () -> received.write(received.getDataset(), AE_TITLE, output, "test"));
+            final IOException thrown = assertThrows(IOException.class, () -> received.write(received.getDataset(), output, "test"));
             assertFalse("a failure writing the object out was reported as the source's", thrown instanceof ReceivedDicomObject.SourceReadException);
         }
     }

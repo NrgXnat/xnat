@@ -228,7 +228,8 @@ public class CatalogUtils {
                     //log.trace("{} reader finish: {}", System.currentTimeMillis(), fl.toString());
                 }
             } catch (IOException e) {
-                log.error("Unable to obtain read lock for file: {}", catFile, e);
+                // The lock's message says what failed: a timeout names the file and how long the read waited.
+                throw new ServerException(e.getMessage(), e);
             } finally {
                 // Only release our reference if we actually obtained one, otherwise we'd decrement another accessor's
                 if (fl != null) {

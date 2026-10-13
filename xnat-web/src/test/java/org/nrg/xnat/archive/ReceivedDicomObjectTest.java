@@ -50,9 +50,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeNoException;
 
 /**
- * The importer historically wrote a received object and then anonymized the file. Reading the whole
- * object, running the scripts in memory and writing once has to leave exactly the same bytes in the
- * archive, so every case here runs both ways and compares the files.
+ * Writing a received instance and then anonymizing the file, and reading the whole instance, running
+ * the scripts in memory and writing once, have to leave exactly the same bytes in the archive, so
+ * every case here runs both ways and compares the files.
  */
 public class ReceivedDicomObjectTest {
 
@@ -120,11 +120,10 @@ public class ReceivedDicomObjectTest {
     }
 
     /**
-     * Pixel data is not the only bulk data. Anonymizing the written file -- the old way for site scripts,
-     * still the way for project scripts -- reads it with dcm4che's default descriptor, which references
-     * encapsulated documents, overlays, waveforms and the like rather than loading them. Running the script in
-     * memory instead must not put them on the heap, and must leave the same file. Regression: the whole read
-     * referenced only the pixel data.
+     * Pixel data is not the only bulk data. Anonymizing a written file -- the way project scripts run -- reads
+     * it with dcm4che's default descriptor, which references encapsulated documents, overlays, waveforms and the
+     * like rather than loading them. Running the script in memory must not put them on the heap either, and must
+     * leave the same file.
      */
     @Test
     public void wholeReadKeepsOtherBulkDataOffTheHeap() throws Exception {
@@ -159,11 +158,11 @@ public class ReceivedDicomObjectTest {
     }
 
     /**
-     * With no script there is no second pass either way, so the two reads must write the same object. Compared
+     * With no script there is no second pass either way, so the two reads must write the same instance. Compared
      * as parsed rather than as bytes: a partial read copies the tail of the stream through as it arrived, while
-     * a whole read re-serializes it, and dcm4che normalizes sequence encodings when it does. That difference is
-     * only reachable when a script runs, and then the old path re-serialized too, which
-     * {@link #scriptInMemoryLeavesTheSameFileAsScriptOnTheWrittenFile} pins byte for byte.
+     * a whole read re-serializes it, and dcm4che normalizes sequence encodings when it does. When a script runs,
+     * anonymizing the written file re-serializes too, and
+     * {@link #scriptInMemoryLeavesTheSameFileAsScriptOnTheWrittenFile} pins that byte for byte.
      */
     @Test
     public void wholeAndPartialReadsWriteTheSameObjectWhenNoScriptRuns() throws Exception {
@@ -252,8 +251,8 @@ public class ReceivedDicomObjectTest {
     /**
      * A Deflated source is one continuous zlib stream past the file meta group, so the partial read's
      * copy-the-remainder trick cannot reassemble it. It must be read whole even when no script asks for
-     * one, and the object it writes must re-read cleanly. Regression: the partial path wrote a fresh
-     * header followed by the raw compressed remainder, which came back malformed and failed re-read.
+     * one, and the instance it writes must re-read cleanly: a fresh header followed by the raw compressed
+     * remainder would come back malformed.
      */
     @Test
     public void deflatedIsAlwaysReadWholeAndRoundTrips() throws Exception {
@@ -337,7 +336,7 @@ public class ReceivedDicomObjectTest {
 
     /**
      * dcm4che inflates three transfer syntaxes, not one. Each must force the whole read: a partial read of
-     * any of them would copy leftover compressed bytes after a fresh header and write a malformed object.
+     * any of them would copy leftover compressed bytes after a fresh header and write a malformed instance.
      */
     @Test
     public void everyInflatedSyntaxIsReadWholeAndRoundTrips() throws Exception {
@@ -357,8 +356,7 @@ public class ReceivedDicomObjectTest {
     /**
      * A C-STORE carries the dataset alone, deflated from its first byte, and names its syntax only in
      * the association. With no file meta group to learn it from, the read has to take the syntax the
-     * caller negotiated. Regression: the stream guessed from the compressed bytes and the object
-     * failed to read.
+     * caller negotiated: guessing it from the compressed bytes fails the read.
      */
     @Test
     public void negotiatedDeflatedDatasetWithoutFileMetaIsInflatedAndRoundTrips() throws Exception {
@@ -403,8 +401,8 @@ public class ReceivedDicomObjectTest {
     }
 
     /**
-     * Old way: partial read, write, anonymize the file in place. New way: whole read, anonymize in memory,
-     * write. Same script, same variables, same recorded script id.
+     * On the file: partial read, write, anonymize the file in place. In memory: whole read, anonymize in
+     * memory, write. Same script, same variables, same recorded script id.
      */
     private void assertSameResultEitherWay(final File fixture, final String script) throws Exception {
         final File onFile = write(fixture, null, false, "on-file-" + fixture.getName());

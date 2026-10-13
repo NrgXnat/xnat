@@ -29,18 +29,17 @@ import java.io.InputStream;
 import java.util.function.Predicate;
 
 /**
- * A DICOM object arriving on an import stream, read once and written once.
+ * A DICOM instance arriving on an import stream, read once and written once.
  * <p>
- * The importer used to read only the header it needed to identify the object, write that header
- * followed by the rest of the stream byte for byte, and then, if a script applied, read the file
- * back, anonymize it and write it again. Reading the whole object up front keeps the pixel data off
- * the heap -- dcm4che spools it to scratch and the dataset holds references, see
+ * When a script applies, the whole instance is read up front. The pixel data stays off the heap --
+ * dcm4che spools it to scratch and the dataset holds references, see
  * {@link ResumableDicomInputStream#openWithBulkDataOffHeap} -- so scripts can run against the
- * dataset in memory and the object can be written to its final place exactly once, with the pixel
+ * dataset in memory and the instance can be written to its final place exactly once, with the pixel
  * data streamed from the spool. The archive never holds a version the scripts have not seen.
  * <p>
- * The partial read is kept for imports no script applies to. Those never had a second pass, so a
- * spool would be pure cost, and they are written exactly as they always were.
+ * When no script applies, only the header the importer needs to identify the instance is read, and
+ * the instance is written as that header followed by the rest of the stream byte for byte. Nothing
+ * reads it a second time, so a spool would be pure cost.
  * <p>
  * Kept apart from {@link GradualDicomImporter} because any static touch of that class runs
  * {@code ImporterHandlerA}'s initializer, which needs a Spring context. This class can be exercised
@@ -55,12 +54,12 @@ final class ReceivedDicomObject implements Closeable {
      * Reads the file meta information and either the whole dataset or the header through
      * <b>lastTag</b>, leaving the stream positioned at the first element not read.
      *
-     * @param source                   the object's bytes.
+     * @param source                   the instance's bytes.
      * @param transferSyntaxFromCaller the transfer syntax the caller negotiated, or null to take the
      *                                 stream's own.
      * @param lastTag                  for a partial read, the last tag the caller needs. Ignored for
      *                                 a whole read.
-     * @param whole                    whether to read the whole object. A Deflated source is read whole
+     * @param whole                    whether to read the whole instance. A Deflated source is read whole
      *                                 regardless, because its dataset cannot be split across a partial
      *                                 read and a raw copy of the remainder.
      */
@@ -101,9 +100,9 @@ final class ReceivedDicomObject implements Closeable {
             // the three dcm4che inflates -- is one continuous zlib stream past the file meta group, or
             // from its first byte on a C-STORE.
             // The partial read stops mid-stream and lets write() copy the raw remainder through, but
-            // a fresh header followed by the leftover compressed bytes does not re-read -- the object
-            // comes back malformed. So a deflated object is always read whole, whether or not a
-            // script applies; write() then re-deflates the parsed dataset into a valid object.
+            // a fresh header followed by the leftover compressed bytes does not re-read -- the instance
+            // comes back malformed. So a deflated instance is always read whole, whether or not a
+            // script applies; write() then re-deflates the parsed dataset into a valid instance.
             final boolean    readWhole      = whole || BufferedBulkDataCreator.isDeflated(transferSyntax);
             final Attributes dataset        = new Attributes();
             if (readWhole) {
@@ -120,7 +119,7 @@ final class ReceivedDicomObject implements Closeable {
                 dis.reset();
             }
             // CStore (DIMSE) has no FMI preamble, so the meta group is synthesized from the
-            // dataset; either way it is merged in so processors see a complete DICOM object, and
+            // dataset; either way it is merged in so processors see a complete DICOM instance, and
             // split back out at write time.
             Dcm4cheConvert.mergeFileMetaInformation(dataset, fmi, transferSyntax);
             return new ReceivedDicomObject(in, dis, dataset, transferSyntax, readWhole);
@@ -150,7 +149,7 @@ final class ReceivedDicomObject implements Closeable {
     }
 
     /**
-     * True when the whole object was read: the pixel data is referenced from a spool file and
+     * True when the whole instance was read: the pixel data is referenced from a spool file and
      * nothing remains on the stream.
      */
     boolean isWhole() {
@@ -171,15 +170,15 @@ final class ReceivedDicomObject implements Closeable {
     }
 
     /**
-     * Writes the object: the file meta information, the dataset, and then, after a partial read, the
+     * Writes the instance: the file meta information, the dataset, and then, after a partial read, the
      * rest of the stream byte for byte. Bulk data the dataset references is streamed from wherever
      * it sits.
      *
      * @param dataset    the dataset to write, with the file meta information merged in. Passed
      *                   rather than taken from this object because a processor may have handed
-     *                   back a different instance.
+     *                   back a different dataset.
      * @param outputFile where to write.
-     * @param source     who sent the object, for the receipt log.
+     * @param source     who sent the instance, for the receipt log.
      */
     void write(final Attributes dataset, final File outputFile, final String source) throws IOException {
         try (final FileOutputStream fos = new FileOutputStream(outputFile)) {
@@ -194,7 +193,7 @@ final class ReceivedDicomObject implements Closeable {
     }
 
     /**
-     * Closes the stream and deletes anything spooled from it. Only safe once the object has been
+     * Closes the stream and deletes anything spooled from it. Only safe once the instance has been
      * written: until then the dataset holds references into the spool files.
      */
     @Override

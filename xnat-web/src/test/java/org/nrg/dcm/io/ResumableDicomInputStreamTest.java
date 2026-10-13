@@ -283,7 +283,7 @@ public class ResumableDicomInputStreamTest {
 
     /**
      * Encapsulated pixel data arrives as fragments, and dcm4che asks for each one separately. They all go into
-     * the one spool file, at the right offsets, and come back out to make the same object.
+     * the one spool file, at the right offsets, and come back out to make the same instance.
      */
     @Test
     public void spoolsEveryFragmentOfEncapsulatedPixelData() throws Exception {
@@ -317,7 +317,7 @@ public class ResumableDicomInputStreamTest {
         assertFalse(spooled.get(0).exists());
     }
 
-    /** An object with three fragments of (not actually compressed) encapsulated pixel data. No codec needed. */
+    /** An instance with three fragments of (not actually compressed) encapsulated pixel data. No codec needed. */
     private File encapsulatedFixture() throws IOException {
         final Attributes dataset = new Attributes();
         dataset.setString(Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);

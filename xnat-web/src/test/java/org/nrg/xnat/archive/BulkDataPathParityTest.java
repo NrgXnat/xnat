@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNotNull;
 
 /**
  * The parity matrix for the off-heap bulk data paths: whatever the transfer syntax, reading an
- * object through the file path ({@code DicomObjectFactory.newInstance(file, IncludeBulkData.URI)},
+ * instance through the file path ({@code DicomObjectFactory.newInstance(file, IncludeBulkData.URI)},
  * how file anonymization reads), through the stream path ({@link ReceivedDicomObject}, how the
  * importer reads a socket or zip entry) or through the file-backed stream path (how it reads an
  * inbox file, referencing pixels in place) and writing it back must reproduce the pixel data
@@ -82,7 +82,7 @@ public class BulkDataPathParityTest {
 
     /**
      * Encapsulated pixel data reads as fragments, each referenced separately, so the strongest
-     * check is byte identity of the whole round-tripped object.
+     * check is byte identity of the whole round-tripped instance.
      */
     @Test
     public void encapsulatedRoundTripsByteForByteThroughBothPaths() throws Exception {
@@ -168,7 +168,7 @@ public class BulkDataPathParityTest {
         return transcoded;
     }
 
-    /** An object with three fragments of (not actually compressed) encapsulated pixel data. No codec needed. */
+    /** An instance with three fragments of (not actually compressed) encapsulated pixel data. No codec needed. */
     private File encapsulatedFixture() throws IOException {
         final Attributes dataset = new Attributes();
         dataset.setString(Tag.SOPClassUID, VR.UI, UID.SecondaryCaptureImageStorage);

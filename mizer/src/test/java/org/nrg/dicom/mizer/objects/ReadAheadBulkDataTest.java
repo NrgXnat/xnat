@@ -6,7 +6,7 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * The read-ahead buffer is sized to the value: dcm4che opens one stream per fragment, so a fixed
- * megabyte per open would allocate far more than a multi-frame object's pixel data to write it.
+ * megabyte per open would allocate far more than a multi-frame instance's pixel data to write it.
  */
 public class ReadAheadBulkDataTest {
 

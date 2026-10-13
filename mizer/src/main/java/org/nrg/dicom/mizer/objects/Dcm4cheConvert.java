@@ -179,7 +179,7 @@ public class Dcm4cheConvert {
 
     /**
      * Merges the file meta information into the dataset, so processors and scripts see a complete
-     * object, synthesizing the meta group from the dataset first when the source carried none -- a
+     * instance, synthesizing the meta group from the dataset first when the source carried none -- a
      * DIMSE stream has no meta group -- or what it carried names no transfer syntax.
      *
      * @param dataset        the dataset to merge into.

@@ -67,7 +67,7 @@ public final class BufferedBulkDataCreator implements BulkDataCreator, Closeable
      *                       be readable only by this user, since pixel data lands in it. Asked for
      *                       the directory only when a value has to be spooled -- most reads
      *                       reference in place or never reach bulk data at all, and resolving a
-     *                       directory that will not be used costs a stat on the per-object path,
+     *                       directory that will not be used costs a stat on the per-instance path,
      *                       serialized behind whatever lock the supplier holds.
      */
     public BufferedBulkDataCreator(final SpoolDirectory spoolDirectory) {

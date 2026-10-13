@@ -113,9 +113,9 @@ public class WorkOnCopyOpTest {
     }
 
     /**
-     * An anonymization that rejects or fails on an object reports that as its result and writes no
+     * An anonymization that rejects or fails on an instance reports that as its result and writes no
      * staged version. The source must then stay exactly as it was: putting an absent (or empty)
-     * staged file in its place would destroy the object.
+     * staged file in its place would destroy the instance.
      */
     @Test
     public void leavesTheSourceUntouchedWhenTheOperationProducedNothing() throws Throwable {

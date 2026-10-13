@@ -144,9 +144,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
         // closing it does not delete this. Each round below wraps the dataset afresh, so a
         // registration can be left on any of the wrappers and every one of them has to be released.
         final List<DicomObjectI> processedObjects = new ArrayList<>();
-        // Whether a script is going to run on this object decides how much of it to read: everything,
-        // so the scripts can run in memory and the object be written once, or only the identifying
-        // header, after which the rest of the stream is copied through as it always was.
+        // Whether a script is going to run on this instance decides how much of it to read: everything,
+        // so the scripts can run in memory and the instance be written once, or only the identifying
+        // header, after which the rest of the stream is copied through unchanged.
         final boolean anonymizeOnReceive = anonymizesOnReceive();
         // A file-backed source -- the inbox hands the importer StoredFiles -- has its pixel data
         // referenced in place instead of copied to the spool. The file outlives the write (inbox
@@ -355,9 +355,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
                 outputFile.getParentFile().mkdirs();
 
-                // With the whole object in hand the scripts run against the dataset and the object is
+                // With the whole instance in hand the scripts run against the dataset and the instance is
                 // written once. After a partial read the header and the rest of the stream are written
-                // first and the scripts run against the file, as every import used to.
+                // first and the scripts run against the file.
                 // The sender's AE title goes in before the scripts run, so a script can change or remove it.
                 ReceivedDicomObject.stampSourceAeTitle(dataset, _parameters.get(SENDER_AE_TITLE_PARAM));
                 final AtomicReference<DicomObjectI> toAnonymize = received.isWhole() ? new AtomicReference<>(new DicomObjectFactory.MizerDicomObject(dataset)) : null;
@@ -467,14 +467,14 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     /**
-     * Whether a script is expected to run on this object, decided from what is known before it is
+     * Whether a script is expected to run on this instance, decided from what is known before it is
      * read: the request's own anonymization flag, any inline script, and whether the site-wide
      * script is enabled, so the prediction only misses what cannot be known yet. The session row
      * looked up later has the final say (an upload marked prevent-anon on its session row cannot be
      * seen from here), so the prediction can still be wrong in either direction without harm: a
      * whole read that turns out to need no script is written as it is -- re-encoded, so parse-equal
      * rather than byte-equal to what was sent, as any whole read is -- and a partial read that
-     * turns out to need one is anonymized on the file, as every import used to be.
+     * turns out to need one is anonymized on the file.
      */
     private boolean anonymizesOnReceive() {
         try {
@@ -502,12 +502,12 @@ public class GradualDicomImporter extends ImporterHandlerA {
      * Runs the site-wide script, if it applies to this session, and then any inline script supplied with the
      * import request (the "Anon-Script" parameter), in that order.
      *
-     * @param apply      Applies one script: to the object still in memory, or to the file already written.
+     * @param apply      Applies one script: to the instance still in memory, or to the file already written.
      * @param session    The session being ingested.
      * @param isNew      Whether this import created the session row.
-     * @param outputFile Where the object is, or is about to be, written.
+     * @param outputFile Where the instance is, or is about to be, written.
      *
-     * @return false if a script rejected the object, in which case nothing of it is kept.
+     * @return false if a script rejected the instance, in which case nothing of it is kept.
      */
     private boolean applyScripts(final ScriptApplication apply, final SessionData session, final AtomicBoolean isNew, final File outputFile) throws ServerException, ClientException {
         // check to see of this session came in through an application that may have performed anonymization

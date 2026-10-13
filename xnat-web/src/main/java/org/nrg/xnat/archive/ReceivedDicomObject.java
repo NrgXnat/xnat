@@ -158,28 +158,34 @@ final class ReceivedDicomObject implements Closeable {
     }
 
     /**
+     * Records the sender's AE title in the file meta information merged into the dataset, so the
+     * scripts that run on the dataset or on the written file can change or remove it.
+     *
+     * @param dataset       the dataset, with the file meta information merged in.
+     * @param sourceAeTitle the sender's AE title, or null to record none.
+     */
+    static void stampSourceAeTitle(final Attributes dataset, final Object sourceAeTitle) {
+        if (null != sourceAeTitle) {
+            dataset.setString(Tag.SourceApplicationEntityTitle, VR.AE, (String) sourceAeTitle);
+        }
+    }
+
+    /**
      * Writes the object: the file meta information, the dataset, and then, after a partial read, the
      * rest of the stream byte for byte. Bulk data the dataset references is streamed from wherever
      * it sits.
      *
-     * @param dataset       the dataset to write, with the file meta information merged in. Passed
-     *                      rather than taken from this object because a processor may have handed
-     *                      back a different instance.
-     * @param sourceAeTitle recorded in the file meta information when present.
-     * @param outputFile    where to write.
-     * @param source        who sent the object, for the receipt log.
+     * @param dataset    the dataset to write, with the file meta information merged in. Passed
+     *                   rather than taken from this object because a processor may have handed
+     *                   back a different instance.
+     * @param outputFile where to write.
+     * @param source     who sent the object, for the receipt log.
      */
-    void write(final Attributes dataset, final Object sourceAeTitle, final File outputFile, final String source) throws IOException {
+    void write(final Attributes dataset, final File outputFile, final String source) throws IOException {
         try (final FileOutputStream fos = new FileOutputStream(outputFile)) {
             // After a partial read the rest of the stream, pixel data included, has not been
             // parsed and is copied through as it arrived.
-            final long copied = DicomObjectWriter.write(dataset, fos,
-                    fmi -> {
-                        if (null != sourceAeTitle) {
-                            fmi.setString(Tag.SourceApplicationEntityTitle, VR.AE, (String) sourceAeTitle);
-                        }
-                    },
-                    _whole ? null : _in);
+            final long copied = DicomObjectWriter.write(dataset, fos, _whole ? null : _in);
             if (!_whole) {
                 log.trace("copied {} additional bytes to {}", copied, outputFile);
             }

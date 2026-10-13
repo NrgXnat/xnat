@@ -358,6 +358,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 // With the whole object in hand the scripts run against the dataset and the object is
                 // written once. After a partial read the header and the rest of the stream are written
                 // first and the scripts run against the file, as every import used to.
+                // The sender's AE title goes in before the scripts run, so a script can change or remove it.
+                ReceivedDicomObject.stampSourceAeTitle(dataset, _parameters.get(SENDER_AE_TITLE_PARAM));
                 final AtomicReference<DicomObjectI> toAnonymize = received.isWhole() ? new AtomicReference<>(new DicomObjectFactory.MizerDicomObject(dataset)) : null;
                 if (toAnonymize != null) {
                     processedObjects.add(toAnonymize.get());
@@ -381,7 +383,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
 
                 try {
-                    received.write(dataset, _parameters.get(SENDER_AE_TITLE_PARAM), outputFile, source);
+                    received.write(dataset, outputFile, source);
                 } catch (IOException e) {
                     throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
                 }

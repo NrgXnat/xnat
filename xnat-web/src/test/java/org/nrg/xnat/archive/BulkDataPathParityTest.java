@@ -153,7 +153,7 @@ public class BulkDataPathParityTest {
         final File output = folder.newFile(source.getName() + (fileBacked ? ".filebacked.out" : ".out"));
         try (final ReceivedDicomObject received = ReceivedDicomObject.read(
                 new FileInputStream(source), null, Tag.SeriesDescription, true, fileBacked ? source : null)) {
-            received.write(received.getDataset(), null, output, "parity-test");
+            received.write(received.getDataset(), output, "parity-test");
         }
         return Files.readAllBytes(output.toPath());
     }

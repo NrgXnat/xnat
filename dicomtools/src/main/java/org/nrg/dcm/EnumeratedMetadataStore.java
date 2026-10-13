@@ -733,7 +733,7 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
                                             progress.incrementMax();
                                             dirsAdded = true;
                                         }
-                                    } else {
+                                    } else if (!isWriteInProgress(file)) {
                                         hook.call(statement, toURI.apply(cfile), addCols);
                                     }
                                 } catch (IOException ignore) {
@@ -1181,5 +1181,19 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
             addTableColumns(tags);
             recache(tags, pm);
         }
+    }
+
+    /**
+     * Whether the file is a write in progress: a hidden file ending in {@code .part}. XNAT writes a re-sent instance
+     * under such a name and renames it into place, so a file of this kind is only left behind when the process writing
+     * it died, and it is not part of the session.
+     *
+     * @param file The file to check.
+     *
+     * @return Whether the file is a write in progress.
+     */
+    static boolean isWriteInProgress(final File file) {
+        final String name = file.getName();
+        return name.startsWith(".") && name.endsWith(".part");
     }
 }

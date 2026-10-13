@@ -22,6 +22,7 @@ import org.nrg.dicom.mizer.objects.DicomObjectFactory;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.service.MizerContext;
 import org.nrg.dicom.mizer.service.impl.BaseMizerService;
+import org.nrg.xnat.utils.CatalogUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -416,6 +417,29 @@ public class ReceivedDicomObjectTest {
     }
 
     /**
+     * A re-send is written beside the instance it replaces. A copy left there by a process that dies before the rename
+     * moves to the archive with the session, so its name must keep it out of the session build and of a catalog
+     * refresh.
+     */
+    @Test
+    public void aReSendInProgressIsNeitherBuiltNorCatalogued() throws Exception {
+        final File session  = folder.newFolder("resend");
+        final File existing = new File(session, "existing.dcm");
+        Files.copy(MR_FIXTURE.toPath(), existing.toPath());
+
+        final List<String> duringWrite = new ArrayList<>();
+        try (ReceivedDicomObject received = ReceivedDicomObject.read(breaksAfter(MR_FIXTURE, MR_FIXTURE.length() / 2, () -> Collections.addAll(duringWrite, session.list())), null, ORDINARY_LAST_TAG, false)) {
+            assertThrows(ReceivedDicomObject.SourceReadException.class, () -> received.write(received.getDataset(), existing, "test"));
+        }
+        duringWrite.remove(existing.getName());
+
+        assertEquals("one copy in progress beside the instance", 1, duringWrite.size());
+        final String inProgress = duringWrite.get(0);
+        assertTrue("the session build skips a hidden .part file: " + inProgress, inProgress.startsWith(".") && inProgress.endsWith(".part"));
+        assertFalse("a catalog refresh must skip " + inProgress, CatalogUtils.XNAT_CATALOGABLE_FILE_FILTER.accept(new File(session, inProgress)));
+    }
+
+    /**
      * A file cut short, such as one still being copied into the inbox, must be caught by the read wherever the cut
      * falls: in the pixel data, where a file-backed read only skips over the value and the skip can run past the end
      * of the file, or in the header. A stream cut short is caught the same way. A partial read would copy either
@@ -617,6 +641,11 @@ public class ReceivedDicomObjectTest {
 
     /** The file's first <b>limit</b> bytes, then the IOException a dropped association or a corrupt zip entry raises. */
     private static InputStream breaksAfter(final File file, final long limit) throws IOException {
+        return breaksAfter(file, limit, () -> {});
+    }
+
+    /** As {@link #breaksAfter(File, long)}, running {@code atBreak} just before the stream breaks. */
+    private static InputStream breaksAfter(final File file, final long limit, final Runnable atBreak) throws IOException {
         return new FilterInputStream(open(file)) {
             private long _position;
 
@@ -629,6 +658,7 @@ public class ReceivedDicomObjectTest {
             @Override
             public int read(final byte[] buffer, final int offset, final int length) throws IOException {
                 if (_position >= limit) {
+                    atBreak.run();
                     throw new IOException("the stream broke after " + limit + " bytes");
                 }
                 final int count = super.read(buffer, offset, (int) Math.min(length, limit - _position));

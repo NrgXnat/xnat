@@ -18,6 +18,7 @@ import org.nrg.dcm.io.ResumableDicomInputStream;
 import org.nrg.dicom.mizer.objects.BufferedBulkDataCreator;
 import org.nrg.dicom.mizer.objects.Dcm4cheConvert;
 import org.nrg.dicom.mizer.objects.DicomObjectWriter;
+import org.nrg.xnat.utils.CatalogUtils;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
@@ -211,11 +212,12 @@ final class ReceivedDicomObject implements Closeable {
         // instance is written beside it and renamed into place, so a failed one leaves the earlier copy as it was. Only
         // the re-send is renamed because a rename makes an NFS client drop the file's cached pages, and the session
         // build that follows would read every instance back from the server. The caller holds the instance's prearchive
-        // file lock. A fixed-length name: one built from the instance's could pass NAME_MAX. The name is hidden and ends
-        // in .part, which the session build skips (EnumeratedMetadataStore.isWriteInProgress), so a copy left by a
-        // process that died mid-write isn't read as part of the session.
+        // file lock. A fixed-length name: one built from the instance's could pass NAME_MAX. A copy left by a process
+        // that died mid-write stays in the session folder and moves to the archive with it. The name is hidden and ends
+        // in .part, which the session build skips (EnumeratedMetadataStore.isWriteInProgress), and it starts with the
+        // upload temp prefix, which a catalog refresh skips (CatalogUtils.XNAT_CATALOGABLE_FILE_FILTER).
         final boolean replacing = outputFile.exists();
-        final File target = replacing ? new File(outputFile.getParentFile(), ".received-" + UUID.randomUUID() + ".part") : outputFile;
+        final File target = replacing ? new File(outputFile.getParentFile(), CatalogUtils.XNAT_TMP_UPLOAD_PREFIX + UUID.randomUUID() + ".part") : outputFile;
         boolean written = false;
         try {
             try (final FileOutputStream fos = new FileOutputStream(target)) {

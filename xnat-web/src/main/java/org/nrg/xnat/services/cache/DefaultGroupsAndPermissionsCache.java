@@ -747,7 +747,10 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
             switch (action) {
                 case EVENT_CREATE:
                     log.debug("New project created with ID {}, caching new instance", id);
-                    getProjectOwners(id).forEach(this::rebuildUserCaches);
+                    // The owners' caches are cleared here and rebuilt last. A rebuild can go on for as long as events
+                    // for its user keep arriving, and the rest of this handling doesn't wait for it.
+                    final List<String> owners = getProjectOwners(id);
+                    owners.forEach(this::evictUserCaches);
 
                     final boolean created = !getGroups(xsiType, id).isEmpty();
                     final String access = Permissions.getProjectAccess(_template, id);
@@ -773,6 +776,7 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
                         }
                     }
                     resetTotalCounts(() -> resetProjectCount(_totalCounts));
+                    owners.forEach(this::rebuildUserCaches);
                     return created;
 
                 case EVENT_UPDATE:
@@ -917,7 +921,9 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         } catch (ItemNotFoundException e) {
             log.warn("While handling action {}, I couldn't find a group for type {} ID {}.", action, xsiType, id, e);
         } finally {
-            USER_CACHES.forEach(a -> evict(a, usernames));
+            // Every user's caches are cleared before any is rebuilt. A rebuild can go on for as long as events for its
+            // user keep arriving, and the users after it don't keep their old action lists meanwhile.
+            usernames.forEach(this::evictUserCaches);
             usernames.forEach(this::rebuildUserCaches);
         }
         return false;

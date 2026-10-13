@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -398,6 +399,22 @@ public class ReceivedDicomObjectTest {
         };
         assertThrows(IOException.class, () -> ReceivedDicomObject.read(empty, null, ORDINARY_LAST_TAG, false).close());
         assertTrue("the source must be closed even though the stream never opened", closed.get());
+    }
+
+    /** When a read fails and closing the stream then fails too, the read's failure is the one thrown. */
+    @Test
+    public void aFailedCloseDoesNotHideWhyTheReadFailed() throws Exception {
+        final byte[] whole = Files.readAllBytes(MR_FIXTURE.toPath());
+        final InputStream cutShort = new ByteArrayInputStream(Arrays.copyOf(whole, whole.length / 2)) {
+            @Override
+            public void close() throws IOException {
+                throw new IOException("the close failed");
+            }
+        };
+        final IOException e = assertThrows(IOException.class, () -> ReceivedDicomObject.read(cutShort, null, ORDINARY_LAST_TAG, true));
+        assertNotEquals("the read's own failure should be the one thrown", "the close failed", e.getMessage());
+        assertEquals(1, e.getSuppressed().length);
+        assertEquals("the close failed", e.getSuppressed()[0].getMessage());
     }
 
     /**

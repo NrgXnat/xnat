@@ -391,8 +391,8 @@ public class ReceivedDicomObjectTest {
 
     /**
      * A stream that breaks partway through the pixel data -- a dropped association, a corrupt zip
-     * entry -- must not leave a truncated object for the session build to skip, nor truncate the copy
-     * a re-send of the same object is written over.
+     * entry -- must not leave a truncated instance for the session build to skip, nor truncate the copy
+     * a re-send of the same instance is written over.
      */
     @Test
     public void aStreamThatBreaksPartwayLeavesNoPartialObject() throws Exception {
@@ -406,7 +406,7 @@ public class ReceivedDicomObjectTest {
         final long breakAt = MR_FIXTURE.length() / 2;
         for (final File target : Arrays.asList(output, existing)) {
             try (ReceivedDicomObject received = ReceivedDicomObject.read(breaksAfter(MR_FIXTURE, breakAt), null, ORDINARY_LAST_TAG, false)) {
-                // Reported as the source's failure, so the importer answers as for an unreadable object, not as for full storage.
+                // Reported as the source's failure, so the importer answers as for an unreadable instance, not as for full storage.
                 assertThrows(ReceivedDicomObject.SourceReadException.class, () -> received.write(received.getDataset(), AE_TITLE, target, "test"));
             }
         }
@@ -435,7 +435,7 @@ public class ReceivedDicomObjectTest {
         assertTrue("nothing should be left spooled", filesUnder(scratch).isEmpty());
     }
 
-    /** Something that isn't DICOM at all must not be taken for a DICOM object cut short, whatever the read makes of it. */
+    /** Something that isn't DICOM at all must not be taken for a DICOM instance cut short, whatever the read makes of it. */
     @Test
     public void aSourceThatIsNotDicomIsNotTakenForOneCutShort() throws Exception {
         final File text = folder.newFile("README.txt");
@@ -448,14 +448,14 @@ public class ReceivedDicomObjectTest {
         Files.write(binary.toPath(), records);
         for (final File notDicom : Arrays.asList(text, binary)) {
             try (ReceivedDicomObject ignored = ReceivedDicomObject.read(open(notDicom), null, ORDINARY_LAST_TAG, true, notDicom)) {
-                // Read without complaint: the importer's own checks reject it later, as they always have.
+                // Read without complaint: the importer's own checks reject it later.
             } catch (IOException e) {
                 assertFalse(notDicom.getName() + " was taken for a DICOM object cut short: " + e, e instanceof ReceivedDicomObject.TruncatedObjectException);
             }
         }
     }
 
-    /** A failure writing the object out is the server's, not the source's, so it must not read as a broken upload. */
+    /** A failure writing the instance out is the server's, not the source's, so it must not read as a broken upload. */
     @Test
     public void aFailureWritingTheObjectOutIsNotASourceReadFailure() throws Exception {
         final File output = new File(new File(folder.getRoot(), "missing"), "object.dcm");

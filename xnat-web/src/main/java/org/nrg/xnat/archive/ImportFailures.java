@@ -31,16 +31,16 @@ public final class ImportFailures {
 
     /**
      * GradualDicomImporter reports every failure as a ClientException, but one caused by a ServerException, such as a
-     * failed write or a script or processor error, says nothing about the object: it fails the import even where
-     * unparsable objects are skipped.
+     * failed write or a script or processor error, says nothing about the instance: it fails the import even where
+     * unparsable instances are skipped.
      */
     public static boolean isUnparsable(final ClientException e) {
         return !(e.getCause() instanceof ServerException);
     }
 
     /**
-     * Whether the object ends before its last value does: a Part 10 file cut short, such as one still being copied.
-     * GradualDicomImporter reports it as unreadable like any other object it can't read, and the zip importer
+     * Whether the instance ends before its last value does: a Part 10 file cut short, such as one still being copied.
+     * GradualDicomImporter reports it as unreadable like any other instance it can't read, and the zip importer
      * skips it as such under Ignore-Unparsable, but it is DICOM, so the inbox stops at it and keeps the file.
      */
     public static boolean endsEarly(final Throwable e) {

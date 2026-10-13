@@ -373,9 +373,17 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
         return new ConstantValue(values);
     }
 
+    /**
+     * Resolve a {@code variable} node appearing as a function argument or a list element.
+     *
+     * <p>Routed through {@link #extractVariableValue(String)} rather than dereferencing
+     * {@link #getVariable(String)} directly, so an undefined or null-valued variable in these
+     * positions reports the same actionable error as one on the right-hand side of an
+     * assignment instead of a raw {@code NullPointerException}. See XNAT-8499.
+     */
     @Override
     public Value visitVariable(DE6Parser.VariableContext ctx) {
-        return getVariable(ctx.ID().getText()).getValue();
+        return extractVariableValue(ctx.ID().getText());
     }
 
     /**

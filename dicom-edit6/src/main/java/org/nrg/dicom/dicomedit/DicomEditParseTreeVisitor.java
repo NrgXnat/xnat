@@ -42,8 +42,12 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
 
     private Map<String, Variable> variables = new HashMap<String, Variable>();
     private DicomObjectI dicomObject;
-    private Integer currentStatementLine;
-    private String  currentStatementText;
+    /**
+     * The most-recently-entered statement, retained so its line and text can be derived on the
+     * error path only. Holding the context costs a reference store per statement; deriving the
+     * text eagerly cost a string allocation per statement of every script for every object.
+     */
+    private DE6Parser.StatementContext currentStatement;
 
     private static final Logger logger = LoggerFactory.getLogger(DicomEditParseTreeVisitor.class);
 
@@ -81,37 +85,45 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
     }
 
     /**
-     * @return the source line of the most-recently-entered top-level statement, or {@code null}
-     *         if no statement has been entered yet. Useful at the script-applicator boundary
-     *         when decorating an evaluation failure with location context.
+     * @return the source line of the most-recently-entered statement, or {@code null} if no
+     *         statement has been entered yet. Useful at the script-applicator boundary when
+     *         decorating an evaluation failure with location context.
      */
     public Integer getCurrentStatementLine() {
-        return currentStatementLine;
+        return currentStatement == null ? null : currentStatement.start.getLine();
     }
 
     /**
-     * @return the textual form of the most-recently-entered top-level statement, or {@code null}.
+     * @return the textual form of the most-recently-entered statement, or {@code null}.
      *         Note: ANTLR's {@code ctx.getText()} concatenates tokens without their original
-     *         whitespace, so the result is a faithful but compact reconstruction.
+     *         whitespace, so the result is a faithful but compact reconstruction. Reconstructing
+     *         it allocates, so this is called only when decorating an error.
      */
     public String getCurrentStatementText() {
-        return currentStatementText;
+        return currentStatement == null ? null : currentStatement.getText();
     }
 
     @Override
     public Value visitScript(DE6Parser.ScriptContext ctx) {
         logger.debug("Encountered script.");
-        for (int i = 0; i < ctx.statement().size(); i++) {
-            logger.debug("visit statement " + i + ": " + ctx.statement(i).getText());
-            this.visit(ctx.statement(i));
+        // ANTLR's generated statement() builds a fresh list by scanning all children on every
+        // call, so hoist it rather than calling it per iteration; and keep getText() behind an
+        // isDebugEnabled() check, since it is evaluated as an argument either way.
+        final List<DE6Parser.StatementContext> statements = ctx.statement();
+        final boolean debug = logger.isDebugEnabled();
+        for (int i = 0; i < statements.size(); i++) {
+            final DE6Parser.StatementContext statement = statements.get(i);
+            if (debug) {
+                logger.debug("visit statement {}: {}", i, statement.getText());
+            }
+            this.visit(statement);
         }
         return new ConstantValue(null);
     }
 
     @Override
     public Value visitStatement(DE6Parser.StatementContext ctx) {
-        this.currentStatementLine = ctx.start.getLine();
-        this.currentStatementText = ctx.getText();
+        this.currentStatement = ctx;
         this.visit(ctx.getChild(0));
         return new ConstantValue(null);
     }

@@ -31,7 +31,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * operation has finished. When tempDir is on the same filesystem as the source the staged file is
  * renamed over the source, which is atomic: a reader sees the old bytes or the new ones, never a
  * missing or partial file. On a different filesystem a rename is impossible and the staged file is
- * copied over the source instead, which is what this always did.
+ * copied over the source instead.
  * <p>
  * Staging names carry a random component. Files worked on concurrently often share a name -- every
  * scan has a 1.dcm -- and a tempDir shared between them has to keep them apart.
@@ -41,7 +41,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * leaves it in place, and the exception names where it is.
  * <p>
  * An operation may return without producing a staged version -- an anonymization that rejected or
- * failed on the object reports that as its result rather than by throwing. Then there is nothing to
+ * failed on the instance reports that as its result rather than by throwing. Then there is nothing to
  * put in the source's place, and the source stays as it was.
  */
 public final class WorkOnCopyOp<T> extends Transaction<T> {

@@ -51,8 +51,8 @@ public class MizerDicomObjectWriteTest {
     /**
      * A Deflated-transfer-syntax file read with {@link DicomInputStream.IncludeBulkData#URI} must
      * not reference pixel data into the raw file: positions in an inflated stream are not file
-     * positions, so dcm4che spools in that case and so must we. Regression test for the merge-time
-     * anonymization of Deflated objects, which read files exactly this way.
+     * positions, so dcm4che spools in that case and so must we. The merge-time anonymization of
+     * Deflated instances reads files exactly this way.
      */
     @Test
     public void deflatedFileRoundTripsPixelsThroughUriRead() throws Exception {

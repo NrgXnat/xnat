@@ -30,10 +30,10 @@ import java.util.function.Supplier;
  * project, timestamp, session and resource directory, so nothing that lists those ever sees a
  * staged file, and the prearchive trawler skips dotted names at the root. That matters because a
  * staged file left behind by a crash would otherwise be catalogued as a resource or parsed as a
- * DICOM object, which is what happened when lock files lived beside the data.
+ * DICOM instance.
  * <p>
  * A file under none of the roots is staged wherever the fallback says, which by default is
- * {@code java.io.tmpdir}, and is replaced by a copy as it always was. So is a file under a root
+ * {@code java.io.tmpdir}, and is replaced by a copy. So is a file under a root
  * where the staging directory can't be created. The same happens, one level down, when a root
  * turns out to span more than one mount: the rename fails and the caller copies.
  */
@@ -69,8 +69,7 @@ public class SameVolumeStagingDirectoryResolver implements StagingDirectoryResol
                     Files.createDirectories(staging);
                 } catch (IOException e) {
                     // A root this process can't write to (a read-only root over per-project mounts,
-                    // say) staged in the temp directory before this class existed, and still can;
-                    // only the rename is lost.
+                    // say) stages in the temp directory; only the rename is lost.
                     log.warn("Unable to create {}, staging {} under the fallback location instead: {}", staging, dicomFile, e.toString());
                     return _fallback.resolve(dicomFile);
                 }

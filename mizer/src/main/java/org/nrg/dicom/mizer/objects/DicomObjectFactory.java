@@ -64,7 +64,7 @@ public class DicomObjectFactory {
      * straight to the stream beneath it, so without a buffer on both sides a gigabyte of pixel data
      * is half a million read calls and half a million write calls. A megabyte per call is what the
      * pixel redactor measured as fastest against 64 KB and 4 MB, it is the transfer size Linux NFS
-     * clients typically negotiate, and at one allocation per object it costs nothing worth counting.
+     * clients typically negotiate, and at one allocation per instance it costs nothing worth counting.
      */
     public static final int BULK_DATA_BUFFER_SIZE = 1 << 20;
 
@@ -256,7 +256,7 @@ public class DicomObjectFactory {
          * permissions and an unguessable name, which rules out anyone planting a directory at a
          * predictable path first. One per JVM, since it holds nothing once the files are released.
          * Resolved only when a read actually spools: this method stats the directory under the
-         * class lock, which no per-object path should pay for a directory it will not use.
+         * class lock, which no per-instance path should pay for a directory it will not use.
          * <p>
          * It does not follow {@code dicom.pixeledit.scratch.dir}: that property belongs to
          * dicom-edit6, which sits above this, and a spool directory an operator can size separately
@@ -1174,8 +1174,8 @@ public class DicomObjectFactory {
         @Override
         public void write(OutputStream os) throws MizerException {
             try {
-                // Longstanding defaults callers may rely on: an object built from scratch still
-                // writes as a valid Explicit VR Little Endian secondary capture.
+                // Defaults callers rely on: an instance built from scratch writes as a valid
+                // Explicit VR Little Endian secondary capture.
                 if (dataset.getString(org.dcm4che3.data.Tag.TransferSyntaxUID) == null) {
                     dataset.setString(org.dcm4che3.data.Tag.TransferSyntaxUID, VR.UI, "1.2.840.10008.1.2.1"); // Explicit VR Little Endian
                 }

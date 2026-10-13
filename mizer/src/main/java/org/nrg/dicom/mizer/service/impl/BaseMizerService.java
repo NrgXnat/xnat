@@ -64,9 +64,9 @@ public class BaseMizerService implements MizerService {
 
     /**
      * Sets where the anonymized version of a file is staged before it replaces the original. Optional:
-     * without one, files are staged under {@code java.io.tmpdir} and replaced by a copy, as they always
-     * were. A resolver that stages on the volume the file lives on makes the replacement an atomic rename
-     * and saves a full read and write of the file.
+     * without one, files are staged under {@code java.io.tmpdir} and replaced by a copy. A resolver that
+     * stages on the volume the file lives on makes the replacement an atomic rename and saves a full read
+     * and write of the file.
      *
      * @param resolver The resolver to use.
      */

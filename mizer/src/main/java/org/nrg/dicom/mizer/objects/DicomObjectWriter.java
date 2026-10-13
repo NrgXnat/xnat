@@ -22,7 +22,7 @@ import java.io.OutputStream;
  * switches to the transfer syntax the meta group names; and finally merge the meta group back into
  * the dataset for whatever processing follows (XNAT-8719).
  * <p>
- * Callers differ only in one parameter: for an object whose tail was never parsed, a raw remainder
+ * Callers differ only in one parameter: for an instance whose tail was never parsed, a raw remainder
  * to copy through after the dataset. Keeping that as a parameter of one implementation, rather than
  * as two copies of the algorithm, is what keeps the two anonymization paths writing identical bytes.
  */
@@ -37,9 +37,9 @@ public final class DicomObjectWriter {
      * @param datasetWithFmi the dataset with its file meta information merged in. On return the
      *                       meta group is merged back into it.
      * @param out            where to write. Buffered here, so callers hand over the raw stream.
-     * @param rawRemainder   the unparsed rest of a partially-read object, copied through byte for
+     * @param rawRemainder   the unparsed rest of a partially-read instance, copied through byte for
      *                       byte after the dataset. May be null. Only meaningful after a partial
-     *                       read, which is never of a Deflated object -- those are always parsed
+     *                       read, which is never of a Deflated instance -- those are always parsed
      *                       whole -- so the copy never has to thread a deflater.
      *
      * @return the number of remainder bytes copied; 0 when no remainder was given.

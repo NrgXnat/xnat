@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * In-place anonymization stages its output where the {@link org.nrg.dicom.mizer.service.StagingDirectoryResolver}
- * says, and the file that ends up at the original path is the anonymized object with its pixel data intact.
+ * says, and the file that ends up at the original path is the anonymized instance with its pixel data intact.
  */
 public class BaseMizerServiceStagingTest {
 
@@ -69,9 +69,9 @@ public class BaseMizerServiceStagingTest {
     }
 
     /**
-     * A script that fails on an object reports that as an error result, not an exception. The
-     * object must then be exactly what it was: the staging file used to be opened before the
-     * script ran, so a failure left it empty, and the empty file was put in the object's place.
+     * A script that fails on an instance reports that as an error result, not an exception. The
+     * instance must then be exactly what it was: no staging file is opened unless the script
+     * succeeds, so no empty file can be put in the instance's place.
      */
     @Test
     public void leavesTheObjectUntouchedWhenTheScriptFails() throws Exception {
@@ -96,9 +96,8 @@ public class BaseMizerServiceStagingTest {
     }
 
     /**
-     * A batch is anonymized all or nothing. Regression: each file was put in place as soon as it was
-     * anonymized, so a failure on a later file left the earlier ones changed, and archiving again
-     * after fixing the script ran it over them a second time.
+     * A batch is anonymized all or nothing: a failure on a later file leaves the earlier ones
+     * unchanged, so archiving again after fixing the script runs it over each file once.
      */
     @Test
     public void leavesEveryFileInTheBatchUntouchedWhenOneFails() throws Exception {

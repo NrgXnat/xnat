@@ -22,9 +22,8 @@ public interface StagingDirectoryResolver {
     File resolve(final File dicomFile) throws IOException;
 
     /**
-     * Stages under {@code java.io.tmpdir}, which is where anonymization always staged before a
-     * resolver could be supplied. That is rarely the filesystem the data is on, so the replacement
-     * is a copy.
+     * Stages under {@code java.io.tmpdir}, the default when no resolver is supplied. That is rarely
+     * the filesystem the data is on, so the replacement is a copy.
      */
     StagingDirectoryResolver JAVA_IO_TMPDIR = dicomFile -> new File(System.getProperty("java.io.tmpdir"), "anon_backup");
 }

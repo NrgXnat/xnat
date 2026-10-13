@@ -60,11 +60,11 @@ public final class ResumableDicomInputStream extends DicomInputStream {
     static final BulkDataDescriptor PIXEL_DATA_OF_ANY_FORM = ResumableDicomInputStream::isPixelData;
 
     /**
-     * For a read of the whole object: {@link #PIXEL_DATA_OF_ANY_FORM} plus everything
+     * For a read of the whole instance: {@link #PIXEL_DATA_OF_ANY_FORM} plus everything
      * {@link BulkDataDescriptor#DEFAULT} matches -- overlays, waveforms, spectroscopy data, encapsulated
-     * documents, palette colour lookup tables. Reading an object from its file has always referenced those
-     * rather than loaded them, so a whole read holds no more on the heap than anonymizing the written file
-     * did. The objection that keeps them out of {@link #PIXEL_DATA_OF_ANY_FORM} is the ordinary partial
+     * documents, palette colour lookup tables. Reading an instance from its file references those rather
+     * than loading them, and so does a whole read, which holds no more on the heap than anonymizing the
+     * written file. The objection that keeps them out of {@link #PIXEL_DATA_OF_ANY_FORM} is the ordinary partial
      * read, which never reaches most of them; a whole read spools its pixel data anyway, into the same file.
      */
     public static final BulkDataDescriptor WHOLE_OBJECT_BULK_DATA = (itemPointers, privateCreator, tag, vr, length) ->
@@ -100,7 +100,7 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * the value is spooled to a file and the reference points there. The spooling is
      * {@link BufferedBulkDataCreator}'s rather than dcm4che's, which writes 2 KB at a time to an unbuffered
      * stream and hands back references that read the same way: a gigabyte of pixel data would cost a million
-     * system calls each way. Here every value of an object goes into one spool file through a
+     * system calls each way. Here every value of an instance goes into one spool file through a
      * {@link DicomObjectFactory#BULK_DATA_BUFFER_SIZE} buffer, and the references read ahead by the same
      * amount.
      * <p>
@@ -112,7 +112,7 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      *
      * Where the spool lands is {@link #SCRATCH_DIR_PROPERTY configurable}.
      *
-     * @param in the object's bytes.
+     * @param in the instance's bytes.
      *
      * @return a resumable stream that references bulk data rather than loading it.
      *
@@ -129,10 +129,10 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * <b>sourceFile</b> from its first byte: bulk data is referenced straight into the file
      * instead of copied to the spool, except under a Deflated transfer syntax, where stream
      * positions are not file positions and the creator spools as it must. The references are
-     * followed when the object is written, so the file must outlive that write; nothing here
+     * followed when the instance is written, so the file must outlive that write; nothing here
      * alters or deletes it -- {@link #getSpoolFiles()} never includes it.
      *
-     * @param in                       the object's bytes.
+     * @param in                       the instance's bytes.
      * @param sourceFile               the file the stream reads from its beginning, or null when the
      *                                 source is not a file.
      * @param negotiatedTransferSyntax the syntax the caller negotiated for a stream without file meta
@@ -160,9 +160,9 @@ public final class ResumableDicomInputStream extends DicomInputStream {
         }
         // A method reference, not a call: scratchDirectory() stats the directory under a
         // class-level lock, and the ordinary import stops short of the pixel data and spools
-        // nothing, so resolving it per object would be a serialized syscall for nothing. A
-        // configured directory that cannot be created still fails the read -- now when the first
-        // value has to be spooled rather than when the stream opens.
+        // nothing, so resolving it per instance would be a serialized syscall for nothing. A
+        // configured directory that cannot be created fails the read when the first value has to
+        // be spooled.
         dis._creator = new BufferedBulkDataCreator(ResumableDicomInputStream::scratchDirectory);
         dis.setBulkDataCreator(dis._creator);
         return dis;

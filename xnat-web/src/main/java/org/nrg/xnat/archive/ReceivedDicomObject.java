@@ -207,11 +207,11 @@ final class ReceivedDicomObject implements Closeable {
      * @param source     who sent the instance, for the receipt log.
      */
     void write(final Attributes dataset, final File outputFile, final String source) throws IOException {
-        // A new object is written straight to its name, and deleted if the write fails. A re-send over an existing
-        // object is written beside it and renamed into place, so a failed one leaves the earlier copy as it was. Only
+        // A new instance is written straight to its name, and deleted if the write fails. A re-send over an existing
+        // instance is written beside it and renamed into place, so a failed one leaves the earlier copy as it was. Only
         // the re-send is renamed because a rename makes an NFS client drop the file's cached pages, and the session
-        // build that follows would read every object back from the server. The caller holds the object's prearchive
-        // file lock. A fixed-length name: one built from the object's could pass NAME_MAX.
+        // build that follows would read every instance back from the server. The caller holds the instance's prearchive
+        // file lock. A fixed-length name: one built from the instance's could pass NAME_MAX.
         final boolean replacing = outputFile.exists();
         final File target = replacing ? new File(outputFile.getParentFile(), ".received-" + UUID.randomUUID() + ".part") : outputFile;
         boolean written = false;
@@ -241,9 +241,9 @@ final class ReceivedDicomObject implements Closeable {
     }
 
     /**
-     * Thrown by {@link #read} for a Part 10 object that ends before its last value does, such as a file
+     * Thrown by {@link #read} for a Part 10 instance that ends before its last value does, such as a file
      * still being copied, as opposed to a source that isn't DICOM at all. After a partial read, the rest
-     * of the object is copied through as far as it goes, so only a whole read finds this.
+     * of the instance is copied through as far as it goes, so only a whole read finds this.
      */
     static final class TruncatedObjectException extends EOFException {
         TruncatedObjectException(final String message) {
@@ -257,7 +257,7 @@ final class ReceivedDicomObject implements Closeable {
     }
 
     /**
-     * Thrown by {@link #write} when the rest of the object could not be read from the stream it arrived
+     * Thrown by {@link #write} when the rest of the instance could not be read from the stream it arrived
      * on, such as an upload cut off partway, as opposed to a failure writing it out.
      */
     static final class SourceReadException extends IOException {

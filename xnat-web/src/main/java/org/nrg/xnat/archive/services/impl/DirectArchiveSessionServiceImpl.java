@@ -226,7 +226,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         final long id = session.getId();
         try {
             // Claimed before anything on the filesystem is touched, as a delete is: from here the importer refuses the
-            // next file of any upload into this session, and the archive trigger no longer queues it.
+            // next file of any upload into this session, and the archive trigger stops queuing it.
             if (!directArchiveSessionHibernateService.setStatusToErrorIfReceiving(id, cause)) {
                 return;
             }

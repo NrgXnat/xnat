@@ -70,8 +70,8 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
 
     /**
      * Moves a session that is still RECEIVING to ERROR, recording why, as one conditional update. A session that has
-     * moved on, e.g. queued for building or claimed by a delete, is left as it is. Once moved, the importer no longer
-     * appends files to it and the archive trigger no longer queues it.
+     * moved on, e.g. queued for building or claimed by a delete, is left as it is. Once the session is moved, the
+     * importer appends no more files to it and the archive trigger doesn't queue it.
      *
      * @return whether the session was moved
      */

@@ -211,7 +211,9 @@ final class ReceivedDicomObject implements Closeable {
         // instance is written beside it and renamed into place, so a failed one leaves the earlier copy as it was. Only
         // the re-send is renamed because a rename makes an NFS client drop the file's cached pages, and the session
         // build that follows would read every instance back from the server. The caller holds the instance's prearchive
-        // file lock. A fixed-length name: one built from the instance's could pass NAME_MAX.
+        // file lock. A fixed-length name: one built from the instance's could pass NAME_MAX. The name is hidden and ends
+        // in .part, which the session build skips (EnumeratedMetadataStore.isWriteInProgress), so a copy left by a
+        // process that died mid-write isn't read as part of the session.
         final boolean replacing = outputFile.exists();
         final File target = replacing ? new File(outputFile.getParentFile(), ".received-" + UUID.randomUUID() + ".part") : outputFile;
         boolean written = false;

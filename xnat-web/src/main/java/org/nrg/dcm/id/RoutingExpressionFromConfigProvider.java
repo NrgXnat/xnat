@@ -33,8 +33,8 @@ public class RoutingExpressionFromConfigProvider implements RoutingExpressionPro
 
     @Override
     public List<String> provide(CompositeDicomObjectIdentifier.ExtractorType type) {
-        // Every received object asks for the project, subject, session and auto-archive rules in turn, and each
-        // ask was a config-service read (several database round trips). Within one import scope (the objects
+        // Every received instance asks for the project, subject, session and auto-archive rules in turn, and
+        // each is a config-service read (several database round trips). Within one import scope (the instances
         // of one association, one uploaded archive, one inbox request) each set of rules is read once.
         return new ArrayList<>(ImportScope.scoped(getClass().getName() + ":" + type, () -> List.copyOf(readRules(type))));
     }

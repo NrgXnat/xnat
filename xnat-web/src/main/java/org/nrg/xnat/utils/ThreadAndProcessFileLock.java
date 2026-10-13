@@ -206,8 +206,8 @@ public class ThreadAndProcessFileLock {
     }
 
     private String getCachePath() {
-        // Reading the preference is a database round trip, and every lock cycle read it (twice per catalog at
-        // archive time, hundreds of times per session). The path is read once and kept until the cachePath
+        // Reading the preference is a database round trip, and every lock cycle needs the path (twice per
+        // catalog at archive time). The path is read once and kept until the cachePath
         // preference changes (CachePathHandlerMethod calls cachePathChanged, on every node when the distributed
         // events plugin relays the change) or the preferences bean is replaced.
         final SiteConfigPreferences preferences = getSiteConfigPreferences();

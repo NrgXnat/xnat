@@ -70,12 +70,12 @@ public class AttrAdapter extends AbstractAttrAdapter<DicomAttributeIndex, String
     }
 
     /**
-     * One store query for all of the definitions instead of one per definition: a scan's forty-odd
-     * attribute lookups become a single SELECT. Each definition then sees the distinct combinations of
-     * its own attributes projected from the shared rows, which is the same set the per-definition query
-     * returns (the distinct projection of distinct rows). Definitions with no native attributes get
-     * nothing, as the store gives them nothing. Should the shared query fail, the definitions are
-     * queried one at a time as before, so a failure is reported exactly as it always was.
+     * One store query for all of the definitions: a scan's attribute lookups run as a single SELECT.
+     * Each definition then sees the distinct combinations of its own attributes projected from the
+     * shared rows, which is the same set the per-definition query returns (the distinct projection of
+     * distinct rows). Definitions with no native attributes get nothing, as the store gives them
+     * nothing. Should the shared query fail, the definitions are queried one at a time, so a failure is
+     * reported the way the per-definition query reports it.
      */
     @Override
     protected Function<ExtAttrDef<DicomAttributeIndex>, Collection<Map<DicomAttributeIndex, String>>>

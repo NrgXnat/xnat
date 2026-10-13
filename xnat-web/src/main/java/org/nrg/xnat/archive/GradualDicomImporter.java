@@ -123,8 +123,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private ImportScope _scope;
 
     /**
-     * Sets the scope this object's import reads its settings in: the scope of the association, uploaded archive
-     * or inbox request the object belongs to. Without one the import reads its settings for itself.
+     * Sets the scope this instance's import reads its settings in: the scope of the association, uploaded archive
+     * or inbox request the instance belongs to. Without one the import reads its settings for itself.
      */
     public void setScope(final ImportScope scope) {
         _scope = scope;
@@ -441,7 +441,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
     /**
      * The enableNativeDicomPreCompression site preference, read once per import scope: reading a preference is
-     * a database round trip, and this one was read for every object received.
+     * a database round trip, and every received instance needs this one.
      */
     private static boolean nativeDicomPreCompressionEnabled() {
         return ImportScope.scoped("site.enableNativeDicomPreCompression", () -> XDAT.getSiteConfigPreferences().getEnableNativeDicomPreCompression());

@@ -48,7 +48,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	private ArrayList allFields = null;
 	// Derived schema metadata, computed once per element (the schema is fixed once loaded). The getters hand
-	// out copies, so callers that alter what they get keep seeing fresh collections as they always did.
+	// out copies, so a caller can alter what it gets without changing what the next caller sees.
 	private volatile ArrayList uniqueFieldsCache          = null;
 	private volatile Hashtable uniqueCompositeFieldsCache = null;
 	private final    Map<String, GenericWrapperField> nonMultipleDataFieldCache = new ConcurrentHashMap<>();
@@ -1989,7 +1989,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 			cached = computeUniqueCompositeFields();
 			uniqueCompositeFieldsCache = cached;
 		}
-		// A copy one level deep: callers iterate the lists and may alter them, as they always could.
+		// A copy one level deep: callers iterate the lists and may alter them.
 		final Hashtable copy = new Hashtable();
 		for (final Object key : cached.keySet()) {
 			copy.put(key, new ArrayList((ArrayList) cached.get(key)));

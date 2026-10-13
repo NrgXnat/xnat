@@ -173,10 +173,10 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
     /**
      * Delete every private tag that is not retained.
      * <p>
-     * The retained tags are the tags with values (every tag except sequences with items, and except Pixel Data) that
-     * match a tagPath in retainTagPathList, and the creator IDs of the private blocks on their paths. A private sequence
-     * that holds a retained tag is kept. Its other content is deleted, and so are the items at the end of it that are
-     * left empty. Empty items before a retained one are kept, so retained tags keep their item numbers.
+     * The retained tags are the tags with values (every tag except sequences with items) that match a tagPath in
+     * retainTagPathList, and the creator IDs of the private blocks on their paths. A private sequence that holds a
+     * retained tag is kept. Its other content is deleted, and so are the items at the end of it that are left empty.
+     * Empty items before a retained one are kept, so retained tags keep their item numbers.
      *
      * @param retainTagPathList tagPaths to match the tags to retain.
      * @param dicomObject       the object under scrutiny.
@@ -261,11 +261,9 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
     }
 
     /**
-     * Collects the tagPaths of the tags with values: every tag except sequences with items, and except Pixel Data.
-     * Values are not read.
+     * Collects the tagPaths of the tags with values: every tag except sequences with items. Values are not read.
      */
     private static class ValueTagPathCollector extends DicomObjectTagVisitor {
-        private static final int PIXEL_DATA = 0x7FE00010;
         private final List<TagPath> tagPaths = new ArrayList<>();
 
         List<TagPath> getAll(DicomObjectI dicomObject) {
@@ -275,9 +273,7 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
 
         @Override
         public void visitTag(TagPath tagPath, DicomElementI dicomElement, DicomObjectI dicomObject) {
-            if (dicomElement.tag() != PIXEL_DATA) {
-                tagPaths.add(tagPath);
-            }
+            tagPaths.add(tagPath);
         }
     }
 

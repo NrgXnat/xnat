@@ -301,7 +301,7 @@ public class EnumeratedMetadataStoreTest {
     public void aWriteInProgressIsNotPartOfTheDirectory() throws IOException, SQLException {
         // What a re-send left behind when the process writing it died: a whole, readable copy of one of the files.
         try (final InputStream in = new GZIPInputStream(Files.newInputStream(new File(tempDir, fileNames[0]).toPath()))) {
-            Files.copy(in, new File(tempDir, ".received-left-behind.part").toPath());
+            Files.copy(in, new File(tempDir, ".xnat-tmp-upload-left-behind.part").toPath());
         }
         try (final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(TAGS, FileURIOpener.getInstance())) {
             store.add(Collections.singletonList(toURI(tempDir)));

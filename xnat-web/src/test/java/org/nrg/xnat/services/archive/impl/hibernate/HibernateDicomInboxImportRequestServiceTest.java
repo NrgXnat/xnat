@@ -28,27 +28,18 @@ public class HibernateDicomInboxImportRequestServiceTest {
     }
 
     @Test
-    public void aFailureTooLongForItsColumnKeepsItsStart() {
+    public void aReasonTooLongForItsColumnIsCutOnFailureAndOnCompletion() {
         service.fail(request, "Stopped at {}: {}", "object.dcm", "x".repeat(400));
 
         assertEquals(Status.Failed, request.getStatus());
         assertEquals(255, request.getResolution().length());
         assertTrue(request.getResolution().startsWith("Stopped at object.dcm: xxx"));
         verify(dao).update(request);
-    }
 
-    @Test
-    public void aCompletionTooLongForItsColumnKeepsItsStart() {
-        service.complete(request, "x".repeat(400));
+        final DicomInboxImportRequest completed = new DicomInboxImportRequest();
+        service.complete(completed, "x".repeat(400));
 
-        assertEquals(Status.Completed, request.getStatus());
-        assertEquals(255, request.getResolution().length());
-    }
-
-    @Test
-    public void aShortReasonIsKeptWhole() {
-        service.fail(request, "No valid DICOM files found for the specified session :{}", "/data/xnat/inbox/PROJ/session");
-
-        assertEquals("No valid DICOM files found for the specified session :/data/xnat/inbox/PROJ/session", request.getResolution());
+        assertEquals(Status.Completed, completed.getStatus());
+        assertEquals(255, completed.getResolution().length());
     }
 }

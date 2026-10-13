@@ -102,13 +102,6 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
                 .filter(TagPath::isPrivate)
                 .collect(Collectors.toList());
 
-        // Include the necessary creator IDs
-        Set<TagPath> pvcs = retainTagPathList.stream()
-                .map(this::mapCreatorIDPaths)
-                .flatMap(Set::stream)
-                .collect(Collectors.toSet());
-        retainTagPathList.addAll(pvcs);
-
         return retainTagPathList;
     }
 
@@ -181,11 +174,11 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
      * Delete every private tag that is not retained.
      * <p>
      * The retained tags are the tags with values (every tag except sequences with items, and except Pixel Data) that
-     * match a tagPath in retainTagPathList. A private sequence that holds a retained tag is kept. Its other content is
-     * deleted, and so are the items at the end of it that are left empty. Empty items before a retained one are kept,
-     * so retained tags keep their item numbers.
+     * match a tagPath in retainTagPathList, and the creator IDs of the private blocks on their paths. A private sequence
+     * that holds a retained tag is kept. Its other content is deleted, and so are the items at the end of it that are
+     * left empty. Empty items before a retained one are kept, so retained tags keep their item numbers.
      *
-     * @param retainTagPathList tagPaths to match the tags to retain, including their creator IDs.
+     * @param retainTagPathList tagPaths to match the tags to retain.
      * @param dicomObject       the object under scrutiny.
      */
     private void deletePrivateTagsExcept(List<TagPath> retainTagPathList, DicomObjectI dicomObject) {
@@ -196,6 +189,7 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
             if (filter.allow(tagPath)) {
                 List<Integer> path = asList(tagPath.getTagsAsArray());
                 retained.add(path);
+                retained.addAll(getCreatorPaths(path));
                 sequencesToKeep.addAll(getSequencePaths(path));
             }
         }
@@ -228,6 +222,26 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
             sequencePaths.add(new ArrayList<>(path.subList(0, length)));
         }
         return sequencePaths;
+    }
+
+    /**
+     * The paths of the creator IDs of the private blocks on the path, one for each private tag that is not a creator
+     * ID. A private tag (gggg,bbxx) is in the block whose creator ID is (gggg,00bb) in the same item.
+     *
+     * @param path the tag array of a tagPath.
+     * @return the paths of the creator IDs, empty for a path with no private tags.
+     */
+    private static List<List<Integer>> getCreatorPaths(List<Integer> path) {
+        List<List<Integer>> creatorPaths = new ArrayList<>();
+        for (int i = 0; i < path.size(); i += 2) {
+            int tag = path.get(i);
+            if (((tag >>> 16) & 1) == 1 && (tag & 0xFF00) != 0) {
+                List<Integer> creatorPath = new ArrayList<>(path.subList(0, i));
+                creatorPath.add((tag & 0xFFFF0000) | ((tag >>> 8) & 0xFF));
+                creatorPaths.add(creatorPath);
+            }
+        }
+        return creatorPaths;
     }
 
     /**

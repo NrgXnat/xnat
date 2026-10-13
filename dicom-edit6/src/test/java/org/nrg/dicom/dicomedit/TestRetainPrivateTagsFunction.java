@@ -341,6 +341,90 @@ public class TestRetainPrivateTagsFunction {
     }
 
     /**
+     * Keeping part of a private block deletes the block's other elements, at the root and in a sequence item. That
+     * includes the element whose element number equals the block number, such as (0029,1010) in block 0x10.
+     *
+     * retainPrivateTags[ (0029,{A}20), (0029,{B}20), "(0029,{A}40)[0]/(0029,{A}44)"]
+     * <pre>
+     * (0029,0010) LO [A] Private Creator Data Element     retain
+     * (0029,0011) LO [B] Private Creator Data Element     retain
+     * (0029,1010) LO [a10] ?                              delete
+     * (0029,1020) LO [a20] ?                              retain
+     * (0029,1040) SQ #-1 [1 item] ?                       retain
+     *   >ITEM #1:
+     *   >(0029,0010) LO [A] Private Creator               retain
+     *   >(0029,1010) LO [i10] ?                           delete
+     *   >(0029,1044) LO [i44] ?                           retain
+     * (0029,1111) LO [b11] ?                              delete
+     * (0029,1120) LO [b20] ?                              retain
+     * (0029,1130) LO [b30] ?                              delete
+     * </pre>
+     *
+     * @throws MizerException unexpected exception
+     */
+    @Test
+    public void testKeepingPartOfABlockDeletesTheRest() throws MizerException {
+        Attributes attrs = new Attributes();
+        attrs.setString(0x00290010, VR.LO, "A");
+        attrs.setString(0x00290011, VR.LO, "B");
+        attrs.setString(0x00291010, VR.LO, "a10");
+        attrs.setString(0x00291020, VR.LO, "a20");
+        Attributes item = new Attributes();
+        item.setString(0x00290010, VR.LO, "A");
+        item.setString(0x00291010, VR.LO, "i10");
+        item.setString(0x00291044, VR.LO, "i44");
+        attrs.newSequence(0x00291040, 1).add(item);
+        attrs.setString(0x00291111, VR.LO, "b11");
+        attrs.setString(0x00291120, VR.LO, "b20");
+        attrs.setString(0x00291130, VR.LO, "b30");
+
+        String script = "retainPrivateTags[ (0029,{A}20), (0029,{B}20), \"(0029,{A}40)[0]/(0029,{A}44)\"]";
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        AnonymizationResult result = sa.apply(new DicomObjectFactory.MizerDicomObject(attrs));
+        assertFalse(result instanceof AnonymizationResultError);
+
+        assertTrue(attrs.contains(0x00290010));
+        assertTrue(attrs.contains(0x00290011));
+        assertFalse(attrs.contains(0x00291010));
+        assertTrue(attrs.contains(0x00291020));
+        assertFalse(attrs.contains(0x00291111));
+        assertTrue(attrs.contains(0x00291120));
+        assertFalse(attrs.contains(0x00291130));
+        Attributes retainedItem = attrs.getNestedDataset(0x00291040);
+        assertNotNull(retainedItem);
+        assertTrue(retainedItem.contains(0x00290010));
+        assertFalse(retainedItem.contains(0x00291010));
+        assertTrue(retainedItem.contains(0x00291044));
+    }
+
+    /**
+     * Keeping one Siemens CSA header deletes the other. The CSA block in this file is at 0x10, so CSA Image Header
+     * Info is (0029,1010).
+     *
+     * retainPrivateTags[ (0029,{SIEMENS CSA HEADER}20)]
+     *
+     * @throws MizerException unexpected exception
+     */
+    @Test
+    public void testKeepingOneCsaHeaderDeletesTheOther() throws MizerException {
+        DicomObjectI original = DicomObjectFactory.newInstance(SIEMENS_CSA);
+        int imageHeaderInfo = original.resolvePrivateTag(0x00291010, "SIEMENS CSA HEADER", false);
+        int seriesHeaderInfo = original.resolvePrivateTag(0x00291020, "SIEMENS CSA HEADER", false);
+        assertEquals(0x00291010, imageHeaderInfo);
+        assertTrue(original.contains(imageHeaderInfo));
+        assertTrue(original.contains(seriesHeaderInfo));
+
+        String script = "retainPrivateTags[ (0029,{SIEMENS CSA HEADER}20)]";
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        AnonymizationResult result = sa.apply(DicomObjectFactory.newInstance(SIEMENS_CSA));
+        assertFalse(result instanceof AnonymizationResultError);
+        DicomObjectI dobj = result.getDicomObject();
+
+        assertTrue(dobj.contains(seriesHeaderInfo));
+        assertFalse(dobj.contains(imageHeaderInfo));
+    }
+
+    /**
      * 1. retain-tagPath arguments can be specified as a tagPath.
      * 2. retain all tags in a specific private block in root DICOM object.
      *

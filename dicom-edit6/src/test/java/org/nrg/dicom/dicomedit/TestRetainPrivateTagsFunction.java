@@ -10,6 +10,7 @@
 package org.nrg.dicom.dicomedit;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.Fragments;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.VR;
 import org.junit.Test;
@@ -422,6 +423,57 @@ public class TestRetainPrivateTagsFunction {
 
         assertTrue(dobj.contains(seriesHeaderInfo));
         assertFalse(dobj.contains(imageHeaderInfo));
+    }
+
+    /**
+     * Pixel Data in a retained private sequence is kept, native and encapsulated.
+     *
+     * retainPrivateTags[ (0009,{GEIIS}XX)]
+     * <pre>
+     * (0009,0010) LO [GEIIS] Private Creator Data Element    retain
+     * (0009,1010) SQ #-1 [2 items] ?                         retain
+     *   >ITEM #1:
+     *   >(0028,0010) US 2 Rows                               retain
+     *   >(7FE0,0010) OB native Pixel Data                    retain
+     *   >ITEM #2:
+     *   >(0028,0010) US 2 Rows                               retain
+     *   >(7FE0,0010) OB encapsulated Pixel Data              retain
+     * </pre>
+     *
+     * @throws MizerException unexpected exception
+     * @throws IOException     unexpected exception
+     */
+    @Test
+    public void testPixelDataInRetainedPrivateSequenceIsKept() throws MizerException, IOException {
+        byte[] pixels = {1, 2, 3, 4};
+        byte[] fragment = {5, 6, 7, 8};
+
+        Attributes attrs = new Attributes();
+        attrs.setString(0x00090010, VR.LO, "GEIIS");
+        Sequence seq = attrs.newSequence(0x00091010, 2);
+        Attributes nativeItem = new Attributes();
+        nativeItem.setInt(0x00280010, VR.US, 2);
+        nativeItem.setBytes(0x7FE00010, VR.OB, pixels);
+        seq.add(nativeItem);
+        Attributes encapsulatedItem = new Attributes();
+        encapsulatedItem.setInt(0x00280010, VR.US, 2);
+        Fragments fragments = encapsulatedItem.newFragments(0x7FE00010, VR.OB, 2);
+        fragments.add(new byte[0]);
+        fragments.add(fragment);
+        seq.add(encapsulatedItem);
+
+        String script = "retainPrivateTags[ (0009,{GEIIS}XX)]";
+        final BaseScriptApplicator sa = BaseScriptApplicator.getInstance(bytes(script));
+        AnonymizationResult result = sa.apply(new DicomObjectFactory.MizerDicomObject(attrs));
+        assertFalse(result instanceof AnonymizationResultError);
+
+        Sequence retained = attrs.getSequence(0x00091010);
+        assertNotNull(retained);
+        assertEquals(2, retained.size());
+        assertArrayEquals(pixels, retained.get(0).getBytes(0x7FE00010));
+        Object encapsulated = retained.get(1).getValue(0x7FE00010);
+        assertTrue(encapsulated instanceof Fragments);
+        assertArrayEquals(fragment, (byte[]) ((Fragments) encapsulated).get(1));
     }
 
     /**

@@ -189,7 +189,8 @@ public class TestThreadAndProcessFileLock {
             assertTrue("lock file released", locks.noneMatch(p -> p.getFileName().toString().contains("testUpdateCatalogUnderOneLock")));
         }
 
-        // The rewritten catalog still goes through the two-lock path: the checksum recorded on write is the file's
+        // The rewritten catalog also has to pass the two-lock writer, which checks the file against the checksum
+        // recorded when it was written.
         CatalogUtils.writeCatalogToFile(after);
     }
 

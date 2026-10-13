@@ -139,8 +139,8 @@ public class AttrAdapterTest {
 
     @Test
     public final void queriesTheStoreOnceForAllDefinitions() throws ExtAttrException, IOException, SQLException {
-        // A scan's definitions used to cost one store query each; they now share one query, and every
-        // definition must still see exactly what its own query returned.
+        // A scan's definitions share one store query, and every definition must see exactly what its own
+        // query returns.
         final AtomicInteger queries = new AtomicInteger();
         final DicomMetadataStore counting = (DicomMetadataStore) Proxy.newProxyInstance(
                 DicomMetadataStore.class.getClassLoader(), new Class<?>[]{DicomMetadataStore.class},

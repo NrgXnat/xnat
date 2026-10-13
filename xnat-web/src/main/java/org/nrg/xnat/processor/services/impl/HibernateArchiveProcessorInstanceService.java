@@ -49,11 +49,10 @@ public class HibernateArchiveProcessorInstanceService extends AbstractHibernateE
 
     @Override
     public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrderForLocation(final String location) {
-        // The importer asks this for every received object at each of its processing locations, and each ask
-        // was a Hibernate query: the single largest CPU cost of receiving an object. Within one import scope
-        // (the objects of one association, one uploaded archive, one inbox request) the answer is read once
-        // per location; the instances are fully loaded (every collection is eager) and read-only to the
-        // importer, so sharing them within the scope is safe.
+        // The importer asks this for every received instance at each of its processing locations, and each ask
+        // is a Hibernate query. Within one import scope (the instances of one association, one uploaded archive,
+        // one inbox request) the answer is read once per location; the processor instances are fully loaded
+        // (every collection is eager) and read-only to the importer, so sharing them within the scope is safe.
         return ImportScope.scoped("archive-processors:" + location, () -> getDao().getEnabledSiteArchiveProcessorsInOrderForLocation(location));
     }
 

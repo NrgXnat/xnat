@@ -621,7 +621,7 @@ public class XFTElement extends XFTNode{
 	public ArrayList getSortedFields()
 	{
 		// Sorted once and kept until a field is added (the constructor and addField reset it); a copy goes out
-		// each time so callers that alter the list keep seeing fresh ones, as they always did.
+		// each time, so a caller can alter the list without changing what the next caller gets.
 		ArrayList sorted = sortedFieldsCache;
 		if (sorted == null) {
 			sorted = new ArrayList();

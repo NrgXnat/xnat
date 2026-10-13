@@ -3386,11 +3386,10 @@ public class DBAction {
     static void ExecuteTriggerCommands(final List<String> commands, final String dbname, final String username) {
         //process modification triggers
         // In batches of up to TRIGGERS_PER_ROUND_TRIP commands: the driver sends a multi-statement string in one round
-        // trip and the server runs it as one implicit transaction. A 200-scan session has 400 of these, each a
-        // pooled connection and a round trip on its own. Should any statement fail, the server rolls its batch
-        // back and that batch's commands run one at a time, exactly as they always did, so one bad trigger
-        // still stops only itself. The batch must see every error (ExecuteOrThrow): the tolerant executor the
-        // single commands use would take a rolled-back batch for a success.
+        // trip and the server runs it as one implicit transaction. Should any statement fail, the server rolls its
+        // batch back and that batch's commands run one at a time, so one bad trigger stops only itself. The batch
+        // must see every error (ExecuteOrThrow): the tolerant executor the single commands use would take a
+        // rolled-back batch for a success.
         for (final List<String> batch : Lists.partition(commands, TRIGGERS_PER_ROUND_TRIP)) {
             if (batch.size() > 1) {
                 try {

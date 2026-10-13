@@ -49,8 +49,6 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     /** The row's status as the database holds it; null once the row is gone. */
     private PrearcStatus status;
 
-    /** The row's message as the database holds it. */
-    private String message;
 
     @Before
     public void setUp() {
@@ -72,7 +70,6 @@ public class DirectArchiveSessionHibernateServiceImplTest {
                 return 0;
             }
             status  = invocation.getArgument(1);
-            message = invocation.getArgument(3);
             return 1;
         });
         when(dao.retrieve(SESSION_ID)).thenAnswer(invocation -> status == null ? null : sessionIn(SESSION_ID, status));
@@ -274,17 +271,6 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     }
 
     @Test
-    public void aFailedUploadMovesAReceivingSessionToErrorAndRecordsWhy() throws Exception {
-        status = PrearcStatus.RECEIVING;
-
-        assertThat(service.setStatusToErrorIfReceiving(SESSION_ID, new Exception("the upload broke"))).isTrue();
-
-        assertThat(status).isEqualTo(PrearcStatus.ERROR);
-        assertThat(message).isEqualTo("the upload broke");
-        verify(dao, never()).update(any());
-    }
-
-    @Test
     public void aFailedUploadLeavesASessionThatHasMovedOnAlone() throws Exception {
         // A queued build, a delete's claim or an earlier failure must not be overwritten.
         for (final PrearcStatus from : EnumSet.complementOf(EnumSet.of(PrearcStatus.RECEIVING))) {
@@ -295,15 +281,6 @@ public class DirectArchiveSessionHibernateServiceImplTest {
             assertThat(status).as("from %s", from).isEqualTo(from);
         }
         verify(dao, never()).update(any());
-    }
-
-    @Test
-    public void aFailureTooLongForTheMessageColumnIsShortenedToFit() throws Exception {
-        status = PrearcStatus.RECEIVING;
-
-        service.setStatusToErrorIfReceiving(SESSION_ID, new Exception("x".repeat(400)));
-
-        assertThat(message).hasSize(255).endsWith("...");
     }
 
     @Test

@@ -23,6 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -196,6 +199,36 @@ public class TestThreadAndProcessFileLock {
 
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
+
+    @Test
+    public void aLockThatTimesOutSaysWhichFileAndHowLongItWaited() throws Exception {
+        final File file = new File(TMPDIR, "aLockThatTimesOut_" + UUID.randomUUID() + ".xml");
+        final ThreadAndProcessFileLock writer = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, false);
+        writer.tryLock(1L, TimeUnit.SECONDS);
+        final ExecutorService other = Executors.newSingleThreadExecutor();
+        try {
+            final Future<IOException> read = other.submit(() -> {
+                final ThreadAndProcessFileLock reader = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, true);
+                try {
+                    reader.tryLock(1L, TimeUnit.SECONDS);
+                    reader.unlock();
+                    return null;
+                } catch (IOException e) {
+                    return e;
+                } finally {
+                    ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
+                }
+            });
+            final IOException failure = read.get(30L, TimeUnit.SECONDS);
+            assertNotNull("the read should time out while the write lock is held", failure);
+            assertEquals("Timed out after 1 second waiting for the read lock on " + file + "; another thread or process holds it",
+                         failure.getMessage());
+        } finally {
+            other.shutdownNow();
+            writer.unlock();
+            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
+        }
+    }
 
     @Test
     public void testConcurrentWriteThrowsException() throws Exception {

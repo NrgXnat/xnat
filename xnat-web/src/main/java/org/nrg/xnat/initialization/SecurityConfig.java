@@ -60,6 +60,7 @@ import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 import org.springframework.security.web.access.channel.InsecureChannelProcessor;
 import org.springframework.security.web.access.channel.SecureChannelProcessor;
 import org.springframework.security.web.access.intercept.DefaultFilterInvocationSecurityMetadataSource;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -332,7 +333,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .addFilterAfter(new RequestContextFilter(), ChannelProcessingFilter.class)
             .addFilterBefore(customAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(xnatInitCheckFilter(_appInfo), RememberMeAuthenticationFilter.class)
-            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), BasicAuthenticationFilter.class);
+            .addFilterAfter(expiredPasswordFilter(_preferences, _template, _aliasTokenService, _dateValidation), BasicAuthenticationFilter.class)
+            .addFilterAfter(new ExternalClientAuthFilter(_aliasTokenService), AnonymousAuthenticationFilter.class);
 
         if (_extensions.size() > 0) {
             for (final XnatSecurityExtension extension : _extensions) {

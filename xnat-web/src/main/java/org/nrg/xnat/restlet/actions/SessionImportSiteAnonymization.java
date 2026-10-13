@@ -11,6 +11,7 @@ package org.nrg.xnat.restlet.actions;
 
 import org.nrg.action.ServerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
+import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +38,8 @@ import java.util.stream.Stream;
  * its own.
  */
 final class SessionImportSiteAnonymization {
+    static final String EVERY_INSTANCE_REJECTED = "The site anonymization script rejected every instance in the upload, so nothing was imported.";
+
     private SessionImportSiteAnonymization() {
     }
 
@@ -81,6 +84,25 @@ final class SessionImportSiteAnonymization {
             }
             throw e;
         }
+    }
+
+    /**
+     * Removes the session when the site script rejected every instance in it. The caller has already deleted the
+     * rejected instances, so nothing is left to build or archive, and the import ends with nothing imported.
+     *
+     * @param results       the site script's results.
+     * @param removeSession removes the whole session from the prearchive.
+     *
+     * @return Whether every instance was rejected, so the session was removed.
+     *
+     * @throws Exception The removal's failure.
+     */
+    static boolean removeIfEveryInstanceRejected(final List<AnonymizationResult> results, final Removal removeSession) throws Exception {
+        if (results.isEmpty() || !results.stream().allMatch(AnonymizationResultReject.class::isInstance)) {
+            return false;
+        }
+        removeSession.remove();
+        return true;
     }
 
     /**

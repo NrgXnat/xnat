@@ -283,6 +283,11 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 // An instance the site script rejects must not be archived. The merge and direct archive
                 // delete what their scripts reject; this import deletes what this one rejects.
                 MergeUtils.deleteRejectedFiles(log, anonResults, imageSession.getProject());
+                if (SessionImportSiteAnonymization.removeIfEveryInstanceRejected(anonResults,
+                        () -> PrearcDatabase.deleteSession(session.getFolderName(), session.getTimestamp(), session.getProject()))) {
+                    this.completed(SessionImportSiteAnonymization.EVERY_INSTANCE_REJECTED, true);
+                    return Collections.emptyList();
+                }
                 if (!(anonResults.isEmpty() || anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance))){
                     // rebuild XML
                     XnatSubjectdata s = imageSession.getSubjectData();

@@ -6,6 +6,7 @@ import org.junit.rules.TemporaryFolder;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultNoOp;
+import org.nrg.dicom.mizer.objects.AnonymizationResultReject;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -109,6 +111,30 @@ public class SessionImportSiteAnonymizationTest {
         Files.write(instance.toPath(), "the version this upload wrote over it".getBytes(StandardCharsets.UTF_8));
 
         assertEquals(Collections.singletonList(instance.toPath()), before.writtenSince());
+    }
+
+    @Test
+    public void aSessionWhoseEveryInstanceWasRejectedIsRemoved() throws Exception {
+        final List<AnonymizationResult> results = Arrays.asList(new AnonymizationResultReject(null, "rejected 1.dcm"), new AnonymizationResultReject(null, "rejected 2.dcm"));
+        assertTrue(SessionImportSiteAnonymization.removeIfEveryInstanceRejected(results, this::remove));
+        assertEquals("the session should be removed once", 1, removals.get());
+    }
+
+    @Test
+    public void aSessionWithAnInstanceTheScriptKeptGoesOn() throws Exception {
+        assertFalse(SessionImportSiteAnonymization.removeIfEveryInstanceRejected(Arrays.asList(new AnonymizationResultReject(null, "rejected 1.dcm"), new AnonymizationResultNoOp(null, "kept 2.dcm")), this::remove));
+        assertFalse(SessionImportSiteAnonymization.removeIfEveryInstanceRejected(Collections.emptyList(), this::remove));
+        assertEquals("the session should not be removed", 0, removals.get());
+    }
+
+    @Test
+    public void aFailedRemovalAfterEveryRejectionFailsTheImport() {
+        final Exception removalFailure = new IllegalStateException("prearchive unavailable");
+        final Exception thrown = assertThrows(Exception.class, () -> SessionImportSiteAnonymization.removeIfEveryInstanceRejected(
+                Collections.singletonList(new AnonymizationResultReject(null, "rejected 1.dcm")), () -> {
+                    throw removalFailure;
+                }));
+        assertSame(removalFailure, thrown);
     }
 
     private static File file(final File directory, final String relativePath, final String content) throws IOException {

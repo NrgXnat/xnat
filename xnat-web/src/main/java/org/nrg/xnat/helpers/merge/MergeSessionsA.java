@@ -206,8 +206,8 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
     }
 
     protected A getPostAnonSession() throws Exception {
-        // Anonymize the data.
-        anonymizer.call();
+        // Anonymize the data, and delete the instances the script rejects.
+        MergeUtils.deleteRejectedFiles(logger, anonymizer.call(), src.getProject());
 
         // Return the default session XML.
         return src;

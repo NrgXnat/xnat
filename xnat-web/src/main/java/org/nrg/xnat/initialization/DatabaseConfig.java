@@ -61,6 +61,7 @@ public class DatabaseConfig {
     private String _dataSourcePassword;
 
     private Environment _environment;
+    private Properties  _datasourceProperties;
 
     public DatabaseConfig() {
         log.info("Creating DatabaseConfig");
@@ -73,7 +74,7 @@ public class DatabaseConfig {
 
     @Bean
     public DataSource dataSource() {
-        final Properties properties = Beans.getNamespacedProperties(_environment, "datasource", true);
+        final Properties properties = getDatasourceProperties();
         final DataSource dataSource = getConfiguredDataSource(properties);
         return BooleanUtils.toBoolean(properties.getProperty("useLoggingProxy", "false")) ? getProxiedDataSource(dataSource, properties) : dataSource;
     }
@@ -95,17 +96,32 @@ public class DatabaseConfig {
     }
 
     /**
-     * The driver, URL and credentials the {@link org.nrg.xnat.node.services.impl.PostgresNodeLockService node lock
-     * service} uses for its dedicated lock connection. These are the same values the application data source is
-     * configured with, defaults included, so the lock connection goes through the same driver as the pool.
+     * The driver, URL, credentials and driver properties the
+     * {@link org.nrg.xnat.node.services.impl.PostgresNodeLockService node lock service} uses for its dedicated lock
+     * connection. These are the same values the application data source is configured with, defaults included, so
+     * the lock connection goes through the same driver, with the same settings, as the pool.
      *
      * @return The lock connection settings.
      */
     @Bean
     public NodeLockConnectionSettings nodeLockConnectionSettings() {
-        final Properties properties = Beans.getNamespacedProperties(_environment, "datasource", true);
-        setDefaultDatasourceProperties(properties);
-        return new NodeLockConnectionSettings(properties.getProperty("driver"), properties.getProperty("url"), properties.getProperty("username"), properties.getProperty("password"));
+        return NodeLockConnectionSettings.fromDatasourceProperties(getDatasourceProperties());
+    }
+
+    /**
+     * The {@code datasource.*} properties with the defaults applied. They're computed once, so the defaults are
+     * logged once, and each caller gets its own copy, because building the data source replaces the driver class
+     * name with a driver instance.
+     */
+    private synchronized Properties getDatasourceProperties() {
+        if (_datasourceProperties == null) {
+            final Properties properties = Beans.getNamespacedProperties(_environment, "datasource", true);
+            setDefaultDatasourceProperties(properties);
+            _datasourceProperties = properties;
+        }
+        final Properties copy = new Properties();
+        copy.putAll(_datasourceProperties);
+        return copy;
     }
 
     private DataSource getProxiedDataSource(final DataSource dataSource, final Properties properties) {
@@ -128,7 +144,6 @@ public class DatabaseConfig {
     }
 
     private DataSource getConfiguredDataSource(final Properties properties) {
-        setDefaultDatasourceProperties(properties);
         final String dataSourceClassName = properties.getProperty("class");
         try {
             final Class<? extends DataSource> dataSourceClazz = Class.forName(dataSourceClassName).asSubclass(DataSource.class);

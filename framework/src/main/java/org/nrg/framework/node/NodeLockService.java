@@ -20,7 +20,7 @@ package org.nrg.framework.node;
  * <p>
  * The service is backed by the shared database, so it needs no configuration beyond the data source. The kill switch
  * {@link #PROPERTY_ENABLED} turns it off for one release: with it off, leaders elect themselves only on the node
- * flagged as the primary node, which is the behaviour before this service existed.
+ * flagged as the primary node, which is the behavior before this service existed.
  */
 public interface NodeLockService {
     /**

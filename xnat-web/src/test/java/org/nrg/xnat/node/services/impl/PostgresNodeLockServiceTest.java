@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -303,6 +304,45 @@ public class PostgresNodeLockServiceTest {
     }
 
     @Test
+    public void killSwitchOffShutdownStillDemotesThePrimary() {
+        final NodeLockConnectionSettings badDriver = new NodeLockConnectionSettings("org.nrg.NoSuchDriver", postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+        final PostgresNodeLockService    primary   = start(new PostgresNodeLockService("A", false, () -> true, badDriver, TICK, CHECK_TIMEOUT, MAX_TIMEOUTS));
+        final RecordingListener          events    = new RecordingListener();
+        final NodeLeader                 leader    = primary.registerLeader(LOCK, events);
+        await().atMost(WAIT).until(() -> events.elected.size() == 1);
+
+        primary.close();
+        assertThat(leader.isLeader()).isFalse();
+        assertThat(events.demoted).containsExactly("shutdown");
+    }
+
+    @Test
+    public void driverPropertiesReachTheLockConnectionWithoutOverridingItsOwn() {
+        final Properties datasource = new Properties();
+        datasource.setProperty("driver", InstrumentedTestDriver.CLASS_NAME);
+        datasource.setProperty("url", postgres.getJdbcUrl());
+        datasource.setProperty("username", postgres.getUsername());
+        datasource.setProperty("password", postgres.getPassword());
+        datasource.setProperty("maximumPoolSize", "40");
+        datasource.setProperty("dataSourceProperties.sslmode", "disable");
+        datasource.setProperty("dataSourceProperties.tcpKeepAlive", "false");
+        datasource.setProperty("dataSourceProperties.ApplicationName", "not-the-lock-connection");
+        final NodeLockConnectionSettings settings = NodeLockConnectionSettings.fromDatasourceProperties(datasource);
+        assertThat(settings.getDriverProperties()).containsOnlyKeys("sslmode", "tcpKeepAlive", "ApplicationName");
+        assertThat(settings.toString()).doesNotContain("password", "driverProperties", "sslmode");
+
+        final PostgresNodeLockService a       = start(new PostgresNodeLockService("A", true, () -> true, settings, TICK, CHECK_TIMEOUT, MAX_TIMEOUTS));
+        final NodeLeader              aLeader = a.registerLeader(LOCK, new RecordingListener());
+        await().atMost(WAIT).until(aLeader::isLeader);
+
+        final Properties received = InstrumentedTestDriver.lastConnectProperties();
+        assertThat(received.getProperty("sslmode")).isEqualTo("disable");
+        assertThat(received.getProperty("tcpKeepAlive")).isEqualTo("true");
+        assertThat(received.getProperty("maximumPoolSize")).isNull();
+        assertThat(lockHolders()).containsExactly(PostgresNodeLockService.APPLICATION_NAME_PREFIX + "A");
+    }
+
+    @Test
     public void stepDownWhoseUnlockFailsStillDemotesTheLeader() {
         final PostgresNodeLockService a       = node("A");
         final RecordingListener       aEvents = new RecordingListener();
@@ -365,6 +405,26 @@ public class PostgresNodeLockServiceTest {
         assertThat(lockHolders()).containsExactly(PostgresNodeLockService.APPLICATION_NAME_PREFIX + "A");
     }
 
+    @Test
+    public void closeDuringAReconnectLeavesNoLockConnectionBehind() throws SQLException {
+        final PostgresNodeLockService a       = node("A");
+        final NodeLeader              aLeader = a.registerLeader(LOCK, new RecordingListener());
+        await().atMost(WAIT).until(aLeader::isLeader);
+
+        // The reconnect after the session is ended returns only after close() has stopped waiting for the lock
+        // thread and dropped its queued shutdown, so nothing else is left to close that connection.
+        final Duration lateConnect = CHECK_TIMEOUT.multipliedBy(5);
+        InstrumentedTestDriver.delayNextConnects(1, lateConnect);
+        terminateLockConnection("A");
+        await().atMost(WAIT).until(() -> InstrumentedTestDriver.connectAttempts() == 2);
+        a.close();
+
+        sleep(lateConnect.plus(TICK.multipliedBy(3)));
+        assertThat(aLeader.isLeader()).isFalse();
+        assertThat(lockHolders()).isEmpty();
+        assertThat(lockSessions()).isEmpty();
+    }
+
     // ---------------------------------------------------------------------------------------------------------------
 
     private PostgresNodeLockService node(final String nodeId) {
@@ -411,6 +471,25 @@ public class PostgresNodeLockServiceTest {
             throw new AssertionError("Couldn't read pg_locks", e);
         }
         return holders;
+    }
+
+    /**
+     * The application names of the open lock sessions, from {@code pg_stat_activity}.
+     */
+    private static List<String> lockSessions() {
+        final List<String> sessions = new ArrayList<>();
+        try (final Connection connection = plainConnection();
+             final PreparedStatement statement = connection.prepareStatement("SELECT application_name FROM pg_stat_activity WHERE application_name LIKE ? ORDER BY 1")) {
+            statement.setString(1, PostgresNodeLockService.APPLICATION_NAME_PREFIX + "%");
+            try (final ResultSet results = statement.executeQuery()) {
+                while (results.next()) {
+                    sessions.add(results.getString(1));
+                }
+            }
+        } catch (SQLException e) {
+            throw new AssertionError("Couldn't read pg_stat_activity", e);
+        }
+        return sessions;
     }
 
     private static void sleep(final Duration duration) {

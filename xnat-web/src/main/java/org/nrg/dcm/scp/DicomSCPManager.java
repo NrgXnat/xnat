@@ -412,6 +412,18 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
                                        .orElseThrow(() -> new NotFoundException("No such instance with aeTitle '%s' and port %d".formatted(aeTitle, port)));
     }
 
+    /**
+     * The DICOM SCP instance with this AE title and port, if there is one.
+     *
+     * @param aeTitle The AE title of the instance
+     * @param port    The port of the instance
+     *
+     * @return The instance, or empty if there is none.
+     */
+    public Optional<DicomSCPInstance> findDicomSCPInstance(final String aeTitle, final int port) {
+        return _dicomSCPInstanceService.findByAETitleAndPort(aeTitle, port);
+    }
+
     public List<DicomSCPInstance> getEnabledDicomSCPInstancesByPort(final int port) {
         return _dicomSCPInstanceService.findAllByPort(port);
     }
@@ -531,6 +543,19 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
     public DicomObjectIdentifier<XnatProjectdata> getDicomObjectIdentifier(final String aeTitle, int port) {
         DicomSCPInstance instance = _dicomSCPInstanceService.findByAETitleAndPort(aeTitle, port)
                                                             .orElseThrow(() -> new IllegalArgumentException("Unknown DicomSCPInstances with aeTitle '%s' and port %d".formatted(aeTitle, port)));
+        return getDicomObjectIdentifier(instance);
+    }
+
+    /**
+     * The DOI for the DICOM instances a receiver gets: the receiver's identifier bean, made specific to the
+     * receiver when the bean is a {@link ReceiverAwareIdentifier}. Each call builds a new receiver-specific DOI.
+     *
+     * @param instance The DICOM SCP instance (the receiver)
+     *
+     * @return The DOI for the receiver, or null if its identifier bean doesn't exist.
+     */
+    @Nullable
+    public DicomObjectIdentifier<XnatProjectdata> getDicomObjectIdentifier(final DicomSCPInstance instance) {
         DicomObjectIdentifier<XnatProjectdata> doi = _dicomObjectIdentifierMap.get(instance.getIdentifier());
         return doi instanceof ReceiverAwareIdentifier<?> rai ?
                 rai.forInstance(instance) :

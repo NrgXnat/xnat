@@ -247,6 +247,26 @@ public final class EnumeratedMetadataStore implements DicomMetadataStore, Closea
         final Collection<Closeable>   closeHandlers = Lists.newArrayListWithExpectedSize(2);
         final DataSource              ds            = buildHSQLDataSource(new LinkedHashMap<String, String>(), closeHandlers);
         final EnumeratedMetadataStore s             = new EnumeratedMetadataStore(ds, indices, addCols, uriOpener);
+        // Every query below opens and closes its own connection, and HSQLDB syncs its log to disk
+        // whenever the database's last connection closes (Database.closeIfLast). A connection held for
+        // the store's lifetime keeps the database from being last-closed between queries, so the
+        // queries don't each wait for an fsync.
+        final Connection anchor;
+        try {
+            anchor = ds.getConnection();
+        } catch (SQLException | RuntimeException e) {
+            // Otherwise the database and its directory would outlive the failed build.
+            s.closeHandlers.addAll(closeHandlers);
+            s.close();
+            throw e;
+        }
+        s.closeHandlers.add(() -> {
+            try {
+                anchor.close();
+            } catch (SQLException e) {
+                logger.warn("Unable to close the anchor connection", e);
+            }
+        });
         s.closeHandlers.addAll(closeHandlers);
         return s;
     }

@@ -83,6 +83,7 @@ dependencies {
     testImplementation libs.spring.test
     testImplementation libs.assertj.core
     testImplementation libs.h2database.h2
+    testImplementation libs.testcontainers.postgresql
     testImplementation libs.hibernate.jcache
     testImplementation libs.logback.classic
 }

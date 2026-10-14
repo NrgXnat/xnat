@@ -13,6 +13,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
@@ -47,9 +48,12 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -216,6 +220,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
 
     private Set<String> xmlBuild(Set<String> uris) throws ClientException {
         Set<String> archiveUrls = new HashSet<>();
+        final Map<String, Exception> failures = new LinkedHashMap<>();
         final boolean override = isBooleanParameter(PrearchiveOperationRequest.PARAM_OVERRIDE_EXCEPTIONS);
         final boolean appendMerge = isBooleanParameter(PrearchiveOperationRequest.PARAM_ALLOW_SESSION_MERGE);
         PrearchiveOperationHandlerResolver resolver = XDAT.getContextService().getBean(PrearchiveOperationHandlerResolver.class);
@@ -238,10 +243,29 @@ public final class DicomZipImporter extends ImporterHandlerA {
                 }
 
             } catch (Exception e) {
-                throw new ClientException("unable to archive for the Prearchive session", e);
+                failures.put(session, e);
             }
         }
+        if (!failures.isEmpty()) {
+            final String sessions = failures.entrySet().stream()
+                                            .map(entry -> entry.getKey() + " (" + reason(entry.getValue()) + ")")
+                                            .collect(Collectors.joining("; "));
+            // The first failure is the cause and the others are suppressed, so the log keeps each one's stack trace
+            final Iterator<Exception> causes = failures.values().iterator();
+            final ClientException failure = new ClientException("unable to build or archive " + failures.size() + " of " + uris.size() + " Prearchive sessions: " + sessions, causes.next());
+            causes.forEachRemaining(failure::addSuppressed);
+            throw failure;
+        }
         return archiveUrls;
+    }
+
+    /**
+     * The message of the client error behind a failure, such as an archive conflict. Any other failure is reported only
+     * as a server error, as its message can name server paths.
+     */
+    private static String reason(final Exception failure) {
+        final ClientException clientError = ExceptionUtils.throwableOfType(failure, ClientException.class);
+        return clientError != null ? clientError.getMessage() : "server error";
     }
 
     private void archiveSession(Set<String> archiveUrls, boolean override, boolean appendMerge, PrearchiveOperationRequest request) throws Exception {

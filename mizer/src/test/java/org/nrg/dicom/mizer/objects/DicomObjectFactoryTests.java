@@ -398,6 +398,23 @@ public class DicomObjectFactoryTests {
     }
 
     @Test
+    public void getStringsOfUcUseTheCharacterSet() {
+        byte[] value = "Müller\\B".getBytes(StandardCharsets.ISO_8859_1);
+        Attributes attrs = new Attributes();
+        attrs.setString(Tag.SpecificCharacterSet, VR.CS, "ISO_IR 100");
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.setBytes(0x00291010, VR.UC, value);
+        Attributes item = new Attributes();
+        item.setString(0x00290010, VR.LO, "p1");
+        item.setBytes(0x00291010, VR.UC, value);
+        attrs.newSequence(0x00291020, 1).add(item);
+        DicomObjectI dobj = new DicomObjectFactory.MizerDicomObject(attrs);
+        assertArrayEquals(new String[]{"Müller", "B"}, dobj.getStrings(0x00291010));
+        assertEquals("Müller\\B", dobj.getString(0x00291010));
+        assertArrayEquals(new String[]{"Müller", "B"}, dobj.getStrings(0x00291020, 0, 0x00291010));
+    }
+
+    @Test
     // TODO Test putBytes better.
     public void putBytes() {
         TestTag t1 = new TestTag(0x00100010, "t1");

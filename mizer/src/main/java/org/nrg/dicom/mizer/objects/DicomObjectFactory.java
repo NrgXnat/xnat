@@ -351,7 +351,7 @@ public class DicomObjectFactory {
          * {@inheritDoc}
          * All implementations of getString and getStrings ultimately rely on this method.
          */
-        private static final Set<VR> BYTES_VRS = new HashSet<>(Arrays.asList(VR.OB, VR.UN, VR.OW, VR.UC));
+        private static final Set<VR> BYTES_VRS = new HashSet<>(Arrays.asList(VR.OB, VR.UN, VR.OW));
         @Override
         public String[] getStrings(final int... tagArray) {
             // tags with VR == UN do not have an implementation of getStrings(). Are there other VRs that do this?

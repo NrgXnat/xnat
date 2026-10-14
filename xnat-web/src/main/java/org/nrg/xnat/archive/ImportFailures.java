@@ -46,7 +46,8 @@ public final class ImportFailures {
      * reason in its log. Left receiving, it looks like one still arriving, and unless the upload tool sent it, the
      * idle-timeout rebuild builds it as though the import had finished, then archives it where the project archives
      * automatically. An import of the same study still reopens it: a session in error takes more data. A
-     * direct-archive session moves to the prearchive in {@code ERROR}, as it does when its build or archive fails.
+     * direct-archive session is marked instead and keeps receiving. If it goes idle with no file landing in it since,
+     * it moves to the prearchive in {@code ERROR}, as it does when its build or archive fails.
      *
      * @param uris  The sessions, as GradualDicomImporter returns them.
      * @param cause Why the import failed.

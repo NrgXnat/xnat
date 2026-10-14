@@ -290,7 +290,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
 
     @Test
     public void aFileMayLandWhileTheSessionIsStillReceiving() throws Exception {
-        stubDeletableSession(sessionIn(PrearcStatus.RECEIVING));
+        when(hibernateService.getStatusClearingFailedUpload(SESSION_ID)).thenReturn(PrearcStatus.RECEIVING);
 
         service.requireReceiving(sessionIn(PrearcStatus.RECEIVING));
     }
@@ -298,7 +298,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
     @Test
     public void aFileIsRefusedOnceADeleteHasClaimedTheSession() throws Exception {
         // The importer's status check ran before its file lock; under the lock the row now says DELETING.
-        stubDeletableSession(sessionIn(PrearcStatus.DELETING));
+        when(hibernateService.getStatusClearingFailedUpload(SESSION_ID)).thenReturn(PrearcStatus.DELETING);
 
         assertThatThrownBy(() -> service.requireReceiving(sessionIn(PrearcStatus.RECEIVING)))
                 .isInstanceOfSatisfying(ClientException.class,
@@ -307,7 +307,7 @@ public class DirectArchiveSessionServiceImplDeleteTest {
 
     @Test
     public void aFileIsRefusedWhenTheSessionRowIsAlreadyGone() throws Exception {
-        when(hibernateService.getSessionData(SESSION_ID)).thenThrow(new NotFoundException("gone"));
+        when(hibernateService.getStatusClearingFailedUpload(SESSION_ID)).thenThrow(new NotFoundException("gone"));
 
         assertThatThrownBy(() -> service.requireReceiving(sessionIn(PrearcStatus.RECEIVING)))
                 .isInstanceOfSatisfying(ClientException.class,

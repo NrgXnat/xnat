@@ -2,6 +2,7 @@ package org.nrg.xnat.archive.services.impl;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
@@ -13,6 +14,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.jms.core.JmsTemplate;
 
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
@@ -37,9 +39,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * An upload that fails partway leaves its direct-archive session holding only part of a study. Left receiving, the
- * archive trigger would archive it once it had been idle long enough. Instead it goes to the prearchive in ERROR, as a
- * session whose build or archive failed does, unless its files are not its own to move.
+ * An upload that fails partway leaves its direct-archive session holding only part of a study. The session is marked
+ * and keeps receiving, since another upload may still be sending into it. If it goes idle still marked, the archive
+ * trigger moves it to the prearchive in ERROR, as a session whose build or archive failed does, unless its files are
+ * not its own to move; once a file has landed since, it is archived as usual.
  */
 public class DirectArchiveSessionServiceImplFailedUploadTest {
     private static final long   SESSION_ID = 42L;
@@ -56,6 +59,7 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
     private MockedStatic<PrearcDatabase>         mockedPrearcDatabase;
     private MockedStatic<BaseXnatProjectdata>    mockedProjects;
     private MockedStatic<BaseXnatExperimentdata> mockedExperiments;
+    private MockedStatic<XDAT>                   mockedXDAT;
 
     private File sessionDirectory;
     private File prearchiveDirectory;
@@ -99,11 +103,18 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
             return created;
         });
 
-        when(hibernateService.setStatusToErrorIfReceiving(SESSION_ID, cause)).thenReturn(true);
+        mockedXDAT = Mockito.mockStatic(XDAT.class);
+
+        // The session has gone idle still marked, unless a test says otherwise.
+        when(hibernateService.markFailedUpload(SESSION_ID, cause)).thenReturn(true);
+        when(hibernateService.findReadyForArchive()).thenAnswer(invocation -> List.of(idleSession()));
+        when(hibernateService.hasFailedUpload(SESSION_ID)).thenReturn(true);
+        when(hibernateService.setStatusToErrorIfReceiving(eq(SESSION_ID), any())).thenReturn(true);
     }
 
     @After
     public void tearDown() {
+        mockedXDAT.closeOnDemand();
         mockedPrearcDatabase.closeOnDemand();
         mockedProjects.closeOnDemand();
         mockedExperiments.closeOnDemand();
@@ -118,6 +129,13 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
         return session;
     }
 
+    /** The session as the archive trigger finds it, with the failure the mark recorded. */
+    private SessionData idleSession() {
+        final SessionData session = receivingSession();
+        session.setMessage(cause.getMessage());
+        return session;
+    }
+
     private void assertLeftInPlace() throws Exception {
         assertThat(new File(sessionDirectory, "1.dcm")).isFile();
         assertThat(prearchiveDirectory).doesNotExist();
@@ -126,8 +144,18 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
     }
 
     @Test
-    public void aFailedUploadMovesItsSessionToThePrearchiveInErrorWithTheReasonInItsLog() throws Exception {
+    public void aFailedUploadMarksItsSessionAndLeavesItReceivingWhereItIs() throws Exception {
+        // Another upload may still be sending into it.
         service.handleFailedUpload(receivingSession(), cause);
+
+        verify(hibernateService).markFailedUpload(SESSION_ID, cause);
+        verify(hibernateService, never()).setStatusToErrorIfReceiving(anyLong(), any());
+        assertLeftInPlace();
+    }
+
+    @Test
+    public void anIdleSessionStillMarkedMovesToThePrearchiveInErrorWithTheReasonInItsLog() throws Exception {
+        service.triggerArchive();
 
         assertThat(sessionDirectory).doesNotExist();
         assertThat(new File(prearchiveDirectory, "1.dcm")).isFile();
@@ -137,15 +165,30 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
         assertThat(recorded.get().getUrl()).isEqualTo(prearchiveDirectory.getAbsolutePath());
         // Queued for a rebuild instead, the partial session would be archived after all.
         mockedPrearcUtils.verify(() -> PrearcUtils.queuePrearchiveOperation(any()), never());
+        verify(hibernateService, never()).setStatusToQueuedBuilding(anyLong(), anyBoolean());
         verify(hibernateService).delete(SESSION_ID);
     }
 
     @Test
-    public void aSessionThatHasMovedOnIsLeftAlone() throws Exception {
-        // Queued for building, claimed by a delete, or already failed: not the importer's to move.
-        when(hibernateService.setStatusToErrorIfReceiving(SESSION_ID, cause)).thenReturn(false);
+    public void anIdleSessionAFileLandedInSinceIsArchivedAsUsual() throws Exception {
+        // Another upload, or the same one sent again, added to it after the failure.
+        when(hibernateService.hasFailedUpload(SESSION_ID)).thenReturn(false);
+        when(hibernateService.setStatusToQueuedBuilding(SESSION_ID, false)).thenReturn(true);
 
-        service.handleFailedUpload(receivingSession(), cause);
+        service.triggerArchive();
+
+        verify(hibernateService).setStatusToQueuedBuilding(SESSION_ID, false);
+        mockedXDAT.verify(() -> XDAT.sendJmsRequest(any(), any()));
+        verify(hibernateService, never()).setStatusToErrorIfReceiving(anyLong(), any());
+        assertLeftInPlace();
+    }
+
+    @Test
+    public void aSessionThatHasMovedOnIsLeftAlone() throws Exception {
+        // Claimed by a delete, or already failed: not the trigger's to move.
+        when(hibernateService.setStatusToErrorIfReceiving(eq(SESSION_ID), any())).thenReturn(false);
+
+        service.triggerArchive();
 
         assertLeftInPlace();
     }
@@ -156,20 +199,20 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
         mockedExperiments.when(() -> BaseXnatExperimentdata.GetExptByProjectIdentifier(eq(PROJECT), eq(SESSION), any(), anyBoolean()))
                          .thenReturn(mock(XnatExperimentdata.class));
 
-        service.handleFailedUpload(receivingSession(), cause);
+        service.triggerArchive();
 
-        verify(hibernateService).setStatusToErrorIfReceiving(SESSION_ID, cause);
+        verify(hibernateService).setStatusToErrorIfReceiving(eq(SESSION_ID), any());
         assertLeftInPlace();
     }
 
     @Test
-    public void aSessionStillReceivingAnotherUploadsFileStaysInErrorWhereItIs() throws Exception {
+    public void aSessionAFileIsStillLandingInStaysInErrorWhereItIs() throws Exception {
         // That file passed the importer's check before the claim and is still being written.
         mockedPrearcUtils.when(() -> PrearcUtils.isSessionReceiving(any())).thenReturn(true);
 
-        service.handleFailedUpload(receivingSession(), cause);
+        service.triggerArchive();
 
-        verify(hibernateService).setStatusToErrorIfReceiving(SESSION_ID, cause);
+        verify(hibernateService).setStatusToErrorIfReceiving(eq(SESSION_ID), any());
         assertLeftInPlace();
     }
 }

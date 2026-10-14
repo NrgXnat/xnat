@@ -1,6 +1,7 @@
 package org.nrg.dicom.mizer.objects;
 
 import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.junit.Assert;
@@ -363,6 +364,37 @@ public class DicomObjectFactoryTests {
         assertEquals("", dobj.getString(0x00291010));
         assertEquals("", dobj.getString(0x00291011));
         assertEquals("", dobj.getString(0x00291012));
+    }
+
+    @Test
+    public void getStringOfUnreadableBinaryValue() {
+        Attributes attrs = new Attributes();
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.newFragments(0x00291010, VR.OB, 2).add(new byte[0]);
+        attrs.setValue(0x00291011, VR.OB, new BulkData(null, "file:/nonexistent.dcm?offset=0&length=4", false));
+        Attributes item = new Attributes();
+        item.setString(0x00290010, VR.LO, "p1");
+        item.newFragments(0x00291010, VR.OB, 2).add(new byte[0]);
+        attrs.newSequence(0x00291020, 1).add(item);
+        DicomObjectI dobj = new DicomObjectFactory.MizerDicomObject(attrs);
+        assertEquals("", dobj.getString(0x00291010));
+        assertEquals("", dobj.getString(0x00291011));
+        assertEquals("", dobj.getString(0x00291020, 0, 0x00291010));
+    }
+
+    @Test
+    public void getStringOfBinaryValueWithTrailingNul() {
+        byte[] value = {'A', 'B', 'C', 0};
+        Attributes attrs = new Attributes();
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.setBytes(0x00291010, VR.OB, value);
+        Attributes item = new Attributes();
+        item.setString(0x00290010, VR.LO, "p1");
+        item.setBytes(0x00291010, VR.OB, value);
+        attrs.newSequence(0x00291020, 1).add(item);
+        DicomObjectI dobj = new DicomObjectFactory.MizerDicomObject(attrs);
+        assertEquals("ABC", dobj.getString(0x00291010));
+        assertEquals("ABC", dobj.getString(0x00291020, 0, 0x00291010));
     }
 
     @Test

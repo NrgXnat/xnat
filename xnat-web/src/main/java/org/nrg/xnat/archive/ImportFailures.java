@@ -11,8 +11,6 @@ package org.nrg.xnat.archive;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.action.ClientException;
-import org.nrg.action.ServerException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnat.archive.services.DirectArchiveSessionService;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
@@ -27,15 +25,6 @@ import java.util.Collection;
 @Slf4j
 public final class ImportFailures {
     private ImportFailures() {
-    }
-
-    /**
-     * GradualDicomImporter reports every failure as a ClientException, but one caused by a ServerException, such as a
-     * failed write or a script or processor error, says nothing about the instance: it fails the import even where
-     * unparsable instances are skipped.
-     */
-    public static boolean isUnparsable(final ClientException e) {
-        return !(e.getCause() instanceof ServerException);
     }
 
     /**

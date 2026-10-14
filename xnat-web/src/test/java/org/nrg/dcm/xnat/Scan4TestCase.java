@@ -13,6 +13,8 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.taskdefs.Delete;
 import org.apache.tools.ant.types.FileSet;
+import org.junit.BeforeClass;
+import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.test.workers.resources.ResourceManager;
 import org.springframework.core.io.Resource;
@@ -31,6 +33,14 @@ public class Scan4TestCase {
     private static final ResourceManager RESOURCE_MANAGER = ResourceManager.getInstance();
 
     private static final String scan4_includes = "1.MR.head_DHead.4.*";
+
+    @BeforeClass
+    public static void runWithoutSpring() {
+        // The builders look up site preferences through XDAT's static ContextService and run without them. A Spring
+        // test earlier in the same JVM can leave its closed application context registered there, and a closed
+        // context throws instead of finding nothing.
+        new ContextService().setApplicationContext(null);
+    }
 
     protected File initializeScan4WorkingCopy() throws IOException {
         return initializeScan4WorkingCopy(scan4_includes);

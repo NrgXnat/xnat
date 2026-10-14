@@ -49,6 +49,7 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     /** The row's status as the database holds it; null once the row is gone. */
     private PrearcStatus status;
 
+
     @Before
     public void setUp() {
         dao     = mock(DirectArchiveSessionDao.class);
@@ -61,6 +62,14 @@ public class DirectArchiveSessionHibernateServiceImplTest {
                 return 0;
             }
             status = invocation.getArgument(1);
+            return 1;
+        });
+        when(dao.transitionStatus(eq(SESSION_ID), any(), any(), any())).thenAnswer(invocation -> {
+            final Set<PrearcStatus> allowed = invocation.getArgument(2);
+            if (status == null || !allowed.contains(status)) {
+                return 0;
+            }
+            status  = invocation.getArgument(1);
             return 1;
         });
         when(dao.retrieve(SESSION_ID)).thenAnswer(invocation -> status == null ? null : sessionIn(SESSION_ID, status));
@@ -259,6 +268,26 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     public void settingBackToReceivingOnlyUndoesAQueuedForBuildingTransition() throws Throwable {
         // A claimed session must not be revived by the build path giving up on it.
         assertOnlyMovesFrom(PrearcStatus.QUEUED_BUILDING, PrearcStatus.RECEIVING, () -> service.setStatusBackToReceiving(SESSION_ID));
+    }
+
+    @Test
+    public void aFailedUploadLeavesASessionThatHasMovedOnAlone() throws Exception {
+        // A queued build, a delete's claim or an earlier failure must not be overwritten.
+        for (final PrearcStatus from : EnumSet.complementOf(EnumSet.of(PrearcStatus.RECEIVING))) {
+            status = from;
+
+            assertThat(service.setStatusToErrorIfReceiving(SESSION_ID, new Exception("the upload broke"))).as("from %s", from).isFalse();
+
+            assertThat(status).as("from %s", from).isEqualTo(from);
+        }
+        verify(dao, never()).update(any());
+    }
+
+    @Test
+    public void aFailedUploadIntoARowThatIsGoneThrowsNotFound() {
+        status = null;
+
+        assertThatThrownBy(() -> service.setStatusToErrorIfReceiving(SESSION_ID, new Exception("the upload broke"))).isInstanceOf(NotFoundException.class);
     }
 
     @Test

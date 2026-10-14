@@ -47,18 +47,20 @@ public interface DirectArchiveSessionService {
      * For the importer, once it holds the file lock for a session: confirms the session is still RECEIVING. Its
      * earlier check in {@link #getOrCreate} runs before the lock is taken, and a delete claims the session and then
      * looks for locks, so only a check made under the lock can guarantee the file is not written into a directory
-     * the delete is about to remove.
+     * the delete is about to remove. The file adds to the session, so the mark a failed upload left is cleared.
      *
      * @throws ClientException 409 when the session has been claimed for deletion, has moved on, or is gone
      */
     void requireReceiving(SessionData session) throws ClientException;
 
     /**
-     * For the importer, when an upload that wrote into this session failed partway: the session stops receiving and,
-     * like a session whose build or archive failed, moves to the prearchive in ERROR with the failure in its log, so
-     * nothing archives what may be only part of the study. Its files stay where they are, with the session in ERROR
-     * here, when they are not this session's alone to move: it merges into an archived experiment's directory, or a
-     * file of another upload is still landing. A session that has already moved on is left alone.
+     * For the importer, when an upload that wrote into this session failed partway: the session is marked and keeps
+     * receiving, since other uploads may still be sending into it, and the next file to land in it clears the mark.
+     * If it goes idle still marked, the archive trigger does not archive what may be only part of the study: like a
+     * session whose build or archive failed, it moves to the prearchive in ERROR with the failure in its log. Its
+     * files stay where they are, with the session in ERROR here, when they are not this session's alone to move: it
+     * merges into an archived experiment's directory, or a file is still landing. A session that has already moved
+     * on is left alone. Archiving the session on request still archives it.
      */
     void handleFailedUpload(SessionData session, Exception cause);
 

@@ -25,6 +25,7 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
     private Date scanDate;
     private String scanTime;
     private Boolean preventAnon;
+    private Boolean failedUpload;
 
     public DirectArchiveSession(String project, String subject, String name, String timestampUid, String folderName,
                                 String tag, String visit, String protocol, String timeZone, String location,
@@ -202,6 +203,15 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
 
     public void setOverwriteMode(String overwriteMode) {
         this.overwriteMode = overwriteMode;
+    }
+
+    /** Whether an upload into this session failed partway and no file has landed in it since. */
+    public Boolean getFailedUpload() {
+        return failedUpload;
+    }
+
+    public void setFailedUpload(Boolean failedUpload) {
+        this.failedUpload = failedUpload;
     }
 
     public SessionData toSessionData() {

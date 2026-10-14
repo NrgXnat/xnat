@@ -122,7 +122,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
-    public List<String> call() throws ClientException {
+    public List<String> call() throws ClientException, ServerException {
         final String name = _fileWriter.getName();
         final XnatProjectdata project;
         final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
@@ -391,7 +391,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     // be read, not a failure of the server's storage.
                     throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, e.getCause());
                 } catch (IOException e) {
-                    throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
+                    throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
                 }
 
                 if (XDAT.getSiteConfigPreferences().getEnableNativeDicomPreCompression()) {
@@ -415,7 +415,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                             String.format("/xapi/direct-archive/%s/%s/%s",
                                     session.getProject(), session.getTag(), session.getName())) :
                     Collections.singletonList(session.getExternalUrl());
-        } catch (ClientException e) {
+        } catch (ClientException | ServerException e) {
+            // A ServerException is the server's own failure, such as a failed write or a script or processor error.
             throw e;
         } catch (Throwable t) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);

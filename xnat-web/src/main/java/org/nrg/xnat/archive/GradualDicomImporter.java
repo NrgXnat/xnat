@@ -391,7 +391,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     // be read, not a failure of the server's storage.
                     throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, e.getCause());
                 } catch (IOException e) {
-                    throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
+                    // Named by the instance, not by the IOException's message: that holds the server's paths.
+                    throw new ServerException(Status.SERVER_ERROR_INTERNAL, "unable to write DICOM object " + name, e);
                 }
 
                 if (XDAT.getSiteConfigPreferences().getEnableNativeDicomPreCompression()) {

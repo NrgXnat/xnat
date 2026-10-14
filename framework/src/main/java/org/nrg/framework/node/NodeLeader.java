@@ -26,6 +26,11 @@ public interface NodeLeader {
     /**
      * Indicates whether this node currently holds the leader lock. Periodic work should check this at the start of
      * every run, and long work should check it between steps, because leadership can be lost at any time.
+     * <p>
+     * Leadership can briefly overlap. If this node loses the lock without noticing at once, for example because its
+     * database session is ended while the node keeps running, another node can be elected before this node's next
+     * lock check, so for up to one check interval (10 seconds by default) two nodes can see {@code true} here. Work
+     * that must never run twice needs its own guard, such as a status check under a row lock.
      *
      * @return {@code true} when this node leads.
      */

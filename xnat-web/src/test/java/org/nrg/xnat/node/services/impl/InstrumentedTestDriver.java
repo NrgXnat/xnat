@@ -18,6 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -30,6 +31,10 @@ public class InstrumentedTestDriver extends org.postgresql.Driver {
     public static final String CLASS_NAME = InstrumentedTestDriver.class.getName();
 
     private static final AtomicInteger CONNECTS      = new AtomicInteger();
+    private static final AtomicInteger ATTEMPTS      = new AtomicInteger();
+    private static volatile Properties LAST_INFO     = new Properties();
+    private static final AtomicInteger LATE_CONNECTS = new AtomicInteger();
+    private static volatile Duration   LATE_DURATION = Duration.ZERO;
     private static final AtomicInteger SLOW_QUERIES  = new AtomicInteger();
     private static volatile Duration   SLOW_DURATION = Duration.ZERO;
 
@@ -42,6 +47,10 @@ public class InstrumentedTestDriver extends org.postgresql.Driver {
 
     public static void reset() {
         CONNECTS.set(0);
+        ATTEMPTS.set(0);
+        LAST_INFO = new Properties();
+        LATE_CONNECTS.set(0);
+        LATE_DURATION = Duration.ZERO;
         SLOW_QUERIES.set(0);
         SLOW_DURATION = Duration.ZERO;
         FAIL_SQL = null;
@@ -53,6 +62,30 @@ public class InstrumentedTestDriver extends org.postgresql.Driver {
 
     public static int connects() {
         return CONNECTS.get();
+    }
+
+    /**
+     * How many times {@code connect} has been entered, including connects that haven't returned yet.
+     */
+    public static int connectAttempts() {
+        return ATTEMPTS.get();
+    }
+
+    /**
+     * The properties the most recent {@code connect} was given.
+     */
+    public static Properties lastConnectProperties() {
+        return LAST_INFO;
+    }
+
+    /**
+     * Makes the next {@code count} connects open the connection and then hold it for the duration before returning
+     * it, ignoring interrupts the way a blocking socket connect does. Simulates a connect that succeeds only after
+     * its caller has stopped waiting for it.
+     */
+    public static void delayNextConnects(final int count, final Duration duration) {
+        LATE_DURATION = duration;
+        LATE_CONNECTS.set(count);
     }
 
     /**
@@ -86,9 +119,23 @@ public class InstrumentedTestDriver extends org.postgresql.Driver {
 
     @Override
     public Connection connect(final String url, final Properties info) throws SQLException {
+        ATTEMPTS.incrementAndGet();
+        final Properties received = new Properties();
+        received.putAll(info);
+        LAST_INFO = received;
         final Connection connection = super.connect(url, info);
         if (connection == null) {
             return null;
+        }
+        if (LATE_CONNECTS.get() > 0 && LATE_CONNECTS.decrementAndGet() >= 0) {
+            final long deadline = System.nanoTime() + LATE_DURATION.toNanos();
+            for (long left = LATE_DURATION.toNanos(); left > 0; left = deadline - System.nanoTime()) {
+                try {
+                    TimeUnit.NANOSECONDS.sleep(left);
+                } catch (InterruptedException ignored) {
+                    // Keep holding the connection, as a blocking connect would.
+                }
+            }
         }
         CONNECTS.incrementAndGet();
         return (Connection) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[]{Connection.class}, new Delegating(connection, null));

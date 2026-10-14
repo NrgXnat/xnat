@@ -66,7 +66,7 @@ import java.util.function.BooleanSupplier;
  * with the single-bigint {@code hashtext} keys other XNAT code already uses.
  * <p>
  * With the kill switch {@link NodeLockService#PROPERTY_ENABLED} off, no connection is opened and a leader leads if
- * and only if this node is the primary node, which is the behaviour before this service existed.
+ * and only if this node is the primary node, which is the behavior before this service existed.
  */
 @Slf4j
 public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
@@ -256,7 +256,13 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
             return;
         }
         _tickExecutor.shutdownNow();
-        if (_enabled && _started.get()) {
+        if (!_enabled) {
+            // No lock connection, but the primary node leads all the same, and its listeners are owed the same
+            // "shutting down" demotion as with locks on.
+            for (final Leader leader : _leaders.values()) {
+                demote(leader, "shutdown");
+            }
+        } else if (_started.get()) {
             try {
                 _lockExecutor.submit(this::shutdownOnLockThread).get(_checkTimeout.toMillis() * 2, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
@@ -329,11 +335,20 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         if (_connection == null) {
             try {
                 openConnection();
-                log.info("Node locks on node {}: lock connection restored", _nodeId);
             } catch (SQLException e) {
                 log.warn("Node locks on node {}: lock connection could not be reopened ({}), will retry on the next tick", _nodeId, e.getMessage());
                 return null;
             }
+            if (_closed.get()) {
+                // close() ran while this connect was in flight and may have stopped waiting for it, dropping its
+                // queued shutdown, so nothing else would close this connection. Close it before it can take a lock.
+                final Connection connection = _connection;
+                _connected.set(false);
+                _connection = null;
+                closeQuietly(connection);
+                return null;
+            }
+            log.info("Node locks on node {}: lock connection restored", _nodeId);
         }
         runSql("tick", connection -> {
             final Set<Integer> held = heldKeys(connection);
@@ -410,12 +425,16 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
             // leader (still flagged) with its callback; clearing the flag beforehand would skip that and leave the
             // listener believing it leads.
             unlock(connection, leader);
+            final boolean wasLeader;
             synchronized (_leadership) {
-                leader._leader       = false;
+                // connectionLost() can demote the leader, and tell its listener, while the unlock is in flight.
+                wasLeader            = clearLeader(leader);
                 leader._backoffUntil = System.nanoTime() + backoffNanos;
             }
-            log.info("Node lock \"{}\": stepped down on node {} (backoff {})", leader._name, _nodeId, backoff);
-            callback(() -> leader._listener.onDemoted(leader._name, "stepped down"));
+            if (wasLeader) {
+                log.info("Node lock \"{}\": stepped down on node {} (backoff {})", leader._name, _nodeId, backoff);
+                callback(() -> leader._listener.onDemoted(leader._name, "stepped down"));
+            }
             return true;
         });
     }
@@ -440,8 +459,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
     private Void shutdownOnLockThread() {
         final Connection connection = _connection;
         for (final Leader leader : _leaders.values()) {
-            if (leader._leader) {
-                leader._leader = false;
+            if (clearLeader(leader)) {
                 if (connection != null) {
                     try {
                         unlock(connection, leader);
@@ -461,7 +479,8 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
 
     private void openConnection() throws SQLException {
         final Driver     driver     = loadDriver();
-        final Properties properties = new Properties();
+        // The pool's driver properties first, so the credentials and the lock connection's own settings below win.
+        final Properties properties = _settings.getDriverProperties();
         if (_settings.getUsername() != null) {
             properties.setProperty("user", _settings.getUsername());
         }
@@ -544,9 +563,23 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
     }
 
     private void demote(final Leader leader, final String reason) {
-        leader._leader = false;
+        if (!clearLeader(leader)) {
+            return;
+        }
         log.info("Node lock \"{}\": demoted on node {} ({})", leader._name, _nodeId, reason);
         callback(() -> leader._listener.onDemoted(leader._name, reason));
+    }
+
+    /**
+     * Clears the leader flag under the leadership monitor and reports whether it was set, so that when several paths
+     * demote the same leader at once, only one of them calls the listener.
+     */
+    private boolean clearLeader(final Leader leader) {
+        synchronized (_leadership) {
+            final boolean wasLeader = leader._leader;
+            leader._leader = false;
+            return wasLeader;
+        }
     }
 
     private void callback(final Runnable runnable) {
@@ -596,9 +629,18 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
                 return fallback;
             }
         }
+        final Future<T> future;
         try {
-            return _lockExecutor.submit(callable).get(_checkTimeout.toMillis() * 2, TimeUnit.MILLISECONDS);
+            future = _lockExecutor.submit(callable);
+        } catch (RejectedExecutionException e) {
+            return fallback;
+        }
+        try {
+            return future.get(_checkTimeout.toMillis() * 2, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
+            // The caller acts on the fallback, so the operation mustn't run later behind its back. One that has
+            // already started can't be stopped and completes as usual.
+            future.cancel(false);
             log.warn("Node locks on node {}: {} didn't complete within {}", _nodeId, what, _checkTimeout.multipliedBy(2));
             return fallback;
         } catch (ExecutionException e) {
@@ -606,8 +648,6 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
             return fallback;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return fallback;
-        } catch (RejectedExecutionException e) {
             return fallback;
         }
     }

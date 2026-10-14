@@ -265,9 +265,6 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                     // delete the only whole copy of it there may be.
                     return stop(file, "ends early", e);
                 }
-                if (!ImportFailures.isUnparsable(e)) {
-                    return stop(file, "failed on the server", e);
-                }
                 log.warn("An error occurred importing the file {} while processing the inbox session located at {}", file, _sessionPath.getAbsolutePath(), e);
             } catch (ServerException e) {
                 return stop(file, "failed on the server", e);

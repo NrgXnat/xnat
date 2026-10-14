@@ -283,7 +283,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
          * on the server or a file cut short.
          */
         private FileVisitResult stop(final Path file, final String because, final Exception cause) {
-            log.error("Importing {}, which {}, failed, so the import of the inbox session located at {} stops", file, because, _sessionPath.getAbsolutePath(), cause);
+            log.error("Stopping the import of the inbox session located at {} at {}, which {}", _sessionPath.getAbsolutePath(), file, because, cause);
             _failedFile    = file;
             _failedBecause = because;
             _failure       = cause;

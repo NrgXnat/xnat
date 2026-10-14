@@ -135,6 +135,27 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
                 .executeUpdate();
     }
 
+    /**
+     * Marks a session that is still receiving as one an upload failed partway into, recording why, as one conditional
+     * update.
+     *
+     * @return the number of rows updated: 0 when the session is no longer receiving or no longer exists
+     */
+    public int markFailedUpload(final long id, final String message) {
+        return getSession().createQuery("update DirectArchiveSession set failedUpload = true, message = :message where id = :id and status = :receiving")
+                .setParameter("message", message)
+                .setParameter("id", id)
+                .setParameter("receiving", PrearcStatus.RECEIVING)
+                .executeUpdate();
+    }
+
+    /** Clears the mark {@link #markFailedUpload(long, String)} left, touching nothing else. */
+    public int clearFailedUpload(final long id) {
+        return getSession().createQuery("update DirectArchiveSession set failedUpload = false where id = :id")
+                .setParameter("id", id)
+                .executeUpdate();
+    }
+
     private final SiteConfigPreferences preferences;
 
 }

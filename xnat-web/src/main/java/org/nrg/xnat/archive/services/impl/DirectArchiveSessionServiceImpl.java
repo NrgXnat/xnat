@@ -209,7 +209,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     public void requireReceiving(SessionData session) throws ClientException {
         final PrearcStatus status;
         try {
-            status = directArchiveSessionHibernateService.getSessionData(session.getId()).getStatus();
+            status = directArchiveSessionHibernateService.getStatusClearingFailedUpload(session.getId());
         } catch (NotFoundException e) {
             throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Direct archive session " +
                     session.getSessionDataTriple() + " was deleted while this file was being received", e);
@@ -224,25 +224,38 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     public void handleFailedUpload(SessionData session, Exception cause) {
         final long id = session.getId();
         try {
-            // Claimed before anything on the filesystem is touched, as a delete is: from here the importer refuses the
-            // next file of any upload into this session, and the archive trigger stops queuing it.
-            if (!directArchiveSessionHibernateService.setStatusToErrorIfReceiving(id, cause)) {
-                return;
+            // Nothing moves yet: another upload may still be sending into this session.
+            if (directArchiveSessionHibernateService.markFailedUpload(id, cause)) {
+                log.warn("An upload into DirectArchiveSession id={} {} failed; it moves to the prearchive in ERROR once idle unless another file lands in it first",
+                         id, session.getSessionDataTriple(), cause);
             }
-            final boolean stillLanding = PrearcUtils.isSessionReceiving(session.getSessionDataTriple());
-            if (stillLanding || !ownsSessionDirectory(session)) {
-                log.warn("An upload into DirectArchiveSession id={} {} failed; leaving it in ERROR at {} because {}", id, session.getSessionDataTriple(), session.getUrl(),
-                         stillLanding ? "a file of another upload is still landing there" : "the directory is not this session's alone", cause);
-                return;
-            }
-            log.warn("An upload into DirectArchiveSession id={} {} failed; moving it to the prearchive", id, session.getSessionDataTriple(), cause);
-            // In ERROR, where the idle-timeout rebuild leaves it alone: queued for a rebuild instead, what may be only
-            // part of the study would be archived after all.
-            doPrearchiveMove(id, session, Rebuild, PrearcStatus.ERROR,
-                             new ArchivingException("An import into this session failed partway, so it may be missing files", cause));
         } catch (NotFoundException e) {
             log.warn("DirectArchiveSession id={} disappeared while handling a failed upload into it", id, e);
         }
+    }
+
+    /**
+     * For the archive trigger: the session went idle with no file landing after an upload into it failed, so it may
+     * hold only part of the study.
+     */
+    private void moveFailedUpload(SessionData session) throws NotFoundException {
+        final long id = session.getId();
+        final ArchivingException failure = new ArchivingException("An import into this session failed partway, so it may be missing files. The import failed with: " + session.getMessage());
+        // Claimed before anything on the filesystem is touched, as a delete is: from here the importer refuses the
+        // next file of any upload into this session.
+        if (!directArchiveSessionHibernateService.setStatusToErrorIfReceiving(id, failure)) {
+            return;
+        }
+        final boolean stillLanding = PrearcUtils.isSessionReceiving(session.getSessionDataTriple());
+        if (stillLanding || !ownsSessionDirectory(session)) {
+            log.warn("DirectArchiveSession id={} {} went idle after an upload into it failed; leaving it in ERROR at {} because {}", id, session.getSessionDataTriple(), session.getUrl(),
+                     stillLanding ? "a file is still landing there" : "the directory is not this session's alone");
+            return;
+        }
+        log.warn("DirectArchiveSession id={} {} went idle after an upload into it failed; moving it to the prearchive", id, session.getSessionDataTriple());
+        // In ERROR, where the idle-timeout rebuild leaves it alone: queued for a rebuild instead, what may be only
+        // part of the study would be archived after all.
+        doPrearchiveMove(id, session, Rebuild, PrearcStatus.ERROR, failure);
     }
 
     /**
@@ -492,11 +505,17 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         if(sessions != null) {
             for (SessionData session : sessions) {
                 try {
-                    triggerArchive(session);
+                    if (directArchiveSessionHibernateService.hasFailedUpload(session.getId())) {
+                        moveFailedUpload(session);
+                    } else {
+                        triggerArchive(session);
+                    }
                 } catch (ClientException e) {
                     log.warn("Skip trigger archive", e);
                 } catch (ServerException e) {
                     log.error("Unable to trigger archive", e);
+                } catch (NotFoundException e) {
+                    log.warn("DirectArchiveSession id={} disappeared before it could be archived", session.getId(), e);
                 }
             }
         }

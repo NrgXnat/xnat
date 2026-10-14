@@ -140,7 +140,7 @@ public class DirectArchiveSessionStatusTransitionTest {
 
     /** A failure that names a file path can run past the 255 characters the message column holds. */
     @Test
-    public void aFailedUploadMovesAReceivingSessionToErrorWithAReasonThatFitsItsColumn() throws Exception {
+    public void anIdleFailedUploadMovesAReceivingSessionToErrorWithAReasonThatFitsItsColumn() throws Exception {
         final long id = receivingSession(ROUNDS + 6).getId();
 
         assertThat(service.setStatusToErrorIfReceiving(id, new Exception("x".repeat(400)))).isTrue();
@@ -151,12 +151,55 @@ public class DirectArchiveSessionStatusTransitionTest {
     }
 
     @Test
-    public void aFailedUploadLeavesASessionClaimedForDeletionAlone() throws Exception {
+    public void anIdleFailedUploadLeavesASessionClaimedForDeletionAlone() throws Exception {
         final long id = receivingSession(ROUNDS + 7).getId();
         service.setStatusToDeleting(id, false);
 
         assertThat(service.setStatusToErrorIfReceiving(id, new Exception("the upload broke"))).isFalse();
         assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.DELETING);
+    }
+
+    /** The session keeps receiving, so another upload sending into it carries on. */
+    @Test
+    public void aFailedUploadMarksAReceivingSessionWithAReasonThatFitsItsColumn() throws Exception {
+        final long id = receivingSession(ROUNDS + 8).getId();
+
+        assertThat(service.markFailedUpload(id, new Exception("x".repeat(400)))).isTrue();
+
+        assertThat(service.hasFailedUpload(id)).isTrue();
+        final DirectArchiveSession marked = service.get(id);
+        assertThat(marked.getStatus()).isEqualTo(PrearcStatus.RECEIVING);
+        assertThat(marked.getMessage()).hasSize(255);
+    }
+
+    @Test
+    public void aFileLandingClearsAFailedUploadsMark() throws Exception {
+        final long id = receivingSession(ROUNDS + 9).getId();
+        service.markFailedUpload(id, new Exception("the upload broke"));
+
+        assertThat(service.getStatusClearingFailedUpload(id)).isEqualTo(PrearcStatus.RECEIVING);
+
+        assertThat(service.hasFailedUpload(id)).isFalse();
+    }
+
+    /** The importer touches a session at most every 15 seconds, so touching it must not be what clears the mark. */
+    @Test
+    public void touchingASessionLeavesAFailedUploadsMark() throws Exception {
+        final long id = receivingSession(ROUNDS + 11).getId();
+        service.markFailedUpload(id, new Exception("the upload broke"));
+
+        service.touch(id);
+
+        assertThat(service.hasFailedUpload(id)).isTrue();
+    }
+
+    @Test
+    public void aFailedUploadDoesNotMarkASessionClaimedForDeletion() throws Exception {
+        final long id = receivingSession(ROUNDS + 10).getId();
+        service.setStatusToDeleting(id, false);
+
+        assertThat(service.markFailedUpload(id, new Exception("the upload broke"))).isFalse();
+        assertThat(service.hasFailedUpload(id)).isFalse();
     }
 
     @Test

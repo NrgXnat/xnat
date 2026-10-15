@@ -14,6 +14,7 @@ import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
@@ -52,6 +53,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcDatabase.Either;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.SessionFileLockException;
 import org.nrg.xnat.helpers.prearchive.SessionData;
+import org.nrg.xnat.helpers.prearchive.SessionException;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
 import org.nrg.xnat.processors.ArchiveProcessor;
@@ -71,6 +73,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -320,6 +324,12 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
                 session = eitherGetOrCreateSession(initialize, prearchiveRoot, project, dataset, isNew);
             } catch (Exception e) {
+                if (isDestinationTaken(e)) {
+                    // Another session is already at the requested prearchive folder. It holds a different study, or
+                    // this instance would have joined it, so the request is at fault.
+                    throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to import DICOM object " + name
+                                                                               + ": a session of another study is already at its destination", e);
+                }
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
             }
             // There is no direct archive commit (yet) so just return the session triple
@@ -568,8 +578,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     return false;
                 } else if (inlineResult instanceof AnonymizationResultError) {
                     // A valid script that errors on this data (e.g. an absent tag) returns an error
-                    // result: a 400, cleaned up like the site-wide path. A parse failure instead throws
-                    // MizerException, which the catch below maps to a 500 (mizer can't tell it from a real fault).
+                    // result: a 400, cleaned up like the site-wide path. A script that can't be parsed or run
+                    // throws a MizerException instead, which the catch below makes a 400 as well.
                     final ClientException error = new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
                             "The supplied inline anonymization script could not be applied: " +
                                     String.join("\n", inlineResult.getMessages()));
@@ -577,11 +587,57 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
             } catch (ClientException e) {
                 throw e;
+            } catch (MizerException e) {
+                if (isScriptFailure(e)) {
+                    // The uploader's own script is at fault.
+                    final ClientException error = new ClientException(Status.CLIENT_ERROR_BAD_REQUEST,
+                            "The supplied inline anonymization script could not be applied: " + innermostMessage(e), e);
+                    handleAnonymizationError(isNew, session, outputFile, error, error);
+                } else {
+                    handleAnonymizationError(isNew, session, outputFile, e);
+                }
             } catch (Throwable e) {
                 handleAnonymizationError(isNew, session, outputFile, e);
             }
         }
         return true;
+    }
+
+    /**
+     * Whether creating the session failed because another session is already at its prearchive folder: the database's
+     * unique constraint refused the row (PostgreSQL reports SQLState 23505 rather than an
+     * {@link SQLIntegrityConstraintViolationException}), or, for a session with no project, the prearchive's own check
+     * for duplicates gave up.
+     */
+    static boolean isDestinationTaken(final Throwable e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLIntegrityConstraintViolationException
+                || cause instanceof SQLException sql && "23505".equals(sql.getSQLState())
+                || cause instanceof SessionException session && session.getError() == SessionException.Error.AlreadyExists) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether an inline script failed as a script, because it could not be parsed or run, rather than because reading
+     * or writing the instance failed. Mizer reports both as a {@link MizerException}; only the second has an
+     * {@link IOException} among its causes.
+     */
+    static boolean isScriptFailure(final MizerException e) {
+        return ExceptionUtils.indexOfType(e, IOException.class) < 0;
+    }
+
+    /** The most specific message in the cause chain, such as the parser's own over "Failed creating DE6Parser." */
+    private static String innermostMessage(final Throwable e) {
+        String message = e.getMessage();
+        for (Throwable cause = e.getCause(); cause != null; cause = cause.getCause()) {
+            if (StringUtils.isNotBlank(cause.getMessage())) {
+                message = cause.getMessage();
+            }
+        }
+        return message;
     }
 
     private void deleteSessionFromDb(SessionData session) throws Exception {

@@ -36,7 +36,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -100,7 +99,6 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
     private final ExecutorService          _lockExecutor;
     private final ScheduledExecutorService _tickExecutor;
     private final ExecutorService          _callbackExecutor;
-    private volatile Thread                _lockThread;
 
     private volatile Connection _connection;
     private final AtomicBoolean _connected = new AtomicBoolean();
@@ -149,11 +147,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         _checkTimeout = checkTimeout;
         _maxTimeouts  = Math.max(1, maxTimeouts);
 
-        _lockExecutor     = Executors.newSingleThreadExecutor(runnable -> {
-            final Thread thread = daemon("xnat-locks", runnable);
-            _lockThread = thread;
-            return thread;
-        });
+        _lockExecutor     = Executors.newSingleThreadExecutor(runnable -> daemon("xnat-locks", runnable));
         _tickExecutor     = Executors.newSingleThreadScheduledExecutor(runnable -> daemon("xnat-locks-tick", runnable));
         _callbackExecutor = Executors.newSingleThreadExecutor(runnable -> daemon("xnat-locks-callbacks", runnable));
     }
@@ -181,7 +175,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
             Thread.currentThread().interrupt();
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Interrupted while opening the node lock connection");
         } catch (ExecutionException e) {
-            final Throwable cause = e.getCause() == null ? e : e.getCause();
+            final Throwable cause = e.getCause();
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Could not open the node lock connection for node " + _nodeId + " with driver " + _settings.getDriverClassName() + " and URL " + _settings.getUrl() + ". XNAT can't run node locks without it. Fix the datasource configuration, or set " + PROPERTY_ENABLED + "=false to start without node locks: " + cause.getMessage(), cause);
         }
         _tickExecutor.scheduleWithFixedDelay(this::tick, _tickInterval.toMillis(), _tickInterval.toMillis(), TimeUnit.MILLISECONDS);
@@ -229,18 +223,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         }
         if (_started.get() && !_closed.get()) {
             try {
-                _lockExecutor.execute(() -> {
-                    try {
-                        if (_connection != null) {
-                            runSql("elect \"" + name + "\"", connection -> {
-                                tryElect(connection, leader);
-                                return null;
-                            });
-                        }
-                    } catch (SQLException e) {
-                        log.debug("Node lock \"{}\": first election attempt failed, the next tick will retry", name, e);
-                    }
-                });
+                _lockExecutor.execute(() -> electOnLockThread(leader));
             } catch (RejectedExecutionException ignored) {
                 // Closing.
             }
@@ -314,7 +297,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         } catch (ExecutionException e) {
             // runSql has already handled a database error; anything else is a bug worth seeing.
             _timeouts = 0;
-            final Throwable cause = e.getCause() == null ? e : e.getCause();
+            final Throwable cause = e.getCause();
             if (!(cause instanceof SQLException)) {
                 log.error("Node locks on node {}: unexpected error on the lock thread", _nodeId, cause);
             }
@@ -343,10 +326,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
             if (_closed.get()) {
                 // close() ran while this connect was in flight and may have stopped waiting for it, dropping its
                 // queued shutdown, so nothing else would close this connection. Close it before it can take a lock.
-                final Connection connection = _connection;
-                _connected.set(false);
-                _connection = null;
-                closeQuietly(connection);
+                closeConnection(_connection);
                 return null;
             }
             log.info("Node locks on node {}: lock connection restored", _nodeId);
@@ -366,6 +346,20 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
             return null;
         });
         return null;
+    }
+
+    private void electOnLockThread(final Leader leader) {
+        if (_connection == null) {
+            return;
+        }
+        try {
+            runSql("elect \"" + leader._name + "\"", connection -> {
+                tryElect(connection, leader);
+                return null;
+            });
+        } catch (SQLException e) {
+            log.debug("Node lock \"{}\": first election attempt failed, the next tick will retry", leader._name, e);
+        }
     }
 
     private void tryElect(final Connection connection, final Leader leader) throws SQLException {
@@ -457,7 +451,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         }
     }
 
-    private Void shutdownOnLockThread() {
+    private void shutdownOnLockThread() {
         final Connection connection = _connection;
         for (final Leader leader : _leaders.values()) {
             if (clearLeader(leader)) {
@@ -472,10 +466,16 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
                 callback(() -> leader._listener.onDemoted(leader._name, "shutdown"));
             }
         }
+        closeConnection(connection);
+    }
+
+    /**
+     * Marks the lock connection closed and closes it.
+     */
+    private void closeConnection(final Connection connection) {
         _connected.set(false);
         _connection = null;
         closeQuietly(connection);
-        return null;
     }
 
     private void openConnection() throws SQLException {
@@ -490,8 +490,9 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         }
         properties.setProperty("ApplicationName", APPLICATION_NAME_PREFIX + _nodeId);
         properties.setProperty("tcpKeepAlive", "true");
-        properties.setProperty("connectTimeout", Long.toString(Math.max(1, _checkTimeout.getSeconds() * 2)));
-        properties.setProperty("loginTimeout", Long.toString(Math.max(1, _checkTimeout.getSeconds() * 2)));
+        final String timeoutSeconds = Long.toString(Math.max(1, _checkTimeout.getSeconds() * 2));
+        properties.setProperty("connectTimeout", timeoutSeconds);
+        properties.setProperty("loginTimeout", timeoutSeconds);
 
         final Connection connection = driver.connect(_settings.getUrl(), properties);
         if (connection == null) {
@@ -553,11 +554,10 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         final Connection connection = _connection;
         _connection = null;
         abortQuietly(connection);
+        final String demotion = "lock connection lost: " + reason;
         synchronized (_leadership) {
             for (final Leader leader : _leaders.values()) {
-                if (leader._leader) {
-                    demote(leader, "lock connection lost: " + reason);
-                }
+                demote(leader, demotion);
             }
         }
     }
@@ -621,14 +621,6 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
     }
 
     private <T> T onLockThread(final String what, final Callable<T> callable, final T fallback) {
-        if (Thread.currentThread() == _lockThread) {
-            try {
-                return callable.call();
-            } catch (Exception e) {
-                log.warn("Node locks on node {}: {} failed", _nodeId, what, e);
-                return fallback;
-            }
-        }
         final Future<T> future;
         try {
             future = _lockExecutor.submit(callable);

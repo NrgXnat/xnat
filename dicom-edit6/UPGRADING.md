@@ -9,30 +9,6 @@ earlier one: 6.10.0 accepts `version "6.10"`, and 6.11.0 will accept `version "6
 version means the same as any other; declaring a newer one makes older engines reject the script as
 unsupported rather than run it without whatever changed. A patch release adds no script version.
 
-## 6.10.0 to 6.10.1
-
-### Scripts
-
-Existing scripts keep working. There is no new script version.
-
-- **Empty binary values no longer stop a script.** An empty OB, OW or UC element anywhere in the
-  object made `retainPrivateTags` fail with `Index -1 out of bounds for length 0`, and any statement
-  that read such an element failed the same way. These scripts now run, and the element reads as an
-  empty string.
-- **Binary and UC values read the same way everywhere.** A statement that reads an OB, OW or UN
-  value in a sequence item gets it without its trailing NUL, as at the root. A binary value that
-  can't be read as bytes, such as an encapsulated one, reads as an empty string instead of failing.
-  A UC value is read with the object's character set and split into values at backslashes; like any
-  other text value, it loses its leading and trailing spaces when it is read.
-
-### Java API and dependencies
-
-- **`getString` and `getStrings` no longer throw on binary values.** They return `""` for an empty
-  OB, OW or UC and for a binary value that can't be read as bytes, remove a binary value's trailing
-  NUL at any depth, and read UC with the character set. The fixes are in mizer 1.10.3.
-- **`retainPrivateTags` errors keep their cause.** The `ScriptEvaluationException` it throws now
-  carries the exception that caused it.
-
 ## 6.9.1 to 6.10.0
 
 ### Scripts

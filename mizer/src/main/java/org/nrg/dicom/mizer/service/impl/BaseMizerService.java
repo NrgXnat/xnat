@@ -32,6 +32,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.nrg.dicom.mizer.values.Value.EMPTY_VARIABLES;
 
@@ -275,12 +276,14 @@ public class BaseMizerService implements MizerService {
             final WorkOnCopyOp<AnonymizationResult> anonymizeOp = new WorkOnCopyOp<>(dicomFile, tmpdir, callOnFile);
             return new TransactionRunner<AnonymizationResult>().runTransaction(anonymizeOp);
         } catch (RollbackException | TransactionException e) {
-            throw new MizerException(e);
+            throw new MizerException("Anonymization transaction failed for file '" + dicomFile.getAbsolutePath()
+                    + "': " + e.getMessage(), e);
         }
     }
 
     @Override
     public List<AnonymizationResult> anonymize(List<File> dicomFiles, String project, String subject, String session, long scriptId, String script, boolean record, boolean ignoreRejection) throws MizerException {
+        File current = null;
         try {
             List<AnonymizationResult> resultList = new ArrayList<>();
             MizerContextWithScript context = createContext( project, subject, session, scriptId, script, record, ignoreRejection);
@@ -288,6 +291,7 @@ public class BaseMizerService implements MizerService {
             log.info("Found mizer for versions {}", Joiner.on(", ").join(mizer.getSupportedVersions()));
             mizer.setContext( context);
             for( File dicomFile: dicomFiles) {
+                current = dicomFile;
                 final CallOnFile<AnonymizationResult> callOnFile = new AnonymizeCallOnFileWithPixels(dicomFile, mizer, context);
                 final File tmpdir = new File(System.getProperty("java.io.tmpdir"), "anon_backup");
                 final WorkOnCopyOp<AnonymizationResult> anonymizeOp = new WorkOnCopyOp<>(dicomFile, tmpdir, callOnFile);
@@ -298,7 +302,8 @@ public class BaseMizerService implements MizerService {
             mizer.removeContext( context);
             return resultList;
         } catch (RollbackException | TransactionException e) {
-            throw new MizerException(e);
+            final String which = current == null ? "<before first file>" : current.getAbsolutePath();
+            throw new MizerException("Anonymization transaction failed at file '" + which + "': " + e.getMessage(), e);
         }
     }
 
@@ -323,7 +328,23 @@ public class BaseMizerService implements MizerService {
                 throw new MizerException(String.format(INVALID_VERSION_MESSAGE, matcher.group("expression")));
             }
         }
-        throw new MizerException("The Mizer service failed to find a Mizer implementation that knows how to handle your script");
+        final String requested = extractRequestedVersion(context);
+        final String supported = _mizers.stream()
+                .flatMap(m -> m.getSupportedVersions().stream())
+                .map(Object::toString)
+                .distinct()
+                .collect(Collectors.joining(", "));
+        throw new MizerException(String.format(
+                "No Mizer implementation handles script version '%s'. Supported versions: [%s].",
+                requested, supported.isEmpty() ? "none registered" : supported));
+    }
+
+    private static String extractRequestedVersion(final MizerContext context) {
+        if (!(context instanceof MizerContextWithScript)) {
+            return "<unknown>";
+        }
+        final Matcher matcher = VALID_VERSION_FORMAT.matcher(((MizerContextWithScript) context).getScriptAsString());
+        return matcher.find() ? matcher.group("version") : "<not declared>";
     }
 
     @Nonnull
@@ -347,6 +368,7 @@ public class BaseMizerService implements MizerService {
         return mizerContext;
     }
 
+    private static final Pattern   VALID_VERSION_FORMAT    = Pattern.compile("^\\s*version\\s+\"(?<version>[\\d.]+)\"\\s*$", Pattern.MULTILINE);
     private static final Pattern   INVALID_VERSION_FORMAT  = Pattern.compile("^.*(?<expression>version\\s*[:]?=\\s*\"[\\d.]+\").*$", Pattern.MULTILINE);
     private static final String    INVALID_VERSION_MESSAGE = "The Mizer service failed to find a Mizer implementation that knows how to handle your"
                                                              + "script, but also found what appears to be a malformed version declaration. The "

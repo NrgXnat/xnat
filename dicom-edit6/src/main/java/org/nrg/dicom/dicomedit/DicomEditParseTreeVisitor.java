@@ -26,9 +26,11 @@ import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.nrg.dicom.mizer.values.AbstractMizerValue.VOID;
@@ -40,6 +42,12 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
 
     private Map<String, Variable> variables = new HashMap<String, Variable>();
     private DicomObjectI dicomObject;
+    /**
+     * The most-recently-entered statement, retained so its line and text can be derived on the
+     * error path only. Holding the context costs a reference store per statement; deriving the
+     * text eagerly cost a string allocation per statement of every script for every object.
+     */
+    private DE6Parser.StatementContext currentStatement;
 
     private static final Logger logger = LoggerFactory.getLogger(DicomEditParseTreeVisitor.class);
 
@@ -76,18 +84,46 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
         return variables.get(name);
     }
 
+    /**
+     * @return the source line of the most-recently-entered statement, or {@code null} if no
+     *         statement has been entered yet. Useful at the script-applicator boundary when
+     *         decorating an evaluation failure with location context.
+     */
+    public Integer getCurrentStatementLine() {
+        return currentStatement == null ? null : currentStatement.start.getLine();
+    }
+
+    /**
+     * @return the textual form of the most-recently-entered statement, or {@code null}.
+     *         Note: ANTLR's {@code ctx.getText()} concatenates tokens without their original
+     *         whitespace, so the result is a faithful but compact reconstruction. Reconstructing
+     *         it allocates, so this is called only when decorating an error.
+     */
+    public String getCurrentStatementText() {
+        return currentStatement == null ? null : currentStatement.getText();
+    }
+
     @Override
     public Value visitScript(DE6Parser.ScriptContext ctx) {
         logger.debug("Encountered script.");
-        for (int i = 0; i < ctx.statement().size(); i++) {
-            logger.debug("visit statement " + i + ": " + ctx.statement(i).getText());
-            this.visit(ctx.statement(i));
+        // ANTLR's generated statement() builds a fresh list by scanning all children on every
+        // call, so hoist it rather than calling it per iteration; and keep getText() behind an
+        // isDebugEnabled() check, since it is evaluated as an argument either way.
+        final List<DE6Parser.StatementContext> statements = ctx.statement();
+        final boolean debug = logger.isDebugEnabled();
+        for (int i = 0; i < statements.size(); i++) {
+            final DE6Parser.StatementContext statement = statements.get(i);
+            if (debug) {
+                logger.debug("visit statement {}: {}", i, statement.getText());
+            }
+            this.visit(statement);
         }
         return new ConstantValue(null);
     }
 
     @Override
     public Value visitStatement(DE6Parser.StatementContext ctx) {
+        this.currentStatement = ctx;
         this.visit(ctx.getChild(0));
         return new ConstantValue(null);
     }
@@ -349,9 +385,17 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
         return new ConstantValue(values);
     }
 
+    /**
+     * Resolve a {@code variable} node appearing as a function argument or a list element.
+     *
+     * <p>Routed through {@link #extractVariableValue(String)} rather than dereferencing
+     * {@link #getVariable(String)} directly, so an undefined or null-valued variable in these
+     * positions reports the same actionable error as one on the right-hand side of an
+     * assignment instead of a raw {@code NullPointerException}. See XNAT-8499.
+     */
     @Override
     public Value visitVariable(DE6Parser.VariableContext ctx) {
-        return getVariable(ctx.ID().getText()).getValue();
+        return extractVariableValue(ctx.ID().getText());
     }
 
     /**
@@ -400,10 +444,65 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
 
     protected Value extractVariableValue(String id) {
         if (variables.containsKey(id)) {
-            return variables.get(id).getValue();
-        } else {
-            throw new ParseCancellationException("Unknown variable: " + id);
+            Value value = variables.get(id).getValue();
+            if (value == null) {
+                throw new ScriptEvaluationRuntimeException("Variable '" + id + "' is null.");
+            }
+            return value;
         }
+        throw new ParseCancellationException(buildUnknownVariableMessage(id, variables.keySet()));
+    }
+
+    static String buildUnknownVariableMessage(final String id, final Collection<String> known) {
+        final StringBuilder sb = new StringBuilder("Unknown variable: '").append(id).append("'");
+        final String suggestion = closestMatch(id, known);
+        if (suggestion != null) {
+            sb.append(" (did you mean '").append(suggestion).append("'?)");
+        }
+        if (known.isEmpty()) {
+            sb.append(". No variables are defined.");
+        } else {
+            // Sort for stable output
+            final TreeSet<String> sorted = new TreeSet<>(known);
+            sb.append(". Defined variables: [").append(String.join(", ", sorted)).append("]");
+        }
+        return sb.toString();
+    }
+
+    private static String closestMatch(final String target, final Collection<String> candidates) {
+        if (candidates == null || candidates.isEmpty() || target == null) {
+            return null;
+        }
+        String best = null;
+        int bestDist = Integer.MAX_VALUE;
+        for (final String c : candidates) {
+            final int d = editDistance(target, c);
+            if (d < bestDist) {
+                bestDist = d;
+                best = c;
+            }
+        }
+        // Only suggest if reasonably close: at most 1/3 of the input length, minimum 2.
+        final int threshold = Math.max(2, target.length() / 3);
+        return bestDist <= threshold ? best : null;
+    }
+
+    private static int editDistance(final String a, final String b) {
+        final int n = a.length(), m = b.length();
+        if (n == 0) return m;
+        if (m == 0) return n;
+        int[] prev = new int[m + 1];
+        int[] curr = new int[m + 1];
+        for (int j = 0; j <= m; j++) prev[j] = j;
+        for (int i = 1; i <= n; i++) {
+            curr[0] = i;
+            for (int j = 1; j <= m; j++) {
+                final int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
+                curr[j] = Math.min(Math.min(curr[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
+            }
+            final int[] tmp = prev; prev = curr; curr = tmp;
+        }
+        return prev[m];
     }
 
     @Override

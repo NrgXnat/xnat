@@ -79,8 +79,8 @@ public class MizerContextWithScript extends MizerContextBase {
     public InputStream getScriptInputStream() {
         try {
             return new ByteArrayInputStream(getScriptAsString().getBytes("UTF-8"));
-        } catch(UnsupportedEncodingException ignore) {
-            return null;
+        } catch(UnsupportedEncodingException e) {
+            throw new IllegalStateException("UTF-8 encoding not supported by this JVM (critical environment misconfiguration)", e);
         }
     }
 

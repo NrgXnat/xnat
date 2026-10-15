@@ -10,8 +10,10 @@
 package org.nrg.dicom.dicomedit;
 
 import org.nrg.dicom.dicomedit.functions.LookupManager;
+import org.nrg.dicom.mizer.exceptions.MizerContextException;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.exceptions.RejectedInstanceException;
+import org.nrg.dicom.mizer.exceptions.ScriptErrorContext;
 import org.nrg.dicom.mizer.objects.*;
 import org.nrg.dicom.mizer.values.AbstractMizerValue;
 import org.nrg.dicom.mizer.values.ConstantValue;
@@ -88,17 +90,18 @@ public class SerialScriptApplicator implements ScriptApplicatorI {
         AnonymizationResult globalResult = new AnonymizationResultSuccess(dicomObject);
         int i = 0;
         for (DE6Script script : scripts) {
-            logger.trace("Apply script {} of {}", ++i, scripts.size());
+            final int scriptIndex = ++i;
+            logger.trace("Apply script {} of {}", scriptIndex, scripts.size());
             LookupManager.setLookupTable(script.getLookupTable());
             visitor.visit(script.getParseTree());
-            globalResult = globalResult.merge(apply(visitor, script));
+            globalResult = globalResult.merge(apply(visitor, script, scriptIndex));
         }
         logger.trace("Edited Dicom object: " + dicomObject);
         return globalResult;
 
     }
 
-    private AnonymizationResult apply(DicomEditParseTreeVisitor visitor, DE6Script script) {
+    private AnonymizationResult apply(DicomEditParseTreeVisitor visitor, DE6Script script, int scriptIndex) {
         try {
             if (logger.isTraceEnabled()) {
                 logger.trace("Applying script {}", script);
@@ -108,9 +111,13 @@ public class SerialScriptApplicator implements ScriptApplicatorI {
         } catch (RejectedInstanceException re) {
             return new AnonymizationResultReject(visitor.getDicomObject(), re.getMessage());
         } catch (Exception e) {
-            logger.error("Failed to apply script", e);
-            return new AnonymizationResultError(visitor.getDicomObject(),
-                    e.getMessage() == null ? e.getClass().getName() : e.getMessage());
+            final ScriptErrorContext ctx = ScriptErrorContext.empty()
+                    .withScriptIndex(scriptIndex)
+                    .withScriptLine(visitor.getCurrentStatementLine())
+                    .withStatementText(visitor.getCurrentStatementText());
+            final MizerContextException decorated = MizerException.rewrap(e, ctx);
+            logger.error("Failed to apply script #{}: {}", scriptIndex, decorated.getMessage(), e);
+            return new AnonymizationResultError(visitor.getDicomObject(), decorated.getMessage(), e);
         }
     }
 

@@ -13,6 +13,10 @@ public class AnonException extends Exception {
         super(msg, e);
     }
 
+    public AnonException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
+
     public AnonException(Throwable e) {
         super( e);
     }

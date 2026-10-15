@@ -385,9 +385,11 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
                             return;
                         }
                         leader._leader = true;
+                        // Queued under the monitor, as demotions are, so a connectionLost() that runs right after
+                        // this grant can't queue its onDemoted ahead of this onElected.
+                        log.info("Node lock \"{}\": elected on node {}", leader._name, _nodeId);
+                        callback(() -> leader._listener.onElected(leader._name));
                     }
-                    log.info("Node lock \"{}\": elected on node {}", leader._name, _nodeId);
-                    callback(() -> leader._listener.onElected(leader._name));
                 }
             }
         }

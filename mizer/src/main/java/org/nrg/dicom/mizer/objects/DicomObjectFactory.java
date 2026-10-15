@@ -382,7 +382,7 @@ public class DicomObjectFactory {
          * {@inheritDoc}
          * All implementations of getString and getStrings ultimately rely on this method.
          */
-        private static final Set<VR> BYTES_VRS = new HashSet<>(Arrays.asList(VR.OB, VR.UN, VR.OW, VR.UC));
+        private static final Set<VR> BYTES_VRS = new HashSet<>(Arrays.asList(VR.OB, VR.UN, VR.OW));
         @Override
         public String[] getStrings(final int... tagArray) {
             // tags with VR == UN do not have an implementation of getStrings(). Are there other VRs that do this?
@@ -400,11 +400,7 @@ public class DicomObjectFactory {
                 int tag = tagArray[0];
                 VR vr = dataset.getVR(tag);
                 if (BYTES_VRS.contains(vr)) {
-                    byte[] byteResult =getBytes(tag);
-                    if (byteResult[byteResult.length-1]==0) {
-                        byteResult = Arrays.copyOf(byteResult, byteResult.length-1);
-                    }
-                    return  new String[]{new String(byteResult,StandardCharsets.UTF_8)};
+                    return bytesToStrings(getBytes(tag));
                 }
                 return dataset.getStrings(tagArray[0]);
             }
@@ -414,9 +410,24 @@ public class DicomObjectFactory {
             }
             VR vr = current.getVR(tagArray[tagArray.length - 1]);
             if (BYTES_VRS.contains(vr)) {
-                return  new String[]{new String(Dcm4cheConvert.getNestedBytes(dataset, tagArray),StandardCharsets.UTF_8)};
+                return bytesToStrings(Dcm4cheConvert.getNestedBytes(dataset, tagArray));
             }
             return Dcm4cheConvert.getNestedStrings(dataset, tagArray);
+        }
+
+        /**
+         * A binary value as one UTF-8 string, without its trailing NUL if it has one. A value that can't be read as
+         * bytes, such as an encapsulated value or bulk data that can't be read, reads as an empty string.
+         *
+         * @param bytes the value, or null if it can't be read as bytes
+         * @return the value as a single string
+         */
+        private static String[] bytesToStrings(final byte[] bytes) {
+            if (bytes == null) {
+                return new String[]{""};
+            }
+            final int length = bytes.length > 0 && bytes[bytes.length - 1] == 0 ? bytes.length - 1 : bytes.length;
+            return new String[]{new String(bytes, 0, length, StandardCharsets.UTF_8)};
         }
 
         /**

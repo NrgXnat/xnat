@@ -84,7 +84,8 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
     private static final String SQL_TRY_LOCK             = "SELECT pg_try_advisory_lock(?, hashtext(?)), hashtext(?)";
     private static final String SQL_UNLOCK               = "SELECT pg_advisory_unlock(?, ?)";
     private static final String SQL_HELD_KEYS            = "SELECT objid FROM pg_locks WHERE locktype = 'advisory' AND classid = ?::oid AND objsubid = 2 AND pid = pg_backend_pid() AND granted";
-    private static final String SQL_OTHER_NODES          = "SELECT count(*) FROM pg_stat_activity WHERE application_name LIKE ? AND pid <> pg_backend_pid()";
+    // Advisory locks are per database, so only lock sessions on this database are nodes that could take over.
+    private static final String SQL_OTHER_NODES          = "SELECT count(*) FROM pg_stat_activity WHERE application_name LIKE ? AND datname = current_database() AND pid <> pg_backend_pid()";
 
     private final String                     _nodeId;
     private final boolean                    _enabled;
@@ -508,7 +509,6 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         }
         _connection = connection;
         _connected.set(true);
-        _timeouts = 0;
         log.info("Node locks on node {}: lock connection opened as {}{} with driver {}", _nodeId, APPLICATION_NAME_PREFIX, _nodeId, _settings.getDriverClassName());
     }
 

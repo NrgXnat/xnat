@@ -273,13 +273,14 @@ public class PrearcImporterHelper extends PrearcImporterA{
                 .call();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-
-		org.nrg.xft.utils.FileUtils.DeleteFile(srcXML);
-		org.nrg.xft.utils.FileUtils.deleteDirQuietly(srcDIR);
-		
-		if(!FileUtils.HasFiles(srcDIR.getParentFile())){
-			org.nrg.xft.utils.FileUtils.deleteDirQuietly(srcDIR.getParentFile());
+		} finally {
+			// The upload's own unpacked copy, under its own timestamp, goes whether or not the merge succeeded: left
+			// behind by a failed merge, the prearchive would list it as a session of its own.
+			org.nrg.xft.utils.FileUtils.DeleteFile(srcXML);
+			org.nrg.xft.utils.FileUtils.deleteDirQuietly(srcDIR);
+			if(!FileUtils.HasFiles(srcDIR.getParentFile())){
+				org.nrg.xft.utils.FileUtils.deleteDirQuietly(srcDIR.getParentFile());
+			}
 		}
 		
 		return destDIR;

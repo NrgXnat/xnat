@@ -6,7 +6,6 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
-import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 
 import javax.annotation.Nullable;
@@ -80,8 +79,7 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
 
     /**
      * Marks a session that is still RECEIVING as one an upload failed partway into, recording why. It stays RECEIVING,
-     * so other uploads into it carry on, and the next file to land in it clears the mark. A session that has moved on
-     * is left as it is.
+     * so other uploads into it carry on. A session that has moved on is left as it is.
      *
      * @return whether the session was marked
      */
@@ -89,12 +87,6 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
 
     /** Whether the session still carries the mark {@link #markFailedUpload(long, Exception)} left. */
     boolean hasFailedUpload(long id) throws NotFoundException;
-
-    /**
-     * For the importer, about to write a file into the session: its status, after clearing the mark a failed upload
-     * left if it is still receiving. Another upload, or the same one sent again, is adding to the session.
-     */
-    PrearcStatus getStatusClearingFailedUpload(long id) throws NotFoundException;
 
     /**
      * Queues a session for building, as {@link #setStatusToQueuedBuilding(long, boolean)} without {@code force}. Stays

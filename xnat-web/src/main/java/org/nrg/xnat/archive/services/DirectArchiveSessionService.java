@@ -47,7 +47,7 @@ public interface DirectArchiveSessionService {
      * For the importer, once it holds the file lock for a session: confirms the session is still RECEIVING. Its
      * earlier check in {@link #getOrCreate} runs before the lock is taken, and a delete claims the session and then
      * looks for locks, so only a check made under the lock can guarantee the file is not written into a directory
-     * the delete is about to remove. The file adds to the session, so the mark a failed upload left is cleared.
+     * the delete is about to remove.
      *
      * @throws ClientException 409 when the session has been claimed for deletion, has moved on, or is gone
      */

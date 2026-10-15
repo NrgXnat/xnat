@@ -172,17 +172,7 @@ public class DirectArchiveSessionStatusTransitionTest {
         assertThat(marked.getMessage()).hasSize(255);
     }
 
-    @Test
-    public void aFileLandingClearsAFailedUploadsMark() throws Exception {
-        final long id = receivingSession(ROUNDS + 9).getId();
-        service.markFailedUpload(id, new Exception("the upload broke"));
-
-        assertThat(service.getStatusClearingFailedUpload(id)).isEqualTo(PrearcStatus.RECEIVING);
-
-        assertThat(service.hasFailedUpload(id)).isFalse();
-    }
-
-    /** The importer touches a session at most every 15 seconds, so touching it must not be what clears the mark. */
+    /** A later file touches the session; the session still goes to the prearchive in ERROR once idle. */
     @Test
     public void touchingASessionLeavesAFailedUploadsMark() throws Exception {
         final long id = receivingSession(ROUNDS + 11).getId();

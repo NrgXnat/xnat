@@ -149,12 +149,6 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
                 .executeUpdate();
     }
 
-    /** Clears the mark {@link #markFailedUpload(long, String)} left, touching nothing else. */
-    public int clearFailedUpload(final long id) {
-        return getSession().createQuery("update DirectArchiveSession set failedUpload = false where id = :id")
-                .setParameter("id", id)
-                .executeUpdate();
-    }
 
     private final SiteConfigPreferences preferences;
 

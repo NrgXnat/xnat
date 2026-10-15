@@ -210,7 +210,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     public void requireReceiving(SessionData session) throws ClientException {
         final PrearcStatus status;
         try {
-            status = directArchiveSessionHibernateService.getStatusClearingFailedUpload(session.getId());
+            status = directArchiveSessionHibernateService.getSessionData(session.getId()).getStatus();
         } catch (NotFoundException e) {
             throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "Direct archive session " +
                     session.getSessionDataTriple() + " was deleted while this file was being received", e);
@@ -227,7 +227,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         try {
             // Nothing moves yet: another upload may still be sending into this session.
             if (directArchiveSessionHibernateService.markFailedUpload(id, cause)) {
-                log.warn("An upload into DirectArchiveSession id={} {} failed; it moves to the prearchive in ERROR once idle unless another file lands in it first",
+                log.warn("An upload into DirectArchiveSession id={} {} failed; it moves to the prearchive in ERROR once idle",
                          id, session.getSessionDataTriple(), cause);
             }
         } catch (NotFoundException e) {
@@ -236,8 +236,8 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
     }
 
     /**
-     * For the archive trigger: the session went idle with no file landing after an upload into it failed, so it may
-     * hold only part of the study.
+     * For the archive trigger: the session went idle after an upload into it failed, so it may hold only part of the
+     * study.
      */
     private void moveFailedUpload(SessionData session) throws NotFoundException {
         final long id = session.getId();

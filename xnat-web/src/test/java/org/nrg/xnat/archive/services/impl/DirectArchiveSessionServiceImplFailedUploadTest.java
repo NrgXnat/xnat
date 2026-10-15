@@ -36,13 +36,14 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
  * An upload that fails partway leaves its direct-archive session holding only part of a study. The session is marked
- * and keeps receiving, since another upload may still be sending into it. If it goes idle still marked, the archive
- * trigger moves it to the prearchive in ERROR, as a session whose build or archive failed does, unless its files are
- * not its own to move; once a file has landed since, it is archived as usual.
+ * and keeps receiving, since another upload may still be sending into it. Once it goes idle, the archive trigger moves
+ * it to the prearchive in ERROR, as a session whose build or archive failed does, unless its files are not its own to
+ * move.
  */
 public class DirectArchiveSessionServiceImplFailedUploadTest {
     private static final long   SESSION_ID = 42L;
@@ -170,8 +171,18 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
     }
 
     @Test
-    public void anIdleSessionAFileLandedInSinceIsArchivedAsUsual() throws Exception {
-        // Another upload, or the same one sent again, added to it after the failure.
+    public void aLaterFileLeavesTheMarkInPlace() throws Exception {
+        // The later file may fail too, and C-STORE and single-file uploads never mark a session.
+        when(hibernateService.getSessionData(SESSION_ID)).thenReturn(receivingSession());
+
+        service.requireReceiving(receivingSession());
+
+        verify(hibernateService).getSessionData(SESSION_ID);
+        verifyNoMoreInteractions(hibernateService);
+    }
+
+    @Test
+    public void anIdleSessionWithNoFailedUploadIsArchivedAsUsual() throws Exception {
         when(hibernateService.hasFailedUpload(SESSION_ID)).thenReturn(false);
         when(hibernateService.setStatusToQueuedBuilding(SESSION_ID, false)).thenReturn(true);
 

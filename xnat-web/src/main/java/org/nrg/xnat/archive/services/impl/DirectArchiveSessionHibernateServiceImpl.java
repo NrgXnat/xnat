@@ -177,16 +177,6 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
-    public PrearcStatus getStatusClearingFailedUpload(long id) throws NotFoundException {
-        // The row is read for its status anyway, so a session that isn't marked costs no extra statement.
-        final DirectArchiveSession session = get(id);
-        if (session.getStatus() == PrearcStatus.RECEIVING && Boolean.TRUE.equals(session.getFailedUpload())) {
-            getDao().clearFailedUpload(id);
-        }
-        return session.getStatus();
-    }
-
-    @Override
     public void setStatusToQueuedBuilding(long id) throws NotFoundException {
         if (!setStatusToQueuedBuilding(id, false)) {
             throw new IllegalStateException("DirectArchiveSession id=" + id + " is not in a status that can be queued for building");

@@ -205,7 +205,7 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
         this.overwriteMode = overwriteMode;
     }
 
-    /** Whether an upload into this session failed partway and no file has landed in it since. */
+    /** Whether an upload into this session failed partway. */
     public Boolean getFailedUpload() {
         return failedUpload;
     }

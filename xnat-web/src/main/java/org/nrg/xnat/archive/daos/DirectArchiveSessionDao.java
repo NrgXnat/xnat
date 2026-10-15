@@ -68,10 +68,8 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
      */
     @Nullable
     public List<DirectArchiveSession> findReadyForArchive() {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.MINUTE, -1 * preferences.getSessionXmlRebuilderInterval());
         QueryBuilder<DirectArchiveSession> builder = newQueryBuilder();
-        builder.where(builder.and(builder.le(LAST_BUILT_DATE, cal.getTime()),
+        builder.where(builder.and(builder.le(LAST_BUILT_DATE, idleCutoff()),
                                   builder.eq(STATUS, Prearchive.PrearcStatus.RECEIVING)));
         return builder.getResults();
     }
@@ -109,15 +107,21 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
     }
 
     /**
-     * As {@link #transitionStatus(long, PrearcStatus, Set)}, recording in the same statement why the session moved.
+     * Moves a session to ERROR, recording why, only while it is still RECEIVING, still marked as one an upload failed
+     * partway into, and idle: no file since the cutoff {@link #findReadyForArchive()} uses. One conditional update, so a
+     * session that a file reached after the archive trigger read its list is left for a later run.
+     *
+     * @return the number of rows updated: 0 when the session no longer qualifies or no longer exists
      */
-    public int transitionStatus(final long id, final PrearcStatus target, final Set<PrearcStatus> allowed, final String message) {
-        return getSession().createQuery("update DirectArchiveSession set status = :target, message = :message, timestamp = :now where id = :id and status in (:allowed)")
-                .setParameter("target", target)
+    public int claimIdleFailedUpload(final long id, final String message) {
+        return getSession().createQuery("update DirectArchiveSession set status = :error, message = :message, timestamp = :now"
+                                        + " where id = :id and status = :receiving and failedUpload = true and lastBuiltDate <= :cutoff")
+                .setParameter("error", PrearcStatus.ERROR)
                 .setParameter("message", message)
                 .setParameter("now", new Date())
                 .setParameter("id", id)
-                .setParameterList("allowed", allowed)
+                .setParameter("receiving", PrearcStatus.RECEIVING)
+                .setParameter("cutoff", idleCutoff())
                 .executeUpdate();
     }
 
@@ -149,6 +153,13 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
                 .executeUpdate();
     }
 
+
+    /** A session with no file since this time has been idle for the session idle timeout. */
+    private Date idleCutoff() {
+        final Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MINUTE, -1 * preferences.getSessionXmlRebuilderInterval());
+        return cal.getTime();
+    }
 
     private final SiteConfigPreferences preferences;
 

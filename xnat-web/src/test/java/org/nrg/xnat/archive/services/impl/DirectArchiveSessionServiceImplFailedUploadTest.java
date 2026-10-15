@@ -110,7 +110,7 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
         when(hibernateService.markFailedUpload(SESSION_ID, cause)).thenReturn(true);
         when(hibernateService.findReadyForArchive()).thenAnswer(invocation -> List.of(idleSession()));
         when(hibernateService.hasFailedUpload(SESSION_ID)).thenReturn(true);
-        when(hibernateService.setStatusToErrorIfReceiving(eq(SESSION_ID), any())).thenReturn(true);
+        when(hibernateService.claimIdleFailedUpload(eq(SESSION_ID), any())).thenReturn(true);
     }
 
     @After
@@ -150,7 +150,7 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
         service.handleFailedUpload(receivingSession(), cause);
 
         verify(hibernateService).markFailedUpload(SESSION_ID, cause);
-        verify(hibernateService, never()).setStatusToErrorIfReceiving(anyLong(), any());
+        verify(hibernateService, never()).claimIdleFailedUpload(anyLong(), any());
         assertLeftInPlace();
     }
 
@@ -206,14 +206,14 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
 
         verify(hibernateService).setStatusToQueuedBuilding(SESSION_ID, false);
         mockedXDAT.verify(() -> XDAT.sendJmsRequest(any(), any()));
-        verify(hibernateService, never()).setStatusToErrorIfReceiving(anyLong(), any());
+        verify(hibernateService, never()).claimIdleFailedUpload(anyLong(), any());
         assertLeftInPlace();
     }
 
     @Test
     public void aSessionThatHasMovedOnIsLeftAlone() throws Exception {
         // Claimed by a delete, or already failed: not the trigger's to move.
-        when(hibernateService.setStatusToErrorIfReceiving(eq(SESSION_ID), any())).thenReturn(false);
+        when(hibernateService.claimIdleFailedUpload(eq(SESSION_ID), any())).thenReturn(false);
 
         service.triggerArchive();
 
@@ -228,7 +228,7 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
 
         service.triggerArchive();
 
-        verify(hibernateService).setStatusToErrorIfReceiving(eq(SESSION_ID), any());
+        verify(hibernateService).claimIdleFailedUpload(eq(SESSION_ID), any());
         assertLeftInPlace();
     }
 
@@ -239,7 +239,7 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
 
         service.triggerArchive();
 
-        verify(hibernateService).setStatusToErrorIfReceiving(eq(SESSION_ID), any());
+        verify(hibernateService).claimIdleFailedUpload(eq(SESSION_ID), any());
         assertLeftInPlace();
     }
 }

@@ -1,6 +1,7 @@
 package org.nrg.xnat.archive.services.impl;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
@@ -9,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 /**
  * XNAT-7944: the guarded status transitions must be atomic. A delete claiming a session and the archive trigger
@@ -38,6 +41,11 @@ public class DirectArchiveSessionStatusTransitionTest {
     private DirectArchiveSessionHibernateService service;
 
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
+
+    @Before
+    public void setIdleTimeout() {
+        when(DirectArchiveSessionOrmTestConfig.PREFERENCES.getSessionXmlRebuilderInterval()).thenReturn(1);
+    }
 
     @After
     public void shutDown() {
@@ -138,12 +146,21 @@ public class DirectArchiveSessionStatusTransitionTest {
         assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.BUILDING);
     }
 
+    /** The session had its last file longer ago than the one-minute idle timeout the tests set. */
+    private void makeIdle(final long id) throws Exception {
+        final DirectArchiveSession session = service.get(id);
+        session.setLastBuiltDate(new Date(System.currentTimeMillis() - 10 * 60 * 1000L));
+        service.update(session);
+    }
+
     /** A failure that names a file path can run past the 255 characters the message column holds. */
     @Test
     public void anIdleFailedUploadMovesAReceivingSessionToErrorWithAReasonThatFitsItsColumn() throws Exception {
         final long id = receivingSession(ROUNDS + 6).getId();
+        service.markFailedUpload(id, new Exception("the upload broke"));
+        makeIdle(id);
 
-        assertThat(service.setStatusToErrorIfReceiving(id, new Exception("x".repeat(400)))).isTrue();
+        assertThat(service.claimIdleFailedUpload(id, new Exception("x".repeat(400)))).isTrue();
 
         final DirectArchiveSession failed = service.get(id);
         assertThat(failed.getStatus()).isEqualTo(PrearcStatus.ERROR);
@@ -153,10 +170,34 @@ public class DirectArchiveSessionStatusTransitionTest {
     @Test
     public void anIdleFailedUploadLeavesASessionClaimedForDeletionAlone() throws Exception {
         final long id = receivingSession(ROUNDS + 7).getId();
+        service.markFailedUpload(id, new Exception("the upload broke"));
+        makeIdle(id);
         service.setStatusToDeleting(id, false);
 
-        assertThat(service.setStatusToErrorIfReceiving(id, new Exception("the upload broke"))).isFalse();
+        assertThat(service.claimIdleFailedUpload(id, new Exception("the upload broke"))).isFalse();
         assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.DELETING);
+    }
+
+    /** A retry started after the trigger read its list: its first file touched the session, so it isn't idle now. */
+    @Test
+    public void aSessionAFileReachedSinceTheIdleCutoffIsNotClaimed() throws Exception {
+        final long id = receivingSession(ROUNDS + 12).getId();
+        service.markFailedUpload(id, new Exception("the upload broke"));
+        makeIdle(id);
+        service.touch(id);
+
+        assertThat(service.claimIdleFailedUpload(id, new Exception("the upload broke"))).isFalse();
+        assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.RECEIVING);
+        assertThat(service.hasFailedUpload(id)).isTrue();
+    }
+
+    @Test
+    public void anIdleSessionWithNoFailedUploadIsNotClaimed() throws Exception {
+        final long id = receivingSession(ROUNDS + 13).getId();
+        makeIdle(id);
+
+        assertThat(service.claimIdleFailedUpload(id, new Exception("the upload broke"))).isFalse();
+        assertThat(service.getSessionData(id).getStatus()).isEqualTo(PrearcStatus.RECEIVING);
     }
 
     /** The session keeps receiving, so another upload sending into it carries on. */

@@ -743,7 +743,8 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             FileUtils.moveDirectory(new File(archivePath), prearchivePath);
             Path xmlSource = sessionXmlPath(archivePath);
             Path xmlDest   = Path.of(prearchivePath.getParent(), prearchivePath.getName() + ".xml");
-            if(Files.exists(xmlSource)) {
+            // A build that produced no session leaves the XML empty, and there is nothing in it to adjust.
+            if(Files.exists(xmlSource) && Files.size(xmlSource) > 0) {
                 // Adjust prearchive path in xml to point to prearchive rather than archive and save
                 XnatImagesessiondataBean session = PrearcTableBuilder.parseSession(xmlSource.toFile());
                 session.setPrearchivepath(prearchivePath.getAbsolutePath());

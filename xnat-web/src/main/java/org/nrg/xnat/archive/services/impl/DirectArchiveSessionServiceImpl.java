@@ -242,8 +242,9 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         final long id = session.getId();
         final ArchivingException failure = new ArchivingException("An import into this session failed partway, so it may be missing files. The import failed with: " + session.getMessage());
         // Claimed before anything on the filesystem is touched, as a delete is: from here the importer refuses the
-        // next file of any upload into this session.
-        if (!directArchiveSessionHibernateService.setStatusToErrorIfReceiving(id, failure)) {
+        // next file of any upload into this session. A session a file reached since the trigger read its list isn't
+        // claimed; a later run moves it once it is idle again.
+        if (!directArchiveSessionHibernateService.claimIdleFailedUpload(id, failure)) {
             return;
         }
         final boolean stillLanding = PrearcUtils.isSessionReceiving(session.getSessionDataTriple());

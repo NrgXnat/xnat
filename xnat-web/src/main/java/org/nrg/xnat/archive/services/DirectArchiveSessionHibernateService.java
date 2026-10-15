@@ -69,13 +69,14 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
     void setStatusToError(long id, Exception e) throws NotFoundException;
 
     /**
-     * Moves a session that is still RECEIVING to ERROR, recording why, as one conditional update. A session that has
-     * moved on, e.g. queued for building or claimed by a delete, is left as it is. Once the session is moved, the
-     * importer appends no more files to it and the archive trigger doesn't queue it.
+     * For the archive trigger: moves a session to ERROR, recording why, only while it is still RECEIVING, still marked
+     * by {@link #markFailedUpload(long, Exception)}, and idle, as one conditional update. A session that has moved on,
+     * e.g. claimed by a delete, or that a file reached since the trigger read its list, is left as it is. Once the
+     * session is moved, the importer appends no more files to it.
      *
      * @return whether the session was moved
      */
-    boolean setStatusToErrorIfReceiving(long id, Exception e) throws NotFoundException;
+    boolean claimIdleFailedUpload(long id, Exception e) throws NotFoundException;
 
     /**
      * Marks a session that is still RECEIVING as one an upload failed partway into, recording why. It stays RECEIVING,

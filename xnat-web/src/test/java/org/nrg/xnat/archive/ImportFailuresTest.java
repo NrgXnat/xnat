@@ -20,6 +20,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -55,6 +56,8 @@ public class ImportFailuresTest {
         mockedPrearcUtils    = Mockito.mockStatic(PrearcUtils.class);
         mockedPrearcDatabase = Mockito.mockStatic(PrearcDatabase.class);
         mockedPrearcDatabase.when(() -> PrearcDatabase.setStatus(anyString(), anyString(), anyString(), any(PrearcStatus.class))).thenReturn(true);
+        // Still receiving, unless a test says otherwise.
+        mockedPrearcDatabase.when(() -> PrearcDatabase.getSession(SESSION, TIMESTAMP, PROJECT)).thenReturn(new SessionData().setStatus(PrearcStatus.RECEIVING));
         directArchive = mock(DirectArchiveSessionService.class);
         final ContextService contextService = mock(ContextService.class);
         when(contextService.getBean(DirectArchiveSessionService.class)).thenReturn(directArchive);
@@ -84,6 +87,22 @@ public class ImportFailuresTest {
         mockedPrearcUtils.verify(() -> PrearcUtils.log(eq(PROJECT), eq(TIMESTAMP), eq(SESSION), contains("failed partway")));
         mockedPrearcDatabase.verify(() -> PrearcDatabase.setStatus(SESSION, TIMESTAMP, PROJECT, PrearcStatus.ERROR));
         verify(directArchive, never()).handleFailedUpload(any(), any());
+    }
+
+    @Test
+    public void aSessionQueuedForOrInTheMiddleOfAnOperationIsLeftToIt() throws Exception {
+        // A zip that runs past the idle timeout can fail after an earlier study in it was queued for archiving. The
+        // queued operation runs whatever the status says, so ERROR wouldn't keep it from running.
+        final EnumSet<PrearcStatus> markable = EnumSet.of(PrearcStatus.RECEIVING, PrearcStatus.RECEIVING_INTERRUPT,
+                                                          PrearcStatus.READY, PrearcStatus.CONFLICT, PrearcStatus.ERROR);
+        for (final PrearcStatus status : EnumSet.complementOf(markable)) {
+            mockedPrearcDatabase.when(() -> PrearcDatabase.getSession(SESSION, TIMESTAMP, PROJECT)).thenReturn(new SessionData().setStatus(status));
+
+            ImportFailures.markFailed(Collections.singletonList(PREARCHIVE_URI), cause);
+        }
+
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.setStatus(anyString(), anyString(), anyString(), any(PrearcStatus.class)), never());
+        mockedPrearcUtils.verify(() -> PrearcUtils.log(anyString(), anyString(), anyString(), anyString()), never());
     }
 
     @Test

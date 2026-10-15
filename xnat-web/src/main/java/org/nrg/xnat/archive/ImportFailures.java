@@ -15,8 +15,11 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xnat.archive.services.DirectArchiveSessionService;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
+import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * An import that fails partway, a compressed upload or an inbox folder, can leave sessions holding only part of a
@@ -26,6 +29,10 @@ import java.util.Collection;
 public final class ImportFailures {
     private ImportFailures() {
     }
+
+    /** What a failed import marks ERROR: a session still receiving, or at rest. */
+    private static final Set<PrearcStatus> MARKABLE = EnumSet.of(PrearcStatus.RECEIVING, PrearcStatus.RECEIVING_INTERRUPT,
+                                                                 PrearcStatus.READY, PrearcStatus.CONFLICT, PrearcStatus.ERROR);
 
     /**
      * Whether the instance ends before its last value does: a Part 10 file cut short, such as one still being copied.
@@ -45,8 +52,9 @@ public final class ImportFailures {
      * Marks the sessions an import wrote into before it failed. A prearchive session is marked {@code ERROR}, with the
      * reason in its log. Left receiving, it looks like one still arriving, and unless the upload tool sent it, the
      * idle-timeout rebuild builds it as though the import had finished, then archives it where the project archives
-     * automatically. An import of the same study still reopens it: a session in error takes more data. A
-     * direct-archive session is marked instead and keeps receiving; once idle, it moves to the prearchive in
+     * automatically. An import of the same study still reopens it: a session in error takes more data. A session
+     * already queued for, or in the middle of, a build, archive, delete or move is left to that operation, which would
+     * run anyway. A direct-archive session is marked instead and keeps receiving; once idle, it moves to the prearchive in
      * {@code ERROR}, as it does when its build or archive fails.
      *
      * @param uris  The sessions, as GradualDicomImporter returns them.
@@ -61,6 +69,11 @@ public final class ImportFailures {
                     final String project   = elements[3];
                     final String timestamp = elements[4];
                     final String folder    = elements[5];
+                    final PrearcStatus status = PrearcDatabase.getSession(folder, timestamp, project).getStatus();
+                    if (!MARKABLE.contains(status)) {
+                        log.warn("The import failed after writing into {}, which is {} and is left as it is: {}", uri, status, cause.getMessage());
+                        continue;
+                    }
                     PrearcUtils.log(project, timestamp, folder, "An import into this session failed partway, so it may be missing files. "
                                                                 + "Importing the study again adds them. The import failed with: " + cause.getMessage());
                     if (PrearcDatabase.setStatus(folder, timestamp, project, PrearcUtils.PrearcStatus.ERROR)) {

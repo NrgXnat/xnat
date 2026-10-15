@@ -19,15 +19,21 @@ import java.util.Properties;
  * driver, URL and credentials: the lock connection is opened directly through the configured driver class rather
  * than borrowed from the connection pool, so drivers that do their own authentication (for example IAM token
  * drivers) work the same way for the lock connection as for the pool. The driver properties the pool passes to the
- * driver ({@code datasource.dataSourceProperties.*}, for example SSL settings) are passed to the lock connection
- * too.
+ * driver, for example SSL settings, are passed to the lock connection too: HikariCP's
+ * {@code datasource.dataSourceProperties.*} and DBCP2's {@code datasource.connectionProperties}.
  */
 @Value
 public class NodeLockConnectionSettings {
     /**
-     * Prefix of the {@code datasource.*} properties that the connection pool hands to the JDBC driver.
+     * Prefix of the {@code datasource.*} properties that HikariCP hands to the JDBC driver.
      */
     public static final String DRIVER_PROPERTIES_PREFIX = "dataSourceProperties.";
+
+    /**
+     * The {@code datasource.*} property that DBCP2 hands to the JDBC driver: {@code name=value} pairs separated by
+     * semicolons.
+     */
+    public static final String DBCP_CONNECTION_PROPERTIES = "connectionProperties";
 
     String driverClassName;
     String url;
@@ -54,8 +60,8 @@ public class NodeLockConnectionSettings {
 
     /**
      * Builds the settings from the application's {@code datasource.*} properties, with the prefix removed and the
-     * defaults applied: the driver, URL and credentials, plus every {@code dataSourceProperties.*} entry as a driver
-     * property.
+     * defaults applied: the driver, URL and credentials, plus the pool's driver properties. A HikariCP
+     * {@code dataSourceProperties.*} entry wins over the same name in DBCP2's {@code connectionProperties}.
      *
      * @param datasource The data source properties.
      *
@@ -63,6 +69,20 @@ public class NodeLockConnectionSettings {
      */
     public static NodeLockConnectionSettings fromDatasourceProperties(final Properties datasource) {
         final Properties driverProperties = new Properties();
+        // Parsed the way DBCP2's BasicDataSource.setConnectionProperties() parses it.
+        final String connectionProperties = datasource.getProperty(DBCP_CONNECTION_PROPERTIES);
+        if (connectionProperties != null) {
+            for (final String entry : connectionProperties.split(";")) {
+                if (!entry.isEmpty()) {
+                    final int index = entry.indexOf('=');
+                    if (index > 0) {
+                        driverProperties.setProperty(entry.substring(0, index), entry.substring(index + 1));
+                    } else {
+                        driverProperties.setProperty(entry, "");
+                    }
+                }
+            }
+        }
         for (final String name : datasource.stringPropertyNames()) {
             if (name.startsWith(DRIVER_PROPERTIES_PREFIX)) {
                 driverProperties.setProperty(name.substring(DRIVER_PROPERTIES_PREFIX.length()), datasource.getProperty(name));

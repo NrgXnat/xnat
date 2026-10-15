@@ -45,7 +45,9 @@ public interface NodeLockService {
     /**
      * Registers a leader for the named lock on this node. The returned handle reports whether this node currently
      * leads, and the listener is called when leadership is gained or lost. Election is attempted at once and then
-     * on every tick while the lock is free.
+     * on every tick while the lock is free. Listener callbacks run on another thread, so
+     * {@link NodeLeaderListener#onElected(String)} can be called before this method returns: a listener mustn't
+     * rely on the caller already holding the returned handle.
      * <p>
      * Only one leader per name may be registered on a node. The database grants an advisory lock again to the
      * session that already holds it, so a second registration on the same node would lead alongside the first.

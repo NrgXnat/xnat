@@ -26,6 +26,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -327,8 +328,9 @@ public class PostgresNodeLockServiceTest {
         datasource.setProperty("dataSourceProperties.sslmode", "disable");
         datasource.setProperty("dataSourceProperties.tcpKeepAlive", "false");
         datasource.setProperty("dataSourceProperties.ApplicationName", "not-the-lock-connection");
+        datasource.setProperty("connectionProperties", "socketTimeout=60;;sslmode=require");
         final NodeLockConnectionSettings settings = NodeLockConnectionSettings.fromDatasourceProperties(datasource);
-        assertThat(settings.getDriverProperties()).containsOnlyKeys("sslmode", "tcpKeepAlive", "ApplicationName");
+        assertThat(settings.getDriverProperties()).containsOnlyKeys("sslmode", "tcpKeepAlive", "ApplicationName", "socketTimeout");
         assertThat(settings.toString()).doesNotContain("password", "driverProperties", "sslmode");
 
         final PostgresNodeLockService a       = start(new PostgresNodeLockService("A", true, () -> true, settings, TICK, CHECK_TIMEOUT, MAX_TIMEOUTS));
@@ -337,6 +339,7 @@ public class PostgresNodeLockServiceTest {
 
         final Properties received = InstrumentedTestDriver.lastConnectProperties();
         assertThat(received.getProperty("sslmode")).isEqualTo("disable");
+        assertThat(received.getProperty("socketTimeout")).isEqualTo("60");
         assertThat(received.getProperty("tcpKeepAlive")).isEqualTo("true");
         assertThat(received.getProperty("maximumPoolSize")).isNull();
         assertThat(lockHolders()).containsExactly(PostgresNodeLockService.APPLICATION_NAME_PREFIX + "A");
@@ -403,6 +406,28 @@ public class PostgresNodeLockServiceTest {
         assertThat(aEvents.elected).hasSize(2);
         assertThat(aEvents.demoted).containsExactly("stepped down");
         assertThat(lockHolders()).containsExactly(PostgresNodeLockService.APPLICATION_NAME_PREFIX + "A");
+    }
+
+    @Test
+    public void stepDownIgnoresLockSessionsOnOtherDatabases() throws SQLException {
+        final PostgresNodeLockService a       = node("A");
+        final NodeLeader              aLeader = a.registerLeader(LOCK, new RecordingListener());
+        await().atMost(WAIT).until(aLeader::isLeader);
+
+        // Another XNAT on another database of the same server. Advisory locks are per database, so it can never take
+        // this lock and isn't a node to hand over to.
+        try (final Connection connection = plainConnection(); final Statement statement = connection.createStatement()) {
+            statement.execute("CREATE DATABASE other_xnat");
+        }
+        final Properties info = new Properties();
+        info.setProperty("user", postgres.getUsername());
+        info.setProperty("password", postgres.getPassword());
+        info.setProperty("ApplicationName", PostgresNodeLockService.APPLICATION_NAME_PREFIX + "elsewhere");
+        final String otherUrl = "jdbc:postgresql://" + postgres.getHost() + ":" + postgres.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT) + "/other_xnat";
+        try (final Connection ignored = DriverManager.getConnection(otherUrl, info)) {
+            assertThat(aLeader.stepDown(Duration.ofSeconds(1))).isFalse();
+            assertThat(aLeader.isLeader()).isTrue();
+        }
     }
 
     @Test

@@ -187,6 +187,20 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
     }
 
     @Test
+    public void anEmptySessionXmlLeftByABuildDoesNotStopTheMove() throws Exception {
+        // A build that produced no session, such as one of a session that holds no instances, leaves the XML empty.
+        // Parsed after the files had moved, it failed the move and left them in the prearchive with no row.
+        Files.createFile(new File(sessionDirectory.getPath() + ".xml").toPath());
+
+        service.triggerArchive();
+
+        assertThat(new File(prearchiveDirectory, "1.dcm")).isFile();
+        assertThat(recorded.get().getStatus()).isEqualTo(PrearcStatus.ERROR);
+        assertThat(recorded.get().getUrl()).isEqualTo(prearchiveDirectory.getAbsolutePath());
+        verify(hibernateService).delete(SESSION_ID);
+    }
+
+    @Test
     public void aLaterFileLeavesTheMarkInPlace() throws Exception {
         // The later file may fail too, and C-STORE and single-file uploads never mark a session.
         when(hibernateService.getSessionData(SESSION_ID)).thenReturn(receivingSession());

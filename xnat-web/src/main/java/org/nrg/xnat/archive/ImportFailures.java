@@ -16,9 +16,11 @@ import org.nrg.xnat.archive.services.DirectArchiveSessionService;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
+import org.nrg.xnat.helpers.uri.URIManager;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -62,13 +64,12 @@ public final class ImportFailures {
      */
     public static void markFailed(final Collection<String> uris, final Exception cause) {
         for (final String uri : uris) {
-            final String[] elements = uri.split("/");
             try {
                 if (StringUtils.startsWith(uri, "/prearchive/")) {
-                    // /prearchive/projects/<project>/<timestamp>/<session>
-                    final String project   = elements[3];
-                    final String timestamp = elements[4];
-                    final String folder    = elements[5];
+                    final Map<String, Object> properties = PrearcUtils.parseURI(uri);
+                    final String              project    = (String) properties.get(URIManager.PROJECT_ID);
+                    final String              timestamp  = (String) properties.get(PrearcUtils.PREARC_TIMESTAMP);
+                    final String              folder     = (String) properties.get(PrearcUtils.PREARC_SESSION_FOLDER);
                     final PrearcStatus status = PrearcDatabase.getSession(folder, timestamp, project).getStatus();
                     if (!MARKABLE.contains(status)) {
                         log.warn("The import failed after writing into {}, which is {} and is left as it is: {}", uri, status, cause.getMessage());
@@ -82,7 +83,8 @@ public final class ImportFailures {
                         log.warn("The import failed after writing into {}, which could not be marked ERROR", uri);
                     }
                 } else if (StringUtils.startsWith(uri, "/xapi/direct-archive/")) {
-                    // /xapi/direct-archive/<project>/<tag>/<name>
+                    // /xapi/direct-archive/<project>/<tag>/<name>, built by GradualDicomImporter. No parser exists for these.
+                    final String[] elements = uri.split("/");
                     final DirectArchiveSessionService directArchive = XDAT.getContextService().getBean(DirectArchiveSessionService.class);
                     directArchive.handleFailedUpload(directArchive.findByProjectTagName(elements[3], elements[4], elements[5]), cause);
                 }

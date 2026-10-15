@@ -54,6 +54,7 @@ public class ImportFailuresTest {
     @Before
     public void setUp() {
         mockedPrearcUtils    = Mockito.mockStatic(PrearcUtils.class);
+        mockedPrearcUtils.when(() -> PrearcUtils.parseURI(anyString())).thenCallRealMethod();
         mockedPrearcDatabase = Mockito.mockStatic(PrearcDatabase.class);
         mockedPrearcDatabase.when(() -> PrearcDatabase.setStatus(anyString(), anyString(), anyString(), any(PrearcStatus.class))).thenReturn(true);
         // Still receiving, unless a test says otherwise.

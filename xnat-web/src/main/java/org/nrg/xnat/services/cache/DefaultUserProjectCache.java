@@ -77,6 +77,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
@@ -431,22 +432,18 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return true;
         }
 
-        final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
-        for (final String username : users) {
-            if (isAddOperation) {
-                userAccessLevels.computeIfAbsent(username, (key) -> new ArrayList<>()).add(access);
-            } else {
-                final List<AccessLevel> levels = userAccessLevels.get(username);
-                if (levels != null) {
-                    levels.remove(access);
-                }
+        // The users' cached levels can't be patched: an entry built by hasAccess() or the extractor also holds levels
+        // derived from permissions, such as Edit for a member, which no group change names. Dropping the entries has
+        // hasAccess() rebuild them from the current memberships. That also covers the groups an addition moved the users
+        // out of, which the event reports in its removed groups property rather than in an event of its own.
+        synchronized (getUserAccessLock(projectId)) {
+            final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
+            applyMembershipChange(userAccessLevels, users);
+            try {
+                cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+            } catch (IOException e) {
+                throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
             }
-        }
-
-        try {
-            cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
-        } catch (IOException e) {
-            throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
         }
 
         return true;
@@ -516,6 +513,25 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private boolean handleDataTypeProtocolEvent(final XftItemEventI event) {
         log.info("Got the {} event for the data-type protocol {}. This should only happen when changes to the protocol affected field definition groups that are non-project specific.", event.getAction(), event.getId());
         return true;
+    }
+
+    /**
+     * Applies a change to the users' membership in a project's groups to the project's per-user access levels, by
+     * dropping the users' entries so the next access check rebuilds them from the users' current groups.
+     *
+     * @param userAccessLevels The access levels for each user on the project, updated in place.
+     * @param users            The users whose membership changed.
+     */
+    static void applyMembershipChange(final Map<String, ArrayList<AccessLevel>> userAccessLevels, final Collection<String> users) {
+        users.forEach(userAccessLevels::remove);
+    }
+
+    /**
+     * Gets the lock that guards reading, changing and caching one project's per-user access levels, so a membership
+     * change can't be overwritten by an access check that read the levels before it.
+     */
+    private Object getUserAccessLock(final String projectId) {
+        return _userAccessLocks.computeIfAbsent(projectId, key -> new Object());
     }
 
     private Map<String, ArrayList<AccessLevel>> getUserAccessLevelsForProject(final String projectId) {
@@ -660,19 +676,23 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 return true;
             }
 
-            final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
+            final List<AccessLevel> levels;
+            synchronized (getUserAccessLock(projectId)) {
+                final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
 
-            // If the user isn't already cached...
-            if (!userAccessLevels.containsKey(userId)) {
-                // Cache the user!
-                userAccessLevels.put(userId, new ArrayList<>(Permissions.getAllUserProjectAccess(ObjectUtils.defaultIfNull(user, new XDATUser(userId)), projectId)));
-                try {
-                    cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
-                } catch (IOException e) {
-                    throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+                // If the user isn't already cached...
+                if (!userAccessLevels.containsKey(userId)) {
+                    // Cache the user!
+                    userAccessLevels.put(userId, new ArrayList<>(Permissions.getAllUserProjectAccess(ObjectUtils.defaultIfNull(user, new XDATUser(userId)), projectId)));
+                    try {
+                        cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+                    } catch (IOException e) {
+                        throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+                    }
                 }
+                levels = userAccessLevels.get(userId);
             }
-            return CollectionUtils.containsAny(userAccessLevels.get(userId), ACCESS_LEVELS.get(accessLevel));
+            return CollectionUtils.containsAny(levels, ACCESS_LEVELS.get(accessLevel));
         } catch (UserInitException e) {
             log.error("Something bad happened trying to retrieve the user {}", userId, e);
         } catch (UserNotFoundException e) {
@@ -826,6 +846,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private final Map<String, String>               _aliasMapping       = new HashMap<>();
     private final ArrayListMultimap<String, String> _projectsAndAliases = ArrayListMultimap.create();
     private final AtomicBoolean                     _initialized        = new AtomicBoolean(false);
+    private final Map<String, Object>               _userAccessLocks    = new ConcurrentHashMap<>();
 
     private final GroupsAndPermissionsCache  _cache;
     private final SerializerService          _serializer;

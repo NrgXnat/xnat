@@ -106,6 +106,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
         try {
             importCompressedFile(fw, uris);
         } catch (ServerException | ClientException e) {
+            ImportFailures.markFailed(uris, e);
             this.failed(e.getMessage(), true);
             throw e;
         }

@@ -221,6 +221,45 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         }
     }
 
+    @Override
+    public void handleFailedUpload(SessionData session, Exception cause) {
+        final long id = session.getId();
+        try {
+            // Nothing moves yet: another upload may still be sending into this session.
+            if (directArchiveSessionHibernateService.markFailedUpload(id, cause)) {
+                log.warn("An upload into DirectArchiveSession id={} {} failed; it moves to the prearchive in ERROR once idle",
+                         id, session.getSessionDataTriple(), cause);
+            }
+        } catch (NotFoundException e) {
+            log.warn("DirectArchiveSession id={} disappeared while handling a failed upload into it", id, e);
+        }
+    }
+
+    /**
+     * For the archive trigger: the session went idle after an upload into it failed, so it may hold only part of the
+     * study.
+     */
+    private void moveFailedUpload(SessionData session) throws NotFoundException {
+        final long id = session.getId();
+        final ArchivingException failure = new ArchivingException("An import into this session failed partway, so it may be missing files. The import failed with: " + session.getMessage());
+        // Claimed before anything on the filesystem is touched, as a delete is: from here the importer refuses the
+        // next file of any upload into this session. A session a file reached since the trigger read its list isn't
+        // claimed; a later run moves it once it is idle again.
+        if (!directArchiveSessionHibernateService.claimIdleFailedUpload(id, failure)) {
+            return;
+        }
+        final boolean stillLanding = PrearcUtils.isSessionReceiving(session.getSessionDataTriple());
+        if (stillLanding || !ownsSessionDirectory(session)) {
+            log.warn("DirectArchiveSession id={} {} went idle after an upload into it failed; leaving it in ERROR at {} because {}", id, session.getSessionDataTriple(), session.getUrl(),
+                     stillLanding ? "a file is still landing there" : "the directory is not this session's alone");
+            return;
+        }
+        log.warn("DirectArchiveSession id={} {} went idle after an upload into it failed; moving it to the prearchive", id, session.getSessionDataTriple());
+        // In ERROR, where the idle-timeout rebuild leaves it alone: queued for a rebuild instead, what may be only
+        // part of the study would be archived after all.
+        doPrearchiveMove(id, session, Rebuild, PrearcStatus.ERROR, failure);
+    }
+
     /**
      * The directory is this session's to remove only when no newer session at the same location is still alive and
      * no archived experiment already owns it. The cheap row check runs first.
@@ -478,11 +517,17 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         if(sessions != null) {
             for (SessionData session : sessions) {
                 try {
-                    triggerArchive(session);
+                    if (directArchiveSessionHibernateService.hasFailedUpload(session.getId())) {
+                        moveFailedUpload(session);
+                    } else {
+                        triggerArchive(session);
+                    }
                 } catch (ClientException e) {
                     log.warn("Skip trigger archive", e);
                 } catch (ServerException e) {
                     log.error("Unable to trigger archive", e);
+                } catch (NotFoundException e) {
+                    log.warn("DirectArchiveSession id={} disappeared before it could be archived", session.getId(), e);
                 }
             }
         }
@@ -698,7 +743,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                                                                   target.getFolderName(), true);
 
             // ensure target location is empty, increment timestamp if needed
-            if(Files.exists(prearchivePath.toPath())) {
+            if(Files.exists(prearchivePath.toPath()) || PrearcDatabase.countOf(target.getFolderName(), target.getTimestamp(), target.getProject()) > 0) {
                 target.setTimestamp(target.getTimestamp() + "_DA");
                 prearchivePath = PrearcUtils.getPrearcSessionDir(user, target.getProject(), target.getTimestamp(),
                                                                  target.getFolderName(), true);
@@ -738,10 +783,11 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                          PrearcUtils.PrearcStatus.ERROR : PrearcUtils.PrearcStatus.RECEIVING;
             }
             target.setStatus(status);
-            PrearcDatabase.Either<SessionData, SessionData> sd = PrearcDatabase.eitherGetOrCreateSession(target,
-                                                                                                         prearchivePath.getParentFile(),
-                                                                                                         PrearchiveCode.AutoArchive);
-            SessionData prearchiveSession = sd.isLeft() ? sd.getLeft() : sd.getRight();
+            target.setAutoArchive(PrearchiveCode.AutoArchive);
+            // A row for exactly the folder the files moved to, even when the prearchive holds another session of the
+            // same study: that session is left as it is.
+            PrearcDatabase.addSession(target);
+            SessionData prearchiveSession = PrearcDatabase.getSession(target.getFolderName(), target.getTimestamp(), target.getProject());
             if (prearchiveSession != null && prearchiveSession.getStatus() == PrearcUtils.PrearcStatus.RECEIVING) {
                 PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(receivedFileUserProvider.get(),
                                                                                     nextOperation,

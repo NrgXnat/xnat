@@ -67,6 +67,28 @@ public interface DirectArchiveSessionHibernateService extends BaseHibernateServi
     void setStatusToDeleting(long id, boolean force) throws NotFoundException, ArchivingException;
 
     void setStatusToError(long id, Exception e) throws NotFoundException;
+
+    /**
+     * For the archive trigger: moves a session to ERROR, recording why, only while it is still RECEIVING, still marked
+     * by {@link #markFailedUpload(long, Exception)}, and idle, as one conditional update. A session that has moved on,
+     * e.g. claimed by a delete, or that a file reached since the trigger read its list, is left as it is. Once the
+     * session is moved, the importer appends no more files to it.
+     *
+     * @return whether the session was moved
+     */
+    boolean claimIdleFailedUpload(long id, Exception e) throws NotFoundException;
+
+    /**
+     * Marks a session that is still RECEIVING as one an upload failed partway into, recording why. It stays RECEIVING,
+     * so other uploads into it carry on. A session that has moved on is left as it is.
+     *
+     * @return whether the session was marked
+     */
+    boolean markFailedUpload(long id, Exception e) throws NotFoundException;
+
+    /** Whether the session still carries the mark {@link #markFailedUpload(long, Exception)} left. */
+    boolean hasFailedUpload(long id) throws NotFoundException;
+
     /**
      * Queues a session for building, as {@link #setStatusToQueuedBuilding(long, boolean)} without {@code force}. Stays
      * {@code void}: plugins built against earlier 1.10.x releases link to this signature. Callers that need to know

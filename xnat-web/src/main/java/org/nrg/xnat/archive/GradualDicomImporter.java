@@ -131,7 +131,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     @Override
-    public List<String> call() throws ClientException {
+    public List<String> call() throws ClientException, ServerException {
         final ImportScope scope = _scope != null ? _scope : new ImportScope();
         try (ImportScope.Binding ignored = scope.bind()) {
             return importObject();
@@ -139,7 +139,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private List<String> importObject() throws ClientException {
+    private List<String> importObject() throws ClientException, ServerException {
         final String name = _fileWriter.getName();
         final XnatProjectdata project;
         final DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier = getIdentifier();
@@ -161,17 +161,19 @@ public class GradualDicomImporter extends ImporterHandlerA {
         // closing it does not delete this. Each round below wraps the dataset afresh, so a
         // registration can be left on any of the wrappers and every one of them has to be released.
         final List<DicomObjectI> processedObjects = new ArrayList<>();
-        // Whether a script is going to run on this instance decides how much of it to read: everything,
-        // so the scripts can run in memory and the instance be written once, or only the identifying
-        // header, after which the rest of the stream is copied through unchanged.
+        // Whether a script is going to run on this instance decides how much of a stream to read:
+        // everything, so the scripts can run in memory and the instance be written once, or only the
+        // identifying header, after which the rest of the stream is copied through unchanged.
         final boolean anonymizeOnReceive = anonymizesOnReceive();
         // A file-backed source -- the inbox hands the importer StoredFiles -- has its pixel data
         // referenced in place instead of copied to the spool. The file outlives the write (inbox
         // cleanup runs after the whole import), and the read still spools when the transfer syntax
-        // demands it.
+        // demands it. With no spool to pay for, a file is always read whole: that finds a file cut
+        // short, such as one still being copied into the inbox, before any of it is written, where a
+        // partial read would copy it through as far as it goes.
         final File sourceFile = _fileWriter instanceof StoredFile ? ((StoredFile) _fileWriter).getStored() : null;
-        try (final ReceivedDicomObject received = ReceivedDicomObject.read(_fileWriter.getInputStream(), _transferSyntax, lastTag, anonymizeOnReceive, sourceFile)) {
-            log.debug("Read {} of {}", received.isWhole() ? "the whole object, to anonymize before writing" : "the identifying header", name);
+        try (final ReceivedDicomObject received = ReceivedDicomObject.read(_fileWriter.getInputStream(), _transferSyntax, lastTag, anonymizeOnReceive || sourceFile != null, sourceFile)) {
+            log.debug("Read {} of {}", received.isWhole() ? "the whole object" : "the identifying header", name);
             final String transferSyntaxUID = received.getTransferSyntax();
             Attributes dataset = received.getDataset();
 
@@ -401,8 +403,13 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
                 try {
                     received.write(dataset, outputFile, source);
+                } catch (ReceivedDicomObject.SourceReadException e) {
+                    // The rest of the instance could not be read from the upload: unparsable, like a header that cannot
+                    // be read, not a failure of the server's storage.
+                    throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, e.getCause());
                 } catch (IOException e) {
-                    throw new ServerException(Status.SERVER_ERROR_INSUFFICIENT_STORAGE, e);
+                    // Named by the instance, not by the IOException's message: that holds the server's paths.
+                    throw new ServerException(Status.SERVER_ERROR_INTERNAL, "unable to write DICOM object " + name, e);
                 }
 
                 if (nativeDicomPreCompressionEnabled()) {
@@ -426,7 +433,8 @@ public class GradualDicomImporter extends ImporterHandlerA {
                             String.format("/xapi/direct-archive/%s/%s/%s",
                                     session.getProject(), session.getTag(), session.getName())) :
                     Collections.singletonList(session.getExternalUrl());
-        } catch (ClientException e) {
+        } catch (ClientException | ServerException e) {
+            // A ServerException is the server's own failure, such as a failed write or a script or processor error.
             throw e;
         } catch (Throwable t) {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);

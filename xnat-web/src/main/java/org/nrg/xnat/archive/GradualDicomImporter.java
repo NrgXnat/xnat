@@ -120,6 +120,16 @@ public class GradualDicomImporter extends ImporterHandlerA {
         return false;
     }
 
+    /**
+     * The session this instance went into, as {@link #call()} returns it. It is set as soon as the session is found or
+     * created, so it is there when the instance then fails, and cleared if this importer deletes the session it created.
+     *
+     * @return The session's URI, or null if the instance failed before it had a session.
+     */
+    public String getSessionUri() {
+        return _sessionUri;
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public List<String> call() throws ClientException, ServerException {
@@ -312,6 +322,10 @@ public class GradualDicomImporter extends ImporterHandlerA {
             } catch (Exception e) {
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
             }
+            // There is no direct archive commit (yet) so just return the session triple
+            _sessionUri = _directArchive
+                          ? String.format("/xapi/direct-archive/%s/%s/%s", session.getProject(), session.getTag(), session.getName())
+                          : session.getExternalUrl();
 
             Callable<Void> cleanupPrearcDb = isNew.get() ? () -> {
                 deleteSessionFromDb(session); return null;} : () -> null;
@@ -410,12 +424,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             log.trace("Stored object {}/{}/{} as {} for {}", project, studyInstanceUID,
                     dataset.getString(Tag.SOPInstanceUID), session.getUrl(), source);
 
-            // There is no direct archive commit (yet) so just return the session triple
-            return _directArchive ?
-                    Collections.singletonList(
-                            String.format("/xapi/direct-archive/%s/%s/%s",
-                                    session.getProject(), session.getTag(), session.getName())) :
-                    Collections.singletonList(session.getExternalUrl());
+            return Collections.singletonList(_sessionUri);
         } catch (ClientException | ServerException e) {
             // A ServerException is the server's own failure, such as a failed write or a script or processor error.
             throw e;
@@ -581,6 +590,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         } else {
             PrearcDatabase.deleteSession(session.getFolderName(), session.getTimestamp(), session.getProject());
         }
+        _sessionUri = null;
     }
 
     private void updateSessionLastMod(SessionData session) {
@@ -847,6 +857,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
     private final String              _directArchiveOverwrite;
 
     private String     _transferSyntax;
+    private String     _sessionUri;
 
     private final MizerService _mizer;
     private final ArchiveProcessorInstanceService _processorInstanceService;

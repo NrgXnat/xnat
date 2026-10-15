@@ -106,12 +106,13 @@ public final class DicomZipImporter extends ImporterHandlerA {
         try {
             importCompressedFile(fw, uris);
         } catch (ServerException | ClientException e) {
-            ImportFailures.markFailed(uris, e);
+            ImportFailures.markFailed(Sets.union(uris, failedEntrySessions), e);
             this.failed(e.getMessage(), true);
             throw e;
         }
 
         if (uris.isEmpty() && nonDcmException != null) {
+            ImportFailures.markFailed(failedEntrySessions, nonDcmException);
             this.failed(nonDcmException.getMessage(), true);
             throw nonDcmException;
         }
@@ -274,7 +275,16 @@ public final class DicomZipImporter extends ImporterHandlerA {
         if (null != getNamer()) {
             importer.setNamer(getNamer());
         }
-        uris.addAll(importer.call());
+        try {
+            uris.addAll(importer.call());
+        } catch (ServerException | ClientException e) {
+            // The entry may have been the first in its session, so no entry returned that session. Skipped or not,
+            // it went into the session, and a failed import marks it with the others.
+            if (importer.getSessionUri() != null) {
+                failedEntrySessions.add(importer.getSessionUri());
+            }
+            throw e;
+        }
     }
 
     private void determiningDestination() throws MalformedURLException {
@@ -325,4 +335,5 @@ public final class DicomZipImporter extends ImporterHandlerA {
     private final FileWriterWrapperI fw;
     private final boolean ignoreUnparsable;
     private ClientException nonDcmException = null;
+    private final Set<String> failedEntrySessions = Sets.newLinkedHashSet();
 }

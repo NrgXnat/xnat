@@ -10,6 +10,7 @@
 package org.nrg.xnat.services.messaging.archive;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
@@ -194,7 +195,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                 if (_failure != null) {
                     // Nothing is rebuilt, and the files stay in the inbox so the import can run again once the cause
                     // is fixed: cleaning up would delete files that never reached XNAT.
-                    ImportFailures.markFailed(_fileUris, _failure);
+                    ImportFailures.markFailed(Sets.union(_fileUris, _failedFileSessions), _failure);
                     _service.fail(_request, "Stopped at {}, which {}; sessions it wrote into are marked ERROR and the files stay in the inbox: {}",
                                   _sessionPath.toPath().relativize(_failedFile).toString(), _failedBecause, Objects.toString(_failure.getMessage(), _failure.getClass().getSimpleName()));
                     return Collections.emptyList();
@@ -251,8 +252,9 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                 // The importer would report it as not DICOM, and cleaning up would delete it unread.
                 return stop(file, "could not be read", new AccessDeniedException(file.toString()));
             }
+            GradualDicomImporter importer = null;
             try {
-                final GradualDicomImporter importer = new GradualDicomImporter(null, _user, new StoredFile(file.toFile(), false), _parameters);
+                importer = new GradualDicomImporter(null, _user, new StoredFile(file.toFile(), false), _parameters);
                 importer.setIdentifier(getIdentifier());
                 if (null != getNamer()) {
                     importer.setNamer(getNamer());
@@ -260,6 +262,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                 _fileUris.addAll(importer.call());
                 _dicomFiles++;
             } catch (ClientException e) {
+                rememberSessionOf(importer);
                 if (ImportFailures.endsEarly(e)) {
                     // DICOM, so not skipped: most likely a copy still in progress, and cleaning up would
                     // delete the only whole copy of it there may be.
@@ -267,9 +270,20 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
                 }
                 log.warn("An error occurred importing the file {} while processing the inbox session located at {}", file, _sessionPath.getAbsolutePath(), e);
             } catch (ServerException e) {
+                rememberSessionOf(importer);
                 return stop(file, "failed on the server", e);
             }
             return FileVisitResult.CONTINUE;
+        }
+
+        /**
+         * Keeps the session a failed file went into. The file may have been the first in its session, so no file
+         * returned that session. Skipped or not, the file went into it, and a stopped import marks it with the others.
+         */
+        private void rememberSessionOf(final GradualDicomImporter importer) {
+            if (importer != null && importer.getSessionUri() != null) {
+                _failedFileSessions.add(importer.getSessionUri());
+            }
         }
 
         @Override
@@ -304,6 +318,7 @@ public final class DicomInboxImportRequestListener implements JmsRequestListener
 
         private final Set<String> _folderUris = new LinkedHashSet<>();
         private final Set<String> _fileUris   = new LinkedHashSet<>();
+        private final Set<String> _failedFileSessions = new LinkedHashSet<>();
 
         private final DicomInboxImportRequestService _service;
         private final DicomInboxImportRequest        _request;

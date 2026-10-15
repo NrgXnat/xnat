@@ -731,7 +731,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                                                                   target.getFolderName(), true);
 
             // ensure target location is empty, increment timestamp if needed
-            if(Files.exists(prearchivePath.toPath())) {
+            if(Files.exists(prearchivePath.toPath()) || PrearcDatabase.countOf(target.getFolderName(), target.getTimestamp(), target.getProject()) > 0) {
                 target.setTimestamp(target.getTimestamp() + "_DA");
                 prearchivePath = PrearcUtils.getPrearcSessionDir(user, target.getProject(), target.getTimestamp(),
                                                                  target.getFolderName(), true);
@@ -771,10 +771,11 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                          PrearcUtils.PrearcStatus.ERROR : PrearcUtils.PrearcStatus.RECEIVING;
             }
             target.setStatus(status);
-            PrearcDatabase.Either<SessionData, SessionData> sd = PrearcDatabase.eitherGetOrCreateSession(target,
-                                                                                                         prearchivePath.getParentFile(),
-                                                                                                         PrearchiveCode.AutoArchive);
-            SessionData prearchiveSession = sd.isLeft() ? sd.getLeft() : sd.getRight();
+            target.setAutoArchive(PrearchiveCode.AutoArchive);
+            // A row for exactly the folder the files moved to, even when the prearchive holds another session of the
+            // same study: that session is left as it is.
+            PrearcDatabase.addSession(target);
+            SessionData prearchiveSession = PrearcDatabase.getSession(target.getFolderName(), target.getTimestamp(), target.getProject());
             if (prearchiveSession != null && prearchiveSession.getStatus() == PrearcUtils.PrearcStatus.RECEIVING) {
                 PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(receivedFileUserProvider.get(),
                                                                                     nextOperation,

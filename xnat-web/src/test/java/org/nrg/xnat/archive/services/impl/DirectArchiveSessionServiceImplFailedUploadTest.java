@@ -95,14 +95,14 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
         mockedProjects = Mockito.mockStatic(BaseXnatProjectdata.class);
         mockedProjects.when(() -> BaseXnatProjectdata.getProjectByIDorAlias(eq(PROJECT), any(), anyBoolean())).thenReturn(project);
 
-        final PrearcDatabase.Either<SessionData, SessionData> created = mock(PrearcDatabase.Either.class);
-        when(created.isLeft()).thenReturn(true);
-        when(created.getLeft()).thenAnswer(invocation -> recorded.get());
+        // No prearchive row at the move's folder yet, unless a test says so.
         mockedPrearcDatabase = Mockito.mockStatic(PrearcDatabase.class);
-        mockedPrearcDatabase.when(() -> PrearcDatabase.eitherGetOrCreateSession(any(), any(), any())).thenAnswer(invocation -> {
+        mockedPrearcDatabase.when(() -> PrearcDatabase.countOf(any(), any(), any())).thenReturn(0);
+        mockedPrearcDatabase.when(() -> PrearcDatabase.addSession(any())).thenAnswer(invocation -> {
             recorded.set(invocation.getArgument(0));
-            return created;
+            return null;
         });
+        mockedPrearcDatabase.when(() -> PrearcDatabase.getSession(any(), any(), any())).thenAnswer(invocation -> recorded.get());
 
         mockedXDAT = Mockito.mockStatic(XDAT.class);
 
@@ -140,7 +140,7 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
     private void assertLeftInPlace() throws Exception {
         assertThat(new File(sessionDirectory, "1.dcm")).isFile();
         assertThat(prearchiveDirectory).doesNotExist();
-        mockedPrearcDatabase.verify(() -> PrearcDatabase.eitherGetOrCreateSession(any(), any(), any()), never());
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.addSession(any()), never());
         verify(hibernateService, never()).delete(anyLong());
     }
 
@@ -164,10 +164,26 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
                 .contains("An import into this session failed partway").contains("unable to read data from file");
         assertThat(recorded.get().getStatus()).isEqualTo(PrearcStatus.ERROR);
         assertThat(recorded.get().getUrl()).isEqualTo(prearchiveDirectory.getAbsolutePath());
+        // Looked up by study instead, it would join any other prearchive session of the study and leave these files
+        // without a row.
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.eitherGetOrCreateSession(any(), any(), any()), never());
         // Queued for a rebuild instead, the partial session would be archived after all.
         mockedPrearcUtils.verify(() -> PrearcUtils.queuePrearchiveOperation(any()), never());
         verify(hibernateService, never()).setStatusToQueuedBuilding(anyLong(), anyBoolean());
         verify(hibernateService).delete(SESSION_ID);
+    }
+
+    @Test
+    public void aRowAlreadyAtTheMovesFolderGivesTheMoveANewTimestamp() throws Exception {
+        final File daDirectory = new File(temporaryFolder.getRoot(), String.join(File.separator, "prearchive", PROJECT, TIMESTAMP + "_DA", SESSION));
+        mockedPrearcUtils.when(() -> PrearcUtils.getPrearcSessionDir(any(), eq(PROJECT), eq(TIMESTAMP + "_DA"), eq(SESSION), eq(true))).thenReturn(daDirectory);
+        mockedPrearcDatabase.when(() -> PrearcDatabase.countOf(SESSION, TIMESTAMP, PROJECT)).thenReturn(1);
+
+        service.triggerArchive();
+
+        assertThat(new File(daDirectory, "1.dcm")).isFile();
+        assertThat(recorded.get().getTimestamp()).isEqualTo(TIMESTAMP + "_DA");
+        assertThat(recorded.get().getUrl()).isEqualTo(daDirectory.getAbsolutePath());
     }
 
     @Test

@@ -62,9 +62,10 @@ public class NodeConfig {
     }
 
     /**
-     * The node lock service. Opens its lock connection here, so a node that can't open one fails to start rather
-     * than serving without locks. With {@link NodeLockService#PROPERTY_ENABLED} false, nothing is opened and
-     * leaders elect themselves only on the primary node. Spring calls {@code close()} at shutdown.
+     * The node lock service. Opens its lock connection here, so a node whose lock connection is misconfigured fails
+     * to start rather than serving without locks. If the database can't be reached yet, the node starts and keeps
+     * trying. With {@link NodeLockService#PROPERTY_ENABLED} false, nothing is opened and leaders elect themselves
+     * only on the primary node. Spring calls {@code close()} at shutdown.
      *
      * @param environment The environment, for the kill switch.
      * @param xnatNode    This node, for its ID.

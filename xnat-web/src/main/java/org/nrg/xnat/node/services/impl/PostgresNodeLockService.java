@@ -56,7 +56,8 @@ import java.util.function.BooleanSupplier;
  * A check that merely doesn't answer within the {@link #DEFAULT_CHECK_TIMEOUT check timeout} only counts against
  * the connection after {@link #DEFAULT_MAX_TIMEOUTS three} in a row, so a busy node or a slow database doesn't
  * demote everything for nothing. After the third, the connection is aborted and every leader is demoted. A lost
- * connection is reopened on the next tick.
+ * connection is reopened on the next tick, as is one that couldn't be opened at startup because the database couldn't
+ * be reached.
  * <p>
  * Listener callbacks run on a <b>callback thread</b>, in order and never on the lock thread, so a slow
  * {@link NodeLeaderListener#onDemoted(String, String)} can't stall other lock operations.
@@ -153,10 +154,13 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
     }
 
     /**
-     * Opens the lock connection and starts the tick. With the service disabled, nothing is opened.
+     * Opens the lock connection and starts the tick. With the service disabled, nothing is opened. If the database
+     * can't be reached yet, the node starts anyway and the tick keeps trying to open the connection, as it does after
+     * a lost connection.
      *
-     * @throws NrgServiceRuntimeException When the lock connection can't be opened. The node must not serve without
-     *                                    it: it would never lead, and only log lines would say why.
+     * @throws NrgServiceRuntimeException When the lock connection can't be opened because of a configuration error,
+     *                                    such as a driver that can't be loaded or bad credentials. The node must not
+     *                                    serve with one: it would never lead, and only log lines would say why.
      */
     public void start() {
         if (!_started.compareAndSet(false, true)) {
@@ -176,7 +180,10 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Interrupted while opening the node lock connection");
         } catch (ExecutionException e) {
             final Throwable cause = e.getCause();
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Could not open the node lock connection for node " + _nodeId + " with driver " + _settings.getDriverClassName() + " and URL " + urlForMessages() + ". XNAT can't run node locks without it. Fix the datasource configuration, or set " + PROPERTY_ENABLED + "=false to start without node locks: " + cause.getMessage(), cause);
+            if (!isUnreachableDatabase(cause)) {
+                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Could not open the node lock connection for node " + _nodeId + " with driver " + _settings.getDriverClassName() + " and URL " + urlForMessages() + ". XNAT can't run node locks without it. Fix the datasource configuration, or set " + PROPERTY_ENABLED + "=false to start without node locks: " + cause.getMessage(), cause);
+            }
+            log.warn("Node locks on node {}: could not open the lock connection ({}), will retry on every tick. No leader on this node can be elected until it opens.", _nodeId, cause.getMessage());
         }
         _tickExecutor.scheduleWithFixedDelay(this::tick, _tickInterval.toMillis(), _tickInterval.toMillis(), TimeUnit.MILLISECONDS);
     }
@@ -320,7 +327,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
             try {
                 openConnection();
             } catch (SQLException e) {
-                log.warn("Node locks on node {}: lock connection could not be reopened ({}), will retry on the next tick", _nodeId, e.getMessage());
+                log.warn("Node locks on node {}: lock connection could not be opened ({}), will retry on the next tick", _nodeId, e.getMessage());
                 return null;
             }
             if (_closed.get()) {
@@ -513,6 +520,22 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         _connection = connection;
         _connected.set(true);
         log.info("Node locks on node {}: lock connection opened as {}{} with driver {}", _nodeId, APPLICATION_NAME_PREFIX, _nodeId, _settings.getDriverClassName());
+    }
+
+    /**
+     * Indicates whether a failure to open the lock connection can clear by itself, so the node should start and
+     * retry rather than refuse to start. That is a database that can't be reached (SQLSTATE class 08, which the
+     * Postgres driver also reports for an unknown host and a connect timeout), one that is out of resources such as
+     * connection slots (class 53), or one that is still starting up (57P03). Anything else is a configuration error
+     * that retrying won't fix, such as a driver that can't be loaded or doesn't accept the URL (no SQLSTATE), bad
+     * credentials (class 28) or a missing database (3D000).
+     */
+    private static boolean isUnreachableDatabase(final Throwable cause) {
+        if (!(cause instanceof SQLException)) {
+            return false;
+        }
+        final String state = ((SQLException) cause).getSQLState();
+        return state != null && (state.startsWith("08") || state.startsWith("53") || "57P03".equals(state));
     }
 
     /**

@@ -23,9 +23,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A JDBC driver for {@link PostgresNodeLockServiceTest}: a non-default driver class, so tests can check that the
- * configured class is the one used, and one that can interfere with statements on demand, so tests can simulate a
- * lock connection that stops answering, a statement that fails, or a reply that arrives after the connection has
- * been given up on.
+ * configured class is the one used, and one that can interfere with connects and statements on demand, so tests can
+ * simulate a database that can't be reached, a lock connection that stops answering, a statement that fails, or a
+ * reply that arrives after the connection has been given up on.
  */
 public class InstrumentedTestDriver extends org.postgresql.Driver {
     public static final String CLASS_NAME = InstrumentedTestDriver.class.getName();
@@ -35,6 +35,8 @@ public class InstrumentedTestDriver extends org.postgresql.Driver {
     private static volatile Properties LAST_INFO     = new Properties();
     private static final AtomicInteger LATE_CONNECTS = new AtomicInteger();
     private static volatile Duration   LATE_DURATION = Duration.ZERO;
+    private static final AtomicInteger FAIL_CONNECTS = new AtomicInteger();
+    private static volatile String     FAIL_STATE    = null;
     private static final AtomicInteger SLOW_QUERIES  = new AtomicInteger();
     private static volatile Duration   SLOW_DURATION = Duration.ZERO;
 
@@ -51,6 +53,8 @@ public class InstrumentedTestDriver extends org.postgresql.Driver {
         LAST_INFO = new Properties();
         LATE_CONNECTS.set(0);
         LATE_DURATION = Duration.ZERO;
+        FAIL_CONNECTS.set(0);
+        FAIL_STATE = null;
         SLOW_QUERIES.set(0);
         SLOW_DURATION = Duration.ZERO;
         FAIL_SQL = null;
@@ -89,6 +93,15 @@ public class InstrumentedTestDriver extends org.postgresql.Driver {
     }
 
     /**
+     * Makes the next {@code count} connects throw an {@link SQLException} with the SQLSTATE instead of connecting.
+     * Simulates a database that can't be reached ({@code 08001}) or that refuses the connection.
+     */
+    public static void failNextConnects(final int count, final String sqlState) {
+        FAIL_STATE = sqlState;
+        FAIL_CONNECTS.set(count);
+    }
+
+    /**
      * Makes the next {@code count} {@code executeQuery} calls on any connection from this driver sleep for the
      * duration before running.
      */
@@ -123,6 +136,9 @@ public class InstrumentedTestDriver extends org.postgresql.Driver {
         final Properties received = new Properties();
         received.putAll(info);
         LAST_INFO = received;
+        if (FAIL_CONNECTS.get() > 0 && FAIL_CONNECTS.decrementAndGet() >= 0) {
+            throw new SQLException("Instrumented connect failure", FAIL_STATE);
+        }
         final Connection connection = super.connect(url, info);
         if (connection == null) {
             return null;

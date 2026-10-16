@@ -26,62 +26,103 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * XNAT-8499: variables appearing as a <em>function argument</em> or a <em>list element</em>
- * resolve through {@link DicomEditParseTreeVisitor#visitVariable}, which dereferenced
- * {@code getVariable(id).getValue()} without a guard. An undefined or null-valued variable in
- * those positions produced a raw NPE:
- * <pre>
- * Cannot invoke "org.nrg.dicom.mizer.variables.Variable.getValue()" because the return value of
- * "org.nrg.dicom.dicomedit.DicomEditParseTreeVisitor.getVariable(String)" is null
- * </pre>
- * Routing that node through {@code extractVariableValue} gives these positions the same
- * actionable errors as the right-hand side of an assignment already had.
+ * XNAT-8499: variables appearing as a <em>function argument</em> or a <em>list element</em> were
+ * broken in two separate ways, both fixed here.
+ *
+ * <p><b>They were never supplied from the context.</b>
+ * {@code DiscoverVariablesTreeVisitor.visitFunction} returned without visiting its children, so an
+ * identifier nested in a function argument was never registered as an external variable — and that
+ * set is exactly what {@code BaseScriptApplicator} seeds from the {@code MizerContext}. An injected
+ * variable used only inside a function call therefore could not work on any site, under any
+ * configuration: {@code (0010,0010) := format["{0}^{1}", subject, session]} always failed even with
+ * both values supplied. Discovery now descends, and {@code visitVariable} registers what it finds.
+ *
+ * <p><b>Failures in those positions produced a raw NPE.</b>
+ * {@code DicomEditParseTreeVisitor.visitVariable} dereferenced {@code getVariable(id).getValue()}
+ * with no guard, giving
+ * {@code Cannot invoke "...Variable.getValue()" because ... getVariable(String) is null}. It now
+ * resolves through {@code extractVariableValue}, the same guarded path {@code visitIdValue} uses,
+ * so an unsupplied variable in these positions reports the same actionable error as one on the
+ * right-hand side of an assignment.
  *
  * <p>Per the grammar, {@code variable} appears as {@code idValue} (already guarded),
- * {@code variableArgument} (a function argument) and {@code list_element} — so this covers the
- * latter two.
+ * {@code variableArgument} and {@code list_element}; this covers the latter two.
  *
- * <p>It also makes {@link DicomEditParseTreeVisitor#buildUnknownVariableMessage} reachable for
- * the first time: an identifier nested in a function argument is never registered by variable
- * discovery, so it is genuinely unknown at evaluation time rather than merely null. That is the
- * only route by which the "did you mean" suggestion fires — see
- * {@link #nearMissInFunctionArgumentSuggestsTheIntendedName()} and the unit-level coverage in
- * {@link UnknownVariableMessageTests}.
- *
- * <p>The three {@code stillResolves} tests are the regression guard that matters most here:
- * this change alters resolution for <em>every</em> function argument and list element in every
- * script, so the happy paths are pinned explicitly.
- *
- * <p>Note a separate, pre-existing defect this does <em>not</em> fix: because discovery does not
- * descend into function arguments, an injected variable used only inside a function call is never
- * supplied from the context even when routing rules resolve it. The message is now clear, but the
- * script still cannot work. See {@link #injectedVariableUsedOnlyInAFunctionIsNeverSupplied()}.
+ * <p>The {@code stillResolves} tests are the regression guard that matters most: these changes
+ * alter both discovery and resolution for <em>every</em> function argument and list element in
+ * every script, so the happy paths are pinned explicitly.
  */
 public class FunctionArgumentVariableErrorTests {
 
     private static final ResourceManager RESOURCES = ResourceManager.getInstance();
 
-    /** Has SeriesDescription "t1_mpr_1mm_p2_pos50" and Manufacturer "SIEMENS". */
+    /** Has SeriesDescription "t1_mpr_1mm_p2_pos50", Manufacturer "SIEMENS", PatientName "Sample Patient". */
     private static final File DICOM_FILE = RESOURCES.getTestResourceFile(
             "dicom/1.MR.head_DHead.4.1.20061214.091206.156000.1632817982.dcm.gz");
 
     private static final String RAW_NPE = "Cannot invoke";
 
-    /** Applies the statements with `subject` supplied only when asked. */
+    /** Applies the statements, supplying `subject` from the context only when asked. */
     private AnonymizationResult apply(final String subject, final String... statements) throws Exception {
+        return applicator(subject, statements).apply(DicomObjectFactory.newInstance(DICOM_FILE));
+    }
+
+    private BaseScriptApplicator applicator(final String subject, final String... statements) throws Exception {
         final MizerContextWithScript context = new MizerContextWithScript();
         final List<String> script = new ArrayList<>();
         script.add("version \"6.1\"");
         script.addAll(Arrays.asList(statements));
         context.setScript(script);
         context.setElement("project", "PROJ01");
+        context.setElement("session", "SESS01");
         if (subject != null) {
             context.setElement("subject", subject);
         }
-        return BaseScriptApplicator.getInstance(context).apply(DicomObjectFactory.newInstance(DICOM_FILE));
+        return BaseScriptApplicator.getInstance(context);
     }
 
-    // ---- happy paths: resolution through this node must be unchanged --------------------
+    // ---- injected variables inside functions and lists are now supplied ------------------
+
+    @Test
+    public void injectedVariableInsideAFunctionIsDiscovered() throws Exception {
+        assertTrue("a variable referenced only inside a function argument must be discovered"
+                   + " as external, or it is never seeded from the context",
+                applicator("SUBJ01", "(0010,0010) := format[\"{0}\", subject]")
+                        .getExternalVariableNames().contains("subject"));
+    }
+
+    @Test
+    public void injectedVariableInsideAFunctionIsSupplied() throws Exception {
+        final AnonymizationResult result = apply("SUBJ01", "(0010,0010) := format[\"x{0}y\", subject]");
+        assertEquals("expected success, got: " + result.getMessage(),
+                AnonymizationResultSeverity.SUCCESS, result.getSeverity());
+        assertEquals("xSUBJ01y", result.getDicomObject().getString(Tag.PatientName));
+    }
+
+    @Test
+    public void twoInjectedVariablesInOneFunctionAreSupplied() throws Exception {
+        // The shape that could not work at all before: PatientName built from subject and session.
+        final AnonymizationResult result = apply("SUBJ01", "(0010,0010) := format[\"{0}^{1}\", subject, session]");
+        assertEquals("expected success, got: " + result.getMessage(),
+                AnonymizationResultSeverity.SUCCESS, result.getSeverity());
+        assertEquals("SUBJ01^SESS01", result.getDicomObject().getString(Tag.PatientName));
+    }
+
+    @Test
+    public void injectedVariableInsideNestedFunctionsIsSupplied() throws Exception {
+        final AnonymizationResult result = apply("SUBJ01", "(0010,0010) := format[\"{0}\", lowercase[subject]]");
+        assertEquals("expected success, got: " + result.getMessage(),
+                AnonymizationResultSeverity.SUCCESS, result.getSeverity());
+        assertEquals("subj01", result.getDicomObject().getString(Tag.PatientName));
+    }
+
+    @Test
+    public void injectedVariableInAListElementIsDiscovered() throws Exception {
+        assertTrue(applicator("SUBJ01", "tags := { subject }", "(0010,0010) := format[\"{0}\", subject]")
+                .getExternalVariableNames().contains("subject"));
+    }
+
+    // ---- happy paths: resolution through these nodes must be unchanged -------------------
 
     @Test
     public void definedVariableInFunctionArgumentStillResolves() throws Exception {
@@ -98,9 +139,7 @@ public class FunctionArgumentVariableErrorTests {
         final AnonymizationResult result = apply(null, "(0008,103e) := format[\"x{0}y\", (0008,0070)]");
         assertEquals("expected success, got: " + result.getMessage(),
                 AnonymizationResultSeverity.SUCCESS, result.getSeverity());
-        assertTrue("expected the Manufacturer value to be interpolated, got: "
-                   + result.getDicomObject().getString(Tag.SeriesDescription),
-                result.getDicomObject().getString(Tag.SeriesDescription).startsWith("x"));
+        assertEquals("xSIEMENSy", result.getDicomObject().getString(Tag.SeriesDescription));
     }
 
     @Test
@@ -114,18 +153,24 @@ public class FunctionArgumentVariableErrorTests {
                 result.getDicomObject().contains(Tag.PatientName));
     }
 
-    // ---- the fix -------------------------------------------------------------------------
+    // ---- unsupplied variables in these positions now report an actionable error ----------
 
     @Test
-    public void undefinedVariableInFunctionArgumentIsNamed() throws Exception {
+    public void unsuppliedVariableInFunctionArgumentIsNamed() throws Exception {
         final String message = apply(null, "(0008,103e) := format[\"x{0}y\", subject]").getMessage();
-        assertTrue("error should name the unknown variable, but was: " + message,
-                message.contains("Unknown variable: 'subject'"));
+        assertTrue("error should name the variable, but was: " + message,
+                message.contains("Variable 'subject' is null."));
+        assertFalse("error should not surface raw NPE text, but was: " + message,
+                message.contains(RAW_NPE));
     }
 
     @Test
-    public void undefinedVariableInFunctionArgumentDoesNotLeakRawNullPointerText() throws Exception {
-        final String message = apply(null, "(0008,103e) := format[\"x{0}y\", subject]").getMessage();
+    public void unsuppliedVariableInListElementIsNamed() throws Exception {
+        final String message = apply(null,
+                "tags := { subject, (0008,0070) }",
+                "foo := collectValues[ tags]").getMessage();
+        assertTrue("error should name the variable, but was: " + message,
+                message.contains("Variable 'subject' is null."));
         assertFalse("error should not surface raw NPE text, but was: " + message,
                 message.contains(RAW_NPE));
     }
@@ -137,53 +182,5 @@ public class FunctionArgumentVariableErrorTests {
                 message.contains("line 2"));
         assertTrue("error should quote the failing statement, but was: " + message,
                 message.contains("format[\"x{0}y\",subject]"));
-    }
-
-    @Test
-    public void nearMissInFunctionArgumentSuggestsTheIntendedName() throws Exception {
-        // The only route that reaches buildUnknownVariableMessage's suggestion logic.
-        final String message = apply(null,
-                "seriesDesc := \"s\"",
-                "(0008,103e) := format[\"{0}\", seriesDes]").getMessage();
-        assertTrue("expected a 'did you mean' suggestion, but was: " + message,
-                message.contains("did you mean 'seriesDesc'"));
-    }
-
-    @Test
-    public void undefinedVariableInListElementIsNamed() throws Exception {
-        final String message = apply(null,
-                "tags := { subject, (0008,0070) }",
-                "foo := collectValues[ tags]").getMessage();
-        assertTrue("error should name the unknown variable, but was: " + message,
-                message.contains("Unknown variable: 'subject'"));
-        assertFalse("error should not surface raw NPE text, but was: " + message,
-                message.contains(RAW_NPE));
-    }
-
-    @Test
-    public void nullValuedVariableInFunctionArgumentIsNamed() throws Exception {
-        // Here `subject` IS registered (it is used bare on the later line), so it is defined
-        // but null when the earlier function argument evaluates it.
-        final String message = apply(null,
-                "(0008,103e) := format[\"x{0}y\", subject]",
-                "(0010,0010) := subject").getMessage();
-        assertTrue("error should report the null variable by name, but was: " + message,
-                message.contains("Variable 'subject' is null."));
-        assertFalse("error should not surface raw NPE text, but was: " + message,
-                message.contains(RAW_NPE));
-    }
-
-    // ---- documents a defect this change does NOT fix -------------------------------------
-
-    @Test
-    public void injectedVariableUsedOnlyInAFunctionIsNeverSupplied() throws Exception {
-        // `subject` IS supplied by the context, but discovery never registers it because it
-        // appears only inside a function argument, so it is never seeded. Pre-existing defect;
-        // this test documents it so a future fix has something to flip.
-        final AnonymizationResult result = apply("SUBJ01", "(0008,103e) := format[\"x{0}y\", subject]");
-        assertEquals("known defect: supplying subject does not help when it is only used"
-                     + " inside a function argument", AnonymizationResultSeverity.ERROR, result.getSeverity());
-        assertTrue("expected the unknown-variable message, but was: " + result.getMessage(),
-                result.getMessage().contains("Unknown variable: 'subject'"));
     }
 }

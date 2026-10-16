@@ -26,11 +26,9 @@ import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.nrg.dicom.mizer.values.AbstractMizerValue.VOID;
@@ -450,59 +448,10 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
             }
             return value;
         }
-        throw new ParseCancellationException(buildUnknownVariableMessage(id, variables.keySet()));
-    }
-
-    static String buildUnknownVariableMessage(final String id, final Collection<String> known) {
-        final StringBuilder sb = new StringBuilder("Unknown variable: '").append(id).append("'");
-        final String suggestion = closestMatch(id, known);
-        if (suggestion != null) {
-            sb.append(" (did you mean '").append(suggestion).append("'?)");
-        }
-        if (known.isEmpty()) {
-            sb.append(". No variables are defined.");
-        } else {
-            // Sort for stable output
-            final TreeSet<String> sorted = new TreeSet<>(known);
-            sb.append(". Defined variables: [").append(String.join(", ", sorted)).append("]");
-        }
-        return sb.toString();
-    }
-
-    private static String closestMatch(final String target, final Collection<String> candidates) {
-        if (candidates == null || candidates.isEmpty() || target == null) {
-            return null;
-        }
-        String best = null;
-        int bestDist = Integer.MAX_VALUE;
-        for (final String c : candidates) {
-            final int d = editDistance(target, c);
-            if (d < bestDist) {
-                bestDist = d;
-                best = c;
-            }
-        }
-        // Only suggest if reasonably close: at most 1/3 of the input length, minimum 2.
-        final int threshold = Math.max(2, target.length() / 3);
-        return bestDist <= threshold ? best : null;
-    }
-
-    private static int editDistance(final String a, final String b) {
-        final int n = a.length(), m = b.length();
-        if (n == 0) return m;
-        if (m == 0) return n;
-        int[] prev = new int[m + 1];
-        int[] curr = new int[m + 1];
-        for (int j = 0; j <= m; j++) prev[j] = j;
-        for (int i = 1; i <= n; i++) {
-            curr[0] = i;
-            for (int j = 1; j <= m; j++) {
-                final int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
-                curr[j] = Math.min(Math.min(curr[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
-            }
-            final int[] tmp = prev; prev = curr; curr = tmp;
-        }
-        return prev[m];
+        // Defensive only. Variable discovery registers every identifier a script can read --
+        // as an idValue, a function argument or a list element -- so a name reaching evaluation
+        // is always present in the map and this branch is not reachable from a parsed script.
+        throw new ParseCancellationException("Unknown variable: '" + id + "'");
     }
 
     @Override

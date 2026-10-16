@@ -36,6 +36,8 @@ public class NodeLockConnectionSettings {
     public static final String DBCP_CONNECTION_PROPERTIES = "connectionProperties";
 
     String driverClassName;
+    // The query string can carry the password (?password=...).
+    @ToString.Exclude
     String url;
     String username;
     @ToString.Exclude

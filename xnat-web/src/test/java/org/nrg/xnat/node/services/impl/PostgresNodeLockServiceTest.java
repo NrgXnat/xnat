@@ -277,6 +277,18 @@ public class PostgresNodeLockServiceTest {
     }
 
     @Test
+    public void startupErrorLeavesTheUrlQueryStringOut() {
+        // The driver doesn't accept this URL, so both the startup error and its cause would name it.
+        final String                     secret   = "url-secret";
+        final NodeLockConnectionSettings rejected = new NodeLockConnectionSettings(InstrumentedTestDriver.CLASS_NAME, "jdbc:not-postgres://db.example:5432/xnat?user=xnat&password=" + secret, null, null);
+        assertThat(rejected.toString()).doesNotContain(secret);
+        assertThatThrownBy(() -> start(new PostgresNodeLockService("A", true, () -> true, rejected, TICK, CHECK_TIMEOUT, MAX_TIMEOUTS)))
+                .isInstanceOf(NrgServiceRuntimeException.class)
+                .hasMessageContaining("jdbc:not-postgres://db.example:5432/xnat")
+                .hasMessageNotContaining(secret);
+    }
+
+    @Test
     public void killSwitchOffOpensNothingAndFollowsPrimaryNode() {
         final NodeLockConnectionSettings badDriver = new NodeLockConnectionSettings("org.nrg.NoSuchDriver", postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
 

@@ -3,6 +3,7 @@ package org.nrg.xnat.archive.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
@@ -773,7 +774,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                 try (FileWriter fileWriter = new FileWriter(logFile);
                      PrintWriter printWriter = new PrintWriter(fileWriter)) {
                     printWriter.print("Attempt to direct-archive failed\n");
-                    origException.printStackTrace(printWriter);
+                    printWriter.print(reasonOf(origException));
                 }
             }
 
@@ -800,6 +801,21 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             log.error("Unable to move {} to prearchive", target, e);
             directArchiveSessionHibernateService.setStatusToError(id, e);
         }
+    }
+
+    /**
+     * Why a session moved to the prearchive, as its log shows it: each message down the cause chain, without stack
+     * frames. Anyone who can read the session's log sees this; the stack trace, where there is one, is in the server log.
+     */
+    static String reasonOf(final Throwable failure) {
+        final StringBuilder reason = new StringBuilder();
+        for (final Throwable cause : ExceptionUtils.getThrowableList(failure)) {
+            if (cause != failure) {
+                reason.append("Caused by: ");
+            }
+            reason.append(StringUtils.defaultIfBlank(cause.getMessage(), cause.getClass().getSimpleName())).append('\n');
+        }
+        return reason.toString();
     }
 
     // ---- Direct-to-archive merge (append/overwrite) support ----

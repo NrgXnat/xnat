@@ -1,6 +1,7 @@
 package org.nrg.xnat.archive.services.impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -161,7 +162,9 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
         assertThat(sessionDirectory).doesNotExist();
         assertThat(new File(prearchiveDirectory, "1.dcm")).isFile();
         assertThat(Files.readString(new File(prearchiveDirectory, "logs/directArchive" + SESSION_ID + ".log").toPath()))
-                .contains("An import into this session failed partway").contains("unable to read data from file");
+                .contains("An import into this session failed partway").contains("unable to read data from file")
+                // The reason only: users who can read the session's log shouldn't see the server's stack frames.
+                .doesNotContain("\tat ");
         assertThat(recorded.get().getStatus()).isEqualTo(PrearcStatus.ERROR);
         assertThat(recorded.get().getUrl()).isEqualTo(prearchiveDirectory.getAbsolutePath());
         // Looked up by study instead, it would join any other prearchive session of the study and leave these files
@@ -171,6 +174,15 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
         mockedPrearcUtils.verify(() -> PrearcUtils.queuePrearchiveOperation(any()), never());
         verify(hibernateService, never()).setStatusToQueuedBuilding(anyLong(), anyBoolean());
         verify(hibernateService).delete(SESSION_ID);
+    }
+
+    @Test
+    public void theLogGivesEachReasonDownTheCauseChainWithoutStackFrames() {
+        final Exception failure = new Exception("Unable to build the session", new IOException("No space left on device"));
+
+        assertThat(DirectArchiveSessionServiceImpl.reasonOf(failure))
+                .isEqualTo("Unable to build the session\nCaused by: No space left on device\n");
+        assertThat(DirectArchiveSessionServiceImpl.reasonOf(new NullPointerException())).isEqualTo("NullPointerException\n");
     }
 
     @Test

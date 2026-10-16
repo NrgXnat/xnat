@@ -262,7 +262,7 @@ public class PostgresNodeLockServiceTest {
     }
 
     @Test
-    public void startFailsWhenLockConnectionCannotBeOpened() {
+    public void startFailsWhenLockConnectionIsMisconfigured() {
         final NodeLockConnectionSettings badDriver = new NodeLockConnectionSettings("org.nrg.NoSuchDriver", postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
         assertThatThrownBy(() -> start(new PostgresNodeLockService("A", true, () -> true, badDriver, TICK, CHECK_TIMEOUT, MAX_TIMEOUTS)))
                 .isInstanceOf(NrgServiceRuntimeException.class)
@@ -274,6 +274,27 @@ public class PostgresNodeLockServiceTest {
         assertThatThrownBy(() -> start(new PostgresNodeLockService("A", true, () -> true, badPassword, TICK, CHECK_TIMEOUT, MAX_TIMEOUTS)))
                 .isInstanceOf(NrgServiceRuntimeException.class)
                 .hasMessageContaining("lock connection");
+
+        final NodeLockConnectionSettings noSuchDatabase = new NodeLockConnectionSettings(InstrumentedTestDriver.CLASS_NAME, postgres.getJdbcUrl().replace("/test?", "/no_such_database?"), postgres.getUsername(), postgres.getPassword());
+        assertThatThrownBy(() -> start(new PostgresNodeLockService("A", true, () -> true, noSuchDatabase, TICK, CHECK_TIMEOUT, MAX_TIMEOUTS)))
+                .isInstanceOf(NrgServiceRuntimeException.class)
+                .hasMessageContaining("no_such_database");
+    }
+
+    @Test
+    public void startRetriesWhenTheDatabaseCannotBeReached() {
+        // The Postgres driver reports a refused connection, an unknown host and a connect timeout all as 08001.
+        InstrumentedTestDriver.failNextConnects(2, "08001");
+        final PostgresNodeLockService a = node("A");
+        assertThat(a.isConnected()).isFalse();
+
+        final RecordingListener aEvents = new RecordingListener();
+        final NodeLeader        aLeader = a.registerLeader(LOCK, aEvents);
+        await().atMost(WAIT).until(aLeader::isLeader);
+        await().atMost(WAIT).until(() -> aEvents.elected.size() == 1);
+        assertThat(a.isConnected()).isTrue();
+        assertThat(InstrumentedTestDriver.connectAttempts()).isEqualTo(3);
+        assertThat(lockHolders()).containsExactly(PostgresNodeLockService.APPLICATION_NAME_PREFIX + "A");
     }
 
     @Test

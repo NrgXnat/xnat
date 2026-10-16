@@ -176,7 +176,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Interrupted while opening the node lock connection");
         } catch (ExecutionException e) {
             final Throwable cause = e.getCause();
-            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Could not open the node lock connection for node " + _nodeId + " with driver " + _settings.getDriverClassName() + " and URL " + _settings.getUrl() + ". XNAT can't run node locks without it. Fix the datasource configuration, or set " + PROPERTY_ENABLED + "=false to start without node locks: " + cause.getMessage(), cause);
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Could not open the node lock connection for node " + _nodeId + " with driver " + _settings.getDriverClassName() + " and URL " + urlForMessages() + ". XNAT can't run node locks without it. Fix the datasource configuration, or set " + PROPERTY_ENABLED + "=false to start without node locks: " + cause.getMessage(), cause);
         }
         _tickExecutor.scheduleWithFixedDelay(this::tick, _tickInterval.toMillis(), _tickInterval.toMillis(), TimeUnit.MILLISECONDS);
     }
@@ -498,7 +498,7 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
 
         final Connection connection = driver.connect(_settings.getUrl(), properties);
         if (connection == null) {
-            throw new SQLNonTransientConnectionException("Driver " + _settings.getDriverClassName() + " doesn't accept the URL " + _settings.getUrl());
+            throw new SQLNonTransientConnectionException("Driver " + _settings.getDriverClassName() + " doesn't accept the URL " + urlForMessages());
         }
         try {
             connection.setAutoCommit(true);
@@ -513,6 +513,14 @@ public class PostgresNodeLockService implements NodeLockService, AutoCloseable {
         _connection = connection;
         _connected.set(true);
         log.info("Node locks on node {}: lock connection opened as {}{} with driver {}", _nodeId, APPLICATION_NAME_PREFIX, _nodeId, _settings.getDriverClassName());
+    }
+
+    /**
+     * The URL without its query string, for log and error messages: the query string can carry the password
+     * ({@code ?password=...}).
+     */
+    private String urlForMessages() {
+        return StringUtils.substringBefore(_settings.getUrl(), "?");
     }
 
     private Driver loadDriver() throws SQLException {

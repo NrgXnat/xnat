@@ -13,6 +13,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
@@ -240,6 +241,12 @@ public final class DicomZipImporter extends ImporterHandlerA {
                 }
 
             } catch (Exception e) {
+                // A failure the request caused, such as a session already in the archive under the same label, keeps
+                // its status and message. Other failures are reported as before.
+                final ClientException clientError = ExceptionUtils.throwableOfType(e, ClientException.class);
+                if (clientError != null) {
+                    throw new ClientException(clientError.getStatus(), "unable to archive for the Prearchive session: " + clientError.getMessage(), e);
+                }
                 throw new ClientException("unable to archive for the Prearchive session", e);
             }
         }

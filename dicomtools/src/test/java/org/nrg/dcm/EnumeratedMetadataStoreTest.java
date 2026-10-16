@@ -30,9 +30,11 @@ import org.nrg.util.FileURIOpener;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -48,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -289,6 +292,18 @@ public class EnumeratedMetadataStoreTest {
     public void testGetSize() throws IOException, SQLException {
         try (final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(TAGS, FileURIOpener.getInstance())) {
             assertEquals(0, store.getSize());
+            store.add(Collections.singletonList(toURI(tempDir)));
+            assertEquals(fileNames.length, store.getSize());
+        }
+    }
+
+    @Test
+    public void aWriteInProgressIsNotPartOfTheDirectory() throws IOException, SQLException {
+        // What a re-send left behind when the process writing it died: a whole, readable copy of one of the files.
+        try (final InputStream in = new GZIPInputStream(Files.newInputStream(new File(tempDir, fileNames[0]).toPath()))) {
+            Files.copy(in, new File(tempDir, ".xnat-tmp-upload-left-behind.part").toPath());
+        }
+        try (final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(TAGS, FileURIOpener.getInstance())) {
             store.add(Collections.singletonList(toURI(tempDir)));
             assertEquals(fileNames.length, store.getSize());
         }

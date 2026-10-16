@@ -18,15 +18,24 @@ import org.nrg.dcm.io.ResumableDicomInputStream;
 import org.nrg.dicom.mizer.objects.BufferedBulkDataCreator;
 import org.nrg.dicom.mizer.objects.Dcm4cheConvert;
 import org.nrg.dicom.mizer.objects.DicomObjectWriter;
+import org.nrg.xnat.utils.CatalogUtils;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.Closeable;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.util.UUID;
 import java.util.function.Predicate;
+
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * A DICOM instance arriving on an import stream, read once and written once.
@@ -110,6 +119,12 @@ final class ReceivedDicomObject implements Closeable {
                 // everything reading that file would have: not only the pixel data.
                 dis.setBulkDataDescriptor(ResumableDicomInputStream.WHOLE_OBJECT_BULK_DATA);
                 dis.readAttributes(dataset, -1, WHOLE_OBJECT);
+                // Bulk data referenced into a file is skipped over, not read, and a skip can run past the
+                // end of the file without an error: only the write would find the value short.
+                if (sourceFile != null && !BufferedBulkDataCreator.isDeflated(transferSyntax) && dis.getPosition() > sourceFile.length()) {
+                    throw new TruncatedObjectException("The file ends " + (dis.getPosition() - sourceFile.length())
+                                                       + " bytes short of its last value, at " + sourceFile.length() + " bytes");
+                }
             } else {
                 // The last tag the caller needs, not a stop tag: dcm4che's stop tag is exclusive, so
                 // the read adds the one.
@@ -124,11 +139,19 @@ final class ReceivedDicomObject implements Closeable {
             Dcm4cheConvert.mergeFileMetaInformation(dataset, fmi, transferSyntax);
             return new ReceivedDicomObject(in, dis, dataset, transferSyntax, readWhole);
         } catch (IOException | RuntimeException e) {
+            // Past a Part 10 preamble the source is DICOM, so running out is being cut short, not
+            // being something else.
+            final TruncatedObjectException truncated = e instanceof EOFException && !(e instanceof TruncatedObjectException) && dis.getPreamble() != null
+                                                       ? new TruncatedObjectException((EOFException) e)
+                                                       : null;
             // Nothing is going to own the spool files if the read fails.
             try {
                 discard(dis);
             } catch (IOException suppressed) {
-                e.addSuppressed(suppressed);
+                (truncated != null ? truncated : e).addSuppressed(suppressed);
+            }
+            if (truncated != null) {
+                throw truncated;
             }
             throw e;
         }
@@ -185,15 +208,89 @@ final class ReceivedDicomObject implements Closeable {
      * @param source     who sent the instance, for the receipt log.
      */
     void write(final Attributes dataset, final File outputFile, final String source) throws IOException {
-        try (final FileOutputStream fos = new FileOutputStream(outputFile)) {
-            // After a partial read the rest of the stream, pixel data included, has not been
-            // parsed and is copied through as it arrived.
-            final long copied = DicomObjectWriter.write(dataset, fos, _whole ? null : _in);
-            if (!_whole) {
-                log.trace("copied {} additional bytes to {}", copied, outputFile);
+        // A new instance is written straight to its name, and deleted if the write fails. A re-send over an existing
+        // instance is written beside it and renamed into place, so a failed one leaves the earlier copy as it was. Only
+        // the re-send is renamed because a rename makes an NFS client drop the file's cached pages, and the session
+        // build that follows would read every instance back from the server. The caller holds the instance's prearchive
+        // file lock. A fixed-length name: one built from the instance's could pass NAME_MAX. A copy left by a process
+        // that died mid-write stays in the session folder and moves to the archive with it. The name is hidden and ends
+        // in .part, which the session build skips (EnumeratedMetadataStore.isWriteInProgress), and it starts with the
+        // upload temp prefix, which a catalog refresh skips (CatalogUtils.XNAT_CATALOGABLE_FILE_FILTER).
+        final boolean replacing = outputFile.exists();
+        final File target = replacing ? new File(outputFile.getParentFile(), CatalogUtils.XNAT_TMP_UPLOAD_PREFIX + UUID.randomUUID() + ".part") : outputFile;
+        boolean written = false;
+        try {
+            try (final FileOutputStream fos = new FileOutputStream(target)) {
+                // After a partial read the rest of the stream, pixel data included, has not been
+                // parsed and is copied through as it arrived.
+                final long copied = DicomObjectWriter.write(dataset, fos, _whole ? null : readingAsSource(_in));
+                if (!_whole) {
+                    log.trace("copied {} additional bytes to {}", copied, outputFile);
+                }
+            }
+            if (replacing) {
+                try {
+                    Files.move(target.toPath(), outputFile.toPath(), ATOMIC_MOVE, REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException e) {
+                    Files.move(target.toPath(), outputFile.toPath(), REPLACE_EXISTING);
+                }
+            }
+            written = true;
+        } finally {
+            if (replacing || !written) {
+                Files.deleteIfExists(target.toPath());
             }
         }
         LoggerFactory.getLogger("org.nrg.xnat.received").info("{}:{}", source, outputFile);
+    }
+
+    /**
+     * Thrown by {@link #read} for a Part 10 instance that ends before its last value does, such as a file
+     * still being copied, as opposed to a source that isn't DICOM at all. After a partial read, the rest
+     * of the instance is copied through as far as it goes, so only a whole read finds this.
+     */
+    static final class TruncatedObjectException extends EOFException {
+        TruncatedObjectException(final String message) {
+            super(message);
+        }
+
+        TruncatedObjectException(final EOFException cause) {
+            super(cause.getMessage() == null ? "The object ends before its last value does" : cause.getMessage());
+            initCause(cause);
+        }
+    }
+
+    /**
+     * Thrown by {@link #write} when the rest of the instance could not be read from the stream it arrived
+     * on, such as an upload cut off partway, as opposed to a failure writing it out.
+     */
+    static final class SourceReadException extends IOException {
+        SourceReadException(final IOException cause) {
+            super(cause.getMessage(), cause);
+        }
+    }
+
+    /** The rest of the stream, with its read failures reported as {@link SourceReadException}. */
+    private static InputStream readingAsSource(final InputStream in) {
+        return new FilterInputStream(in) {
+            @Override
+            public int read() throws IOException {
+                try {
+                    return super.read();
+                } catch (IOException e) {
+                    throw new SourceReadException(e);
+                }
+            }
+
+            @Override
+            public int read(final byte[] buffer, final int offset, final int length) throws IOException {
+                try {
+                    return super.read(buffer, offset, length);
+                } catch (IOException e) {
+                    throw new SourceReadException(e);
+                }
+            }
+        };
     }
 
     /**

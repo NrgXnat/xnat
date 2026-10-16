@@ -26,10 +26,12 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.FinishImageUpload;
 import org.nrg.xnat.helpers.PrearcImporterHelper;
+import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.merge.SiteWideAnonymizer;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
@@ -232,6 +234,9 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                 prearcParameters.put("xnat:experimentData/label", expt.getLabel());
             }
 
+            // The session as it is before the import, which merges into it when the request names an existing one.
+            final SessionImportSiteAnonymization.SessionFiles before = SessionImportSiteAnonymization.SessionFiles.of(mergeTarget(prearcParameters));
+
             //import to prearchive, code allows for merging new files into a pre-existing session directory
             this.processing("Beginning import");
             final List<PrearcSession> sessions = importToPrearc(this, (String) params.remove(PrearcImporterA.PREARC_IMPORTER_ATTR), listenerControl, user, fw, prearcParameters, allowSessionMerge, overrideExceptions);
@@ -267,7 +272,22 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
 
                 this.processing("Performing anonymization");
                 final SiteWideAnonymizer   siteWideAnonymizer = new SiteWideAnonymizer(imageSession, true, false);
-                List<AnonymizationResult> anonResults = siteWideAnonymizer.call();
+                // A failed site script removes the session from the prearchive when this import created it. The delete
+                // erases its files, or moves them under the cache when the site sets backupDeletedToCache. When the import
+                // merged into an existing session, only the instances it wrote are deleted, and the session is marked
+                // ERROR below.
+                final List<AnonymizationResult> anonResults = SessionImportSiteAnonymization.run(siteWideAnonymizer::call,
+                        SessionImportSiteAnonymization.removal(before,
+                                () -> PrearcDatabase.deleteSession(session.getFolderName(), session.getTimestamp(), session.getProject()),
+                                files -> MergeUtils.deleteFiles(log, files, imageSession.getProject())));
+                // An instance the site script rejects must not be archived. The merge and direct archive
+                // delete what their scripts reject; this import deletes what this one rejects.
+                MergeUtils.deleteRejectedFiles(log, anonResults, imageSession.getProject());
+                if (SessionImportSiteAnonymization.removeIfEveryInstanceRejected(anonResults,
+                        () -> PrearcDatabase.deleteSession(session.getFolderName(), session.getTimestamp(), session.getProject()))) {
+                    this.completed(SessionImportSiteAnonymization.EVERY_INSTANCE_REJECTED, true);
+                    return Collections.emptyList();
+                }
                 if (!(anonResults.isEmpty() || anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance))){
                     // rebuild XML
                     XnatSubjectdata s = imageSession.getSubjectData();
@@ -293,12 +313,14 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
                     return urls;
                 }
             } catch (Exception e) {
-                resetStatus(sessions);
-                if (e instanceof ClientException exception && Status.CLIENT_ERROR_CONFLICT.equals(exception.getStatus())) {
-                    //if this failed due to a conflict
-                    PrearcDatabase.setStatus(session.getSessionDir().getName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.CONFLICT);
-                } else {
-                    PrearcDatabase.setStatus(session.getSessionDir().getName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.ERROR);
+                if (!(e instanceof SessionImportSiteAnonymization.SessionRemovedException)) {
+                    resetStatus(sessions);
+                    if (e instanceof ClientException exception && Status.CLIENT_ERROR_CONFLICT.equals(exception.getStatus())) {
+                        //if this failed due to a conflict
+                        PrearcDatabase.setStatus(session.getSessionDir().getName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.CONFLICT);
+                    } else {
+                        PrearcDatabase.setStatus(session.getSessionDir().getName(), session.getTimestamp(), session.getProject(), PrearcUtils.PrearcStatus.ERROR);
+                    }
                 }
                 throw e;
             }
@@ -319,6 +341,21 @@ public class SessionImporter extends ImporterHandlerA implements Callable<List<S
             this.failed(e.getMessage(), true);
             throw new ServerException(e.getMessage(), new Exception());
         }
+    }
+
+    /**
+     * The prearchive session directory the import merges into: the session the request names with a prearchive
+     * timestamp and session folder, where {@link PrearcImporterHelper} puts the upload. Null when the request names
+     * none, and the import creates its sessions.
+     */
+    private static File mergeTarget(final Map<String, Object> prearcParameters) {
+        final String timestamp = (String) prearcParameters.get(PrearcUtils.PREARC_TIMESTAMP);
+        final String folder    = (String) prearcParameters.get(PrearcUtils.PREARC_SESSION_FOLDER);
+        final String project   = PrearcImporterHelper.identifyProject(prearcParameters);
+        if (StringUtils.isAnyEmpty(timestamp, folder, project)) {
+            return null;
+        }
+        return new File(new File(ArcSpecManager.GetInstance().getPrearchivePathForProject(project), timestamp), folder);
     }
 
     private void copyNonEmptyMapValue(final Map<String, Object> prearc_parameters, final String timezone2) {

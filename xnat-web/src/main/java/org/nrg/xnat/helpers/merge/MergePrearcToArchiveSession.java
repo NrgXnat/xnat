@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.AnonymizationResultNoOp;
@@ -23,7 +24,6 @@ import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.ScanIdValidator;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
@@ -233,7 +233,10 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         final List<AnonymizationResult> anonResults = anonymizer.call();
         if (anonResults.stream().anyMatch(AnonymizationResultError.class::isInstance)) {
             log.error("Anonymization failed for prearcSession at {} ", _prearcSession.getSessionDir().getAbsolutePath());
-            throw new ArchivingException("Anonymization failed for prearcSession at " + _prearcSession.getSessionDir().getAbsolutePath());
+            // A MizerException, not an ArchivingException: MergeSessionsA knows that nothing has moved yet
+            // when anonymization fails and leaves the directories alone. Any other exception takes its
+            // rollback, which moves the prearchive session into the cache and leaves an empty session.
+            throw new MizerException("Anonymization failed for prearcSession at " + _prearcSession.getSessionDir().getAbsolutePath());
         }
         if (anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance)) {
             return false;

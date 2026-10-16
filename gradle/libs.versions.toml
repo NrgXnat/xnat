@@ -259,6 +259,7 @@ dcm4che5-dcm4che-net = { group = "org.dcm4che", name = "dcm4che-net", version.re
 dcm4che5-dcm4che-tool-common = { group = "org.dcm4che.tool", name = "dcm4che-tool-common", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-tool-storescp = { group = "org.dcm4che.tool", name = "dcm4che-tool-storescp", version.ref = "dcm4che5" }
 dcm4che5-dcm4che-tool-storescu = { group = "org.dcm4che.tool", name = "dcm4che-tool-storescu", version.ref = "dcm4che5" }
+dcm4che5-dcm4che-ws-rs = { group = "org.dcm4che", name = "dcm4che-ws-rs", version.ref = "dcm4che5" }
 dom4j-dom4j = { group = "org.dom4j", name = "dom4j", version.ref = "dom4j" }
 easymock-easymock = { group = "easymock", name = "easymock", version.ref = "easymock" }
 easytesting-fest-swing = { group = "org.easytesting", name = "fest-swing", version.ref = "fest-swing" }

@@ -23,6 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -165,8 +168,67 @@ public class TestThreadAndProcessFileLock {
         assertThat(cat2.getEntries_entry().size(), is(size-2));
     }
 
+    @Test
+    public void testUpdateCatalogUnderOneLock() throws Exception {
+        // This operates on a separate file from testDcm/testDcmRepeat so it doesn't change their data mid-test
+        final File outfile = new File(TMPDIR, "testUpdateCatalogUnderOneLock_catalog.xml");
+        Files.copy(TEST_DCMCATALOG_PERM.toPath(), outfile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        final int before = new CatalogUtils.CatalogData(outfile, fakeProject, false).catBean.getEntries_entry().size();
+
+        // A change that declines leaves the file alone
+        final byte[] untouched = Files.readAllBytes(outfile.toPath());
+        assertFalse(CatalogUtils.updateCatalog(outfile, null, fakeProject, false, data -> false));
+        assertArrayEquals(untouched, Files.readAllBytes(outfile.toPath()));
+
+        // A change that removes an entry is written, and the lock file does not linger
+        assertTrue(CatalogUtils.updateCatalog(outfile, null, fakeProject, false, data -> {
+            final CatEntryBean entry = (CatEntryBean) CatalogUtils.getEntryByURI(data.catBean, "TESTID.MR.999.4.53.20080618.133713.agkqek.dcm");
+            assertNotNull(entry);
+            return CatalogUtils.removeEntry(data.catBean, entry);
+        }));
+        final CatalogUtils.CatalogData after = new CatalogUtils.CatalogData(outfile, fakeProject, false);
+        assertThat(after.catBean.getEntries_entry().size(), is(before - 1));
+        try (var locks = Files.list(Path.of(System.getProperty("java.io.tmpdir"), "file-locks"))) {
+            assertTrue("lock file released", locks.noneMatch(p -> p.getFileName().toString().contains("testUpdateCatalogUnderOneLock")));
+        }
+
+        // The rewritten catalog also has to pass the two-lock writer, which checks the file against the checksum
+        // recorded when it was written.
+        CatalogUtils.writeCatalogToFile(after);
+    }
+
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
+
+    @Test
+    public void aLockThatTimesOutSaysWhichFileAndHowLongItWaited() throws Exception {
+        final File file = new File(TMPDIR, "aLockThatTimesOut_" + UUID.randomUUID() + ".xml");
+        final ThreadAndProcessFileLock writer = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, false);
+        writer.tryLock(1L, TimeUnit.SECONDS);
+        final ExecutorService other = Executors.newSingleThreadExecutor();
+        try {
+            final Future<IOException> read = other.submit(() -> {
+                final ThreadAndProcessFileLock reader = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, true);
+                try {
+                    reader.tryLock(1L, TimeUnit.SECONDS);
+                    reader.unlock();
+                    return null;
+                } catch (IOException e) {
+                    return e;
+                } finally {
+                    ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
+                }
+            });
+            final IOException failure = read.get(30L, TimeUnit.SECONDS);
+            assertNotNull("the read should time out while the write lock is held", failure);
+            assertEquals("Timed out after 1 second waiting for the read lock on " + file + "; another thread or process holds it",
+                         failure.getMessage());
+        } finally {
+            other.shutdownNow();
+            writer.unlock();
+            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
+        }
+    }
 
     @Test
     public void testConcurrentWriteThrowsException() throws Exception {

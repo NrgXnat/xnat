@@ -56,6 +56,8 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         // DefaultLoggingService once their configs are merged. No-op when the variable is unset.
         DefaultLoggingService.applyConsoleRedirectIfRequested();
 
+        // Added before super.onStartup() adds Spring's ContextLoaderListener, so it is destroyed after it and logging
+        // lasts until the Spring context has closed. web.xml keeps logback's own initializer from adding another.
         context.addListener(new LogbackServletContextListener());
 
         context.setInitParameter("org.restlet.component", "org.nrg.xnat.restlet.XNATComponent");

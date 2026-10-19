@@ -110,12 +110,12 @@ public class DBItemCache {
         return sql;
     }
 
-    public void finalize() throws Exception {
-        try {
-            super.finalize();
-        } catch (Throwable throwable) {
-            throw new Exception(throwable);
-        }
+    /**
+     * Adds the save's xdat:change_info row to the cached statements. {@link PoolDBUtils#sendBatch(DBItemCache, String, String)}
+     * calls this before it sends them. It must not be named finalize(): the JVM also calls that on its finalizer thread
+     * for every collected instance, outside any save.
+     */
+    public void addChangeInfo() throws Exception {
         XFTItem cache_info = XFTItem.NewItem("xdat:change_info", user);
         cache_info.setDirectProperty("change_date", getModTime());
         if (user != null) {

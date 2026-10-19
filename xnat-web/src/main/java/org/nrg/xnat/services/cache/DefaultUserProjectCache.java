@@ -359,11 +359,13 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                     _aliasMapping.remove(alias);
                 }
                 evictProjectCache(projectId);
+                evictUserAccessLevels(projectId);
                 break;
 
             case UPDATE:
                 log.debug("The project '{}' was updated, refreshing cache entry", projectId);
                 refreshProjectCache(projectId);
+                evictUserAccessLevels(projectId);
                 break;
 
             default:
@@ -750,6 +752,17 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private void refreshProjectCache(final String projectId) {
         evictProjectCache(projectId);
         getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
+    }
+
+    /**
+     * Drops the project's cached per-user access levels, so each user's next check builds them again. A project made
+     * private must stop granting the read access its accessibility gave non-members. A deleted project's levels go
+     * with it.
+     */
+    private void evictUserAccessLevels(final String projectId) {
+        synchronized (getUserAccessLock(projectId)) {
+            evict(CACHE_PROJECT_USER_ACCESS, projectId);
+        }
     }
 
     private void evictProjectCache(final String projectId) {

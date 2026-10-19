@@ -132,15 +132,27 @@ public class DicomZipImporterCommitTest {
     }
 
     @Test
-    public void aFailedBuildDoesNotStopTheNextSessionAndHidesItsMessage() throws Exception {
+    public void aFailedBuildDoesNotStopTheNextSessionAndGivesItsCause() throws Exception {
         when(handlers.get("FIRST").rebuild()).thenThrow(new RuntimeException(new IOException("/data/xnat/prearchive/" + PROJECT + "/" + TIMESTAMP + "/FIRST.xml")));
 
         final Throwable thrown = catchThrowable(() -> committedUpload(false).call());
 
         verify(handlers.get("SECOND")).postBuild();
         assertThat(thrown).isInstanceOf(ServerException.class)
-                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (server error)");
+                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (server error: IOException: /data/xnat/prearchive/" + PROJECT + "/" + TIMESTAMP + "/FIRST.xml)");
         assertThat(((ServerException) thrown).getStatus()).isEqualTo(Status.SERVER_ERROR_INTERNAL);
+    }
+
+    @Test
+    public void aServerErrorFromTheArchiveGivesItsMessage() {
+        final ServerException failure = new ServerException(Status.SERVER_ERROR_INTERNAL, "Unable to create back-up folder: /data/xnat/archive/" + PROJECT + "/arc001/FIRST");
+        mockedPrearcDatabase.when(() -> PrearcDatabase.archive(any(), sessionNamed("FIRST"), anyBoolean(), anyBoolean(), anyBoolean(), any(), any()))
+                            .thenThrow(new SyncFailedException("Operation Failed: " + failure.getMessage(), failure));
+
+        final Throwable thrown = catchThrowable(() -> committedUpload(true).call());
+
+        assertThat(thrown).isInstanceOf(ServerException.class)
+                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (server error: " + failure.getMessage() + ")");
     }
 
     @Test
@@ -165,7 +177,7 @@ public class DicomZipImporterCommitTest {
         final Throwable thrown = catchThrowable(() -> committedUpload(true).call());
 
         assertThat(thrown).isInstanceOf(ServerException.class)
-                          .hasMessage("unable to build or archive 2 of 2 Prearchive sessions: " + FIRST + " (" + PrearcSessionArchiver.PRE_EXISTS + "); " + SECOND + " (server error)");
+                          .hasMessage("unable to build or archive 2 of 2 Prearchive sessions: " + FIRST + " (" + PrearcSessionArchiver.PRE_EXISTS + "); " + SECOND + " (server error: IllegalStateException: second)");
         assertThat(((ServerException) thrown).getStatus()).isEqualTo(Status.SERVER_ERROR_INTERNAL);
     }
 
@@ -194,7 +206,7 @@ public class DicomZipImporterCommitTest {
 
         verify(handlers.get("SECOND")).postBuild();
         assertThat(thrown).isInstanceOf(ServerException.class)
-                          .hasMessage("unable to build or archive 2 of 2 Prearchive sessions: " + FIRST + " (server error); " + SECOND + " (server error)");
+                          .hasMessage("unable to build or archive 2 of 2 Prearchive sessions: " + FIRST + " (server error: IllegalStateException: first); " + SECOND + " (server error: IllegalStateException: second)");
         assertThat(thrown.getSuppressed()).hasSize(1);
     }
 

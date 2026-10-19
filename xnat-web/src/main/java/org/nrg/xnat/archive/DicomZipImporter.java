@@ -291,12 +291,17 @@ public final class DicomZipImporter extends ImporterHandlerA {
     }
 
     /**
-     * The message of the client error behind a failure, such as an archive conflict. Any other failure is reported only
-     * as a server error, as its message can name server paths.
+     * The message of the client error behind a failure, such as an archive conflict. Any other failure is reported as a
+     * server error with the message of the server error behind it, or else of its root cause, so the uploader can pass
+     * it on to the site's administrators.
      */
     private static String reason(final Exception failure) {
         final ClientException clientError = ExceptionUtils.throwableOfType(failure, ClientException.class);
-        return clientError != null ? clientError.getMessage() : "server error";
+        if (clientError != null) {
+            return clientError.getMessage();
+        }
+        final ServerException serverError = ExceptionUtils.throwableOfType(failure, ServerException.class);
+        return "server error: " + (serverError != null && StringUtils.isNotBlank(serverError.getMessage()) ? serverError.getMessage() : ExceptionUtils.getRootCauseMessage(failure));
     }
 
     private void archiveSession(Set<String> archiveUrls, boolean override, boolean appendMerge, PrearchiveOperationRequest request) throws Exception {

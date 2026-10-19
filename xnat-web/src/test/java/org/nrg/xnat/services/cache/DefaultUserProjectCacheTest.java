@@ -1,5 +1,6 @@
 package org.nrg.xnat.services.cache;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Test;
 import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.services.SerializerService;
@@ -10,7 +11,9 @@ import org.nrg.xft.event.XftItemEventI;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+import javax.cache.Cache;
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,8 +25,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -75,41 +80,66 @@ public class DefaultUserProjectCacheTest {
         assertThat(levels.get("other")).containsExactly(Delete, Owner);
     }
 
-    // A non-member's cached Read on a public or protected project must not outlive the project being made private, and a
-    // project deleted and created again with the same ID must not inherit the old project's levels.
+    // A non-member's cached Read on a public or protected project must not outlive the project being made private. A
+    // member's levels come from their group, and other updates change no one's, so those stay cached.
 
     @Test
-    public void aProjectUpdateDropsItsUsersAccessLevels() {
+    public void aChangeOfAccessibilityDropsOnlyNonMembersLevels() throws IOException {
+        final SerializerService serializer = mock(SerializerService.class);
+        final DefaultUserProjectCache cache = projectEventCache(serializer);
+        final Map<String, ArrayList<AccessLevel>> levels = new HashMap<>();
+        levels.put("member", new ArrayList<>(Arrays.asList(Edit, Member)));
+        levels.put("nonMember", new ArrayList<>(Collections.singletonList(Read)));
+        @SuppressWarnings("unchecked") final Cache<String, String> accessLevels = mock(Cache.class);
+        when(accessLevels.get("project")).thenReturn("cached");
+        doReturn(accessLevels).when(cache).getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class);
+        doReturn(levels).when(serializer).deserializeJson(eq("cached"), any(TypeReference.class));
+        when(serializer.toJson(any())).thenReturn("written");
+        doNothing().when(cache).cacheObject(anyString(), anyString(), any());
+
+        cache.handleEventImpl(projectEvent(XftItemEventI.UPDATE, Collections.singletonMap("accessibility", "private")));
+        assertThat(levels).containsOnlyKeys("member");
+        verify(cache).cacheObject(CACHE_PROJECT_USER_ACCESS, "project", "written");
+        verify(cache, never()).evict(CACHE_PROJECT_USER_ACCESS, "project");
+    }
+
+    @Test
+    public void anUpdateThatKeepsTheAccessibilityKeepsTheAccessLevels() {
         final DefaultUserProjectCache cache = projectEventCache();
 
-        cache.handleEventImpl(projectEvent(XftItemEventI.UPDATE));
-        verify(cache).evict(CACHE_PROJECT_USER_ACCESS, "project");
+        cache.handleEventImpl(projectEvent(XftItemEventI.UPDATE, Collections.emptyMap()));
+        verify(cache, never()).evict(CACHE_PROJECT_USER_ACCESS, "project");
     }
 
     @Test
     public void aProjectDeletionDropsItsUsersAccessLevels() {
         final DefaultUserProjectCache cache = projectEventCache();
 
-        cache.handleEventImpl(projectEvent(XftItemEventI.DELETE));
+        cache.handleEventImpl(projectEvent(XftItemEventI.DELETE, Collections.emptyMap()));
         verify(cache).evict(CACHE_PROJECT_USER_ACCESS, "project");
     }
 
     private static DefaultUserProjectCache projectEventCache() {
+        return projectEventCache(mock(SerializerService.class));
+    }
+
+    private static DefaultUserProjectCache projectEventCache(final SerializerService serializer) {
         final NamedParameterJdbcTemplate template = mock(NamedParameterJdbcTemplate.class);
         final JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         when(jdbcTemplate.getDataSource()).thenReturn(mock(DataSource.class));
         when(template.getJdbcOperations()).thenReturn(jdbcTemplate);
-        final DefaultUserProjectCache cache = spy(new DefaultUserProjectCache(mock(JCacheHelper.class), mock(GroupsAndPermissionsCache.class), mock(SerializerService.class), template, Collections.emptyList()));
+        final DefaultUserProjectCache cache = spy(new DefaultUserProjectCache(mock(JCacheHelper.class), mock(GroupsAndPermissionsCache.class), serializer, template, Collections.emptyList()));
         doReturn(null).when(cache).getCacheItem(eq(DefaultUserProjectCache.CACHE_PROJECTS), any(), any());
         doReturn(null).when(cache).evict(anyString(), anyString());
         return cache;
     }
 
-    private static XftItemEventI projectEvent(final String action) {
+    private static XftItemEventI projectEvent(final String action, final Map<String, ?> properties) {
         final XftItemEventI event = mock(XftItemEventI.class);
         when(event.getXsiType()).thenReturn(XnatProjectdata.SCHEMA_ELEMENT_NAME);
         when(event.getId()).thenReturn("project");
         when(event.getAction()).thenReturn(action);
+        doReturn(properties).when(event).getProperties();
         return event;
     }
 

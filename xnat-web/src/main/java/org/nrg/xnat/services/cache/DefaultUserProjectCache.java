@@ -365,7 +365,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             case UPDATE:
                 log.debug("The project '{}' was updated, refreshing cache entry", projectId);
                 refreshProjectCache(projectId);
-                evictUserAccessLevels(projectId);
+                if (event.getProperties().containsKey("accessibility")) {
+                    dropNonMemberAccessLevels(projectId);
+                }
                 break;
 
             default:
@@ -529,8 +531,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
-     * Gets the lock that guards reading, changing and caching one project's per-user access levels, so a membership
-     * change can't be overwritten by an access check that read the levels before it.
+     * Gets the lock that guards building, changing and dropping one project's per-user access levels, so a membership
+     * change can't be overwritten by an access check that read the levels before it. Reading cached levels doesn't
+     * take it.
      */
     private Object getUserAccessLock(final String projectId) {
         return _userAccessLocks.computeIfAbsent(projectId, key -> new Object());
@@ -541,6 +544,19 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         if (StringUtils.isBlank(serialized)) {
             return Collections.emptyMap();
         }
+        return deserializeUserAccessLevels(serialized);
+    }
+
+    /**
+     * Returns the user's cached access levels for the project, or null if none are cached. Unlike {@link
+     * #getUserAccessLevelsForProject(String)}, this doesn't build the project's levels when they aren't cached.
+     */
+    private List<AccessLevel> getCachedUserAccessLevels(final String projectId, final String userId) {
+        final String serialized = getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class).get(projectId);
+        return StringUtils.isBlank(serialized) ? null : deserializeUserAccessLevels(serialized).get(userId);
+    }
+
+    private Map<String, ArrayList<AccessLevel>> deserializeUserAccessLevels(final String serialized) {
         try {
             return _serializer.deserializeJson(serialized, USER_ACCESS_LEVEL_TYPE_REF);
         } catch (IOException e) {
@@ -678,21 +694,24 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 return true;
             }
 
-            final List<AccessLevel> levels;
-            synchronized (getUserAccessLock(projectId)) {
-                final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
+            // Cached levels are read without the lock. Only a check that has to build the user's levels takes it.
+            List<AccessLevel> levels = getCachedUserAccessLevels(projectId, userId);
+            if (levels == null) {
+                synchronized (getUserAccessLock(projectId)) {
+                    final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
 
-                // If the user isn't already cached...
-                if (!userAccessLevels.containsKey(userId)) {
-                    // Cache the user!
-                    userAccessLevels.put(userId, new ArrayList<>(Permissions.getAllUserProjectAccess(ObjectUtils.defaultIfNull(user, new XDATUser(userId)), projectId)));
-                    try {
-                        cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
-                    } catch (IOException e) {
-                        throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+                    // If the user isn't already cached...
+                    if (!userAccessLevels.containsKey(userId)) {
+                        // Cache the user!
+                        userAccessLevels.put(userId, new ArrayList<>(Permissions.getAllUserProjectAccess(ObjectUtils.defaultIfNull(user, new XDATUser(userId)), projectId)));
+                        try {
+                            cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+                        } catch (IOException e) {
+                            throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+                        }
                     }
+                    levels = userAccessLevels.get(userId);
                 }
-                levels = userAccessLevels.get(userId);
             }
             return CollectionUtils.containsAny(levels, ACCESS_LEVELS.get(accessLevel));
         } catch (UserInitException e) {
@@ -755,9 +774,30 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
-     * Drops the project's cached per-user access levels, so each user's next check builds them again. A project made
-     * private must stop granting the read access its accessibility gave non-members. A deleted project's levels go
-     * with it.
+     * Drops the cached levels of users who aren't in one of the project's owner, member or collaborator groups, so
+     * their next check builds them again. A project's accessibility decides what those users can do: a project made
+     * private must stop granting the read access it gave them. The levels of users in those groups come from their
+     * group and stay cached.
+     */
+    private void dropNonMemberAccessLevels(final String projectId) {
+        synchronized (getUserAccessLock(projectId)) {
+            final String serialized = getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class).get(projectId);
+            if (StringUtils.isBlank(serialized)) {
+                return;
+            }
+            final Map<String, ArrayList<AccessLevel>> userAccessLevels = deserializeUserAccessLevels(serialized);
+            if (userAccessLevels.values().removeIf(levels -> Collections.disjoint(levels, PROJECT_GROUP_LEVELS))) {
+                try {
+                    cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+                } catch (IOException e) {
+                    throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Drops the deleted project's cached per-user access levels.
      */
     private void evictUserAccessLevels(final String projectId) {
         synchronized (getUserAccessLock(projectId)) {
@@ -819,6 +859,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                                                                                                             .put(Edit, Stream.of(DELETABLE_ACCESS, WRITABLE_ACCESS).flatMap(Collection::stream).collect(Collectors.toList()))
                                                                                                             .put(Read, Stream.of(DELETABLE_ACCESS, WRITABLE_ACCESS, READABLE_ACCESS).flatMap(Collection::stream).collect(Collectors.toList())).build();
     private static final Map<String, List<AccessLevel>>      USER_GROUP_SUFFIXES              = ImmutableMap.of("owner", DELETABLE_ACCESS, "member", WRITABLE_ACCESS, "collaborator", READABLE_ACCESS);
+    private static final List<AccessLevel>                   PROJECT_GROUP_LEVELS             = Arrays.asList(Owner, Member, Collaborator);
     private static final String                              QUERY_KEY_PROJECT_ID             = "projectId";
     private static final String                              QUERY_KEY_ACCESS_LEVEL           = "accessLevel";
     private static final String                              QUERY_GET_PROJECT_BY_ID_OR_ALIAS = "SELECT DISTINCT id " +

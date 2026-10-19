@@ -134,7 +134,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
                 } else {
                     updateStatus(uris);
                 }
-            } catch (ClientException e) {
+            } catch (ClientException | ServerException e) {
                 failed(e.getMessage(), true);
                 throw e;
             }
@@ -222,7 +222,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
         this.completed(message, true);
     }
 
-    private Set<String> xmlBuild(Set<String> uris) throws ClientException {
+    private Set<String> xmlBuild(Set<String> uris) throws ClientException, ServerException {
         Set<String> archiveUrls = new HashSet<>();
         final Map<String, Exception> failures = new LinkedHashMap<>();
         final boolean override = isBooleanParameter(PrearchiveOperationRequest.PARAM_OVERRIDE_EXCEPTIONS);
@@ -254,9 +254,17 @@ public final class DicomZipImporter extends ImporterHandlerA {
             final String sessions = failures.entrySet().stream()
                                             .map(entry -> entry.getKey() + " (" + reason(entry.getValue()) + ")")
                                             .collect(Collectors.joining("; "));
+            final String message = "unable to build or archive " + failures.size() + " of " + uris.size() + " Prearchive sessions: " + sessions;
             // The first failure is the cause and the others are suppressed, so the log keeps each one's stack trace
             final Iterator<Exception> causes = failures.values().iterator();
-            final ClientException failure = new ClientException(status(failures.values()), "unable to build or archive " + failures.size() + " of " + uris.size() + " Prearchive sessions: " + sessions, causes.next());
+            final Exception           cause  = causes.next();
+            final Status              status = status(failures.values());
+            if (status.isServerError()) {
+                final ServerException failure = new ServerException(status, message, cause);
+                causes.forEachRemaining(failure::addSuppressed);
+                throw failure;
+            }
+            final ClientException failure = new ClientException(status, message, cause);
             causes.forEachRemaining(failure::addSuppressed);
             throw failure;
         }
@@ -264,16 +272,20 @@ public final class DicomZipImporter extends ImporterHandlerA {
     }
 
     /**
-     * The status the upload fails with: that of the client errors behind its failures when every failure has one and
-     * they agree, such as 409 when each session conflicts with one already archived. Otherwise 400.
+     * The status the upload fails with: 500 if any failure is the server's, with no client error behind it. Otherwise
+     * that of the client errors when they agree, such as 409 when each session conflicts with one already archived,
+     * and 400 when they don't.
      */
     private static Status status(final Collection<Exception> failures) {
         final Set<Integer> codes = new HashSet<>();
         for (final Exception failure : failures) {
             final ClientException clientError = ExceptionUtils.throwableOfType(failure, ClientException.class);
-            codes.add(clientError != null ? clientError.getStatus().getCode() : null);
+            if (clientError == null) {
+                return Status.SERVER_ERROR_INTERNAL;
+            }
+            codes.add(clientError.getStatus().getCode());
         }
-        return codes.size() == 1 && !codes.contains(null) ? Status.valueOf(codes.iterator().next()) : Status.CLIENT_ERROR_BAD_REQUEST;
+        return codes.size() == 1 ? Status.valueOf(codes.iterator().next()) : Status.CLIENT_ERROR_BAD_REQUEST;
     }
 
     /**

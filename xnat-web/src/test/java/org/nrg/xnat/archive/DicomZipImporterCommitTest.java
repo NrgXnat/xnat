@@ -28,6 +28,7 @@ import org.mockito.Mockito;
 import org.restlet.data.Status;
 
 import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.services.DataTypeAwareEventService;
@@ -56,8 +57,9 @@ import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.ARCHIVING
 /**
  * A zip upload with action=commit builds, and with auto-archive=true archives, every session it wrote into. A session
  * that fails doesn't stop the sessions after it; the upload still fails, naming each session that failed. It fails
- * with the status of the client errors behind the failures when they all have one and agree, such as 409 for a
- * session already archived under the same label, and with 400 otherwise.
+ * with 500 if any session failed on the server, with no client error behind it. Otherwise it fails with the status of
+ * the client errors when they agree, such as 409 for a session already archived under the same label, and with 400
+ * when they don't.
  */
 public class DicomZipImporterCommitTest {
     private static final String PROJECT   = "PROJ";
@@ -136,13 +138,13 @@ public class DicomZipImporterCommitTest {
         final Throwable thrown = catchThrowable(() -> committedUpload(false).call());
 
         verify(handlers.get("SECOND")).postBuild();
-        assertThat(thrown).isInstanceOf(ClientException.class)
+        assertThat(thrown).isInstanceOf(ServerException.class)
                           .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (server error)");
-        assertThat(((ClientException) thrown).getStatus()).isEqualTo(Status.CLIENT_ERROR_BAD_REQUEST);
+        assertThat(((ServerException) thrown).getStatus()).isEqualTo(Status.SERVER_ERROR_INTERNAL);
     }
 
     @Test
-    public void aConflictAlongsideAnotherFailureIs400() throws Exception {
+    public void aConflictAlongsideAServerFailureIs500() throws Exception {
         final ClientException conflict = new ClientException(Status.CLIENT_ERROR_CONFLICT, PrearcSessionArchiver.PRE_EXISTS, new Exception());
         mockedPrearcDatabase.when(() -> PrearcDatabase.archive(any(), sessionNamed("FIRST"), anyBoolean(), anyBoolean(), anyBoolean(), any(), any()))
                             .thenThrow(new SyncFailedException("Operation Failed: " + conflict.getMessage(), conflict));
@@ -150,8 +152,24 @@ public class DicomZipImporterCommitTest {
 
         final Throwable thrown = catchThrowable(() -> committedUpload(true).call());
 
-        assertThat(thrown).isInstanceOf(ClientException.class)
+        assertThat(thrown).isInstanceOf(ServerException.class)
                           .hasMessage("unable to build or archive 2 of 2 Prearchive sessions: " + FIRST + " (" + PrearcSessionArchiver.PRE_EXISTS + "); " + SECOND + " (server error)");
+        assertThat(((ServerException) thrown).getStatus()).isEqualTo(Status.SERVER_ERROR_INTERNAL);
+    }
+
+    @Test
+    public void clientErrorsThatDisagreeAre400() {
+        final ClientException conflict = new ClientException(Status.CLIENT_ERROR_CONFLICT, PrearcSessionArchiver.PRE_EXISTS, new Exception());
+        final ClientException relabel  = new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, PrearcSessionArchiver.LABEL_MOD, new Exception());
+        mockedPrearcDatabase.when(() -> PrearcDatabase.archive(any(), sessionNamed("FIRST"), anyBoolean(), anyBoolean(), anyBoolean(), any(), any()))
+                            .thenThrow(new SyncFailedException("Operation Failed: " + conflict.getMessage(), conflict));
+        mockedPrearcDatabase.when(() -> PrearcDatabase.archive(any(), sessionNamed("SECOND"), anyBoolean(), anyBoolean(), anyBoolean(), any(), any()))
+                            .thenThrow(new SyncFailedException("Operation Failed: " + relabel.getMessage(), relabel));
+
+        final Throwable thrown = catchThrowable(() -> committedUpload(true).call());
+
+        assertThat(thrown).isInstanceOf(ClientException.class)
+                          .hasMessage("unable to build or archive 2 of 2 Prearchive sessions: " + FIRST + " (" + PrearcSessionArchiver.PRE_EXISTS + "); " + SECOND + " (" + PrearcSessionArchiver.LABEL_MOD + ")");
         assertThat(((ClientException) thrown).getStatus()).isEqualTo(Status.CLIENT_ERROR_BAD_REQUEST);
     }
 
@@ -163,7 +181,7 @@ public class DicomZipImporterCommitTest {
         final Throwable thrown = catchThrowable(() -> committedUpload(false).call());
 
         verify(handlers.get("SECOND")).postBuild();
-        assertThat(thrown).isInstanceOf(ClientException.class)
+        assertThat(thrown).isInstanceOf(ServerException.class)
                           .hasMessage("unable to build or archive 2 of 2 Prearchive sessions: " + FIRST + " (server error); " + SECOND + " (server error)");
         assertThat(thrown.getSuppressed()).hasSize(1);
     }

@@ -1046,12 +1046,19 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
         _userCacheRebuilds.run(username, () -> {
             // A rebuild that was running when this was asked for may have cached data from before the change.
             evictUserCaches(username);
-            log.info("Initializing user group IDs cache entry for user '{}'", username);
-            updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
-            final List<String> groupIds = getCacheList(CACHE_USER_GROUPS, username, String.class);
-            log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
-            ACTIONS.forEach(a -> getActionElementDisplays(username, a));
-            getBrowseableElementDisplays(username);
+            try {
+                log.info("Initializing user group IDs cache entry for user '{}'", username);
+                updateUserLastUpdateCacheIfEmpty(CACHE_USER_GROUPS, username);
+                final List<String> groupIds = getCacheList(CACHE_USER_GROUPS, username, String.class);
+                log.debug("Found {} user group IDs cache entry for user '{}'", groupIds.size(), username);
+                ACTIONS.forEach(a -> getActionElementDisplays(username, a));
+                getBrowseableElementDisplays(username);
+            } catch (RuntimeException e) {
+                // A rebuild asked for while this one ran is dropped when this one fails, and this one may have cached
+                // data read before the change: evict it again, so the next read rebuilds.
+                evictUserCaches(username);
+                throw e;
+            }
         });
     }
 

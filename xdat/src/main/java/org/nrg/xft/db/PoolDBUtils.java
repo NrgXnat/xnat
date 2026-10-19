@@ -256,7 +256,7 @@ public class PoolDBUtils {
 
 	public void sendBatch(DBItemCache cache,String db,String userName) throws SQLException, Exception
 	{
-		cache.finalize();
+		cache.addChangeInfo();
 		this.sendBatch(cache.getStatements(), db, userName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
     	cache.reset();
 	}

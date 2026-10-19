@@ -144,6 +144,18 @@ public class DicomZipImporterCommitTest {
     }
 
     @Test
+    public void aSessionThatCannotBeBuiltIsNamedAndTheNextStillArchives() throws Exception {
+        when(handlers.get("FIRST").rebuild()).thenReturn(false);
+
+        final Throwable thrown = catchThrowable(() -> committedUpload(true).call());
+
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.archive(any(), sessionNamed("SECOND"), anyBoolean(), anyBoolean(), anyBoolean(), any(), any()));
+        assertThat(thrown).isInstanceOf(ClientException.class)
+                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (not built: the session is in use by another operation, was removed, or is still receiving data)");
+        assertThat(((ClientException) thrown).getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT);
+    }
+
+    @Test
     public void aConflictAlongsideAServerFailureIs500() throws Exception {
         final ClientException conflict = new ClientException(Status.CLIENT_ERROR_CONFLICT, PrearcSessionArchiver.PRE_EXISTS, new Exception());
         mockedPrearcDatabase.when(() -> PrearcDatabase.archive(any(), sessionNamed("FIRST"), anyBoolean(), anyBoolean(), anyBoolean(), any(), any()))

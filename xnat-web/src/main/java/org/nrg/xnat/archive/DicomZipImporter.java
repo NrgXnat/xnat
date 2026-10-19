@@ -244,6 +244,8 @@ public final class DicomZipImporter extends ImporterHandlerA {
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
+                } else {
+                    throw new ClientException(Status.CLIENT_ERROR_CONFLICT, "not built: the session is in use by another operation, was removed, or is still receiving data");
                 }
 
             } catch (Exception e) {

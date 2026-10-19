@@ -8,7 +8,11 @@
 
 #if(!$session)
 	#set($allowArchive=false)
+	#if($notBuilt)
+	<div class="alert">This session hasn't been built yet, so its details aren't available. Rebuild it to see them and archive it.</div>
+	#else
 	<div class="alert">Empty sessions cannot be archived.</div>
+	#end
 #elseif($project)
 	#set($allowArchive=true)
 	#set($allowChangeProject=true)

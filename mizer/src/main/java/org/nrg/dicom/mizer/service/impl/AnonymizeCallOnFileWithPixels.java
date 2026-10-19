@@ -22,8 +22,8 @@ import java.io.IOException;
  * should be considered fatal.
  *
  * The dicom data is read from the given file, changed headers and potentially changed pixels are
- * written to a temporary file. The given file is replaced with the
- * temporary file if the anonymization process is successful.
+ * written to a staging file. The given file is replaced with the
+ * staging file if the anonymization process is successful.
  *
  * NOTE: The record and scriptId arguments indicate whether to record the application of this
  * script in the DICOM header and what the ID of the script is. For that reason if "record" is
@@ -42,10 +42,8 @@ public class AnonymizeCallOnFileWithPixels extends CallOnFile<AnonymizationResul
     }
 
     // The dicom data is read from the given file, but the changed pixel data and
-    // headers are written to a temporary file in the system's temp directory
-    // in the "anon_backup" directory. The given file is replaced with the
-    // temporary file if the anonymization process is successful. The "anon_backup" directory
-    // is left in place.
+    // headers are written to the staging file WorkOnCopyOp hands us. The given file
+    // is replaced with the staging file if the anonymization process is successful.
     @Override
     public AnonymizationResult call() throws Exception {
         log.info("Preparing to anonymize file {} to {}", _dicomFile.getAbsolutePath(), getFile().getAbsolutePath());
@@ -55,10 +53,15 @@ public class AnonymizeCallOnFileWithPixels extends CallOnFile<AnonymizationResul
         // value in a byte[]. Constructed from the File, not a stream, so the BulkData references
         // point at _dicomFile rather than at a spooled copy.
         final DicomObjectI dicomObject = DicomObjectFactory.newInstance(_dicomFile, DicomInputStream.IncludeBulkData.URI);
-        try (final FileOutputStream output = new FileOutputStream(getFile())) {
+        try {
             final AnonymizationResult result = _mizer.anonymize(dicomObject, _mizerContext);
+            // The staging file exists only once there is a successful result to write into it. A
+            // rejection or an error is reported through the result, and WorkOnCopyOp then leaves the
+            // source alone; a staging file opened beforehand would be empty and would replace it.
             if (!(result instanceof AnonymizationResultReject) && !(result instanceof AnonymizationResultError)) {
-                result.getDicomObject().write(output);
+                try (final FileOutputStream output = new FileOutputStream(getFile())) {
+                    result.getDicomObject().write(output);
+                }
             }
             result.releaseObjectFromMemory();
             return result;

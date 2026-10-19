@@ -32,12 +32,14 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	private TorqueField tf = null;
 	private XFTSqlField sql = null;
 	
-	private ArrayList directFields = null;
-	private ArrayList allFields = null;
+	// The lookups below are built into a local collection and published through a volatile field once complete, so
+	// another thread never sees one partly built. A race builds equal collections.
+	private volatile ArrayList directFields = null;
+	private volatile ArrayList allFields = null;
 	
 	private XFTReferenceI xftRef = null;
 	
-	private Hashtable allPossibleXMLFieldNames = null;
+	private volatile Hashtable allPossibleXMLFieldNames = null;
 	
 	private static String DEFAULT_STRING_SIZE = "255";
 	
@@ -76,17 +78,19 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	 */
 	public Hashtable getAllPossibleXMLFieldNames()throws ElementNotFoundException, XFTInitException 
 	{
-		if (this.allPossibleXMLFieldNames == null)
+		Hashtable names = allPossibleXMLFieldNames;
+		if (names == null)
 		{
-			allPossibleXMLFieldNames = new Hashtable();
+			names = new Hashtable();
 			Iterator dF = this.getDirectFieldsNoFilter().iterator();
 			while (dF.hasNext())
 			{
 				GenericWrapperField f = (GenericWrapperField)dF.next();
-				allPossibleXMLFieldNames.put(f.getName().toLowerCase(),f);
+				names.put(f.getName().toLowerCase(),f);
 			}
+			allPossibleXMLFieldNames = names;
 		}
-		return allPossibleXMLFieldNames;
+		return names;
 	}
 	
 	/**
@@ -204,18 +208,20 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	 */
 	public ArrayList getDirectFields()
 	{
-		if (this.directFields == null)
+		ArrayList fields = directFields;
+		if (fields == null)
 		{
-			directFields = new ArrayList();
+			fields = new ArrayList();
 			Iterator iter = wrapped.getSortedFields().iterator();
 			while (iter.hasNext())
 			{
 				XFTField xf = (XFTField)iter.next();
-				directFields.add(getFactory().wrapField(xf));
+				fields.add(getFactory().wrapField(xf));
 				
 			}
+			directFields = fields;
 		}
-		return directFields;
+		return fields;
 	}
 
 	public ArrayList getDirectFieldsNoFilter() {
@@ -235,21 +241,23 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	 */
 	public ArrayList getAllFields()
 	{
-		if (this.allFields == null)
+		ArrayList fields = allFields;
+		if (fields == null)
 		{
-			allFields = new ArrayList();
+			fields = new ArrayList();
 			Iterator iter = wrapped.getSortedFields().iterator();
 			while (iter.hasNext())
 			{
 				XFTField xf = (XFTField)iter.next();
 				GenericWrapperField gwf = (GenericWrapperField)getFactory().wrapField(xf);
 				
-				allFields.addAll(gwf.getAllFields());
+				fields.addAll(gwf.getAllFields());
 				if (IsLeafNode(xf))
-					allFields.add(gwf);
+					fields.add(gwf);
 			}
+			allFields = fields;
 		}
-		return allFields;
+		return fields;
 	}
 	
 	

@@ -1,0 +1,42 @@
+name: Needs Milestone Label
+
+# GitHub can't require a milestone when an issue is created, and only people
+# with triage access can set one, so external reporters never could. Instead,
+# every open issue without a milestone carries the `needs-milestone` label for
+# triage to filter on, and the label comes off as soon as a milestone is set.
+#
+# PRs are enforced separately by require-milestone.yml.
+
+on:
+  issues:
+    types: [opened, reopened, milestoned, demilestoned]
+
+permissions:
+  issues: write
+
+# Queue rather than cancel, so quick milestone toggles apply in order and the
+# last event wins.
+concurrency:
+  group: needs-milestone-${{ github.event.issue.number }}
+
+jobs:
+  label:
+    name: Sync needs-milestone label
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE: ${{ github.event.issue.number }}
+    steps:
+      - name: Add needs-milestone
+        if: >-
+          !github.event.issue.milestone
+          && github.event.issue.state == 'open'
+          && !contains(github.event.issue.labels.*.name, 'needs-milestone')
+        run: gh issue edit "$ISSUE" --add-label needs-milestone
+
+      - name: Remove needs-milestone
+        if: >-
+          github.event.issue.milestone
+          && contains(github.event.issue.labels.*.name, 'needs-milestone')
+        run: gh issue edit "$ISSUE" --remove-label needs-milestone

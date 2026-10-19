@@ -13,6 +13,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
@@ -106,11 +107,13 @@ public final class DicomZipImporter extends ImporterHandlerA {
         try {
             importCompressedFile(fw, uris);
         } catch (ServerException | ClientException e) {
+            ImportFailures.markFailed(Sets.union(uris, failedEntrySessions), e);
             this.failed(e.getMessage(), true);
             throw e;
         }
 
         if (uris.isEmpty() && nonDcmException != null) {
+            ImportFailures.markFailed(failedEntrySessions, nonDcmException);
             this.failed(nonDcmException.getMessage(), true);
             throw nonDcmException;
         }
@@ -238,6 +241,12 @@ public final class DicomZipImporter extends ImporterHandlerA {
                 }
 
             } catch (Exception e) {
+                // A failure the request caused, such as a session already in the archive under the same label, keeps
+                // its status and message. Other failures are reported as before.
+                final ClientException clientError = ExceptionUtils.throwableOfType(e, ClientException.class);
+                if (clientError != null) {
+                    throw new ClientException(clientError.getStatus(), "unable to archive for the Prearchive session: " + clientError.getMessage(), e);
+                }
                 throw new ClientException("unable to archive for the Prearchive session", e);
             }
         }
@@ -270,10 +279,20 @@ public final class DicomZipImporter extends ImporterHandlerA {
             throws ServerException, ClientException {
         final GradualDicomImporter importer = new GradualDicomImporter(listenerControl, u, entryFileWriter, params);
         importer.setIdentifier(getIdentifier());
+        importer.setScope(scope);
         if (null != getNamer()) {
             importer.setNamer(getNamer());
         }
-        uris.addAll(importer.call());
+        try {
+            uris.addAll(importer.call());
+        } catch (ServerException | ClientException e) {
+            // The entry may have been the first in its session, so no entry returned that session. Skipped or not,
+            // it went into the session, and a failed import marks it with the others.
+            if (importer.getSessionUri() != null) {
+                failedEntrySessions.add(importer.getSessionUri());
+            }
+            throw e;
+        }
     }
 
     private void determiningDestination() throws MalformedURLException {
@@ -319,9 +338,11 @@ public final class DicomZipImporter extends ImporterHandlerA {
     }
 
     private final Object listenerControl;
+    private final ImportScope scope = new ImportScope();   // the archive's entries read their settings once
     private final UserI u;
     private final Map<String, Object> params;
     private final FileWriterWrapperI fw;
     private final boolean ignoreUnparsable;
     private ClientException nonDcmException = null;
+    private final Set<String> failedEntrySessions = Sets.newLinkedHashSet();
 }

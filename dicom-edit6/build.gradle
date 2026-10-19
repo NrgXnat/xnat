@@ -42,14 +42,16 @@ ext.openCv = {
     final String arch = System.getProperty('os.arch').toLowerCase()
     final boolean arm = arch.contains('aarch64') || arch.contains('arm64')
     if (os.contains('mac')) {
-        return [classifier: arm ? 'macosx-aarch64' : 'macosx-x86-64', extension: 'dylib',
-                fileName: 'libopencv_java.dylib']
+        return [artifactId: 'libopencv_java', classifier: arm ? 'macosx-aarch64' : 'macosx-x86-64',
+                extension: 'dylib', fileName: 'libopencv_java.dylib']
     }
     if (os.contains('windows')) {
-        return [classifier: 'windows-x86-64', extension: 'dll', fileName: 'opencv_java.dll']
+        // Published without the "lib" prefix the other platforms carry.
+        return [artifactId: 'opencv_java', classifier: 'windows-x86-64', extension: 'dll',
+                fileName: 'opencv_java.dll']
     }
-    return [classifier: arm ? 'linux-aarch64' : 'linux-x86-64', extension: 'so',
-            fileName: 'libopencv_java.so']
+    return [artifactId: 'libopencv_java', classifier: arm ? 'linux-aarch64' : 'linux-x86-64',
+            extension: 'so', fileName: 'libopencv_java.so']
 }()
 
 generateGrammarSource {
@@ -91,7 +93,7 @@ dependencies {
     // compressed object cannot decode it. See docs/mirroring-opencv-codecs.md.
     testRuntimeOnly libs.dcm4che5.dcm4che.imageio.opencv
     testRuntimeOnly libs.dcm4che5.dcm4che.imageio.rle
-    opencvNative "org.weasis.thirdparty.org.opencv:libopencv_java:${libs.versions.weasis.opencv.get()}:${openCv.classifier}@${openCv.extension}"
+    opencvNative "org.weasis.thirdparty.org.opencv:${openCv.artifactId}:${libs.versions.weasis.opencv.get()}:${openCv.classifier}@${openCv.extension}"
 }
 
 tasks.register('stageOpenCvNative', Copy) {

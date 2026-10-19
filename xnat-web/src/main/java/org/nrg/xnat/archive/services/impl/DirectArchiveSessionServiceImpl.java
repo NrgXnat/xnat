@@ -3,6 +3,7 @@ package org.nrg.xnat.archive.services.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
@@ -50,6 +51,7 @@ import org.nrg.xnat.services.messaging.archive.DirectArchiveRequest;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.PhaseTimer;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.model.CatDcmentryI;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -220,6 +222,45 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         }
     }
 
+    @Override
+    public void handleFailedUpload(SessionData session, Exception cause) {
+        final long id = session.getId();
+        try {
+            // Nothing moves yet: another upload may still be sending into this session.
+            if (directArchiveSessionHibernateService.markFailedUpload(id, cause)) {
+                log.warn("An upload into DirectArchiveSession id={} {} failed; it moves to the prearchive in ERROR once idle",
+                         id, session.getSessionDataTriple(), cause);
+            }
+        } catch (NotFoundException e) {
+            log.warn("DirectArchiveSession id={} disappeared while handling a failed upload into it", id, e);
+        }
+    }
+
+    /**
+     * For the archive trigger: the session went idle after an upload into it failed, so it may hold only part of the
+     * study.
+     */
+    private void moveFailedUpload(SessionData session) throws NotFoundException {
+        final long id = session.getId();
+        final ArchivingException failure = new ArchivingException("An import into this session failed partway, so it may be missing files. The import failed with: " + session.getMessage());
+        // Claimed before anything on the filesystem is touched, as a delete is: from here the importer refuses the
+        // next file of any upload into this session. A session a file reached since the trigger read its list isn't
+        // claimed; a later run moves it once it is idle again.
+        if (!directArchiveSessionHibernateService.claimIdleFailedUpload(id, failure)) {
+            return;
+        }
+        final boolean stillLanding = PrearcUtils.isSessionReceiving(session.getSessionDataTriple());
+        if (stillLanding || !ownsSessionDirectory(session)) {
+            log.warn("DirectArchiveSession id={} {} went idle after an upload into it failed; leaving it in ERROR at {} because {}", id, session.getSessionDataTriple(), session.getUrl(),
+                     stillLanding ? "a file is still landing there" : "the directory is not this session's alone");
+            return;
+        }
+        log.warn("DirectArchiveSession id={} {} went idle after an upload into it failed; moving it to the prearchive", id, session.getSessionDataTriple());
+        // In ERROR, where the idle-timeout rebuild leaves it alone: queued for a rebuild instead, what may be only
+        // part of the study would be archived after all.
+        doPrearchiveMove(id, session, Rebuild, PrearcStatus.ERROR, failure);
+    }
+
     /**
      * The directory is this session's to remove only when no newer session at the same location is still alive and
      * no archived experiment already owns it. The cheap row check runs first.
@@ -384,10 +425,13 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         String               location   = target.getUrl();
         String               project    = target.getProject();
         XnatImagesessiondata session;
+        final PhaseTimer timer = new PhaseTimer();
         try {
             session = populateSession(user, location, project);
+            timer.lap("populate");
             if (Boolean.FALSE.equals(target.getPreventAnon())) {
                 List<AnonymizationResult>  anonResults = new ProjectAnonymizer(session, project, location, false).call();
+                timer.lap("anonymize");
                 if (anonResults.stream().anyMatch(AnonymizationResultError.class::isInstance)) {
                     log.error("Anonymization failed for DirectArchiveSession id={} at {} ", id, location);
                     throw new ArchivingException("Anonymization failed for DirectArchiveSession id="+id+ "at "+location);
@@ -400,6 +444,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                     // rebuild XML and update session
                     PrearcUtils.buildSession(target);
                     session = populateSession(user, location, project);
+                    timer.lap("rebuild");
                 }
             }
 
@@ -422,10 +467,14 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             PrearcSessionArchiver.preArchive(user, session, EMPTY_MAP, null);
             workflow = createWorkflow(user, session);
             saveSubject(session, workflow.buildEvent());
+            timer.lap("prepare");
             setupScans(session, location);
+            timer.lap("setup-scans");
             saveSession(session, workflow.buildEvent());
+            timer.lap("save");
             PrearcSessionArchiver.postArchive(user, session, EMPTY_MAP);
             Files.delete(sessionXmlPath(location));
+            timer.lap("post-archive");
         } catch (Exception e) {
             log.error("Unable to archive DirectArchiveSession id={}, attempting to move to prearchive", id, e);
             if (workflow != null) {
@@ -442,8 +491,10 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         // At this point, the session has been archived, so we no longer want to move to prearchive if there's an exception
         try {
             cleanupScans(session, location, workflow.buildEvent()); // could potentially be removed for performance. need to set format=DICOM in catalog prior to this
+            timer.lap("cleanup-catalogs");
             directArchiveSessionHibernateService.delete(id);
             completeWorkflow(workflow);
+            PhaseTimer.LOG.info("Direct-archived session {} at {}: {}", id, location, timer);
         } catch (Exception e) {
             log.error("Issue after direct archive DirectArchiveSession id={}", id, e);
             failWorkflow(workflow, e);
@@ -467,11 +518,17 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         if(sessions != null) {
             for (SessionData session : sessions) {
                 try {
-                    triggerArchive(session);
+                    if (directArchiveSessionHibernateService.hasFailedUpload(session.getId())) {
+                        moveFailedUpload(session);
+                    } else {
+                        triggerArchive(session);
+                    }
                 } catch (ClientException e) {
                     log.warn("Skip trigger archive", e);
                 } catch (ServerException e) {
                     log.error("Unable to trigger archive", e);
+                } catch (NotFoundException e) {
+                    log.warn("DirectArchiveSession id={} disappeared before it could be archived", session.getId(), e);
                 }
             }
         }
@@ -687,7 +744,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                                                                   target.getFolderName(), true);
 
             // ensure target location is empty, increment timestamp if needed
-            if(Files.exists(prearchivePath.toPath())) {
+            if(Files.exists(prearchivePath.toPath()) || PrearcDatabase.countOf(target.getFolderName(), target.getTimestamp(), target.getProject()) > 0) {
                 target.setTimestamp(target.getTimestamp() + "_DA");
                 prearchivePath = PrearcUtils.getPrearcSessionDir(user, target.getProject(), target.getTimestamp(),
                                                                  target.getFolderName(), true);
@@ -698,7 +755,8 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             FileUtils.moveDirectory(new File(archivePath), prearchivePath);
             Path xmlSource = sessionXmlPath(archivePath);
             Path xmlDest   = Path.of(prearchivePath.getParent(), prearchivePath.getName() + ".xml");
-            if(Files.exists(xmlSource)) {
+            // A build that produced no session leaves the XML empty, and there is nothing in it to adjust.
+            if(Files.exists(xmlSource) && Files.size(xmlSource) > 0) {
                 // Adjust prearchive path in xml to point to prearchive rather than archive and save
                 XnatImagesessiondataBean session = PrearcTableBuilder.parseSession(xmlSource.toFile());
                 session.setPrearchivepath(prearchivePath.getAbsolutePath());
@@ -716,7 +774,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                 try (FileWriter fileWriter = new FileWriter(logFile);
                      PrintWriter printWriter = new PrintWriter(fileWriter)) {
                     printWriter.print("Attempt to direct-archive failed\n");
-                    origException.printStackTrace(printWriter);
+                    printWriter.print(reasonOf(origException));
                 }
             }
 
@@ -727,10 +785,11 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                          PrearcUtils.PrearcStatus.ERROR : PrearcUtils.PrearcStatus.RECEIVING;
             }
             target.setStatus(status);
-            PrearcDatabase.Either<SessionData, SessionData> sd = PrearcDatabase.eitherGetOrCreateSession(target,
-                                                                                                         prearchivePath.getParentFile(),
-                                                                                                         PrearchiveCode.AutoArchive);
-            SessionData prearchiveSession = sd.isLeft() ? sd.getLeft() : sd.getRight();
+            target.setAutoArchive(PrearchiveCode.AutoArchive);
+            // A row for exactly the folder the files moved to, even when the prearchive holds another session of the
+            // same study: that session is left as it is.
+            PrearcDatabase.addSession(target);
+            SessionData prearchiveSession = PrearcDatabase.getSession(target.getFolderName(), target.getTimestamp(), target.getProject());
             if (prearchiveSession != null && prearchiveSession.getStatus() == PrearcUtils.PrearcStatus.RECEIVING) {
                 PrearcUtils.queuePrearchiveOperation(new PrearchiveOperationRequest(receivedFileUserProvider.get(),
                                                                                     nextOperation,
@@ -742,6 +801,21 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             log.error("Unable to move {} to prearchive", target, e);
             directArchiveSessionHibernateService.setStatusToError(id, e);
         }
+    }
+
+    /**
+     * Why a session moved to the prearchive, as its log shows it: each message down the cause chain, without stack
+     * frames. Anyone who can read the session's log sees this; the stack trace, where there is one, is in the server log.
+     */
+    static String reasonOf(final Throwable failure) {
+        final StringBuilder reason = new StringBuilder();
+        for (final Throwable cause : ExceptionUtils.getThrowableList(failure)) {
+            if (cause != failure) {
+                reason.append("Caused by: ");
+            }
+            reason.append(StringUtils.defaultIfBlank(cause.getMessage(), cause.getClass().getSimpleName())).append('\n');
+        }
+        return reason.toString();
     }
 
     // ---- Direct-to-archive merge (append/overwrite) support ----

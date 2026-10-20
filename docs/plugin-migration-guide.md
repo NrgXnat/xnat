@@ -185,3 +185,42 @@ bomProperties(["javassist.version": vJavassist])
 
 This can be left in place or removed — it will not break the build.
 
+---
+
+## 8. dcm4che 2 Is No Longer Provided (1.11.0+)
+
+XNAT 1.10 shipped dcm4che 2.0.29 only for plugins that had not yet moved to dcm4che 5; XNAT itself has not used it since 1.10.0. From 1.11.0 the `org.nrg:parent` BOM no longer manages these coordinates, and the WAR no longer includes them:
+
+| Group | Artifacts |
+|-------|-----------|
+| `dcm4che` | `dcm4che-core`, `dcm4che-iod`, `dcm4che-image`, `dcm4che-imageio`, `dcm4che-imageio-rle`, `dcm4che-net` |
+| `dcm4che.tool` | `dcm4che-tool-dcmecho`, `dcm4che-tool-dcmqr` |
+
+The 1.10 WAR shipped `core`, `iod`, `image`, `imageio` and `net`; the others were only managed in the BOM. dcm4che 5 (group `org.dcm4che`, packages `org.dcm4che3.*`) is unaffected.
+
+**Symptoms:**
+
+- Build: `Could not find dcm4che:dcm4che-core:.` for a dependency declared without a version (see section 6).
+- Runtime: a plugin built for 1.10 that uses `org.dcm4che2` classes without bundling them fails with `NoClassDefFoundError: org/dcm4che2/...` on 1.11. The plugin may still load, so the failure can surface only when that code path first runs.
+
+**Find it.** Check your sources and build file, and check your built jar too: a library you bundle can depend on dcm4che 2 even when your own code doesn't.
+
+```bash
+grep -rn "org\.dcm4che2" src
+grep -n -E "[\"'(]dcm4che(\.tool)?:" build.gradle
+# Non-zero means something in the jar references dcm4che 2
+unzip -p build/libs/<plugin>.jar '*.class' | LC_ALL=C grep -a -c 'org/dcm4che2/'
+```
+
+**Fix**, depending on what you find:
+
+- **Declared but unused:** delete the dependency.
+- **Used by your code:** migrate to dcm4che 5. Most `org.dcm4che2.data` types have a counterpart in `org.dcm4che3.data`, and `DicomInputStream` and `DicomOutputStream` are in `org.dcm4che3.io`; the biggest change is that `DicomObject` becomes `Attributes`. dicom-query-retrieve 3.x replaced dcm4che 2's `DcmQR` with a dcm4che 5 C-FIND SCU, if you want a worked example.
+- **Can't migrate yet** (for example, a library you depend on needs dcm4che 2): bundle it in your plugin jar with an explicit version, through whichever configuration your build bundles:
+
+  ```groovy
+  implementAndInclude("dcm4che:dcm4che-core:2.0.29") { transitive = false }
+  ```
+
+  dcm4che 2 is not on Maven Central, so your repository list needs `https://maven.dcm4che.org`. The `org.dcm4che2` and `org.dcm4che3` packages don't overlap, so a bundled copy doesn't conflict with XNAT's dcm4che 5. Bundle only what you compile against: `dcm4che-imageio` and `dcm4che-imageio-rle` register ImageIO readers for the `DICOM` and `rle` format names that dcm4che 5 also registers, and XNAT code that asks ImageIO for a DICOM reader takes the first one it is offered.
+

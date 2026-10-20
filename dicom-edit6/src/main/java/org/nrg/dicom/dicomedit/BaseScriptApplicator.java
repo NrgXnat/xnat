@@ -172,7 +172,11 @@ public class BaseScriptApplicator implements ScriptApplicatorI {
             final MizerContextException decorated = MizerException.rewrap(e, ctx);
             String msg = "Failed to apply script: " + decorated.getMessage();
             logger.error(msg, e);
-            return new AnonymizationResultError(visitor.getDicomObject(), msg, e);
+            // Carry the decorated exception, not the raw one: it wraps e, so nothing is lost, and it is
+            // the only thing holding the ScriptErrorContext as fields rather than as rendered text. A
+            // caller with a length budget -- the C-STORE responder's 64-character Error Comment -- needs
+            // the line without the prose around it.
+            return new AnonymizationResultError(visitor.getDicomObject(), msg, decorated);
         }
     }
 

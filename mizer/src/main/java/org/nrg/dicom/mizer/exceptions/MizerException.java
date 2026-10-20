@@ -78,7 +78,7 @@ public class MizerException extends Exception {
         final MizerContext mizerContext = (cause instanceof MizerContextException)
                 ? ((MizerContextException) cause).getContext()
                 : null;
-        return new MizerContextException(mizerContext, message, cause);
+        return new MizerContextException(mizerContext, ctx, message, cause);
     }
 
     /**
@@ -102,7 +102,7 @@ public class MizerException extends Exception {
         } else {
             effective = null;
         }
-        return new MizerContextException(effective, message, cause);
+        return new MizerContextException(effective, ctx, message, cause);
     }
 
     /**

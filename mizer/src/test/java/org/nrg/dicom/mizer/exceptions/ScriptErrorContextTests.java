@@ -19,6 +19,41 @@ import static org.junit.Assert.assertTrue;
 public class ScriptErrorContextTests {
 
     @Test
+    public void formatCompactOmitsUnboundedFieldsSoItFitsAnErrorComment() {
+        // The whole point: Error Comment (0000,0902) is VR LO, capped at 64 characters, and the
+        // file path and statement text are unbounded.
+        final ScriptErrorContext ctx = ScriptErrorContext.empty()
+                .withFilePath("/data/xnat/cache/a/very/long/staging/path/000.dcm")
+                .withStatementText("(0010,0010) := format[\"{0}^{1}\", subject, session]")
+                .withScriptLine(11)
+                .withTag(0x00100010);
+        assertEquals("line 11", ctx.formatCompact());
+    }
+
+    @Test
+    public void formatCompactRendersLineColumnAndScriptIndex() {
+        assertEquals("line 11", ScriptErrorContext.empty().withScriptLine(11).formatCompact());
+        assertEquals("line 11:7", ScriptErrorContext.empty().withScriptLine(11).withScriptColumn(7).formatCompact());
+        assertEquals("script #2 line 5", ScriptErrorContext.empty().withScriptIndex(2).withScriptLine(5).formatCompact());
+        assertEquals("script #2", ScriptErrorContext.empty().withScriptIndex(2).formatCompact());
+    }
+
+    @Test
+    public void formatCompactReportsAColumnWithoutALine() {
+        // format() renders "line ?:7" for this; the compact form has no room for a placeholder.
+        assertEquals("col 7", ScriptErrorContext.empty().withScriptColumn(7).formatCompact());
+    }
+
+    @Test
+    public void formatCompactIsEmptyWhenNoLocatorIsSet() {
+        assertEquals("", ScriptErrorContext.empty().formatCompact());
+        // Not the same condition as isEmpty(): this context has fields, just no cheap locator.
+        final ScriptErrorContext tagOnly = ScriptErrorContext.empty().withTag(0x00100010);
+        assertFalse(tagOnly.isEmpty());
+        assertEquals("", tagOnly.formatCompact());
+    }
+
+    @Test
     public void emptyContextRendersAsEmptyString() {
         assertEquals("", ScriptErrorContext.empty().format());
         assertTrue(ScriptErrorContext.empty().isEmpty());

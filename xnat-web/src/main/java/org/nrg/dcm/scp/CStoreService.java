@@ -20,6 +20,7 @@ import org.dcm4che3.net.PDVInputStream;
 import org.dcm4che3.net.Status;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.net.service.BasicCStoreSCP;
+import org.dcm4che3.net.service.DicomServiceException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
@@ -203,14 +204,6 @@ public class CStoreService extends BasicCStoreSCP {
             "1.2.840.10008.5.1.4.1.1.88.70",
             "1.2.840.10008.5.1.4.1.1.88.35", };
 
-    public static final int SUCCESS = 0;
-    public static final int REFUSED_OUT_OF_RESOURCES = 0xA700;
-    public static final int ERROR_DATA_SET_SOP_CLASS_MISMATCH = 0xA900;
-    public static final int ERROR_CANNOT_UNDERSTAND = 0xC000;
-    public static final int WARNING_COERCION_DATA_ELEMENTS = 0xB000;
-    public static final int WARNING_DATA_SET_SOP_CLASS_MISMATCH = 0xB007;
-    public static final int WARNING_ELEMENTS_DISCARDED = 0xB006;
-
     private final DicomObjectIdentifier<XnatProjectdata> identifier;
     private final Provider<UserI> userProvider;
     private DicomFileNamer namer = null;
@@ -237,13 +230,28 @@ public class CStoreService extends BasicCStoreSCP {
      * response
      */
     @Override
-    protected void store(Association as, PresentationContext pc, Attributes rq, 
+    protected void store(Association as, PresentationContext pc, Attributes rq,
                         PDVInputStream data, Attributes rsp) throws IOException {
         try {
-            doCStore(as, pc, rq, data, pc.getTransferSyntax(), rsp);
-        } catch (Exception e) {
-            rsp.setInt(Tag.Status, VR.US, Status.ProcessingFailure);
-            throw new IOException(e.getMessage(), e);
+            doCStore(as, data, pc.getTransferSyntax());
+            rsp.setInt(Tag.Status, VR.US, Status.Success);
+        } catch (final DicomServiceException e) {
+            // Already carries its own status; dcm4che's registry will answer with it.
+            throw e;
+        } catch (final Throwable t) {
+            // Answer, never throw. dcm4che's DicomServiceRegistry catches only DicomServiceException,
+            // so anything else propagates to Association.onIOException, which closes the socket with
+            // no C-STORE-RSP at all -- while PS3.7 9.1.1.1.9 says the Status "shall be included by the
+            // Performing DIMSE Service User in the response/confirmation". Writing it into the response
+            // dcm4che already built keeps the UID fields and Data Set Type that PS3.7 9.3.1.2 requires.
+            //
+            // This swallows a dead socket too, which is deliberate: tryWriteDimseRSP reports a failed
+            // write rather than throwing, and the decoder's next read ends the association anyway, so
+            // there is nothing to gain by distinguishing the two here.
+            final int status = CStoreOutcome.statusFor(t);
+            log.error("C-STORE operation failed for SOP instance {}, responding {}; see cause for the full chain",
+                      rq.getString(Tag.AffectedSOPInstanceUID), String.format("%04XH", status), t);
+            CStoreOutcome.applyTo(rsp, status, t);
         }
     }
 
@@ -277,50 +285,38 @@ public class CStoreService extends BasicCStoreSCP {
         .append(association.getSocket().getRemoteSocketAddress());
     }
 
-    private void doCStore(final Association as, final PresentationContext pc,
-            final Attributes rq, final PDVInputStream dataStream,
-            final String tsuid, final Attributes rsp)
-            throws IOException {
+    /**
+     * Runs the import. Lets its failures out with their types and causes intact: {@link #store} is the
+     * one place that classifies and logs them, so that a failure is reported once rather than caught,
+     * logged, stringified into an {@link IOException} and then logged again by an outer handler.
+     */
+    private void doCStore(final Association as, final PDVInputStream dataStream, final String tsuid)
+            throws IOException, ClientException, ServerException {
         final FileWriterWrapperI fw = new StreamWrapper(dataStream);
-        try {
-            try {
-                final ReceiverSettings receiver = ReceiverSettings.of(as, _manager);
-                final String directArchiveOverwrite = receiver.getDirectArchiveOverwrite();
+        final ReceiverSettings receiver = ReceiverSettings.of(as, _manager);
+        final String directArchiveOverwrite = receiver.getDirectArchiveOverwrite();
 
-                final ImmutableMap.Builder<String, Object> paramBuilder = ImmutableMap.<String, Object>builder()
-                        .put(GradualDicomImporter.SENDER_ID_PARAM, identifySender(as))
-                        .put(GradualDicomImporter.TSUID_PARAM, tsuid)
-                        .put(GradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET())
-                        .put(GradualDicomImporter.RECEIVER_AE_TITLE_PARAM, as.getLocalAET())
-                        .put(GradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnection().getPort())
-                        .put(GradualDicomImporter.CUSTOM_PROC_PARAM, receiver.isCustomProcessing())
-                        .put(GradualDicomImporter.DIRECT_ARCHIVE_PARAM, receiver.isDirectArchive())
-                        .put(URIManager.PREVENT_ANON, String.valueOf(!receiver.isAnonymizationEnabled()));
-                if (directArchiveOverwrite != null) {
-                    paramBuilder.put(GradualDicomImporter.DIRECT_ARCHIVE_OVERWRITE_PARAM, directArchiveOverwrite);
-                }
-                final ImmutableMap<String, Object> parameters = paramBuilder.build();
-                final GradualDicomImporter importer = new GradualDicomImporter(this,
-                        userProvider.get(), fw, parameters);
-                importer.setIdentifier(receiver.getIdentifier());
-                importer.setScope(scopeOf(as));
-                if (null != namer) {
-                    importer.setNamer(namer);
-                }
-                importer.call();
-                rsp.setInt(Tag.Status, VR.US, Status.Success); // Status.SUCCESS = 0x0000
-            } catch (final ClientException e) {
-                log.error("C-STORE operation failed", e);
-                throw new IOException(e.getMessage());
-            } catch (final ServerException e) {
-                log.error("C-STORE operation failed", e);
-                throw new IOException(e.getMessage());
-            }
-        } catch (final Throwable e) {
-            // Don't let mysterious unchecked exceptions and errors through.
-            log.error("C-STORE operation failed", e);
-            throw new IOException(e.getMessage());
+        final ImmutableMap.Builder<String, Object> paramBuilder = ImmutableMap.<String, Object>builder()
+                .put(GradualDicomImporter.SENDER_ID_PARAM, identifySender(as))
+                .put(GradualDicomImporter.TSUID_PARAM, tsuid)
+                .put(GradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET())
+                .put(GradualDicomImporter.RECEIVER_AE_TITLE_PARAM, as.getLocalAET())
+                .put(GradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnection().getPort())
+                .put(GradualDicomImporter.CUSTOM_PROC_PARAM, receiver.isCustomProcessing())
+                .put(GradualDicomImporter.DIRECT_ARCHIVE_PARAM, receiver.isDirectArchive())
+                .put(URIManager.PREVENT_ANON, String.valueOf(!receiver.isAnonymizationEnabled()));
+        if (directArchiveOverwrite != null) {
+            paramBuilder.put(GradualDicomImporter.DIRECT_ARCHIVE_OVERWRITE_PARAM, directArchiveOverwrite);
         }
+        final ImmutableMap<String, Object> parameters = paramBuilder.build();
+        final GradualDicomImporter importer = new GradualDicomImporter(this,
+                userProvider.get(), fw, parameters);
+        importer.setIdentifier(receiver.getIdentifier());
+        importer.setScope(scopeOf(as));
+        if (null != namer) {
+            importer.setNamer(namer);
+        }
+        importer.call();
     }
 
 

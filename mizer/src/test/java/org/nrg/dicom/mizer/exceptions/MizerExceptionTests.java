@@ -14,6 +14,8 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -150,5 +152,73 @@ public class MizerExceptionTests {
         assertFalse(MizerException.describeMessage(new RuntimeException()).isEmpty());
         assertFalse(MizerException.describeMessage(new RuntimeException("")).isEmpty());
         assertFalse(MizerException.describeMessage(new RuntimeException("msg")).isEmpty());
+    }
+
+    @Test
+    public void rewrapRetainsTheScriptErrorContextObjectNotJustItsText() {
+        // rewrap renders the context into the message, which suits a log or an HTTP body. A caller
+        // that needs the fields separately -- the C-STORE responder needs the line for a 64-character
+        // Error Comment and the tag as an int for Offending Element -- must not have to parse them
+        // back out of prose.
+        final ScriptErrorContext ctx = ScriptErrorContext.empty()
+                .withScriptLine(11)
+                .withTag(0x00100010)
+                .withStatementText("(0010,0010):=subject");
+        final MizerContextException wrapped =
+                MizerException.rewrap(new RuntimeException("Variable 'subject' is null."), ctx);
+
+        assertSame(ctx, wrapped.getScriptErrorContext());
+        assertEquals(Integer.valueOf(11), wrapped.getScriptErrorContext().getScriptLine());
+        assertEquals(Integer.valueOf(0x00100010), wrapped.getScriptErrorContext().getTag());
+    }
+
+    @Test
+    public void findScriptErrorContextWalksTheChainOutermostFirst() {
+        final ScriptErrorContext inner = ScriptErrorContext.empty().withScriptLine(11);
+        final ScriptErrorContext outer = ScriptErrorContext.empty().withScriptLine(4).withScriptIndex(2);
+
+        final MizerContextException wrappedOnce = MizerException.rewrap(new RuntimeException("boom"), inner);
+        final MizerContextException wrappedTwice = MizerException.rewrap(wrappedOnce, outer);
+
+        // The outermost boundary knows the most, so it wins.
+        assertSame(outer, MizerContextException.findScriptErrorContext(wrappedTwice));
+        assertSame(inner, MizerContextException.findScriptErrorContext(wrappedOnce));
+    }
+
+    @Test
+    public void findScriptErrorContextReachesThroughForeignWrappers() {
+        // The real chain is ClientException -> ServerException -> ... -> MizerContextException,
+        // so the walk must not stop at the first non-mizer link.
+        final ScriptErrorContext ctx = ScriptErrorContext.empty().withScriptLine(11);
+        final Throwable chained = new IllegalStateException("outer",
+                new IOException("middle", MizerException.rewrap(new RuntimeException("boom"), ctx)));
+        assertSame(ctx, MizerContextException.findScriptErrorContext(chained));
+    }
+
+    @Test
+    public void findScriptErrorContextReturnsNullWhenThereIsNone() {
+        assertNull(MizerContextException.findScriptErrorContext(new IOException("boom")));
+        assertNull(MizerContextException.findScriptErrorContext(null));
+        // An empty context carries no information, so it does not count as found.
+        assertNull(MizerContextException.findScriptErrorContext(
+                MizerException.rewrap(new RuntimeException("boom"), ScriptErrorContext.empty())));
+    }
+
+    @Test
+    public void findScriptErrorContextSurvivesASelfReferentialCause() {
+        final RuntimeException loop = new RuntimeException("loop") {
+            @Override
+            public synchronized Throwable getCause() {
+                return this;
+            }
+        };
+        assertNull(MizerContextException.findScriptErrorContext(loop));
+    }
+
+    @Test
+    public void rewrapWithoutAContextRetainsNone() {
+        final MizerContextException wrapped = MizerException.rewrap(new RuntimeException("boom"), null);
+        assertNull(wrapped.getScriptErrorContext());
+        assertNotNull(wrapped.getMessage());
     }
 }

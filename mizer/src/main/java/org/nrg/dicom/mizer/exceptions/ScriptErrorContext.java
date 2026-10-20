@@ -126,6 +126,42 @@ public final class ScriptErrorContext {
         return sb.toString();
     }
 
+    /**
+     * Render the smallest useful locator, for channels with a hard length budget — notably the
+     * DICOM C-STORE-RSP Error Comment (0000,0902), which PS3.4 Table B.2-1 permits on a failure
+     * status but whose VR LO caps it at 64 characters, most of which the reason text needs.
+     *
+     * <p>Includes only the cheap locators: script index, line and column. Deliberately omits the
+     * file path and statement text, which are unbounded and would consume the whole budget, and
+     * the tag, which has its own structured channel in DICOM — Offending Element (0000,0901) —
+     * so a caller that wants it should read {@link #getTag()} rather than parse it back out of
+     * a string. Returns the empty string when none of the included fields is set, which is not
+     * the same condition as {@link #isEmpty()}.
+     *
+     * <p>Examples: {@code line 11}, {@code line 11:7}, {@code script #2 line 5}
+     */
+    public String formatCompact() {
+        final StringBuilder sb = new StringBuilder();
+        if (scriptIndex != null) {
+            sb.append("script #").append(scriptIndex);
+        }
+        if (scriptLine != null) {
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append("line ").append(scriptLine);
+            if (scriptColumn != null) {
+                sb.append(':').append(scriptColumn);
+            }
+        } else if (scriptColumn != null) {
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append("col ").append(scriptColumn);
+        }
+        return sb.toString();
+    }
+
     private void appendScriptId(final StringBuilder sb) {
         if (scriptIndex == null && scriptPath == null) {
             return;

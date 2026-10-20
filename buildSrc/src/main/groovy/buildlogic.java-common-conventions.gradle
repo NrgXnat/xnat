@@ -29,7 +29,6 @@ repositories {
     maven { url 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot' }
     mavenCentral()
     maven { url 'https://maven.dcm4che.org' }
-    maven { url 'https://raw.githubusercontent.com/nroduit/mvn-repo/master/' }
     maven { url 'https://jitpack.io' }
 }
 

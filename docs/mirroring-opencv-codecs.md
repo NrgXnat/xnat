@@ -21,9 +21,14 @@ library has to declare it for each platform, and the repository it resolves from
 ## Versions
 
 The versions have to match. `dcm4che-imageio-opencv` uses the dcm4che version, 5.35.0.
-`dcm4che-parent-5.35.0.pom` pins `weasis-core-img` 5.0.0, which pins the native library at
-5.0.0-dcm. A native library that doesn't match the Java code fails to load or misbehaves. When you
-upgrade dcm4che, check the new pins and re-run the mirror script with the new coordinates.
+`dcm4che-parent-5.35.0.pom` imports `weasis-core-img-bom` 5.0.0 and pins `weasis-core-img` 5.0.0,
+which pins the native library at 5.0.0-dcm. A native library that doesn't match the Java code fails
+to load or misbehaves. When you upgrade dcm4che, check the new pins and re-run the mirror script
+with the new coordinates.
+
+Then build with `--refresh-dependencies`. Gradle caches each POM after processing it and doesn't
+request the BOMs it imports again, so a missing BOM goes unnoticed on any machine that has built
+XNAT before, CI included.
 
 Java 17 and later need dcm4che 5.35.0 or later. Earlier versions of `dcm4che-imageio-opencv`
 reflect into `java.desktop` internals, which Java 17 denies. dcm4che logs the denial, and decoding
@@ -35,18 +40,20 @@ succeeds, and the native library crashes the JVM.
 
 | Artifact | |
 | --- | --- |
-| `org.dcm4che:dcm4che-imageio-opencv:5.35.0` | already present, through dcm4che's parent POM |
-| `org.weasis.core:weasis-core-img-bom:5.0.0` | already present, through dcm4che's parent POM |
+| `org.dcm4che:dcm4che-imageio-opencv:5.35.0` | already present, cached from dcm4che's repository |
+| `org.weasis.core:weasis-core-img-bom:5.0.0` | mirrored |
 | `org.weasis.core:weasis-core-img:5.0.0` | mirrored |
 | `org.weasis.thirdparty.org.opencv:libopencv_java:5.0.0-dcm` | mirrored, four classifiers |
 | `org.weasis.thirdparty.org.opencv:opencv_java:5.0.0-dcm` | mirrored, `windows-x86-64` |
 
-Upstream is `https://raw.githubusercontent.com/nroduit/mvn-repo/master`, which the build also
-declares as a repository, in
-`buildSrc/src/main/groovy/buildlogic.java-common-conventions.gradle`. Mirroring gives the build and
-the image a fixed copy we control instead of a file served from a GitHub branch. That matters most
-for the native libraries, which run inside XNAT and are unsigned: upstream publishes only `.sha1`
-and `.md5` checksums for them.
+dcm4che's parent POM imports `weasis-core-img-bom`, so Gradle can't read any dcm4che POM without
+it. Every build that depends on dcm4che 5.35.0 needs it, including plugins that never use OpenCV.
+
+Upstream is `https://raw.githubusercontent.com/nroduit/mvn-repo/master`. The build doesn't declare
+it as a repository, so anything the build needs from there has to be mirrored first. Mirroring
+gives the build and the image a fixed copy we control instead of a file served from a GitHub branch.
+That matters most for the native libraries, which run inside XNAT and are unsigned: upstream
+publishes only `.sha1` and `.md5` checksums for them.
 
 ## Mirroring
 

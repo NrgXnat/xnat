@@ -279,8 +279,8 @@ Commit messages follow [Conventional Commits 1.0.0](https://www.conventionalcomm
   commit.
 - **Summary** (required): one line in the imperative mood ("add", "keep", "stop"), starting
   lowercase, with no trailing period. Say what the change does, not which ticket it is for.
-- **Body** (optional): what changed and why, wrapped at 72 columns. Name the Jira ticket here
-  (`XNAT-1234`) rather than in the summary.
+- **Body** (optional): what changed and why, wrapped at 72 columns. Name the Github Issue # or
+  Jira ticket here (`XNAT-1234`) rather than in the summary.
 - **Footers** (optional): a breaking change needs a `BREAKING CHANGE:` footer as well as the `!`,
   saying what broke and what callers or sites have to change.
 

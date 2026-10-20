@@ -486,7 +486,13 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
     private void handleAnonymizationError(AtomicBoolean isNew, SessionData session,File outputFile, Throwable e) throws ServerException {
         // Site-wide and other system-level anonymization failures surface as a 500 caused by the underlying error.
-        handleAnonymizationError(isNew, session, outputFile, e, new ServerException(Status.SERVER_ERROR_INTERNAL, e));
+        // One that is already a ServerException is carried as it is: ServerException(Status, Throwable) delegates to
+        // Exception(Throwable), whose message is cause.toString(), so every wrap prepends another
+        // "org.nrg.action.ServerException: " to the text the uploader is shown.
+        handleAnonymizationError(isNew, session, outputFile, e,
+                                 e instanceof ServerException
+                                 ? (ServerException) e
+                                 : new ServerException(Status.SERVER_ERROR_INTERNAL, e));
     }
 
     /**
@@ -583,6 +589,11 @@ public class GradualDicomImporter extends ImporterHandlerA {
                     log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without " +
                             "anonymization.", session.getProject(), session.getSubject(), session.getName());
                 }
+            } catch (ServerException e) {
+                // handleAnonymizationError above has already cleaned up and is on its way out. Catching it here
+                // would run the cleanup a second time -- and if that second delete failed, throw its failure in
+                // place of the anonymization error. The inline-script branch below guards its throw the same way.
+                throw e;
             } catch(Throwable e){
                 // Errors of this type are deeper system errors.
                 handleAnonymizationError(isNew, session, outputFile, e);

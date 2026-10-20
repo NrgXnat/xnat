@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -223,7 +224,8 @@ public final class DicomZipImporter extends ImporterHandlerA {
     }
 
     private Set<String> xmlBuild(Set<String> uris) throws ClientException, ServerException {
-        Set<String> archiveUrls = new HashSet<>();
+        Set<String> archiveUrls = new LinkedHashSet<>();
+        final List<String> built = new ArrayList<>();
         final Map<String, Exception> failures = new LinkedHashMap<>();
         final boolean override = isBooleanParameter(PrearchiveOperationRequest.PARAM_OVERRIDE_EXCEPTIONS);
         final boolean appendMerge = isBooleanParameter(PrearchiveOperationRequest.PARAM_ALLOW_SESSION_MERGE);
@@ -240,6 +242,8 @@ public final class DicomZipImporter extends ImporterHandlerA {
                         handler.postBuild();
                         if (isAutoArchive(params)) {
                             archiveSession(archiveUrls, override, appendMerge, request);
+                        } else {
+                            built.add(session);
                         }
                     } catch (Exception e) {
                         throw new RuntimeException(e);
@@ -256,7 +260,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
             final String sessions = failures.entrySet().stream()
                                             .map(entry -> entry.getKey() + " (" + reason(entry.getValue()) + ")")
                                             .collect(Collectors.joining("; "));
-            final String message = "unable to build or archive " + failures.size() + " of " + uris.size() + " Prearchive sessions: " + sessions;
+            final String message = "unable to build or archive " + failures.size() + " of " + uris.size() + " Prearchive sessions: " + sessions + succeeded(archiveUrls, built);
             // The first failure is the cause and the others are suppressed, so the log keeps each one's stack trace
             final Iterator<Exception> causes = failures.values().iterator();
             final Exception           cause  = causes.next();
@@ -271,6 +275,17 @@ public final class DicomZipImporter extends ImporterHandlerA {
             throw failure;
         }
         return archiveUrls;
+    }
+
+    /**
+     * Names the sessions of a failed upload that were archived, or built if the upload doesn't archive, so the uploader
+     * knows which ones not to send again.
+     */
+    private String succeeded(final Set<String> archiveUrls, final List<String> built) {
+        if (isAutoArchive(params)) {
+            return archiveUrls.isEmpty() ? "" : ". Archived: " + String.join("; ", archiveUrls);
+        }
+        return built.isEmpty() ? "" : ". Built in the prearchive: " + String.join("; ", built);
     }
 
     /**

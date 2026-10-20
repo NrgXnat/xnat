@@ -127,7 +127,7 @@ public class DicomZipImporterCommitTest {
 
         mockedPrearcDatabase.verify(() -> PrearcDatabase.archive(any(), sessionNamed("SECOND"), anyBoolean(), anyBoolean(), anyBoolean(), any(), any()));
         assertThat(thrown).isInstanceOf(ClientException.class)
-                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (" + PrearcSessionArchiver.PRE_EXISTS + ")");
+                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (" + PrearcSessionArchiver.PRE_EXISTS + "). Archived: /archive/SECOND");
         assertThat(((ClientException) thrown).getStatus()).as("a conflict keeps the archiver's status").isEqualTo(Status.CLIENT_ERROR_CONFLICT);
     }
 
@@ -139,7 +139,7 @@ public class DicomZipImporterCommitTest {
 
         verify(handlers.get("SECOND")).postBuild();
         assertThat(thrown).isInstanceOf(ServerException.class)
-                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (server error: IOException: /data/xnat/prearchive/" + PROJECT + "/" + TIMESTAMP + "/FIRST.xml)");
+                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (server error: IOException: /data/xnat/prearchive/" + PROJECT + "/" + TIMESTAMP + "/FIRST.xml). Built in the prearchive: " + SECOND);
         assertThat(((ServerException) thrown).getStatus()).isEqualTo(Status.SERVER_ERROR_INTERNAL);
     }
 
@@ -152,7 +152,7 @@ public class DicomZipImporterCommitTest {
         final Throwable thrown = catchThrowable(() -> committedUpload(true).call());
 
         assertThat(thrown).isInstanceOf(ServerException.class)
-                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (server error: " + failure.getMessage() + ")");
+                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (server error: " + failure.getMessage() + "). Archived: /archive/SECOND");
     }
 
     @Test
@@ -163,7 +163,7 @@ public class DicomZipImporterCommitTest {
 
         mockedPrearcDatabase.verify(() -> PrearcDatabase.archive(any(), sessionNamed("SECOND"), anyBoolean(), anyBoolean(), anyBoolean(), any(), any()));
         assertThat(thrown).isInstanceOf(ClientException.class)
-                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (not built: the session is in use by another operation, was removed, or is still receiving data)");
+                          .hasMessage("unable to build or archive 1 of 2 Prearchive sessions: " + FIRST + " (not built: the session is in use by another operation, was removed, or is still receiving data). Archived: /archive/SECOND");
         assertThat(((ClientException) thrown).getStatus()).isEqualTo(Status.CLIENT_ERROR_CONFLICT);
     }
 

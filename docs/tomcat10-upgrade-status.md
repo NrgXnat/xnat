@@ -1097,13 +1097,10 @@ every module develop touched: dicom-edit6 477, dicomtools 103, mizer 200, transa
 **Version collision, resolved by bumping this branch to `1.12.0-SNAPSHOT` (2026-10-21).** develop moved to
 `version=1.11.0-SNAPSHOT` (#82), the coordinates this branch had been publishing its jakarta artifacts under, so
 a javax and a jakarta build would have overwritten each other in the snapshot repository. The jakarta line is
-now `1.12.0-SNAPSHOT` (`gradle.properties` is the only place the version is set). **Not changed, deliberately:**
-the plugin-facing docs (`plugin-migration-guide.md`, `porting-plugins-to-1.11.html`,
-`ai/jakarta-plugin-port-handoff.md`, `docker/plugins.manifest`) still say to build against `1.11.0-SNAPSHOT`,
-because that is what Artifactory holds until a 1.12.0-SNAPSHOT is published. After that publish, update them
-and the migrated plugins' `vXnat`. Once develop publishes its own 1.11.0-SNAPSHOT, a plugin still on that
-version will resolve **javax** core. The bump also makes the 1-23 "remove spring-security-oauth2 in 1.12"
-deprecation due on this branch.
+now `1.12.0-SNAPSHOT` (`gradle.properties` is the only place the version is set). *Superseded the same day
+by 1-46:* the plugin-facing docs and all 22 plugin branches were moved to 1.12, because the collision had in fact
+already happened (develop has owned `1.11.0-SNAPSHOT` on the Artifactory since 2026-10-16). The bump also makes
+the 1-23 "remove spring-security-oauth2 in 1.12" deprecation due on this branch.
 
 ## 1-45 🟢 — six plugin `feature/tomcat10` branches caught up with their development branches; deployed to dave-tc11-2 (2026-10-21)
 
@@ -1160,6 +1157,42 @@ no sudo commands afterwards, and nothing in root's cron. The link went between S
 `temp/` were probably recreated by Tomcat's own log rotation and temp-file writes after the link was gone.
 `application.log`/`xdat.log` last wrote at 22:39–22:41 that night, so something in-process (e.g. a recursive delete
 reaching `CATALINA_TMPDIR`'s parent) is the lead.
+
+## 1-46 🟢 — `1.11.0-SNAPSHOT` on the Artifactory is develop's javax build; all 22 plugins and the plugin docs moved to 1.12 (2026-10-21)
+
+**Measured, not inferred.** `libs-snapshot-local/org/nrg/xnat/web/1.11.0-SNAPSHOT/` holds 7 builds. The manifest
+of each jar (`Implementation-Branch`/`-Sha`) shows that only **`-1`** (2026-09-10, `f35c55964d`) is
+`feature/jakarta-cutover`. **`-2` through `-7`** (2026-10-16 23:13 UTC to 2026-10-20 20:06 UTC) are all `develop`:
+`-2` is `b9e5f56245`, the #82 commit that bumped develop to 1.11.0-SNAPSHOT; `-7` is `507ebc706f`. Bytecode
+confirms the namespace: `-7`'s `XnatWebAppInitializer` has 80 `javax/servlet` refs and 0 `jakarta/servlet`. The
+WAR directory (`…/web/xnat-web/1.11.0-SNAPSHOT/`) has the same seven builds. So since 2026-10-16 every plugin
+on `vXnat = "1.11.0-SNAPSHOT"` has been resolving **javax** core from the Artifactory. **Why it went unnoticed
+here:** plugin builds list a scoped `mavenLocal()` first, and this machine's `~/.m2` held a Jakarta
+`1.11.0-SNAPSHOT` from 2026-07-24 (78 `jakarta/servlet` refs, 0 javax). Local builds kept passing while every
+other machine got javax. Probe note: the first download of `-7` came back as 0 bytes (no `-L`, so the redirect
+was not followed), and its "not on any branch" result was discarded rather than reported.
+
+**Plugins.** The 16 still on `1.11.0-SNAPSHOT` now declare `1.12.0-SNAPSHOT` (`vXnat` only, plus one comment
+in audit_trail naming the version), so all 22 deployed plugins are on 1.12. ldap-auth's checkout was on `main`
+and was switched to `feature/tomcat10` first. Pre-existing local changes (`.idea/` in three repos, a modified
+submodule in ohif-viewer) were left unstaged. Built against `~/.m2` 1.12 with `clean test <jar task>` plus a
+`dependencyInsight`: **15/16 resolve `org.nrg.xnat:web:1.12.0-SNAPSHOT` and build green**. raphaeljs depends on
+no `web` (resource-only). **xnat-jupyterhub**: main code compiles and the jar builds, but `compileTestJava` fails.
+**Pre-existing:** the unmodified branch fails it too, with 9 errors. Its test sources were never ported in the
+July migration (`86927d2`): `WebSecurityConfigurerAdapter`/`WebMvcConfigurerAdapter`, removed in Spring 6.
+1.12 adds a 10th error: the test `ObjectMapperConfig` imports `jackson.datatype.hibernate5`, which core replaced
+with `-hibernate5-jakarta` after July (`6a28fe3ce`). That is a test port still to do, not a regression. Only
+JupyterHub, of these 16, has tests; the other six were verified in 1-45.
+
+**Docs.** `plugin-migration-guide.md`, `porting-plugins-to-1.11.html` (filename kept, since it is linked by
+name) and `ai/jakarta-plugin-port-handoff.md` now name the Jakarta line 1.12 throughout, carry a dated
+"version change" notice (1.11 is javax now; the Jakarta 1.11 build survives only as `-20260910.185426-1`), and
+say plainly that **`1.12.0-SNAPSHOT` is not yet on the Artifactory**, so building core locally is the only route
+until it is, with a one-line `curl` status check rather than a static claim. The paste-in agent prompt and
+`docker/plugins.manifest` were updated to match. **Blocked:** publishing `1.12.0-SNAPSHOT`. Both credential
+pairs on this machine (`repoUsername`, `deployUser`) return 401 from the Artifactory API, the same as deliberately
+bogus credentials. A working `artifactoryUser`/`artifactoryToken` is needed. When it lands, flip the docs'
+"not yet published" lines and re-verify Route 1 end to end.
 
 ## ⚪ Note — automation hard-disabled makes script delete 500 (not a cutover bug)
 

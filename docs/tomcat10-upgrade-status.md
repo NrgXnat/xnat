@@ -1094,9 +1094,16 @@ plugins. Tests for
 every module develop touched: dicom-edit6 477, dicomtools 103, mizer 200, transaction 21, xdat 208, xnat-web
 711; **1,720 tests, 0 failures, 0 errors** (35 skipped; Docker up for the EventService suites).
 
-**Open, not a cutover bug:** develop is now on `version=1.11.0-SNAPSHOT` too (bumped by #82), the same
-coordinates this branch publishes its jakarta artifacts under. If both publish snapshots to the same
-repository, they overwrite each other.
+**Version collision, resolved by bumping this branch to `1.12.0-SNAPSHOT` (2026-10-21).** develop moved to
+`version=1.11.0-SNAPSHOT` (#82), the coordinates this branch had been publishing its jakarta artifacts under, so
+a javax and a jakarta build would have overwritten each other in the snapshot repository. The jakarta line is
+now `1.12.0-SNAPSHOT` (`gradle.properties` is the only place the version is set). **Not changed, deliberately:**
+the plugin-facing docs (`plugin-migration-guide.md`, `porting-plugins-to-1.11.html`,
+`ai/jakarta-plugin-port-handoff.md`, `docker/plugins.manifest`) still say to build against `1.11.0-SNAPSHOT`,
+because that is what Artifactory holds until a 1.12.0-SNAPSHOT is published. After that publish, update them
+and the migrated plugins' `vXnat`. Once develop publishes its own 1.11.0-SNAPSHOT, a plugin still on that
+version will resolve **javax** core. The bump also makes the 1-23 "remove spring-security-oauth2 in 1.12"
+deprecation due on this branch.
 
 ## ⚪ Note — automation hard-disabled makes script delete 500 (not a cutover bug)
 

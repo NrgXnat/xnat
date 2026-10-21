@@ -716,6 +716,17 @@ Format: **what changed → symptom → fix**. References are commits / `tomcat10
   `org.gradle.java.home` in `gradle.properties`. Measured: JDK 21.0.11 reads that jar (987 entries), JDK 25.0.2
   throws. Such a task can also sit green for months and only fail when something unrelated changes the classpath and
   invalidates its up‑to‑date marker.
+  **Gradle's own `:test` task is one of those task actions.** It scans the test classpath for test classes inside
+  the daemon, and `aspectjweaver-1.8.10` reaches every plugin's test classpath through `org.nrg.xnat:web`, so on a
+  JDK 22+ daemon the build fails before a single test runs:
+  `Execution failed for task ':test'. > Test process encountered an unexpected problem. > failed to scan jar file
+  for packages (…/aspectjweaver-1.8.10.jar)`. A branch whose tests were last run on JDK 21 passes on CI and
+  fails on a newer workstation JDK, which makes it look like a regression in whatever you just merged.
+  → **Pin the daemon in the repo** rather than relying on each developer's `JAVA_HOME`: add
+  `gradle/gradle-daemon-jvm.properties` containing `toolchainVersion=21` (Gradle 8.8+; it pins a version, not a
+  path, so it is portable and needs only a local JDK 21). `./gradlew --version` should then report
+  `Daemon JVM: Compatible with Java 21 … (from gradle/gradle-daemon-jvm.properties)`. Core pins its daemon the same
+  way. *(xnat-dicomweb-plugin; tracker 1-45)*
 - **`mavenLocal()` shadows partial third‑party artifacts.** `ehcache:3.10.8` uses a **`-jakarta` classifier**
   jar; if `~/.m2` has the base metadata but not that classifier, an unscoped high‑priority `mavenLocal()` locks
   resolution to `~/.m2` and fails (`Could not find ehcache-3.10.8-jakarta.jar`). → scope `mavenLocal` to

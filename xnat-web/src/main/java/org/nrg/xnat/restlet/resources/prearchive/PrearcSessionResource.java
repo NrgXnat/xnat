@@ -102,7 +102,7 @@ public final class PrearcSessionResource extends SecureResource {
         final File sessionDir;
         final UserI user = getUser();
         try {
-            sessionDir = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session, false);
+            sessionDir = PrearcUtils.getPrearcSessionDirForRead(user, project, timestamp, session);
         } catch (InvalidPermissionException e) {
             getResponse().setStatus(CLIENT_ERROR_FORBIDDEN, e.getMessage());
             return null;

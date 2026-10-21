@@ -213,6 +213,10 @@ dependencies {
     // plugin leaves RLE permanently in that branch, resolved by a jar 1.11 deletes.
     implementation libs.dcm4che5.dcm4che.imageio.rle
     implementation libs.dcm4che5.dcm4che.net
+    // Nothing in XNAT uses dcm4che-json. It is here for plugins that read or write DICOM JSON, so
+    // they can declare it compileOnly instead of bundling a copy. It brings jakarta.json-api and
+    // the Parsson provider with it.
+    runtimeOnly libs.dcm4che5.dcm4che.json
     // Nothing in XNAT imports ij.*, and ij.jar registers no ImageIO or ServiceLoader
     // providers, so this is on the classpath only for plugins that may compile against it.
     // Remove in 1.11 alongside the dcm4che 2.x artifacts above.

@@ -342,6 +342,9 @@ public class UsersApi extends AbstractXapiRestController {
                 }
             }
             return _factory.getUser(user);
+        } catch (PasswordComplexityException e) {
+            // A rejected password is bad input, and the UserInitException below carries INTERNAL_SERVER_ERROR.
+            throw new DataFormatException(e.getMessage(), e);
         } catch (Exception e) {
             throw new UserInitException("Error occurred creating user " + user.getLogin() + " Cause: " + e.getMessage(), e);
         }

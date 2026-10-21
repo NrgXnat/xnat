@@ -1,6 +1,7 @@
 package org.nrg.xnat.archive.entities;
 
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.annotations.DynamicUpdate;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
@@ -12,6 +13,7 @@ import java.util.Date;
 
 @Slf4j
 @Entity
+@DynamicUpdate
 @Table(uniqueConstraints = @UniqueConstraint(columnNames={"project", "name", "tag"}))
 public class DirectArchiveSession extends AbstractHibernateEntity {
     @Serial
@@ -23,6 +25,7 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
     private Date scanDate;
     private String scanTime;
     private Boolean preventAnon;
+    private Boolean failedUpload;
 
     public DirectArchiveSession(String project, String subject, String name, String timestampUid, String folderName,
                                 String tag, String visit, String protocol, String timeZone, String location,
@@ -200,6 +203,15 @@ public class DirectArchiveSession extends AbstractHibernateEntity {
 
     public void setOverwriteMode(String overwriteMode) {
         this.overwriteMode = overwriteMode;
+    }
+
+    /** Whether an upload into this session failed partway. */
+    public Boolean getFailedUpload() {
+        return failedUpload;
+    }
+
+    public void setFailedUpload(Boolean failedUpload) {
+        this.failedUpload = failedUpload;
     }
 
     public SessionData toSessionData() {

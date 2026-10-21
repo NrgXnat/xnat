@@ -118,6 +118,7 @@ dependencies {
         api libs.dcm4che5.dcm4che.dict.private
         api libs.dcm4che5.dcm4che.image
         api libs.dcm4che5.dcm4che.imageio
+        api libs.dcm4che5.dcm4che.imageio.opencv
         api libs.dcm4che5.dcm4che.imageio.rle
         api libs.dcm4che5.dcm4che.javascript
         api libs.dcm4che5.dcm4che.js.dict
@@ -127,6 +128,7 @@ dependencies {
         api libs.dcm4che5.dcm4che.tool.common
         api libs.dcm4che5.dcm4che.tool.storescp
         api libs.dcm4che5.dcm4che.tool.storescu
+        api libs.dcm4che5.dcm4che.ws.rs
 
         // PixelMed
         api libs.pixelmed.pixelmed

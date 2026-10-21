@@ -147,7 +147,11 @@
                     XNAT System Path Verification Failure: Contact your system administrator
                     <span class="tip_text">(<i>what does this mean?</i>)
                         <span class="tip shadowed">
-                            $siteConfig.pathErrorWarning
+                            ## $!esc.html() is required here: Velocity does not escape references by
+                            ## default and no reference-insertion event handler is configured, so this
+                            ## admin-settable preference would otherwise be written to the page as raw
+                            ## HTML. See the note below on the global handler.
+                            $!esc.html($siteConfig.pathErrorWarning)
                         </span>
                     </span>
                 </span>
@@ -294,10 +298,16 @@
 
 <div id="header" class="main_header"><div class="pad">
 
+    ## $!esc.html() is required here: Velocity does not escape references by default and no
+    ## reference-insertion event handler is configured, so these admin-settable preferences would
+    ## otherwise be written to the page as raw HTML. It would be better to register a global
+    ## EscapeHtmlReference eventhandler.referenceinsertion handler in TurbineResources.properties
+    ## so that every reference is escaped by default, but that requires auditing the templates that
+    ## intentionally emit HTML, so escape at the reference for now.
     #if($siteConfig.siteWideAlertStatus == "2")
-        <div class="$siteConfig.siteWideAlertType headNotification hidden">
+        <div class="$!esc.html($siteConfig.siteWideAlertType) headNotification hidden">
             <span class="close closeNotification"><i class="fa fa-close"></i></span>
-            <span>$siteConfig.siteWideAlertMessage</span>
+            <span>$!esc.html($siteConfig.siteWideAlertMessage)</span>
         </div>
 
         <script>

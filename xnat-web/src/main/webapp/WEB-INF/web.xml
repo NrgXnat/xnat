@@ -12,6 +12,20 @@
          version="6.0">
     <!-- ======================================================================== -->
     <!--                                                                          -->
+    <!-- Keep logback's own servlet initializer from registering a second         -->
+    <!-- logback listener. XnatWebAppInitializer registers one ahead of Spring's  -->
+    <!-- ContextLoaderListener, so logging stops only after the Spring context    -->
+    <!-- has closed. Logback's initializer runs in no fixed order relative to     -->
+    <!-- Spring's, and when it runs later its listener stops logging before the   -->
+    <!-- beans shut down.                                                         -->
+    <!--                                                                          -->
+    <!-- ======================================================================== -->
+    <context-param>
+        <param-name>logbackDisableServletContainerInitializer</param-name>
+        <param-value>true</param-value>
+    </context-param>
+    <!-- ======================================================================== -->
+    <!--                                                                          -->
     <!-- Redirect the home page of the application to the turbine servlet         -->
     <!--                                                                          -->
     <!-- ======================================================================== -->

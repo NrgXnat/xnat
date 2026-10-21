@@ -12,6 +12,7 @@ package org.nrg.dicom.dicomedit.functions;
 import org.nrg.dicom.dicomedit.*;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationException;
 import org.nrg.dicom.mizer.exceptions.ScriptEvaluationRuntimeException;
+import org.nrg.dicom.mizer.objects.DicomElementI;
 import org.nrg.dicom.mizer.objects.DicomObjectI;
 import org.nrg.dicom.mizer.tags.*;
 import org.nrg.dicom.mizer.values.AbstractMizerValue;
@@ -25,8 +26,8 @@ import java.util.stream.Collectors;
 /**
  * Retain private tags matching the provided white-listed tags, remove all other private tags.
  * <p>
- * This implementation records the private-tag values that need to be retained, deletes all private tags,
- * then restores the retained values.
+ * This implementation deletes every private tag that is not retained. Retained tags stay in place: their values
+ * are not read or rewritten.
  */
 public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
 
@@ -54,17 +55,11 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
             // troll the DICOM object for all tags to retain.
             List<TagPath> retainTagPathList = getTagPathsToRetain(tagPathArguments, dicomObject);
 
-            // troll the DICOM for the values of the retained tags.
-            Map<TagPath, String> tagPathValueMap = new TagPathValueCollector().getMatching(retainTagPathList, dicomObject);
-
-            // remove all private tags.
-            deleteAllPrivateTags(dicomObject);
-
-            // restore the retained values.
-            restoreTags(tagPathValueMap, dicomObject);
+            // remove all other private tags.
+            deletePrivateTagsExcept(retainTagPathList, dicomObject);
 
         } catch (Exception e) {
-            throw new ScriptEvaluationException("Error in retainPrivateTags: " + e.getMessage());
+            throw new ScriptEvaluationException("Error in retainPrivateTags: " + e.getMessage(), e);
         }
         return AbstractMizerValue.VOID;
     }
@@ -106,13 +101,6 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
         List<TagPath> retainTagPathList = new TagPathCollector().getMatching(tagPathArguments, dicomObject).stream()
                 .filter(TagPath::isPrivate)
                 .collect(Collectors.toList());
-
-        // Include the necessary creator IDs
-        Set<TagPath> pvcs = retainTagPathList.stream()
-                .map(this::mapCreatorIDPaths)
-                .flatMap(Set::stream)
-                .collect(Collectors.toSet());
-        retainTagPathList.addAll(pvcs);
 
         return retainTagPathList;
     }
@@ -183,19 +171,121 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
     }
 
     /**
-     * deleteAllPrivateTags, including empty private items and blocks.
+     * Delete every private tag that is not retained.
+     * <p>
+     * The retained tags are the tags with values (every tag except sequences with items) that match a tagPath in
+     * retainTagPathList, and the creator IDs of the private blocks on their paths. A private sequence that holds a
+     * retained tag is kept. Its other content is deleted, and so are the items at the end of it that are left empty.
+     * Empty items before a retained one are kept, so retained tags keep their item numbers.
      *
-     * @param dicomObject the object under scrutiny.
+     * @param retainTagPathList tagPaths to match the tags to retain.
+     * @param dicomObject       the object under scrutiny.
      */
-    private void deleteAllPrivateTags(DicomObjectI dicomObject) {
-        List<TagPath> pvtTagPaths = new TagPathCollector().getAll(dicomObject).stream()
-                .filter(TagPath::isPrivate)
-                .collect(Collectors.toList());
+    private void deletePrivateTagsExcept(List<TagPath> retainTagPathList, DicomObjectI dicomObject) {
+        MatchingTagPathFilter filter = new MatchingTagPathFilter(retainTagPathList);
+        Set<List<Integer>> retained = new HashSet<>();
+        Set<List<Integer>> sequencesToKeep = new LinkedHashSet<>();
+        for (TagPath tagPath : new ValueTagPathCollector().getAll(dicomObject)) {
+            if (filter.allow(tagPath)) {
+                List<Integer> path = asList(tagPath.getTagsAsArray());
+                retained.add(path);
+                retained.addAll(getCreatorPaths(path));
+                sequencesToKeep.addAll(getSequencePaths(path));
+            }
+        }
 
-        pvtTagPaths.forEach(tagPath -> removeTagPath(tagPath, dicomObject));
+        Set<List<Integer>> deleted = new HashSet<>();
+        for (TagPath tagPath : new TagPathCollector().getAll(dicomObject)) {
+            List<Integer> path = asList(tagPath.getTagsAsArray());
+            if (!tagPath.isPrivate() || retained.contains(path) || sequencesToKeep.contains(path)
+                    || getSequencePaths(path).stream().anyMatch(deleted::contains)) {
+                continue;
+            }
+            removeTagPath(tagPath, dicomObject);
+            deleted.add(path);
+        }
 
-        new DeleteEmptyPrivateItemsVisitor().visit(dicomObject);
-        new DeleteEmptyPrivateBlocksVisitor().visit(dicomObject);
+        sequencesToKeep.stream()
+                .filter(RetainPrivateTagsReplaceFunction::isPrivatePath)
+                .forEach(path -> removeTrailingEmptyItems(path, dicomObject));
+    }
+
+    /**
+     * The paths of the sequences that contain the tag at the specified path, outermost first.
+     *
+     * @param path the tag array of a tagPath.
+     * @return the paths of the containing sequences, empty for a tag in the root object.
+     */
+    private static List<List<Integer>> getSequencePaths(List<Integer> path) {
+        List<List<Integer>> sequencePaths = new ArrayList<>();
+        for (int length = 1; length < path.size(); length += 2) {
+            sequencePaths.add(new ArrayList<>(path.subList(0, length)));
+        }
+        return sequencePaths;
+    }
+
+    /**
+     * The paths of the creator IDs of the private blocks on the path, one for each private tag that is not a creator
+     * ID. A private tag (gggg,bbxx) is in the block whose creator ID is (gggg,00bb) in the same item.
+     *
+     * @param path the tag array of a tagPath.
+     * @return the paths of the creator IDs, empty for a path with no private tags.
+     */
+    private static List<List<Integer>> getCreatorPaths(List<Integer> path) {
+        List<List<Integer>> creatorPaths = new ArrayList<>();
+        for (int i = 0; i < path.size(); i += 2) {
+            int tag = path.get(i);
+            if (((tag >>> 16) & 1) == 1 && (tag & 0xFF00) != 0) {
+                List<Integer> creatorPath = new ArrayList<>(path.subList(0, i));
+                creatorPath.add((tag & 0xFFFF0000) | ((tag >>> 8) & 0xFF));
+                creatorPaths.add(creatorPath);
+            }
+        }
+        return creatorPaths;
+    }
+
+    /**
+     * A path is private if any of its tags is private. Every other element of the path is an item number.
+     */
+    private static boolean isPrivatePath(List<Integer> path) {
+        for (int i = 0; i < path.size(); i += 2) {
+            if (((path.get(i) >>> 16) & 1) == 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<Integer> asList(int[] tags) {
+        return Arrays.stream(tags).boxed().collect(Collectors.toList());
+    }
+
+    /**
+     * Collects the tagPaths of the tags with values: every tag except sequences with items. Values are not read.
+     */
+    private static class ValueTagPathCollector extends DicomObjectTagVisitor {
+        private final List<TagPath> tagPaths = new ArrayList<>();
+
+        List<TagPath> getAll(DicomObjectI dicomObject) {
+            visit(dicomObject);
+            return tagPaths;
+        }
+
+        @Override
+        public void visitTag(TagPath tagPath, DicomElementI dicomElement, DicomObjectI dicomObject) {
+            tagPaths.add(tagPath);
+        }
+    }
+
+    private void removeTrailingEmptyItems(List<Integer> sequencePath, DicomObjectI dicomObject) {
+        int[] tags = sequencePath.stream().mapToInt(Integer::intValue).toArray();
+        if (!dicomObject.contains(tags)) {
+            return;
+        }
+        DicomElementI sequence = dicomObject.getElement(tags);
+        for (int i = sequence.countItems() - 1; i >= 0 && sequence.getDicomObject(i).isEmpty(); i--) {
+            sequence.removeItem(i);
+        }
     }
 
     /**
@@ -213,17 +303,6 @@ public class RetainPrivateTagsReplaceFunction extends AbstractScriptFunction {
         } else {
             logger.warn("Can not resolve attribute for deletion: " + tagPath);
         }
-    }
-
-    /**
-     * restoreTags
-     *
-     * @param tagPathValueMap Map of the tagPaths and values to be restored.
-     * @param dicomObject     The object under scrutiny.
-     */
-    private void restoreTags(Map<TagPath, String> tagPathValueMap, DicomObjectI dicomObject) {
-        tagPathValueMap.entrySet()
-                .forEach(e -> dicomObject.putString(e.getKey().getTagsAsArray(), e.getKey().getLastTag().getVR(),e.getValue()));
     }
 
 }

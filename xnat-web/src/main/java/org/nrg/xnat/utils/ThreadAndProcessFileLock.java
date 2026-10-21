@@ -1,7 +1,6 @@
 package org.nrg.xnat.utils;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.util.concurrent.Striped;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.nrg.xdat.XDAT;
@@ -12,6 +11,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -19,10 +19,10 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -56,14 +56,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Slf4j
 public class ThreadAndProcessFileLock {
 
-    // The following static methods are used to associate a File with a ThreadAndProcessFileLock instance so that
-    // we can keep our actual concurrency control objects (within ThreadAndProcessFileLock) specific to files
-    private final static Map<File, ThreadAndProcessFileLock> FILE_LOCKS = new HashMap<>();
-    private final static Map<File, AtomicInteger> ACCESSOR_COUNT = new HashMap<>();
-
-    // Striped lock for protecting access to the static map of file locks
-    private final static int NUM_LOCKS = 128;
-    private final static Striped<Lock> STRIPED_MAP_LOCK = Striped.lock(NUM_LOCKS);
+    // Associates a File with the ThreadAndProcessFileLock whose ReadWriteLock is shared by everything accessing that
+    // file, along with the number of current accessors. Entries are only created, updated, and removed through the
+    // atomic ConcurrentHashMap compute methods, so concurrent access to different files can't corrupt the map and the
+    // lock and its accessor count can't get out of sync.
+    //
+    // ConcurrentHashMap locks per table bin, and the table grows with the number of entries. The initial capacity makes
+    // sure it starts with at least as many bins as the 128-stripe lock this map replaced, so there's no more contention
+    // between unrelated files than before while only a few files are locked.
+    private final static int INITIAL_CAPACITY = 128;
+    private final static ConcurrentMap<File, LockEntry> FILE_LOCKS = new ConcurrentHashMap<>(INITIAL_CAPACITY);
 
     private static SiteConfigPreferences PREFERENCES;
 
@@ -72,44 +74,53 @@ public class ThreadAndProcessFileLock {
     public static ThreadAndProcessFileLock getThreadAndProcessFileLock(File file,
                                                                        boolean readOnly)
             throws IOException {
-        Lock mapLock = STRIPED_MAP_LOCK.get(file);
-        mapLock.lock();
+        final ThreadAndProcessFileLock[] lock = new ThreadAndProcessFileLock[1];
         try {
-            ThreadAndProcessFileLock lock;
-            if (FILE_LOCKS.containsKey(file)) {
-                // Another thread is accessing this file, too. Use its ReadWriteLock
-                lock = new ThreadAndProcessFileLock(FILE_LOCKS.get(file), file, readOnly);
-                ACCESSOR_COUNT.get(file).incrementAndGet();
-            } else {
-                lock = new ThreadAndProcessFileLock(file, readOnly);
-                FILE_LOCKS.put(file, lock);
-                ACCESSOR_COUNT.put(file, new AtomicInteger(1));
-            }
-            return lock;
-        } finally {
-            mapLock.unlock();
+            FILE_LOCKS.compute(file, (key, entry) -> {
+                try {
+                    if (entry == null) {
+                        lock[0] = new ThreadAndProcessFileLock(key, readOnly);
+                        return new LockEntry(lock[0]);
+                    }
+                    // Another thread is accessing this file, too. Use its ReadWriteLock
+                    lock[0] = new ThreadAndProcessFileLock(entry.lock, key, readOnly);
+                    entry.accessors++;
+                    return entry;
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
+        return lock[0];
     }
 
     public static void removeThreadAndProcessFileLock(File file) {
-        Lock mapLock = STRIPED_MAP_LOCK.get(file);
-        mapLock.lock();
-        try {
-            if (!FILE_LOCKS.containsKey(file)) {
-                return;
+        FILE_LOCKS.computeIfPresent(file, (key, entry) -> {
+            if (--entry.accessors > 0) {
+                return entry;
             }
-            if (ACCESSOR_COUNT.get(file).decrementAndGet() == 0) {
-                try {
-                    Path dummyFilePath = FILE_LOCKS.get(file).dummyFile.toPath();
-                    Files.deleteIfExists(dummyFilePath);
-                } catch (IOException e) {
-                    log.error("Unable to delete dummy file", e);
-                }
-                FILE_LOCKS.remove(file);
-                ACCESSOR_COUNT.remove(file);
+            try {
+                Files.deleteIfExists(entry.lock.dummyFile.toPath());
+            } catch (IOException e) {
+                log.error("Unable to delete dummy file", e);
             }
-        } finally {
-            mapLock.unlock();
+            // Returning null removes the entry from the map
+            return null;
+        });
+    }
+
+    /**
+     * Holds the shared lock for a file and the number of current accessors. Only read or modified inside the
+     * {@link #FILE_LOCKS} compute methods, which serialize access per key, so the count doesn't need to be atomic.
+     */
+    private static final class LockEntry {
+        private final ThreadAndProcessFileLock lock;
+        private int accessors = 1;
+
+        private LockEntry(final ThreadAndProcessFileLock lock) {
+            this.lock = lock;
         }
     }
 
@@ -143,6 +154,8 @@ public class ThreadAndProcessFileLock {
         }
     }
 
+    // The file this lock is for, named when the lock times out
+    private final File file;
     // The dummy file on which we synchronize for inter-process reading & writing
     private File dummyFile;
     private RandomAccessFile dummyRAF;
@@ -185,6 +198,7 @@ public class ThreadAndProcessFileLock {
         this.mutex = l == null ? new ReentrantReadWriteLock() : l.mutex;
         this.threadLock = readOnly ? mutex.readLock() : mutex.writeLock();
         this.readOnly = readOnly;
+        this.file = file;
 
         // Open channel on the dummy file to synchronize across processes
         this.dummyFile = getLockFileForFile(file);
@@ -196,9 +210,30 @@ public class ThreadAndProcessFileLock {
     }
 
     private String getCachePath() {
+        // Reading the preference is a database round trip, and every lock cycle needs the path (twice per
+        // catalog at archive time). The path is read once and kept until the cachePath
+        // preference changes (CachePathHandlerMethod calls cachePathChanged, on every node when the distributed
+        // events plugin relays the change) or the preferences bean is replaced.
         final SiteConfigPreferences preferences = getSiteConfigPreferences();
-        return preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+        final CachedPath            cached      = CACHE_PATH;
+        if (cached != null && cached.preferences == preferences) {
+            return cached.path;
+        }
+        final String path = preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+        CACHE_PATH = new CachedPath(preferences, path);
+        return path;
     }
+
+    /**
+     * Forgets the cache path read from the preferences, so the next lock reads it again.
+     */
+    public static void cachePathChanged() {
+        CACHE_PATH = null;
+    }
+
+    private record CachedPath(SiteConfigPreferences preferences, String path) {}
+
+    private static volatile CachedPath CACHE_PATH;
 
     /**
      * Create the lock-file File corresponding to the provided file.
@@ -296,7 +331,14 @@ public class ThreadAndProcessFileLock {
         } while (System.currentTimeMillis() <= timeoutTime);
 
         dummyRAF.close();
-        throw new IOException("Unable to acquire thread and process locks");
+        throw new IOException("Timed out after " + describe(timeout, units) + " waiting for the " + (readOnly ? "read" : "write")
+                              + " lock on " + file + "; another thread or process holds it");
+    }
+
+    /** The wait as the caller gave it: "2 minutes", "1 second". */
+    private static String describe(final long timeout, final TimeUnit units) {
+        final String unit = units.name().toLowerCase(Locale.ROOT);
+        return timeout + " " + (timeout == 1 ? unit.substring(0, unit.length() - 1) : unit);
     }
 
     /**

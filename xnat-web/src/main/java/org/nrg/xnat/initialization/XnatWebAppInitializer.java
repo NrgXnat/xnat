@@ -9,6 +9,7 @@
 
 package org.nrg.xnat.initialization;
 
+import ch.qos.logback.classic.servlet.LogbackServletContextListener;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
@@ -55,9 +56,10 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         // DefaultLoggingService once their configs are merged. No-op when the variable is unset.
         DefaultLoggingService.applyConsoleRedirectIfRequested();
 
-        // Manual LogbackServletContextListener registration dropped at the Jakarta cutover:
-        // logback 1.2.x only ships a javax listener. Clean logger-context shutdown returns
-        // with the logback 1.5 / slf4j 2 unification (Phase 1-16).
+        // Added before super.onStartup() adds Spring's ContextLoaderListener, so it is destroyed after it and logging
+        // lasts until the Spring context has closed. web.xml keeps logback's own initializer from adding another.
+        context.addListener(new LogbackServletContextListener());
+
         context.setInitParameter("org.restlet.component", "org.nrg.xnat.restlet.XNATComponent");
 
         // If the context path is not empty (meaning this isn't the root application), then we'll get true: Restlet will

@@ -88,7 +88,7 @@ public class PrearcSessionResourcesList extends PrearcSessionResourceA {
 						String prearchivePath, String project) {
 		if (res instanceof XnatResourcecatalogI resourcecatalogI) {
 			try {
-				final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getOrCreateAndClean(prearchivePath,
+				final CatalogUtils.CatalogData catalogData = CatalogUtils.CatalogData.getExistingAndClean(prearchivePath,
 						resourcecatalogI, false, project);
 				CatalogUtils.Stats stats = CatalogUtils.getFileStats(catalogData.catBean, catalogData.catPath,
 						catalogData.project);

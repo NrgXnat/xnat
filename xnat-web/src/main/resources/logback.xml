@@ -627,6 +627,12 @@
         <appender-ref ref="tasks"/>
         <appender-ref ref="console"/>
     </logger>
+    <!-- Node lock events (elected, demoted, stepped down, lock connection lost/restored, tick timeout) are INFO
+         and are what an operator checks on a multi-node install, so they go to tasks.log with the rest of the
+         node package. -->
+    <logger name="org.nrg.xnat.node.services.impl.PostgresNodeLockService" additivity="false" level="INFO">
+        <appender-ref ref="tasks"/>
+    </logger>
     <logger name="org.springframework.ldap" additivity="false" level="ERROR">
         <appender-ref ref="security"/>
         <appender-ref ref="console"/>
@@ -664,6 +670,12 @@
     <logger name="org.nrg.xnat.received" additivity="false" level="INFO">
         <appender-ref ref="RECEIVED"/>
         <appender-ref ref="console"/>
+    </logger>
+    <!-- One summary line per session build, archive or direct archive, with the time spent in each
+         phase (org.nrg.xnat.utils.PhaseTimer). Its own logger, because the packages that do the work
+         are held at WARN above. -->
+    <logger name="org.nrg.xnat.ingest.timing" additivity="false" level="INFO">
+        <appender-ref ref="prearchive"/>
     </logger>
     <logger name="org.springframework.core" additivity="false" level="ERROR">
         <appender-ref ref="spring"/>

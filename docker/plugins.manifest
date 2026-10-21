@@ -21,17 +21,17 @@
 
 # Audit Trail Plugin — serves /REST/services/summary/audit/* (audit-trail screens + REST API,
 # e.g. WorkflowSummaryTable). The jakarta / Restlet 2.6 / Turbine 7 migration lives on the
-# feature/tomcat10 branch; it builds against org.nrg.xnat:web:1.12.0-SNAPSHOT (must be in Maven
-# Local — see the xnat publish step).
+# feature/tomcat10 branch; it builds against org.nrg.xnat:web:1.12.0-SNAPSHOT (from the
+# Artifactory, or Maven Local after the xnat publish step).
 source  ../../audit_trail_plugin  feature/tomcat10
 
 # Container Service — Docker / Swarm / Kubernetes container execution + command configuration. Jakarta /
-# Tomcat 10 migration lives on feature/tomcat10; builds against org.nrg:parent:1.12.0-SNAPSHOT (Maven Local).
+# Tomcat 10 migration lives on feature/tomcat10; builds against org.nrg:parent:1.12.0-SNAPSHOT (Artifactory or Maven Local).
 # Uses the fatJar task (bundles docker-java etc.) rather than xnatPluginJar, and a JDK 21 toolchain.
 source  ../../container-service  feature/tomcat10  fatJar  build/libs/*fat.jar
 
 # XNAT CR (Clinical Research) plugin — CR home screen (ThreeButtonLanding + enroll/upload/review images),
 # site splash/dashboard screens, PET/PET-MR report screens, QC experiment listing, stored-search filter
 # restlet. Provides the three-button landing page the Playwright S1005 suite exercises. Jakarta / Tomcat 10
-# migration lives on feature/tomcat10; builds against org.nrg:parent:1.12.0-SNAPSHOT (Maven Local).
+# migration lives on feature/tomcat10; builds against org.nrg:parent:1.12.0-SNAPSHOT (Artifactory or Maven Local).
 source  ../../xnat_cr_plugin  feature/tomcat10

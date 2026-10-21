@@ -1189,10 +1189,112 @@ name) and `ai/jakarta-plugin-port-handoff.md` now name the Jakarta line 1.12 thr
 "version change" notice (1.11 is javax now; the Jakarta 1.11 build survives only as `-20260910.185426-1`), and
 say plainly that **`1.12.0-SNAPSHOT` is not yet on the Artifactory**, so building core locally is the only route
 until it is, with a one-line `curl` status check rather than a static claim. The paste-in agent prompt and
-`docker/plugins.manifest` were updated to match. **Blocked:** publishing `1.12.0-SNAPSHOT`. Both credential
-pairs on this machine (`repoUsername`, `deployUser`) return 401 from the Artifactory API, the same as deliberately
-bogus credentials. A working `artifactoryUser`/`artifactoryToken` is needed. When it lands, flip the docs'
-"not yet published" lines and re-verify Route 1 end to end.
+`docker/plugins.manifest` were updated to match. ~~**Blocked:** publishing `1.12.0-SNAPSHOT`~~: both credential
+pairs on this machine (`repoUsername`, `deployUser`) returned 401 from the Artifactory API, the same as
+deliberately bogus credentials, so the publish was done by hand (below).
+
+**Published (same day).** `libs-snapshot-local/org/nrg/xnat/web/1.12.0-SNAPSHOT/` now holds build
+`1.12.0-20261021.164311-1`. Verified, not assumed:
+- The jar manifest says `Implementation-Branch: feature/jakarta-cutover`, `Implementation-Sha: 95f79cc70f`,
+  `Implementation-Dirty: false`.
+- `XnatWebAppInitializer`'s bytecode references only `jakarta/servlet/*`.
+- The POM's 149 `javax.servlet` entries are all `<exclusion>`s. Its only direct `javax`/`jakarta` dependencies
+  are `jakarta.jms-api` and `jakarta.servlet.jsp.jstl-api`.
+- Every coordinate the docs list returns 200 at that same timestamp: `parent`, `web`, `xdat:core`, `framework`,
+  `prefs`, `notify`, `config`, `automation`, the `xnat-web` WAR, and the data-builder plugin marker under
+  `org/nrg/xnat/build/`. The data-builder 404 at `org/nrg/xnat/xnat-data-builder/` is the wrong path, which the
+  guide already warns about.
+
+**Route 1 re-verified end to end.** esign was built with `-Dmaven.repo.local=<empty dir>` and
+`--refresh-dependencies`. The `--info` log shows `parent`, `framework` and `xdat:core` downloaded at
+`1.12.0-20261021.164311-1` from `nrgxnat.jfrog.io/nrgxnat/libs-snapshot`, and the empty directory was still
+empty afterwards. All 16 plugins in this entry were then rebuilt the same way (1-47). The "not yet published"
+lines in the guide, the porting page, the handoff and the paste-in prompt were flipped to "published". The
+`curl` status check stays, with its meaning reversed (200 = Route 1, 404 = it is gone).
+
+## 1-47 🟡 — xnat-jupyterhub test sources ported (191 green); two dependency behavior changes found; 16 plugins rebuilt against the published 1.12 (2026-10-21)
+
+**JupyterHub tests** (`07cc6f8`). This closes the open item from 1-46. Against the published 1.12 with an empty
+`mavenLocal`: **191 tests, 0 failures**. The 4 skips are `@Ignore`s that predate the migration (`64ea98b`).
+It took four separate fixes:
+
+1. **Compile (10 errors).**
+   - `WebSecurityConfigurerAdapter` → `@Bean AuthenticationManager` + `@Bean SecurityFilterChain` in three test
+     configs.
+   - `WebMvcConfigurerAdapter` → `implements WebMvcConfigurer`.
+   - `Hibernate5Module` → `Hibernate5JakartaModule`.
+
+   The configs only ever overrode `configure(AuthenticationManagerBuilder)`, so they ran the adapter's
+   *default* `configure(HttpSecurity)`: SS 5.7.14 `WebSecurityConfigurerAdapter:373-379` (anyRequest
+   authenticated, formLogin, httpBasic), with CSRF on via `applyDefaultConfiguration:242-243`. That chain is
+   declared explicitly. container-service's `*RestApiTestConfig` ports chose `anyRequest().permitAll()` with CSRF
+   off instead. That passes, but the tests no longer prove that endpoints reject anonymous callers. Noted here,
+   not changed.
+2. **Runtime: 28 × 403. Mechanism: SS 6.1.7 changed what `authenticated()` means.**
+   - SS 5.7.14 `SecurityExpressionRoot.isAuthenticated():133-135` is `!isAnonymous()`.
+   - SS 6.5.11 `AuthenticatedAuthorizationManager:135-136` and `SecurityExpressionRoot:149-151` delegate to
+     `AuthenticationTrustResolver.isAuthenticated:81-83` (*@since 6.1.7*), which **also requires
+     `Authentication.isAuthenticated()`**.
+   - The tests' 2-arg `TestingAuthenticationToken(principal, credentials)` calls `super(null)`, leaving
+     `authenticated=false` (`AbstractAuthenticationToken:46`).
+   - `TestingAuthenticationProvider.authenticate` returns the token unchanged (`:38-40`), so SS5's
+     re-authenticate step (`AbstractSecurityInterceptor.authenticateIfRequired:307-324`) never changed the flag.
+     The tests passed only because SS5 never looked at it.
+   - Under SS6 the denial goes through `ExceptionTranslationFilter:187-209`. The token is not anonymous, so it
+     reaches the AccessDeniedHandler and returns 403, not 401.
+
+   **Fix:** build the tokens with the 3-arg `List` constructor (`setAuthenticated(true)`, `:50-55`) and
+   `NO_AUTHORITIES`, which keeps the same empty authority set.
+3. **Runtime: 4 × `assertEquals` on `ZonedDateTime`. Mechanism: jackson-datatype-jsr310 2.15.0 normalizes the
+   deserialized zone.**
+   - `InstantDeserializer.getZone` went from `toZoneId()` (2.14.3:334) to `toZoneId().normalized()`
+     (2.15.0:329), per jackson-modules-java8 PR #267.
+   - Since 2.16 this is `JavaTimeFeature.NORMALIZE_DESERIALIZED_ZONE_ID`, on by default.
+   - develop is on 2.13.5 and the cutover on 2.18.4, so a deserialized `ZonedDateTime` now carries
+     `ZoneOffset.UTC` (`Z`) where it used to carry the `UTC` region. `ZonedDateTime.equals` compares zones.
+   - The JSON on the wire is unchanged.
+
+   **Fix:** the fixtures use `ZoneOffset.UTC`.
+4. **`:test` died with "failed to scan jar file for packages (aspectjweaver-1.8.10.jar)".** This is the
+   documented daemon-JDK gotcha (guide; 1-45, dicomweb), fixed the same way with
+   `gradle/gradle-daemon-jvm.properties` `toolchainVersion=21`.
+
+**Sweeps.**
+- *Unauthenticated tokens* (bug class: an `Authentication` with `isAuthenticated()==false` that reaches an
+  `authenticated()` rule).
+  - **Scope:** a constructor-arity scan of `UsernamePassword`/`Testing`/`PreAuthenticated`/`Anonymous`/
+    `RememberMe` tokens across core (all modules, main and test) and all 22 deployed plugins: 28
+    constructions, 14 of them 2-arg.
+  - **Result: all 14 benign.**
+    - 2 in ldap-auth main (`XnatLdapAuthenticationProviderValidator:76`, `ValidateLdap.groovy:102`) are
+      authentication *requests* handed to `provider.authenticate()`, never stored. That is the 2-arg
+      constructor's intended use.
+    - 4 are core auditing tests with no filter chain.
+    - 1 is core `DirectArchiveSessionApiTest`: `standaloneSetup`, no `springSecurity()`.
+    - 7 are container-service tests whose chains are `permitAll`.
+  - **Production context setters:** every one in core uses a 3-arg (authenticated) token or a checked
+    manager result: `XDAT.setUserDetails:344`, `XDAT.loginUser:1048`, `AuthenticationRestlet:142` (guarded by
+    `isAuthenticated()` at :130), and `XnatBasicAuthenticationFilter:101`. No plugin's main code sets the
+    context.
+  - The `setAuthentication(new …)` pattern was shown to match on core's test tree before its zero result on
+    main was accepted.
+- *Zone identity:*
+  - **Scope:** `getZone()` / `getZone().equals` / `getOffset().equals` across core main and all 22 plugins'
+    main. **Result: 0 hits.** The pattern matched a planted positive first.
+  - The two production `ZoneId.of("UTC")` sites, `DefaultJupyterHubService:514,551` (idle/long-running
+    cull), feed only `ChronoUnit.between`, which works on instants, so they're benign.
+  - An `equals`-on-date heuristic also found 0 hits. That one is heuristic, not exhaustive.
+
+**Rebuilt against the published snapshot.** All 16 of 1-46's plugins built green with
+`-Dmaven.repo.local=<empty dir>` against `1.12.0-20261021.164311-1`, from the committed HEADs. ohif-viewer has
+a pre-existing edit in its submodule's `extensions/xnat/package.json`, but the submodule commit matches the
+recorded one and the Gradle build does not read the submodule. The jars are staged on dave-tc11-2 in
+`~david/redeploy16-20261021-150204/`, with 16/16 sha256 matching the local builds. Every name matches a deployed
+jar exactly, so each one replaces its old copy and none lands beside it.
+
+**🟡 Open: the redeploy itself** (stop Tomcat, back up `plugins/`, install, restart). Claude Code's auto-mode
+classifier blocked it as a remote write. It needs to be run by hand or with permission granted, then the boot
+verified as in 1-45.
 
 ## ⚪ Note — automation hard-disabled makes script delete 500 (not a cutover bug)
 

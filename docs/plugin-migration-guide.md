@@ -71,21 +71,21 @@ touches any of those needs source changes too, typically a day, most of it mecha
 > (`1.11.0-20260910.185426-1`, built from `feature/jakarta-cutover` at `f35c55964d`), but it predates every
 > change since 2026-09-10.
 
-**`1.12.0-SNAPSHOT` on the Artifactory: not yet published** (as of 2026-10-21). Publishing is manual, not a CI
-feed (tracker 1-13), so until someone publishes it, **Route 2 is the only route.** Check the current state
-rather than trusting this paragraph:
+**`1.12.0-SNAPSHOT` on the Artifactory: published** (first snapshot `1.12.0-20261021.164311-1`, built from
+`feature/jakarta-cutover` at `95f79cc70f`). Publishing is manual, not a CI feed (tracker 1-13), so the
+snapshot lags the branch between publishes (see the end of Route 1). To confirm it is there:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' \
   https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.12.0-SNAPSHOT/maven-metadata.xml
-# 404 = not published yet (use Route 2); 200 = Route 1 works
+# 200 = Route 1 works; 404 = it is gone, use Route 2
 ```
 
-1.12 itself is unreleased: what exists, once published, is a timestamped snapshot that moves whenever someone
+1.12 itself is unreleased: what exists is a timestamped snapshot that moves whenever someone
 publishes again. Which of the two routes below you want depends on what you are doing, not on which is
 "proper".
 
-### Route 1 — resolve it from the Artifactory (once published)
+### Route 1 — resolve it from the Artifactory
 
 Most plugins already list the XNAT repositories, in which case setting `vXnat` is the whole change:
 
@@ -120,7 +120,7 @@ cutover commit was last published (its `Implementation-Sha` is in the jar's `MET
 
 ### Route 2 — build core yourself
 
-The only route until `1.12.0-SNAPSHOT` is published, and after that still the right move in three cases: you
+The right move in three cases: you
 are **changing core** alongside your plugin; you need a **cutover commit newer** than the published snapshot; or
 you want the **Docker test stack**, which lives in the same clone (next section). Clone core next to your plugin
 and publish it locally:
@@ -155,7 +155,7 @@ dependency resolution happens, with an error about the plugin rather than about 
 | | |
 |---|---|
 | Build against | `vXnat = "1.12.0-SNAPSHOT"` |
-| Resolves from | the Artifactory snapshot repo once published; `~/.m2` if you published locally — and then keep `mavenLocal` scoped to `org.nrg.*` (see J1) so it cannot shadow third-party artifacts |
+| Resolves from | the Artifactory snapshot repo (`libs-snapshot`); `~/.m2` if you published locally — and then keep `mavenLocal` scoped to `org.nrg.*` (see J1) so it cannot shadow third-party artifacts |
 | Once 1.12 releases | `1.12.0` from the release repository, and the snapshot question goes away |
 
 **Why the version matters more than it looks:** a resolution failure names *your plugin's* dependency rather

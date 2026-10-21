@@ -26,7 +26,7 @@ public class Uncompressor extends Unpacker {
 		this.unpacker.setProject(project);
 	}
 
-	public void unpack(final File file, final File destination) {
+	public boolean unpack(final File file, final File destination) {
 		publishStatus(file, "extracting");
 		unpacker.setSrc(file);
 		if (destination != null) {
@@ -37,8 +37,10 @@ public class Uncompressor extends Unpacker {
 		try {
 			unpacker.execute();
 			file.delete();
+			return true;
 		} catch (BuildException e) {
 			publishFailure(file, e.getMessage());
+			return false;
 		}
 	}
 }

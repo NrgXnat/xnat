@@ -12,6 +12,7 @@ package org.nrg.xft.utils;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.springframework.core.io.Resource;
@@ -22,10 +23,18 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -220,6 +229,63 @@ public class FileUtilsTest {
         assertThat(pathsFromFileToFile).isNotNull().isNotEmpty().hasSize(ENDING_PATHS.size()).containsExactlyElementsOf(ENDING_PATHS);
         assertThat(filesFromPathToPath).isNotNull().isNotEmpty().hasSize(ENDING_FILES.size()).containsExactlyElementsOf(ENDING_FILES);
         assertThat(filesFromFileToFile).isNotNull().isNotEmpty().hasSize(ENDING_FILES.size()).containsExactlyElementsOf(ENDING_FILES);
+    }
+
+    @Test
+    public void testIsCanonicalPathAcceptsSafeRelativePaths() throws IOException {
+        final File destinationDir = new File(dest, "archive");
+
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, "file1.txt"));
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, "subdir/file1.txt"));
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, "./subdir/../file1.txt"));
+        Assert.assertTrue(FileUtils.isCanonicalPath(destinationDir, ""));
+    }
+
+    @Test
+    public void testIsCanonicalPathRejectsPathTraversal() throws IOException {
+        final File destinationDir = new File(dest, "archive");
+
+        Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "../evil.txt"));
+        Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "../../etc/passwd"));
+        Assert.assertFalse(FileUtils.isCanonicalPath(destinationDir, "subdir/../../evil.txt"));
+    }
+
+    @Test
+    public void testBuildRootHistoryPathDoesNotThrowOutsideSpringContext() {
+        // XDAT.getSiteConfigPreferences() throws outside of a Spring context (as in this test), which this method
+        // must fall back from rather than propagate -- see FileUtils#BuildRootHistoryPath.
+        final String path = FileUtils.BuildRootHistoryPath();
+        assertThat(path).isNotBlank().endsWith(".history/");
+    }
+
+    @Test
+    public void testClearExecutable() throws Exception {
+        final File file = createFile(src, f[0], c[0]);
+        Assume.assumeTrue("test requires a file system that supports the executable permission bit", file.setExecutable(true, false));
+        Assert.assertTrue(file.canExecute());
+
+        FileUtils.clearExecutable(file);
+
+        Assert.assertFalse(file.canExecute());
+    }
+
+    @Test
+    public void timestampsFormattedConcurrentlyMatchTheirDates() throws Exception {
+        final List<Date>        dates    = IntStream.range(0, 2000).mapToObj(i -> new Date(1_700_000_000_000L + i * 86_461_001L)).collect(Collectors.toList());
+        final SimpleDateFormat  seconds  = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        final SimpleDateFormat  millis   = new SimpleDateFormat("yyyyMMdd_HHmmssSSS");
+        final Map<Date, String> expected = dates.stream().collect(Collectors.toMap(Function.identity(), date -> seconds.format(date) + "|" + millis.format(date)));
+
+        final ExecutorService executor = Executors.newFixedThreadPool(8);
+        try {
+            final List<Callable<String>> tasks = dates.stream().map(date -> (Callable<String>) () -> FileUtils.getTimestamp(date) + "|" + FileUtils.getMsTimestamp(date)).collect(Collectors.toList());
+            final List<Future<String>>   results = executor.invokeAll(tasks);
+            for (int index = 0; index < dates.size(); index++) {
+                assertEquals(expected.get(dates.get(index)), results.get(index).get());
+            }
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     private static List<List<String>> getUntranslatedCsvFileToList(final File file) throws IOException {

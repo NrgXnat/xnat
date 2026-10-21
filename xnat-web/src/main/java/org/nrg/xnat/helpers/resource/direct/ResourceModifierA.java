@@ -21,6 +21,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
+import org.nrg.xft.utils.zip.UnsafeArchiveException;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.utils.CatalogUtils;
 
@@ -122,17 +123,26 @@ public abstract class ResourceModifierA implements Serializable {
             metadataModified = CatalogUtils.configureResource((XnatResourcecatalog) abst, info, user);
         }
 
+        boolean rejected = false;
         try {
             return new ArrayList<>(CatalogUtils.storeCatalogEntry(writers, filepath, (XnatResourcecatalog) abst, getProject(), extract, info, overwrite, ci));
+        } catch (final UnsafeArchiveException e) {
+            // The upload was deliberately rejected, not a
+            // genuine storage failure -- nothing was actually stored, so persisting/creating the resource below
+            // would leave behind an empty catalog entry for an upload that never happened.
+            rejected = true;
+            throw e;
         } finally {
-            boolean needsUpdate = !(ci instanceof UpdateMeta) || ((UpdateMeta) ci).getUpdate();
-            if (needsUpdate || isNew) {
-                CatalogUtils.populateStats(abst, null);
-            }
-            if (isNew) {
-                addResource((XnatResourcecatalog) abst, type, user);
-            } else if (needsUpdate || metadataModified) {
-                SaveItemHelper.authorizedSave(abst, user, false, false, ci);
+            if (!rejected) {
+                boolean needsUpdate = !(ci instanceof UpdateMeta) || ((UpdateMeta) ci).getUpdate();
+                if (needsUpdate || isNew) {
+                    CatalogUtils.populateStats(abst, null);
+                }
+                if (isNew) {
+                    addResource((XnatResourcecatalog) abst, type, user);
+                } else if (needsUpdate || metadataModified) {
+                    SaveItemHelper.authorizedSave(abst, user, false, false, ci);
+                }
             }
         }
     }

@@ -28,6 +28,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.GradualDicomImporter;
+import org.nrg.xnat.archive.ImportScope;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
@@ -256,6 +257,20 @@ public class CStoreService extends BasicCStoreSCP {
         return this;
     }
     
+    /**
+     * The import scope of an association, created with its first instance and kept on the association: its
+     * instances read the routing rules, archive processors and preferences once (see {@link ImportScope}). The
+     * association's instances all arrive on its own thread, so no two of them ask at once.
+     */
+    private static ImportScope scopeOf(final Association association) {
+        ImportScope scope = association.getProperty(ImportScope.class);
+        if (scope == null) {
+            scope = new ImportScope();
+            association.setProperty(ImportScope.class, scope);
+        }
+        return scope;
+    }
+
     private final Object identifySender(final Association association) {
         return new StringBuilder()
         .append(association.getRemoteAET()).append("@")
@@ -269,16 +284,8 @@ public class CStoreService extends BasicCStoreSCP {
         final FileWriterWrapperI fw = new StreamWrapper(dataStream);
         try {
             try {
-                boolean doCustomProcessing   = false;
-                boolean directArchive        = false;
-                boolean anonymizationEnabled = true;
-
-                String aeTitle = as.getLocalAET();
-                int port = as.getConnection().getPort();
-                doCustomProcessing   = _manager.isCustomProcessing( aeTitle, port);
-                directArchive        = _manager.isDirectArchive( aeTitle, port);
-                anonymizationEnabled = _manager.isAnonymizationEnabled( aeTitle, port);
-                String directArchiveOverwrite = _manager.getDirectArchiveOverwrite( aeTitle, port);
+                final ReceiverSettings receiver = ReceiverSettings.of(as, _manager);
+                final String directArchiveOverwrite = receiver.getDirectArchiveOverwrite();
 
                 final ImmutableMap.Builder<String, Object> paramBuilder = ImmutableMap.<String, Object>builder()
                         .put(GradualDicomImporter.SENDER_ID_PARAM, identifySender(as))
@@ -286,16 +293,17 @@ public class CStoreService extends BasicCStoreSCP {
                         .put(GradualDicomImporter.SENDER_AE_TITLE_PARAM, as.getRemoteAET())
                         .put(GradualDicomImporter.RECEIVER_AE_TITLE_PARAM, as.getLocalAET())
                         .put(GradualDicomImporter.RECEIVER_PORT_PARAM, as.getConnection().getPort())
-                        .put(GradualDicomImporter.CUSTOM_PROC_PARAM, doCustomProcessing)
-                        .put(GradualDicomImporter.DIRECT_ARCHIVE_PARAM, directArchive)
-                        .put(URIManager.PREVENT_ANON, String.valueOf(!anonymizationEnabled));
+                        .put(GradualDicomImporter.CUSTOM_PROC_PARAM, receiver.isCustomProcessing())
+                        .put(GradualDicomImporter.DIRECT_ARCHIVE_PARAM, receiver.isDirectArchive())
+                        .put(URIManager.PREVENT_ANON, String.valueOf(!receiver.isAnonymizationEnabled()));
                 if (directArchiveOverwrite != null) {
                     paramBuilder.put(GradualDicomImporter.DIRECT_ARCHIVE_OVERWRITE_PARAM, directArchiveOverwrite);
                 }
                 final ImmutableMap<String, Object> parameters = paramBuilder.build();
                 final GradualDicomImporter importer = new GradualDicomImporter(this,
                         userProvider.get(), fw, parameters);
-                importer.setIdentifier( _manager.getDicomObjectIdentifier( aeTitle, port));
+                importer.setIdentifier(receiver.getIdentifier());
+                importer.setScope(scopeOf(as));
                 if (null != namer) {
                     importer.setNamer(namer);
                 }

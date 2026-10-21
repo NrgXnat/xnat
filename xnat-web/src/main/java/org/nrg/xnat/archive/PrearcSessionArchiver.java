@@ -63,6 +63,7 @@ import org.nrg.xnat.status.ListenerUtils;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.PhaseTimer;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.data.Status;
 import org.nrg.xnat.restlet.util.XnatWebDavStatus;
@@ -389,6 +390,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
      * @see java.util.concurrent.Callable#call()
      */
     public String call() throws ClientException, ServerException {
+        final PhaseTimer timer = new PhaseTimer();
         try {
             lock(prearcSession.getUrl());
         } catch (LockedItemException e3) {
@@ -469,6 +471,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 }
                 fixSubject(c, true);
             }
+            timer.lap("prepare");
 
             try {
                 MergePrearcToArchiveSession mergePrearcToArchiveSession;
@@ -509,6 +512,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                         }
                     }
 
+                    timer.lap("validate");
                     if (arcSessionDir.exists()) {
                         processing("merging files data with existing session");
                     } else {
@@ -521,6 +525,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                     if (scanIdValidator.needsScanIdCorrection()) {
                         scanIdValidator.call();
                     }
+                    timer.lap("scan-ids");
 
                     SaveHandlerI<XnatImagesessiondata> saveImpl = merged -> {
                         if (SaveItemHelper.authorizedSave(merged, user, false, false, c)) {
@@ -572,6 +577,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                                                                                   saveImpl, user, workflow.buildEvent());
 
                     ListenerUtils.addListeners(this, mergePrearcToArchiveSession).call();
+                    timer.lap("merge");
 
                 } catch (Exception e) {
                     if (existing != null) {
@@ -602,6 +608,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 File         projectDir          = timestampedDir.getParentFile();
                 deleteIfEmpty(timestampedDir);
                 deleteIfEmpty(projectDir);
+                timer.lap("cleanup-prearchive");
                 try {
                     workflow.setStepDescription(PersistentWorkflowUtils.COMPLETE);
                     WorkflowUtils.complete(workflow, workflow.buildEvent());
@@ -614,6 +621,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
                 }
 
                 postArchive(user, merged, params);
+                timer.lap("post-archive");
 
                 final String triggerPipelines = (String) params.get(TRIGGER_PIPELINES);
                 //if triggerPipelines!=false
@@ -632,6 +640,7 @@ public class PrearcSessionArchiver extends ArchiveStatusProducer implements Call
 
         final String url = buildURI(project, src);
 
+        PhaseTimer.LOG.info("Archived {} to {}: {}", prearcSession.getUrl(), url, timer);
         completed("archiving operation complete");
         return url;
     }

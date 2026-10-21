@@ -16,6 +16,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.*;
 import org.apache.commons.lang3.RegExUtils;
@@ -61,6 +62,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
@@ -69,6 +71,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -172,11 +175,21 @@ public class CatalogUtils {
 
         public CatalogData(@Nonnull File catFile, @Nullable XnatResourcecatalog catRes, @Nullable String project,
                            @Nullable String catId, boolean create) throws ServerException {
+            this(catFile, catRes, project, catId, create, false);
+        }
+
+        /**
+         * @param lockHeld true when the caller already holds the exclusive lock on the catalog file (see
+         *                 {@link CatalogUtils#updateCatalog(File, XnatResourcecatalog, String, boolean, Predicate)}),
+         *                 so the read takes no lock of its own.
+         */
+        private CatalogData(@Nonnull File catFile, @Nullable XnatResourcecatalog catRes, @Nullable String project,
+                            @Nullable String catId, boolean create, boolean lockHeld) throws ServerException {
             this.catFile = catFile;
             this.catPath = this.catFile.getParent();
             this.catRes  = catRes;
             if (this.catFile.exists()) {
-                this.catBean = readCatalogBeanFromCatalogFile(catId);
+                this.catBean = readCatalogBeanFromCatalogFile(catId, lockHeld);
             } else if (create) {
                 CatCatalogBean cat = new CatCatalogBean();
                 if (StringUtils.isNotBlank(catId)) cat.setId(catId);
@@ -197,66 +210,89 @@ public class CatalogUtils {
             setCatalogProject(catBean, this.project);
         }
 
-        private CatCatalogBean readCatalogBeanFromCatalogFile(final String catId) throws ServerException {
+        private CatCatalogBean readCatalogBeanFromCatalogFile(final String catId, final boolean lockHeld) throws ServerException {
             CatCatalogBean cat = null;
-            InputStream inputStream = null;
+            ThreadAndProcessFileLock fl = null;
             try {
-                final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, true);
-                fl.tryLock(2L, TimeUnit.MINUTES);
+                fl = lockHeld ? null : ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, true);
+                if (fl != null) {
+                    fl.tryLock(2L, TimeUnit.MINUTES);
+                }
                 //log.trace("{} reader start: {}", System.currentTimeMillis(), fl.toString());
-                try (FileInputStream fis = new FileInputStream(catFile)) {
-                    if (catFile.getName().endsWith(".gz")) {
-                        inputStream = new GZIPInputStream(fis);
-                    } else {
-                        inputStream = fis;
-                    }
-
-                    final XDATXMLReader reader = new XDATXMLReader();
-                    BaseElement base;
-                    try {
-                        base = reader.parse(inputStream);
-                    } catch (SAXParseException exception) {
-                        if (exception.getColumnNumber() == 1 && exception.getLineNumber() == 1 && StringUtils.startsWith(exception.getMessage(), PREMATURE_EOF)) {
-                            log.warn("Tried to read the catalog file at {}, but it was empty. I'm going to regenerate the catalog but you should know something happened to the original file.", catFile.getAbsolutePath());
-                            final CatCatalogBean catalog = new CatCatalogBean();
-                            catalog.setId(catId);
-                            base = catalog;
-                        } else {
-                            throw exception;
-                        }
-                    }
-                    if (base instanceof CatCatalogBean bean) {
-                        cat = bean;
-                        catFileChecksum = getHash(catFile, false);
-                        if (StringUtils.isBlank(catFileChecksum)) {
-                            throw new ServerException("Unable to compute checksum for " + catFile + ". This will be needed to safely write the catalog");
-                        }
-                    }
-                } catch (FileNotFoundException exception) {
-                    log.error("Couldn't find file: {}", catFile, exception);
-                } catch (IOException exception) {
-                    log.error("Error occurred reading file: {}", catFile, exception);
-                } catch (SAXException exception) {
-                    log.error("Error processing XML in file: {}", catFile, exception);
+                try {
+                    cat = parseCatalogFile(catId);
                 } finally {
-                    try {
-                        if (inputStream != null) inputStream.close();
-                    } catch (IOException e) {
-                        // Ignore
+                    if (fl != null) {
+                        fl.unlock();
                     }
-                    fl.unlock();
                     //log.trace("{} reader finish: {}", System.currentTimeMillis(), fl.toString());
                 }
             } catch (IOException e) {
-                log.error("Unable to obtain read lock for file: {}", catFile, e);
+                // The lock's message says what failed: a timeout names the file and how long the read waited.
+                throw new ServerException(e.getMessage(), e);
             } finally {
-                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+                // Only release our reference if we actually obtained one, otherwise we'd decrement another accessor's
+                if (fl != null) {
+                    ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+                }
             }
 
             if (cat == null) {
                 throw new ServerException("No catalog bean stored in " + catFile);
             }
             return cat;
+        }
+
+        /**
+         * Reads and parses the catalog file and records its checksum. Takes no lock: the caller holds one.
+         *
+         * @return The catalog bean, or null when the file could not be read or parsed (already logged).
+         */
+        @Nullable
+        private CatCatalogBean parseCatalogFile(final String catId) {
+            InputStream inputStream = null;
+            try {
+                // One read of the file serves both the parse and the checksum the writer later compares
+                // against; a catalog is small, and on a network mount a second read would be mostly latency.
+                final byte[] bytes = Files.readAllBytes(catFile.toPath());
+                if (catFile.getName().endsWith(".gz")) {
+                    inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes));
+                } else {
+                    inputStream = new ByteArrayInputStream(bytes);
+                }
+
+                final XDATXMLReader reader = new XDATXMLReader();
+                BaseElement base;
+                try {
+                    base = reader.parse(inputStream);
+                } catch (SAXParseException exception) {
+                    if (exception.getColumnNumber() == 1 && exception.getLineNumber() == 1 && StringUtils.startsWith(exception.getMessage(), PREMATURE_EOF)) {
+                        log.warn("Tried to read the catalog file at {}, but it was empty. I'm going to regenerate the catalog but you should know something happened to the original file.", catFile.getAbsolutePath());
+                        final CatCatalogBean catalog = new CatCatalogBean();
+                        catalog.setId(catId);
+                        base = catalog;
+                    } else {
+                        throw exception;
+                    }
+                }
+                if (base instanceof CatCatalogBean bean) {
+                    catFileChecksum = DigestUtils.md5Hex(bytes);
+                    return bean;
+                }
+            } catch (FileNotFoundException | NoSuchFileException exception) {
+                log.error("Couldn't find file: {}", catFile, exception);
+            } catch (IOException exception) {
+                log.error("Error occurred reading file: {}", catFile, exception);
+            } catch (SAXException exception) {
+                log.error("Error processing XML in file: {}", catFile, exception);
+            } finally {
+                try {
+                    if (inputStream != null) inputStream.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
+            }
+            return null;
         }
 
         @Nullable
@@ -318,6 +354,34 @@ public class CatalogUtils {
                                                       final boolean includeFullPaths,
                                                       @Nullable final String project) throws ServerException {
             return getOrCreateAndClean(rootPath, resource, includeFullPaths, project, null, null);
+        }
+
+        /**
+         * As {@link #getOrCreateAndClean(String, XnatResourcecatalogI, boolean, String)} for callers that only read:
+         * the catalog is located with {@link CatalogUtils#findCatalogFile(String, XnatResourcecatalogI)}, a gzipped
+         * catalog is read in place, and a missing catalog is reported rather than created. Nothing is written.
+         *
+         * @throws ServerException if the resource has no catalog file, or it cannot be read.
+         */
+        @Nonnull
+        public static CatalogData getExistingAndClean(final String rootPath,
+                                                      final XnatResourcecatalogI resource,
+                                                      final boolean includeFullPaths,
+                                                      @Nullable final String project) throws ServerException {
+            final File catalogFile = findCatalogFile(rootPath, resource);
+            if (catalogFile == null) {
+                throw new ServerException("No catalog file for resource " + resource.getUri() + " under " + rootPath);
+            }
+            final XnatResourcecatalog catRes = (resource instanceof XnatResourcecatalog xr) ? xr : null;
+            final CatalogData catalogData = new CatalogData(catalogFile, catRes, project, null, false);
+            formalizeCatalog(catalogData.catBean, catalogData.catPath, catalogData.project, null, null);
+            if (includeFullPaths) {
+                CatCatalogMetafieldBean mf = new CatCatalogMetafieldBean();
+                mf.setName("CATALOG_LOCATION");
+                mf.setMetafield(catalogData.catPath);
+                catalogData.catBean.addMetafields_metafield(mf);
+            }
+            return catalogData;
         }
 
         @Nonnull
@@ -452,8 +516,8 @@ public class CatalogUtils {
             MessageDigest md5 = MessageDigest.getInstance(hashType);
 
             //read into buffer and update md5
+            ThreadAndProcessFileLock fl = null;
             try {
-                ThreadAndProcessFileLock fl = null;
                 if (needLock) {
                     fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, true);
                     fl.tryLock(10L, TimeUnit.SECONDS);
@@ -478,7 +542,7 @@ public class CatalogUtils {
             } catch (IOException e) {
                 log.error("Unable to obtain read lock for file {}", file.getAbsolutePath(), e);
             } finally {
-                if (needLock) ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
+                if (fl != null) ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
             }
         } catch(NoSuchAlgorithmException e){
             log.error("Unsupported hashing algorithm {}", hashType, e);
@@ -2155,21 +2219,11 @@ public class CatalogUtils {
      */
     public static void writeCatalogToFile(CatalogData catalogData, boolean calculateChecksums,
                                           Map<String, Map<String, Integer>> auditSummary) throws Exception {
+        prepareCatalogForWrite(catalogData, calculateChecksums, auditSummary);
 
-        File catPathFile;
-        if (!(catPathFile = new File(catalogData.catPath)).exists() && !catPathFile.mkdirs()) {
-            throw new IOException("Failed to create required directory: " + catalogData.catPath);
-        }
-
-        if (calculateChecksums) {
-            CatalogUtils.calculateResourceChecksums(catalogData);
-        }
-
-        refreshAuditSummary(catalogData.catBean, auditSummary);
-
+        ThreadAndProcessFileLock fl = null;
         try {
-            final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogData.catFile,
-                    false);
+            fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catalogData.catFile, false);
             fl.tryLock(10L, TimeUnit.SECONDS);
             //log.trace("{} writer start: {}", System.currentTimeMillis(), fl.toString());
             try {
@@ -2180,13 +2234,7 @@ public class CatalogUtils {
                             catalogData.catFile + " since I last read it or I don't have a previous checksum to compare. " +
                             "To avoid overwriting changes, I'm throwing an exception.");
                 }
-                try (final FileOutputStream fos = new FileOutputStream(catalogData.catFile)) {
-                    final OutputStreamWriter fw = new OutputStreamWriter(fos);
-                    catalogData.catBean.toXML(fw);
-                    fw.flush();
-                }
-                // update checksum after we write so this catalogData object will allow a future write
-                catalogData.catFileChecksum = getHash(catalogData.catFile, false);
+                writeCatalogBytes(catalogData);
             } finally {
                 fl.unlock();
                 //log.trace("{} writer finish: {}", System.currentTimeMillis(), fl.toString());
@@ -2195,13 +2243,114 @@ public class CatalogUtils {
             log.error("Error writing catalog file {}", catalogData.catFile, e);
             throw e;
         } finally {
-            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogData.catFile);
+            // Only release our reference if we actually obtained one, otherwise we'd decrement another accessor's
+            if (fl != null) {
+                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catalogData.catFile);
+            }
         }
     }
 
+    /**
+     * Reads a catalog, lets {@code change} alter it and, when {@code change} returns true, writes it back, all under
+     * one exclusive lock on the catalog file. The archive does this for every catalog of a freshly archived session
+     * ({@code PrearcUtils.cleanupScans}). Holding the exclusive lock from the read to the write takes one lock-file
+     * cycle, and no writer can slip in between, so the write needs no checksum comparison with what was read. The
+     * catalog file is created if it does not exist, as {@link CatalogData#getOrCreate} would.
+     *
+     * @param catFile            The catalog file.
+     * @param catRes             The catalog resource, if known.
+     * @param project            The project, if known.
+     * @param calculateChecksums Whether to compute entry checksums before writing.
+     * @param change             Alters the loaded catalog; returns whether it must be written.
+     *
+     * @return Whether the catalog was written.
+     */
+    public static boolean updateCatalog(final File catFile, @Nullable final XnatResourcecatalog catRes, @Nullable final String project,
+                                        final boolean calculateChecksums, final Predicate<CatalogData> change) throws Exception {
+        ThreadAndProcessFileLock fl = null;
+        try {
+            fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(catFile, false);
+            fl.tryLock(2L, TimeUnit.MINUTES);   // as long as the read path waits for its lock
+            try {
+                final CatalogData catalogData = new CatalogData(catFile, catRes, project, null, true, true);
+                if (!change.test(catalogData)) {
+                    return false;
+                }
+                prepareCatalogForWrite(catalogData, calculateChecksums, null);
+                writeCatalogBytes(catalogData);
+                return true;
+            } finally {
+                fl.unlock();
+            }
+        } catch (Exception e) {
+            log.error("Error updating catalog file {}", catFile, e);
+            throw e;
+        } finally {
+            // Only release our reference if we actually obtained one, otherwise we'd decrement another accessor's
+            if (fl != null) {
+                ThreadAndProcessFileLock.removeThreadAndProcessFileLock(catFile);
+            }
+        }
+    }
+
+    /**
+     * As {@link #updateCatalog(File, XnatResourcecatalog, String, boolean, Predicate)}, locating the catalog file
+     * from the resource as {@link CatalogData#getOrCreate(String, XnatResourcecatalogI, String)} does.
+     */
+    public static boolean updateCatalog(final String rootPath, final XnatResourcecatalogI resource, @Nullable final String project,
+                                        final boolean calculateChecksums, final Predicate<CatalogData> change) throws Exception {
+        return updateCatalog(getOrCreateCatalogFile(rootPath, resource, project),
+                             resource instanceof XnatResourcecatalog xr ? xr : null, project, calculateChecksums, change);
+    }
+
+    private static void prepareCatalogForWrite(final CatalogData catalogData, final boolean calculateChecksums,
+                                               @Nullable final Map<String, Map<String, Integer>> auditSummary) throws IOException {
+        File catPathFile;
+        if (!(catPathFile = new File(catalogData.catPath)).exists() && !catPathFile.mkdirs()) {
+            throw new IOException("Failed to create required directory: " + catalogData.catPath);
+        }
+
+        if (calculateChecksums) {
+            CatalogUtils.calculateResourceChecksums(catalogData);
+        }
+
+        refreshAuditSummary(catalogData.catBean, auditSummary);
+    }
+
+    /**
+     * Renders the catalog, writes the bytes and records their checksum. The caller holds the write lock. Rendering
+     * first leaves the file untouched if rendering fails, and checksumming the bytes in hand costs no second read
+     * of the file just written.
+     */
+    private static void writeCatalogBytes(final CatalogData catalogData) throws Exception {
+        final ByteArrayOutputStream rendered = new ByteArrayOutputStream();
+        final OutputStreamWriter    fw       = new OutputStreamWriter(rendered);
+        catalogData.catBean.toXML(fw);
+        fw.flush();
+        final byte[] bytes = rendered.toByteArray();
+        Files.write(catalogData.catFile.toPath(), bytes);
+        // update checksum after we write so this catalogData object will allow a future write
+        catalogData.catFileChecksum = DigestUtils.md5Hex(bytes);
+    }
+
     @Nonnull
-    public static File getOrCreateCatalogFile(String rootPath, XnatResourcecatalogI resource, @Nullable String project)
-            throws ServerException {
+    /**
+     * Locates a resource's catalog file without touching the filesystem beyond existence checks: the plain catalog
+     * if present, otherwise its gzipped copy, otherwise null. Read-only callers use this instead of
+     * {@link #getOrCreateCatalogFile}, which creates a missing catalog and unzips a gzipped one in place.
+     */
+    @Nullable
+    public static File findCatalogFile(String rootPath, XnatResourcecatalogI resource) {
+        final String fullPath = catalogPath(rootPath, resource);
+        final File plain = new File(fullPath);
+        if (plain.exists()) {
+            return plain;
+        }
+        final File gzipped = new File(fullPath + ".gz");
+        return gzipped.exists() ? gzipped : null;
+    }
+
+    private static String catalogPath(String rootPath, XnatResourcecatalogI resource) {
         String fullPath = getFullPath(rootPath, resource);
         if (fullPath.endsWith("\\")) {
             fullPath = fullPath.substring(0, fullPath.length() - 1);
@@ -2209,6 +2358,12 @@ public class CatalogUtils {
         if (fullPath.endsWith("/")) {
             fullPath = fullPath.substring(0, fullPath.length() - 1);
         }
+        return fullPath;
+    }
+
+    public static File getOrCreateCatalogFile(String rootPath, XnatResourcecatalogI resource, @Nullable String project)
+            throws ServerException {
+        final String fullPath = catalogPath(rootPath, resource);
 
         File f = new File(fullPath);
         if (f.exists()) {

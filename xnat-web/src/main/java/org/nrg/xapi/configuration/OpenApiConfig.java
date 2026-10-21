@@ -12,6 +12,8 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
+import jakarta.servlet.ServletContext;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.services.XnatAppInfo;
 import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springdoc.core.properties.SwaggerUiConfigProperties;
@@ -49,13 +51,14 @@ import java.util.Map;
  * Under Boot that property is set automatically; here we publish it ({@code /xapi}) via a
  * {@link #springdocServletPath BeanFactoryPostProcessor} so it is present before springdoc's
  * {@code @Value} fields resolve. That single property makes the redirect and the spec-fetch URLs all
- * resolve under {@code /xapi} — no per-URL overrides needed. (XNAT deploys as {@code webapps/ROOT}, so
- * the context path is empty.)</p>
+ * resolve under {@code /xapi} — no per-URL overrides needed.</p>
  *
  * <p>Operation paths still come from {@code @RequestMapping} and are servlet-relative (e.g.
- * {@code /siteConfig}), so we declare {@code /xapi} as the OpenAPI server base path — the springdoc
- * equivalent of the old {@code Docket.pathMapping("/xapi")} — so "Try it out" targets
- * {@code /xapi/siteConfig}.</p>
+ * {@code /siteConfig}), so we declare the context path plus {@code /xapi} as the OpenAPI server base path —
+ * the springdoc equivalent of the old {@code Docket.pathMapping("/xapi")} — so "Try it out" targets
+ * {@code /xapi/siteConfig}, or {@code /xnat/xapi/siteConfig} when XNAT is deployed to a non-ROOT context.
+ * Swagger UI resolves a server URL that starts with {@code /} against the host, not the spec's location, so
+ * a bare {@code /xapi} would drop the context path (XXX-303, which fixed the same symptom under springfox).</p>
  */
 @Configuration
 @Import({
@@ -95,9 +98,9 @@ public class OpenApiConfig {
     }
 
     @Bean
-    public OpenAPI xnatOpenApi(final XnatAppInfo appInfo, final MessageSource messageSource) {
+    public OpenAPI xnatOpenApi(final XnatAppInfo appInfo, final MessageSource messageSource, final ServletContext servletContext) {
         return new OpenAPI()
-                .servers(List.of(new Server().url(XAPI)))
+                .servers(List.of(new Server().url(StringUtils.defaultString(servletContext.getContextPath()) + XAPI)))
                 .info(new Info().title(getMessage(messageSource, "apiInfo.title"))
                                 .description(getMessage(messageSource, "apiInfo.description"))
                                 .version(appInfo.getVersion())

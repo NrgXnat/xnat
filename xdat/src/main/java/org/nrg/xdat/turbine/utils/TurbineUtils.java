@@ -29,6 +29,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.framework.utilities.SanitizeUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatSecurity;
 import org.nrg.xdat.preferences.DisplayedUserIdentifierType;
@@ -1081,6 +1082,11 @@ public class TurbineUtils {
 
     public boolean resourceExists(String screen) {
         if (StringUtils.isBlank(screen)) {
+            return false;
+        }
+        // Reject paths with traversal segments so a supplied template path stays within the resource root.
+        if (SanitizeUtils.containsPathTraversal(screen)) {
+            log.warn("Rejected unsafe Velocity resource path");
             return false;
         }
         // Turbine 5.1 / Velocity 2: the VelocityService uses its own VelocityEngine, not the

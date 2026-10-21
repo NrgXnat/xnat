@@ -924,7 +924,10 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public synchronized static Map<String, String> GetFieldMap(final GenericWrapperElement e, final String level, final boolean allowMultiples, final boolean isRoot)throws XFTInitException,ElementNotFoundException {
+	// Not synchronized: the maps are ConcurrentHashMaps and getFieldElements() publishes a finished entry, so a race only
+	// builds it twice. A class lock here deadlocked against the element monitors this calls into. Don't switch to
+	// computeIfAbsent(): building an entry can re-enter these maps.
+	public static Map<String, String> GetFieldMap(final GenericWrapperElement e, final String level, final boolean allowMultiples, final boolean isRoot)throws XFTInitException,ElementNotFoundException {
 		return getFieldElements(FIELD_MAPS, e, level, allowMultiples, isRoot);
 	}
 
@@ -933,7 +936,8 @@ public class ViewManager {
 		if (!elementMap.containsKey(fieldElementKey)) {
 			final String fullXMLName = element.getFullXMLName();
 			log.info("No entry found for element key {}: element {}, level {}, multiples {}, isRoot {}", fieldElementKey, fullXMLName, level, allowMultiples, isRoot);
-			final Map<String, String> fieldMap   = new HashMap<>();
+			// Concurrent: GetViewColumnName() adds aliases to the cached map from request threads.
+			final Map<String, String> fieldMap   = new ConcurrentHashMap<>();
 			final List<String>        fieldNames = new ArrayList<>();
 
 			final List<String[]> fields = new ArrayList<>();
@@ -1005,7 +1009,8 @@ public class ViewManager {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public synchronized static List<String> GetFieldNames(GenericWrapperElement e,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException {
+	// Not synchronized: see GetFieldMap() above.
+	public static List<String> GetFieldNames(GenericWrapperElement e,String level,boolean allowMultiples,boolean isRoot)throws XFTInitException,ElementNotFoundException {
 		return getFieldElements(FIELD_NAMES, e, level, allowMultiples, isRoot);
 	}
 	

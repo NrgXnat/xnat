@@ -1019,6 +1019,85 @@ jakarta branch (git diff empty over `xft/search`, `xft/db`, `XFTItem`, `XdatCrit
 first thing to exercise this path. Fix belongs in XFT (render a null `IS` criterion as `IS NULL`). Affects any
 query filtering a relationship field on null, not just pipelines. Not fixed.
 
+## 1-44 🟢 — merged `develop` (32 commits, `e040ae0ef`..`507ebc706`) into the cutover; ported 4 pre-cutover-stack changes (2026-10-21)
+
+Second develop integration under the merge-only policy (1-40). 208 files incoming; **16 conflicted (21 hunks)**.
+Resolutions that were not simply "take one side":
+
+- **6 prearchive files were whole-file conflicts caused only by line endings.** The branch had normalized
+  `PrearcScanResourceList`, `PrearcSessionResourceA`, `…CatalogFiles`, `…Files`, `…ResourcesList` and
+  `PrearchiveSessionScreen` from CRLF to LF while porting them (Restlet 2 imports / `PipelineData`); develop kept
+  CRLF and made 1–18-line changes (XNAT-8806 read-only prearchive access, `getExistingAndClean`, the not-built
+  session page). Every line differed by EOL, so git saw one hunk per file. Re-merged each with `git merge-file`
+  over LF-normalized base/ours/theirs: 5 merged clean, 1 real conflict (import block: kept the Restlet 2
+  `Request`/`Response`, added develop's `Method`).
+- **CVE-2026-22732 (develop #57, `d05a9b2c8`) — workaround NOT ported, because 6.5.11 already carries the fix.**
+  develop forces `HeaderWriterFilter.setShouldWriteHeadersEagerly(true)` because "no public 5.7.x release carries
+  the fix". The Spring advisory (spring.io/security/cve-2026-22732) lists **6.5.9** as fixed; we are on
+  6.5.11. Confirmed from the sources jars rather than the advisory alone: `HeaderWriterFilter` is identical
+  apart from the namespace in 5.7.14 and 6.5.11 (`shouldWriteHeadersEagerly = false` in both), and the fix is
+  in `OnCommittedResponseWrapper`. 6.5.11 overrides `setHeader`/`setIntHeader`/`addHeader`/`addIntHeader` to
+  track `Content-Length` (`checkContentLengthHeader`), and 5.7.14 has none of those overrides, which is the
+  root cause OSV names. Kept the branch's `http.headers(...)` lambda DSL and the Spring Security 6
+  `org.springframework.security.config.ObjectPostProcessor` import.
+- **`LogbackServletContextListener` restored, which the branch's own comment deferred to 1-16.** At the cutover
+  the manual registration was dropped because logback 1.2 shipped only a javax listener. develop has now added
+  `logbackDisableServletContainerInitializer=true` to `web.xml` (auto-merged). Left alone, that would have
+  turned off the jakarta listener which logback 1.5.37's `LogbackServletContainerInitializer` was registering
+  implicitly (`LogbackServletContainerInitializer.java:40`, key at `CoreConstants.java:22`), leaving **no** logback
+  listener, so no clean `LoggerContext.stop()` on undeploy. Restored develop's explicit
+  `context.addListener(new ch.qos.logback.classic.servlet.LogbackServletContextListener())` ahead of Spring's
+  `ContextLoaderListener` (now jakarta in 1.5.37).
+- **XXX-303 non-ROOT Swagger URLs (develop `ef1714507`), ported to springdoc.** develop's fix is a springfox
+  `PathProvider` that strips the context path springfox 2.10 prepends to every operation path. It cannot exist
+  here, so it was removed along with its 2 tests and the springfox-wiring `RestApiConfigTest`. **The same
+  symptom existed in the springdoc wiring through a different mechanism:** `OpenApiConfig` declared
+  `servers: [/xapi]` and its javadoc assumed "XNAT deploys as `webapps/ROOT`". Swagger UI resolves a server URL
+  beginning with `/` against the host, so under `/xnat` "Try it out" went to `host/xapi/...` and 404'd. The
+  server URL is now `servletContext.getContextPath() + "/xapi"`. New `OpenApiConfigContextPathTest`, the
+  springdoc counterpart of develop's springfox test, fetches `/v3/api-docs` through MockMvc under `/xnat` and
+  ROOT. **Negative control:** with the bare `/xapi` restored, the non-ROOT case fails and ROOT passes.
+- **TurbineUtils.resourceExists:** combined develop's XXX-325/326/327 path-traversal guard with the branch's
+  Velocity-2 `CustomClasspathResourceLoader` lookup. develop's version still called the singleton
+  `Velocity.resourceExists`, which always returns false on this stack.
+- **Catalog:** took develop's spring-ldap 2.4.2 → **2.4.4** (CVE bump), ant 1.10.18, `dcm4che-ws-rs`/`-json`/
+  `-imageio-opencv`, and dicom-edit6 renumbered 7.0.0 → **6.10.1-SNAPSHOT** (develop's build now fails on a
+  non-6.x version). Kept springdoc over develop's springfox 2.10.5 upgrade (3 hunks).
+- GradualDicomImporter: took develop's restructured file whole (byte-identical to develop). The branch's only
+  change there had been `Status.SERVER_ERROR_INSUFFICIENT_STORAGE` → `XnatWebDavStatus`, and develop #82
+  (`b9e5f5624`) itself replaced that 507 with `SERVER_ERROR_INTERNAL`, so nothing was left to port.
+
+**Bug class (recurring, see 1-33): develop code is written against the pre-cutover stack.** Swept every line
+develop **added** (diff hunks, `git diff e040ae0ef origin/develop -U0`, ~15k added lines) for javax-EE packages,
+Restlet 1.1 (`org.restlet.data.Request/Response`, `org.restlet.resource.*`, `createEmpty`, `com.noelios`),
+Restlet-2-missing WebDAV `Status` constants, springfox, Spring 5 / Spring Security 5 APIs
+(`WebMvcConfigurerAdapter`, `antMatchers`, `authorizeRequests`, `HttpMethod.resolve`, the old
+`ObjectPostProcessor` package), Turbine `RunData` screen signatures and the `Velocity` singleton. **All hits
+are accounted for:** the springfox files above, the CVE workaround above, and **one auto-merged (outside any
+conflict) compile break**, develop's new `UnsafeArchiveException` catch in `UserCacheResource` using
+`Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY` (not in Restlet 2.x), ported to `XnatWebDavStatus`. **Runtime-only
+surfaces:** develop's 5 changed `.vm` files use `$!esc.html(...)` (XSS fixes) and `$canModify`/`$notBuilt`.
+Under `$!` quiet notation an unregistered `$esc` would make the escaped values (site-wide alert, site
+description) render as **empty**. Traced statically: `$esc` is put by `SecureScreen.loadAdditionalVariables`
+(`SecureScreen.java:113`), called by `Login.java:89`, `Register.java:28`, `RegisterExternalLogin.java:35`, and
+`SecureScreen.java:151` for `DefaultTop.vm`; `canModify`/`notBuilt` are put by `PrearchiveSessionScreen`
+(`:51`, `:71`), the parent of `PrearchiveDetails`. **Traced, not rendered**: confirm on the next deploy that
+the login page shows the site-wide alert.
+
+**Result:** `compileJava compileTestJava verifyNoOrphanedJavaxEE` green (guard: "20 jars reference javax-EE,
+all provided or allowlisted", the same count as 1-33). **The guard does not cover `dcm4che-ws-rs`:** `parent`
+is a `java-platform`, and ws-rs is only a `constraints` entry for plugins. It is not on any XNAT classpath and
+had never been resolved into the Gradle cache (the probe was checked against `dcm4che-core`, 16 hits). Checked
+directly instead: `dcm4che-ws-rs-5.35.0.pom` depends on `jakarta.ws.rs-api` at `${jakarta.ws.rs.version}` =
+**3.1.0** (`dcm4che-parent-5.35.0.pom:96`), the `jakarta.ws.rs` namespace, so it is safe for jakarta-line
+plugins. Tests for
+every module develop touched: dicom-edit6 477, dicomtools 103, mizer 200, transaction 21, xdat 208, xnat-web
+711; **1,720 tests, 0 failures, 0 errors** (35 skipped; Docker up for the EventService suites).
+
+**Open, not a cutover bug:** develop is now on `version=1.11.0-SNAPSHOT` too (bumped by #82), the same
+coordinates this branch publishes its jakarta artifacts under. If both publish snapshots to the same
+repository, they overwrite each other.
+
 ## ⚪ Note — automation hard-disabled makes script delete 500 (not a cutover bug)
 
 On dave-tc11 `/xapi/automation/enabled` is **false**: `_automationEnabled` (from the `automation.enabled`

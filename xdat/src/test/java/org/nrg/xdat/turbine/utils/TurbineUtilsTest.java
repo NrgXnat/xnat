@@ -10,10 +10,25 @@
 package org.nrg.xdat.turbine.utils;
 
 import org.junit.Test;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 
 public class TurbineUtilsTest {
+
+	/**
+	 * {@code resourceExists} must refuse any path containing traversal segments so it stays within the
+	 * resource root.
+	 */
+	@Test
+	public void resourceExistsRejectsLeadingParentTraversal() {
+		assertFalse(TurbineUtils.GetInstance().resourceExists("../../../../../../../../a/b"));
+	}
+
+	@Test
+	public void resourceExistsRejectsEmbeddedParentTraversal() {
+		assertFalse(TurbineUtils.GetInstance().resourceExists("/screens/pages/../../../../../../a/b.vm"));
+	}
 
 	private void doEscapeFail(String s){
 		String s2=TurbineUtils.escapeParam(s);

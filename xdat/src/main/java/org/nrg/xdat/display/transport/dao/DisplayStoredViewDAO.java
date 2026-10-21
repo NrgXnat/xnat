@@ -7,20 +7,18 @@
  */
 package org.nrg.xdat.display.transport.dao;
 
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.xdat.display.transport.entities.DisplayStoredViewDB;
 import org.springframework.stereotype.Repository;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 /**
  * @author Tim Olsen
  *
  * DAO Object for management of DisplayStoredViews (sql views and functions configured for use by the search engine)
  */
-@SuppressWarnings("unchecked")
 @Repository
 public class DisplayStoredViewDAO extends AbstractHibernateDAO<DisplayStoredViewDB> {
     /**
@@ -30,15 +28,9 @@ public class DisplayStoredViewDAO extends AbstractHibernateDAO<DisplayStoredView
      * @return
      */
     public DisplayStoredViewDB findByName(final String name, final boolean includeDisabled) {
-        final Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.eq("name", name));
-        if (!includeDisabled) {
-            criteria.add(Restrictions.eq("enabled", true));
-        }
-        if (criteria.list().size() == 0) {
-            return null;
-        }
-        return (DisplayStoredViewDB) criteria.list().get(0);
+        return instance(includeDisabled
+                        ? findByProperties(parameters("name", name))
+                        : findByProperties(parameters("name", name, ENABLED_PROPERTY, true)));
     }
 
     /**
@@ -46,12 +38,6 @@ public class DisplayStoredViewDAO extends AbstractHibernateDAO<DisplayStoredView
      * @return
      */
     public List<DisplayStoredViewDB> getSortedViews() {
-        final Criteria criteria = getCriteriaForType();
-        criteria.addOrder(Order.asc("sourceType"));
-        criteria.addOrder(Order.asc("sortOrder"));
-        if (criteria.list().size() == 0) {
-            return null;
-        }
-        return criteria.list();
+        return emptyToNull(findByProperties(Collections.emptyMap(), Arrays.asList(asc("sourceType"), asc("sortOrder"))));
     }
 }

@@ -21,7 +21,7 @@ dependencies {
     compileOnly libs.google.jsr305
 
     testImplementation project(':test')
-    testImplementation libs.ehcache.ehcache
+    testImplementation variantOf(libs.ehcache.ehcache) { classifier('jakarta') }
     testImplementation libs.junit.junit
     testImplementation libs.spring.test
 }

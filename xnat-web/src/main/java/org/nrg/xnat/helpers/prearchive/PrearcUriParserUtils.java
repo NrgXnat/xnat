@@ -13,8 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.Reference;
-import org.restlet.util.Template;
-import org.restlet.util.Variable;
+import org.restlet.routing.Template;
+import org.restlet.routing.Variable;
 
 import java.util.*;
 

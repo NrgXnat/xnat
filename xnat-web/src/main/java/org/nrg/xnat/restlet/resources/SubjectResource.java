@@ -37,11 +37,12 @@ import org.nrg.xnat.restlet.representations.TurbineScreenRepresentation;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
+import org.nrg.xnat.restlet.util.XnatWebDavStatus;
 import org.xml.sax.SAXParseException;
 
 import static org.nrg.xft.event.XftItemEventI.CREATE;
@@ -237,7 +238,7 @@ public class SubjectResource extends ItemResource {
                             }
                         }
                     } else {
-                        this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted subject record must include the project attribute.");
+                        this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Submitted subject record must include the project attribute.");
                         return;
                     }
 
@@ -372,10 +373,10 @@ public class SubjectResource extends ItemResource {
                     returnString(sub.getId(), (existing == null) ? Status.SUCCESS_CREATED : Status.SUCCESS_OK);
                 }
             } else {
-                this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
+                this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, "Only xnat:Subject documents can be PUT to this address.");
             }
         } catch (SAXParseException e) {
-            this.getResponse().setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
+            this.getResponse().setStatus(XnatWebDavStatus.CLIENT_ERROR_UNPROCESSABLE_ENTITY, e.getMessage());
         } catch (InvalidValueException e) {
             this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
             logger.error("", e);

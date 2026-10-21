@@ -3,7 +3,7 @@ package org.nrg.xnat.eventservice.entities;
 import com.google.common.base.MoreObjects;
 import org.nrg.xnat.eventservice.model.TriggeringEvent;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.io.Serializable;

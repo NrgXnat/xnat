@@ -11,8 +11,8 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.xdat.services.StudyRoutingService;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.Objects;

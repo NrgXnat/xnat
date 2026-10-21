@@ -15,10 +15,10 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.nrg.framework.orm.hibernate.audit.NrgRevisionEntity;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.Objects;
 
 /**
@@ -31,7 +31,7 @@ import java.util.Objects;
  * rather than removing it, and Envers records that as a modification rather than a deletion.
  *
  * <p>That soft delete is why the inherited "enabled" and "disabled" properties are explicitly audited below. Envers
- * does not audit {@link javax.persistence.MappedSuperclass} properties unless told to, and without these a revocation
+ * does not audit {@link jakarta.persistence.MappedSuperclass} properties unless told to, and without these a revocation
  * would produce an audit row identical to the original grant — recording that something changed but not what.
  */
 @Auditable

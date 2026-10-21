@@ -6,7 +6,7 @@ import lombok.Setter;
 import org.nrg.xnat.entities.CustomVariableAppliesTo;
 import org.nrg.xnat.entities.CustomVariableFormAppliesTo;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;

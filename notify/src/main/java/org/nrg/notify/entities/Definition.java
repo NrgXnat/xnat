@@ -12,7 +12,7 @@ package org.nrg.notify.entities;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.List;
 
 @Auditable

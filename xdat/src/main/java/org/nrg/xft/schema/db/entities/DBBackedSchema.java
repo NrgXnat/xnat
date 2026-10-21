@@ -9,7 +9,7 @@ package org.nrg.xft.schema.db.entities;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 
 @Entity

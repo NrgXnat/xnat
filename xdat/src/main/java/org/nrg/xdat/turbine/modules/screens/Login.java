@@ -12,7 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
-import org.apache.turbine.services.velocity.TurbineVelocity;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
@@ -22,14 +22,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistryImpl;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpSession;
 import java.util.Date;
 
 @Slf4j
 public class Login extends VelocitySecureScreen {
 	@Override
-	protected void doBuildTemplate(RunData data) throws Exception {
+	protected void doBuildTemplate(PipelineData pipelineData) throws Exception {
+        RunData data = pipelineData.getRunData();
 		final String message = data.getMessage();
 
 		if (!StringUtils.isBlank(message) && (message.startsWith("Password changed") || message.startsWith("Registration successful"))) {
@@ -84,7 +85,7 @@ public class Login extends VelocitySecureScreen {
 			data.setMessage("Your account has been disabled. Please contact the system administrator for more information.");
 		}
 
-		final Context context = TurbineVelocity.getContext(data);
+		final Context context = TurbineUtils.getVelocityContext(data);
         SecureScreen.loadAdditionalVariables(data, context);
 
         doBuildTemplate(data, context);
@@ -93,7 +94,8 @@ public class Login extends VelocitySecureScreen {
 	}
 
     @Override
-	protected void doBuildTemplate(RunData data, Context context) throws Exception {
+	protected void doBuildTemplate(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
 		for(final Object param : data.getParameters().keySet()){
 			final String paramS= (String)param;
 			if ((!paramS.equalsIgnoreCase("template")) && (!paramS.equalsIgnoreCase("action"))){
@@ -103,7 +105,8 @@ public class Login extends VelocitySecureScreen {
 	}
 
 	@Override
-	protected boolean isAuthorized(final RunData data) {
+	protected boolean isAuthorized(final PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
 		return false;
 	}
 }

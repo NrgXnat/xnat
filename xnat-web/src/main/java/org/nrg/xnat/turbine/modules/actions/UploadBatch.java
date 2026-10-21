@@ -15,12 +15,13 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
-import org.apache.commons.fileupload.FileItem;
+import jakarta.servlet.http.Part;
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -31,7 +32,8 @@ public class UploadBatch extends SecureAction {
     static org.apache.log4j.Logger logger = Logger.getLogger(UploadBatch.class);
 
     @Override
-    public void doPerform(RunData data,Context context) throws Exception {
+    public void doPerform(PipelineData pipelineData,Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         System.out.println("Starting Upload");
         long startTime = Calendar.getInstance().getTimeInMillis();
         ParameterParser params = data.getParameters();
@@ -60,8 +62,8 @@ public class UploadBatch extends SecureAction {
             Float file_size = params.getFloat("file_size");
             try {
                 //byte[] bytes = params.getUploadData();
-                //grab the FileItems available in ParameterParser
-                FileItem fi = params.getFileItem("image_archive");
+                //grab the Parts available in ParameterParser
+                Part fi = params.getPart("image_archive");
                 if (fi != null)
                 {                    
                     String filename = fi.getName();
@@ -69,7 +71,7 @@ public class UploadBatch extends SecureAction {
                     f = new File(dir.getAbsolutePath() + File.separator + f.getName());
                     System.out.println("Pre-write: " + ((Calendar.getInstance().getTimeInMillis()-startTime)) + " ms");
                     startTime = Calendar.getInstance().getTimeInMillis();
-                    fi.write(f);
+                    java.nio.file.Files.copy(fi.getInputStream(), f.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                     System.out.println("Write: " + ((Calendar.getInstance().getTimeInMillis()-startTime)) + " ms");
                     
                     if (uploadID!=null)session.setAttribute(uploadID + "Upload", Long.valueOf(100));

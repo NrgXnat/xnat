@@ -15,11 +15,12 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Hashtable;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.RawScreen;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.security.user.exceptions.FailedLoginException;
@@ -44,13 +45,15 @@ public class GetFileCatalog extends RawScreen {
     * @param data Turbine information.
     * @return content type.
     */
-    public String getContentType(RunData data)
+    public String getContentType(PipelineData pipelineData)
     {
+        RunData data = pipelineData.getRunData();
         return "text/xml";
     };
     
-    protected final void doOutput(RunData data) 
+    protected final void doOutput(PipelineData pipelineData) 
     {
+        RunData data = pipelineData.getRunData();
         AccessLogger.LogScreenAccess(data);
         HttpServletResponse response = data.getResponse();
         long startTime = Calendar.getInstance().getTimeInMillis();

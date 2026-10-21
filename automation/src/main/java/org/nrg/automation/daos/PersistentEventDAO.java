@@ -17,7 +17,7 @@ import org.nrg.automation.event.entities.PersistentEvent;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.springframework.stereotype.Repository;
 
-import javax.persistence.Query;
+import jakarta.persistence.Query;
 
 /**
  * The Class PersistentEventDAO.

@@ -14,8 +14,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -28,6 +28,7 @@ import org.apache.avalon.framework.logger.Logger;
 import org.apache.fop.apps.Driver;
 import org.apache.fop.messaging.MessageHandler;
 import org.apache.turbine.Turbine;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.base.BaseElement;
@@ -50,7 +51,8 @@ public class XDATScreen_pdf extends SecureScreen {
      * @param data Turbine information.
      * @return content type.
      */
-    public String getContentType(RunData data) {
+    public String getContentType(PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
         return "application/pdf";
     }
 
@@ -139,7 +141,8 @@ public class XDATScreen_pdf extends SecureScreen {
         return out;
     }
 
-    public void doBuildTemplate(RunData data, Context context) {
+    public void doBuildTemplate(PipelineData pipelineData, Context context) {
+        RunData data = pipelineData.getRunData();
         try {
             item = TurbineUtils.GetItemBySearch(data);
         } catch (Exception ignored) {

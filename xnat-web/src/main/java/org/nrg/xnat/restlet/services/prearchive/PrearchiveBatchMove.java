@@ -14,8 +14,8 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.restlet.Context;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 
 import java.io.File;
 import java.util.HashMap;

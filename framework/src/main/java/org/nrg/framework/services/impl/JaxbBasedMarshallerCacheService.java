@@ -23,9 +23,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.*;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.*;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
@@ -357,7 +357,7 @@ public final class JaxbBasedMarshallerCacheService implements MarshallerCacheSer
     }
 
     /**
-     * Creating the JAXB Context ... javax.xml.bind.JAXBContext.newInstance() is
+     * Creating the JAXB Context ... jakarta.xml.bind.JAXBContext.newInstance() is
      * a very slow operation, you can improve your performance if you create a
      * cache of these instances, we do this by wrapping the call to newInstance
      * with the following code

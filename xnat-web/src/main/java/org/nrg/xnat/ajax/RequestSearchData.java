@@ -11,11 +11,9 @@ package org.nrg.xnat.ajax;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.rundata.RunDataService;
-import org.apache.turbine.services.rundata.TurbineRunDataFacade;
-import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.TurbineException;
-import org.apache.turbine.util.parser.CookieParser;
+import org.apache.fulcrum.parser.CookieParser;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.exceptions.IllegalAccessException;
@@ -33,10 +31,10 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.xml.sax.InputSource;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.SQLException;
@@ -56,7 +54,7 @@ public class RequestSearchData {
             InputSource is = new InputSource(sr);
             
             RunDataService rundataService = null;
-            rundataService = TurbineRunDataFacade.getService();
+            rundataService = (org.apache.turbine.services.rundata.RunDataService) org.apache.turbine.services.TurbineServices.getInstance().getService(org.apache.turbine.services.rundata.RunDataService.SERVICE_NAME);
             try {
                 if (rundataService == null)
                 {
@@ -64,7 +62,7 @@ public class RequestSearchData {
                             "No RunData Service configured!");
                 }
                 RunData data = rundataService.getRunData(req, response, sc);
-                Context context = TurbineVelocity.getContext(data);
+                Context context = TurbineUtils.getVelocityContext(data);
 
                 String isNew =req.getParameter("isNew");
 
@@ -111,10 +109,7 @@ public class RequestSearchData {
                 
                 if (numToDisplay != null)
                 {
-                    org.apache.turbine.util.uri.TurbineURI dui = new org.apache.turbine.util.uri.TurbineURI(data, "/");
-                    dui.removePathInfo();
-                    dui.setScriptName("/");
-                    cp.setCookiePath(dui);
+                    // Turbine 5.1/Fulcrum CookieParser has no setCookiePath; cookies use the default path.
                     cp.set("numToDisplay", numToDisplay.toString(), 60*60*24*365);
                     cp.set("secure", "true");
                 }else
@@ -188,7 +183,7 @@ public class RequestSearchData {
         if (user!=null){
             
             RunDataService rundataService = null;
-            rundataService = TurbineRunDataFacade.getService();
+            rundataService = (org.apache.turbine.services.rundata.RunDataService) org.apache.turbine.services.TurbineServices.getInstance().getService(org.apache.turbine.services.rundata.RunDataService.SERVICE_NAME);
             try {
                 if (rundataService == null)
                 {
@@ -196,7 +191,7 @@ public class RequestSearchData {
                             "No RunData Service configured!");
                 }
                 RunData data = rundataService.getRunData(req, response, sc);
-                Context context = TurbineVelocity.getContext(data);
+                Context context = TurbineUtils.getVelocityContext(data);
                 
                 StringBuffer sb = new StringBuffer();
                 DisplaySearch ds = (DisplaySearch)session.getAttribute(id + "DS");

@@ -14,7 +14,7 @@ import org.hibernate.annotations.LazyCollectionOption;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.notify.api.SubscriberType;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 

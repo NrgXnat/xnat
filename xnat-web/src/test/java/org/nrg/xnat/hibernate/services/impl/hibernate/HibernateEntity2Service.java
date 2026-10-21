@@ -7,7 +7,7 @@ import org.nrg.xnat.hibernate.repositories.Entity2Repository;
 import org.nrg.xnat.hibernate.services.Entity2Service;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 
 @Service
 @Transactional

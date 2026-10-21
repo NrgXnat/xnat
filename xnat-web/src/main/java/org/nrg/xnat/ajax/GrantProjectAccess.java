@@ -11,13 +11,11 @@ package org.nrg.xnat.ajax;
 
 import java.io.IOException;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.turbine.services.rundata.RunDataService;
-import org.apache.turbine.services.rundata.TurbineRunDataFacade;
-import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.TurbineException;
 import org.apache.velocity.context.Context;
@@ -51,7 +49,7 @@ public class GrantProjectAccess {
         }
 		else {
             RunDataService rundataService = null;
-            rundataService = TurbineRunDataFacade.getService();
+            rundataService = (org.apache.turbine.services.rundata.RunDataService) org.apache.turbine.services.TurbineServices.getInstance().getService(org.apache.turbine.services.rundata.RunDataService.SERVICE_NAME);
             try {
                 if (rundataService == null) {
                     throw new TurbineException(

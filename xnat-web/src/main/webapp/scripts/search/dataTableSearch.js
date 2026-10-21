@@ -194,7 +194,16 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
 
 
 
+        // Tomcat 10 / Restlet 2.6 regression: an application/x-www-form-urlencoded POST body is drained
+        // by the servlet parameter parser before it reaches the Restlet resource, so the stored-search
+        // XML is lost and SearchResource returns 422 ("Content is not allowed in prolog"). Restlet 1.1
+        // preserved the raw body; 2.6 does not. Post the bundle as text/xml so Restlet keeps it as the
+        // raw request entity (SearchResource already accepts a bare-XML body). setDefaultPostHeader is
+        // read synchronously by asyncRequest while building the request, so restoring it immediately
+        // afterward is safe and leaves other YUI POSTs untouched.
+        YAHOO.util.Connect.setDefaultPostHeader('text/xml; charset=UTF-8');
         YAHOO.util.Connect.asyncRequest('POST', serverRoot + '/REST/search?' + params, this.initCallback, this.xml, this);
+        YAHOO.util.Connect.setDefaultPostHeader('application/x-www-form-urlencoded; charset=UTF-8');
     };
 
     this.initFailure = function(o){

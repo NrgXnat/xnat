@@ -19,7 +19,7 @@ import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
-import org.apache.turbine.services.velocity.TurbineVelocity;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -54,9 +54,9 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * @author Tim
@@ -228,9 +228,10 @@ public abstract class SecureAction extends VelocitySecureAction {
         throw new InvalidCsrfException(errorMessage, user != null ? user.getUsername() : Users.DEFAULT_GUEST_USERNAME);
     }
 
-    protected boolean isAuthorized(final RunData data) throws Exception {
+    protected boolean isAuthorized(final PipelineData pipelineData) throws Exception {
+        RunData data = pipelineData.getRunData();
         if (XDAT.getSiteConfigPreferences().getRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
-            TurbineVelocity.getContext(data).put("logout", "true");
+            TurbineUtils.getVelocityContext(data).put("logout", "true");
             data.getParameters().setString("logout", "true");
         } else {
             data.getParameters().add("new_session", "TRUE");

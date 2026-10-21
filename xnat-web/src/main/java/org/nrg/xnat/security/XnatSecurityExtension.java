@@ -17,16 +17,18 @@ public interface XnatSecurityExtension {
     String getAuthMethod();
 
     /**
-     * Called by the {@link SecurityConfig#configure(HttpSecurity)} method. This allows the implementing class to add
-     * further configurations to the HTTP security configuration.
+     * Called while {@link SecurityConfig#securityFilterChain} builds the filter chain (formerly the
+     * adapter's {@code configure(HttpSecurity)}). This allows the implementing class to add further
+     * configurations to the HTTP security configuration.
      *
      * @param http The HTTP security configuration.
      */
     void configure(final HttpSecurity http) throws Exception;
 
     /**
-     * Called by the {@link SecurityConfig#configure(AuthenticationManagerBuilder)} method. This allows the implementing
-     * class to add further configurations to the authentication manager configuration.
+     * Called while {@link SecurityConfig#authenticationManager} builds the authentication manager
+     * (formerly the adapter's {@code configure(AuthenticationManagerBuilder)}). This allows the
+     * implementing class to add further configurations to the authentication manager configuration.
      *
      * @param builder The authentication manager configuration.
      */

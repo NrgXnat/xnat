@@ -22,7 +22,7 @@ import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import static lombok.AccessLevel.PRIVATE;
 

@@ -5,7 +5,7 @@ import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xft.security.UserI;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Checks whether the user is a site administrator.

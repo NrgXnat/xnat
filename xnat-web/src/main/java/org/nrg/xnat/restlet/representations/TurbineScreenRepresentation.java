@@ -16,14 +16,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.PageLoader;
 import org.apache.turbine.services.template.TemplateService;
-import org.apache.turbine.services.template.TurbineTemplate;
 import org.apache.turbine.util.RunData;
+import org.apache.turbine.services.rundata.RunDataService;
+import org.apache.turbine.services.TurbineServices;
 import org.apache.turbine.util.ServerData;
 import org.apache.turbine.util.TurbineException;
 import org.nrg.xdat.XDAT;
@@ -31,11 +32,11 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.rundata.RestletRunData;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.resource.OutputRepresentation;
+import org.restlet.Request;
+import org.restlet.representation.OutputRepresentation;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
-import com.noelios.restlet.http.HttpRequest;
+import org.restlet.ext.servlet.ServletUtils;
+import org.restlet.engine.adapter.HttpRequest;
 
 public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 	static org.apache.log4j.Logger logger = Logger.getLogger(TurbineScreenRepresentation.class);
@@ -49,8 +50,8 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 		this.request=request;
 		user=_user;
 		this.params=params;
-		HttpServletRequest _request = ((ServletCall)((HttpRequest) request).getHttpCall()).getRequest(); 
-		HttpServletResponse _response = ((ServletCall)((HttpRequest) request).getHttpCall()).getResponse(); 
+		HttpServletRequest _request = org.restlet.ext.servlet.ServletUtils.getRequest(request);
+		HttpServletResponse _response = org.restlet.ext.servlet.ServletUtils.getResponse(org.restlet.Response.getCurrent());
 		
 		data = populateRunData(_request,_response,user,params);
 	}
@@ -60,15 +61,15 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 		this.request=request;
 		user=_user;
 		this.params=params;
-		HttpServletRequest _request = ((ServletCall)((HttpRequest) request).getHttpCall()).getRequest(); 
-		HttpServletResponse _response = ((ServletCall)((HttpRequest) request).getHttpCall()).getResponse(); 
+		HttpServletRequest _request = org.restlet.ext.servlet.ServletUtils.getRequest(request);
+		HttpServletResponse _response = org.restlet.ext.servlet.ServletUtils.getResponse(org.restlet.Response.getCurrent());
 		
 		data = populateRunData(_request,_response,user,params);
 	}
 
 	@SuppressWarnings("deprecation")
 	public void turbineScreen(RunData data,OutputStream out)throws IOException,Exception{
-		TemplateService templateService = TurbineTemplate.getService();
+		TemplateService templateService = (org.apache.turbine.services.template.TemplateService) org.apache.turbine.services.TurbineServices.getInstance().getService(org.apache.turbine.services.template.TemplateService.SERVICE_NAME);
         String defaultPage = (templateService == null)
                 ? null :templateService.getDefaultPageName(data);
 
@@ -82,12 +83,8 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 
         PageLoader.getInstance().exec(data, defaultPage);
 
-		//COPIED FROM org.apache.turbine.Turbine.doGet
-        if (data.isPageSet() && data.isOutSet() == false)
-        {
-            // Output the Page.
-            data.getPage().output(out);
-        }
+		// Turbine 5.1 removed the ECS Page model; screen output was written to the hijacked
+		// PrintWriter during PageLoader.exec() above, so there is no Page to output here.
 
         writer.flush();
         writer.close();
@@ -108,19 +105,11 @@ public abstract class TurbineScreenRepresentation extends OutputRepresentation {
 //		}
 //		RunData data = rundataService.getRunData("restlet",request, response, XNATRestletServlet.REST_CONFIG);
 
-		RestletRunData data = new RestletRunData();
-        data.setParameterParser(new org.apache.turbine.util.parser.DefaultParameterParser());
-        data.setCookieParser(new org.apache.turbine.util.parser.DefaultCookieParser());
-
-        // Set the request and response.
-        data.setRequest(request);
-        data.setResponse(response);
-
-        // Set the servlet configuration.
-        data.setServletConfig(XNATRestletServlet.REST_CONFIG);
-
-        // Set the ServerData.
-        data.setServerData(new ServerData(request));
+		// Turbine 5.1: RunData is built by the RunDataService, which populates the parser, request,
+		// response and ServerData internally (the individual setters were removed in the 4.0 rewrite).
+		// The "restlet" key selects RestletRunData (services.RunDataService.restlet.run.data).
+		final RunDataService rundataService = (RunDataService) TurbineServices.getInstance().getService(RunDataService.SERVICE_NAME);
+		final RestletRunData data = (RestletRunData) rundataService.getRunData("restlet", request, response, XNATRestletServlet.REST_CONFIG);
 		
 		if(!XDAT.isAuthenticated()) {
 			try {

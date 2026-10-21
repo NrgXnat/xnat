@@ -13,8 +13,8 @@ import org.nrg.framework.orm.hibernate.BaseHibernateEntity;
 import org.nrg.framework.orm.hibernate.HibernateUtils;
 import org.nrg.xnat.customforms.pojo.formio.RowIdentifier;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;

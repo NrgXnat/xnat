@@ -10,6 +10,7 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
@@ -45,8 +46,9 @@ public class SearchResults extends SecureScreen {
 	/* (non-Javadoc)
 	 * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
 	 */
-	public void doBuildTemplate(RunData data, Context context)
+	public void doBuildTemplate(PipelineData pipelineData, Context context)
 	{
+        RunData data = pipelineData.getRunData();
 		DisplaySearch search = getSearch(data);
 		XFTTableI table = search.getPresentedTable();
 		
@@ -100,7 +102,7 @@ public class SearchResults extends SecureScreen {
 		    String templateName = "/screens/" + search.getRootElement().getFormattedName() + "_search.vm";
 
 		    logger.debug("looking for: " + templateName);
-		    if (Velocity.resourceExists(templateName))
+		    if (TurbineUtils.GetInstance().resourceExists(templateName))
 			{
 		        context.put("searchType",templateName);
 			}else

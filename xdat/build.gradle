@@ -16,6 +16,7 @@ publishing {
 dependencies {
     api project(':notify')
     api project(':config')
+    api libs.jakarta.validation.api
     api project(':mail')
     api project(':framework')
     api project(':automation')
@@ -42,9 +43,10 @@ dependencies {
     implementation libs.httpcomponents.httpclient
     implementation libs.commons.lang3
     implementation libs.commons.text
-    implementation libs.commons.fileupload
     implementation(libs.turbine.turbine) { transitive = false }
-    implementation(libs.torque.torque) { transitive = false }
+    // Turbine 5.1 pulls parser/intake from Fulcrum; xdat uses turbine transitive=false, so add explicitly.
+    implementation libs.fulcrum.parser
+    implementation libs.fulcrum.intake
     implementation libs.apache.velocity
     implementation libs.apache.velocity.tools
     implementation libs.restlet.com.noelios.restlet.ext.servlet
@@ -68,7 +70,7 @@ dependencies {
     implementation libs.commons.dbcp2
     implementation libs.bitwalker.useragentutils
     implementation libs.apache.ant
-    implementation libs.ehcache.ehcache
+    implementation variantOf(libs.ehcache.ehcache) { classifier('jakarta') }
     implementation libs.postgresql.postgresql
     implementation libs.slf4j.log4j.over.slf4j
     implementation libs.commons.compress

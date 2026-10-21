@@ -28,6 +28,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -45,12 +46,12 @@ import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.bind.Marshaller;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.xml.bind.Marshaller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ import java.util.Map;
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @Slf4j
 @ComponentScan({"org.nrg.xapi.rest.aspects", "org.nrg.xapi.authorization", "org.nrg.xapi.pages"})
-public class WebConfig extends WebMvcConfigurerAdapter {
+public class WebConfig implements WebMvcConfigurer {
     @Autowired
     public WebConfig(final Jackson2ObjectMapperBuilder objectMapperBuilder,
                      @Qualifier("threadPoolExecutorFactoryBean") final ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean,
@@ -88,6 +89,12 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Override
     public void configureMessageConverters(final List<HttpMessageConverter<?>> converters) {
+        // configureMessageConverters REPLACES Spring's defaults, so the default ByteArrayHttpMessageConverter
+        // is gone. Without it, a controller returning byte[] with produces=application/json (e.g. springdoc's
+        // /xapi/v3/api-docs OpenApiWebMvcResource) falls through to Jackson, which serializes byte[] as a
+        // base64 string — corrupting the payload. Register it first (matching Spring's default ordering) so
+        // byte[] is written raw.
+        converters.add(new ByteArrayHttpMessageConverter());
         converters.add(stringHttpMessageConverter());
         converters.add(mappingJackson2HttpMessageConverter());
         converters.add(marshallingHttpMessageConverter());
@@ -98,8 +105,14 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void configurePathMatch(final PathMatchConfigurer matcher) {
         matcher.setUseRegisteredSuffixPatternMatch(true);
+        // Spring 6 flipped the trailing-slash default to false, so every XAPI URL built with a
+        // trailing slash (e.g. dicomScpManager's scpUrl(id) -> PUT /xapi/dicomscp/{id}/) 404s and
+        // the write silently no-ops. XNAT's JS builds such URLs in many places; restore the
+        // pre-6 lenient matching app-wide. (Deprecated but functional through 6.2.x.)
+        matcher.setUseTrailingSlashMatch(true);
     }
 
     @Override

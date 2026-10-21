@@ -19,7 +19,6 @@ import java.util.Arrays;
 
 import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 
-import static org.nrg.xft.utils.predicates.ProjectAccessPredicate.UNASSIGNED;
 
 public final class PrearcImporterFactory {
     public static PrearcImporterFactory getFactory() { return INSTANCE; }

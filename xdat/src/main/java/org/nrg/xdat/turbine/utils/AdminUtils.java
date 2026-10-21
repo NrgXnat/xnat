@@ -31,7 +31,7 @@ import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.security.UserI;
 import org.springframework.mail.MailException;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 import java.io.StringWriter;
 import java.util.*;
 
@@ -296,10 +296,7 @@ public class AdminUtils {
 	}
 
 	public static String populateVmTemplate(Context context, String templatePath) {
-        StringWriter writer = new StringWriter();
-        Template template = Velocity.getTemplate(templatePath);
-        template.merge(context, writer);
-        return writer.toString();
+        return org.nrg.xft.utils.VelocityUtils.render(context, templatePath);
     }
 
 	/**

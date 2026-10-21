@@ -32,7 +32,7 @@ import org.nrg.xnat.archive.ImportScope;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 import java.io.IOException;
 
 @Slf4j

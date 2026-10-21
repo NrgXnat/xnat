@@ -39,7 +39,7 @@
 							<select name="subject_bmonth" ID="subject_bmonth">
 								<option value="bad">(SELECT)</option>
 								#foreach ($month in $months)
-									#set ($monthCount = $velocityCount + 1)
+									#set ($monthCount = $foreach.count + 1)
 					        		<option value="$monthCount">
 										$month
 									</option>

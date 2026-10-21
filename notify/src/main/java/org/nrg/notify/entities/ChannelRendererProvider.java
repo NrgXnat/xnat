@@ -11,7 +11,7 @@ package org.nrg.notify.entities;
 
 import java.util.Map;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import org.nrg.notify.renderers.ChannelRenderer;
 

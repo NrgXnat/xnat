@@ -1,0 +1,98 @@
+# Local Tomcat 10 + PostgreSQL + ActiveMQ stack for the Jakarta-cutover WAR
+# (Restlet 2.6 / Turbine 7.0 / Velocity 2.4.1 / Spring 6, jakarta.* / Tomcat 10.1).
+# For the Phase-0 javax WAR (feature/turbine-5x), override TOMCAT_BASE back to
+# tomcat:9-jdk21-temurin — a javax WAR will not boot on the Tomcat 10 default.
+#
+# Quick start (3 phases — boot, then two scripts):
+#   ./docker/stage-war.sh              # builds :xnat-web:war -> docker-context/xnat.war
+#   ./docker/stage-plugins.sh          # (optional) build/stage the curated plugin set (docker/plugins.manifest)
+#   docker compose up --build          # 1) boot db + broker + xnat, UNINITIALIZED (like develop)
+#   SMTP_PASS=... ./docker/init-xnat.sh   # 2) first-install setup + base site config + SMTP
+#   ./docker/build-known-state.sh  # 3) (optional) seed the reproducible data fixture
+#   open http://localhost:8080         # first boot runs schema creation; give it a few minutes
+#
+# The container boots UNINITIALIZED (empty DB -> setup wizard), the same as the develop branch —
+# the entrypoint no longer auto-inits. Complete first-install setup + config with init-xnat.sh,
+# then optionally populate fixture data with build-known-state.sh.
+#
+# Service names MUST stay xnat-postgresql / xnat-activemq: the Dockerfile bakes those
+# hostnames into xnat-conf.properties at build time (see Dockerfile ARG defaults).
+
+# The stack persists state in two named volumes:
+#  - xnat-db → PostgreSQL data (/var/lib/postgresql/data)
+#  - xnat-data → XNAT archive/prearchive (/data/xnat)
+#
+#  The clean bring-up
+#
+#  cd /Volumes/Offload/projects/xnatworks/rtv/xnat
+#  ./docker/stage-war.sh          # only if you changed XNAT code since last build
+#  docker compose down -v         # stop containers AND remove the named volumes
+#  docker compose up --build      # fresh DB + archive; first boot re-runs schema creation
+#
+#- down -v removes the compose-declared volumes (xnat-db, xnat-data). Plain down keeps them, so the DB would survive.
+#- First boot runs XNAT's schema creation — give it a few minutes before http://localhost:8080 responds; it comes up UNINITIALIZED (run docker/init-xnat.sh to complete setup).
+#
+#  Verify it's actually gone
+#  docker volume ls | grep xnat     # should NOT list xnat_xnat-db / xnat_xnat-data after down -v
+#
+services:
+  xnat-postgresql:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: xnat
+      POSTGRES_USER: xnat
+      POSTGRES_PASSWORD: xnat
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xnat -d xnat"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - xnat-db:/var/lib/postgresql/data
+
+  xnat-activemq:
+    # Any ActiveMQ "Classic" image exposing OpenWire on 61616 works; the broker
+    # runs unauthenticated by default so XNAT's admin/admin creds are ignored.
+    image: apache/activemq-classic:6.1.4
+    expose:
+      - "61616"
+    ports:
+      - "${ACTIVEMQ_CONSOLE_PORT:-8161}:8161"   # web console (admin/admin) — optional
+
+  xnat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Env-overridable; DEFAULTS to Tomcat 10.1 (the jakarta target). Override e.g.
+        # TOMCAT_BASE=tomcat:11.0-jdk21-temurin for a Tomcat 11 trial, or :9 for the Phase-0 javax WAR.
+        TOMCAT_BASE: ${TOMCAT_BASE:-tomcat:10.1-jdk21-temurin}
+    depends_on:
+      xnat-postgresql:
+        condition: service_healthy
+      xnat-activemq:
+        condition: service_started
+    environment:
+      # Run the server in the timezone the Playwright suite assumes (SYSTEM_TIMEZONE=America/Chicago
+      # in its .env), so last-login timestamp assertions (e.g. T1002.1) resolve within tolerance.
+      # The base image defaults to UTC otherwise. Override with TZ=... for a different fixture tz.
+      TZ: ${TZ:-America/Chicago}
+    ports:
+      - "${XNAT_PORT:-8080}:8080"
+      # DICOM C-STORE receiver ports published to the host for external tests (env-overridable host ports).
+      # 8104 = the enabled "XNAT" receiver; 8131/8132 = the PWDBG receivers
+      # (left disabled in XNAT — the mapping is here so tests can reach them if/when enabled).
+      - "${XNAT_DICOM_PORT:-8104}:8104"
+      - "${XNAT_DICOM_PORT_2:-8131}:8131"
+      - "${XNAT_DICOM_PORT_3:-8132}:8132"
+    volumes:
+      - xnat-data:/data/xnat
+      # Curated plugin set, staged by ./docker/stage-plugins.sh (see docker/plugins.manifest).
+      # This bind mount on the plugins subpath OVERRIDES the xnat-data named volume there, so an
+      # updated set appears on `docker compose restart xnat` — no rebuild, no `down -v`. XNAT scans
+      # ${xnat.home}/plugins (=/data/xnat/home/plugins) once at boot; read-only is all it needs.
+      - ./docker/plugins:/data/xnat/home/plugins:ro
+
+volumes:
+  xnat-db:
+  xnat-data:

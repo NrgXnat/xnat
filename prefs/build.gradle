@@ -5,7 +5,7 @@ plugins {
 dependencies {
     api project(':framework')
 
-    implementation libs.ehcache.ehcache
+    implementation variantOf(libs.ehcache.ehcache) { classifier('jakarta') }
     implementation libs.redisson.redisson
     implementation libs.commons.beanutils
     implementation libs.commons.configuration2

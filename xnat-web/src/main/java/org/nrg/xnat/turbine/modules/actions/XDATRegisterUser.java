@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.utilities.Reflection;
@@ -61,7 +62,8 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
     }
 
     @Override
-    public void doPerform(final RunData data, final Context context) throws Exception {
+    public void doPerform(final PipelineData pipelineData, final Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
         boolean isProjectAccessRequest = hasPAR(data);
 
@@ -194,7 +196,7 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
         } else if (getPreferences().getUserRegistration() && !getPreferences().getEmailVerification()) {
             if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
                 data.setAction(nextAction);
-                ((VelocityAction) ActionLoader.getInstance().getInstance(nextAction)).doPerform(data, context);
+                ((VelocityAction) ActionLoader.getInstance().getAssembler(nextAction)).doPerform(data, context);
             } else if (!StringUtils.isBlank(nextPage) && !StringUtils.equals(nextPage, Turbine.getConfiguration().getString("template.home"))) {
                 data.setScreenTemplate(nextPage);
             }

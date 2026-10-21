@@ -149,7 +149,7 @@ public class EventServiceTestConfig {
     }
 
     @Bean
-    public EventServiceActionProvider testAction(SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {
+    public TestAction testAction(SubscriptionDeliveryEntityService subscriptionDeliveryEntityService) {
         return new TestAction(subscriptionDeliveryEntityService);
     }
 
@@ -188,11 +188,6 @@ public class EventServiceTestConfig {
     @Bean
     public SubscriptionDeliveryEntityDao subscriptionDeliveryEntityDao() {
         return new SubscriptionDeliveryEntityDao();
-    }
-
-    @Bean
-    public List<EventServiceActionProvider> actionProviders() {
-        return null;
     }
 
     @Bean

@@ -44,7 +44,7 @@
             <th align="left">Investigators:</th>
             <td>
                 #foreach($invest in $om.getInvestigators_investigator())
-                    #if($velocityCount>1);#end #escapeCleanHTML($!invest.getLastname()), #escapeCleanHTML($!invest.getFirstname())
+                    #if($foreach.count>1);#end #escapeCleanHTML($!invest.getLastname()), #escapeCleanHTML($!invest.getFirstname())
                 #end
             </td>
         </tr>

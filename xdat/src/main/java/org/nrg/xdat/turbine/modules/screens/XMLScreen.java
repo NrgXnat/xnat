@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.screens;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatUser;
@@ -26,7 +27,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.restlet.data.Status;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -49,14 +50,16 @@ public class XMLScreen extends XDATRawScreen {
      *
      * @return content type.
      */
-    public String getContentType(final RunData data) {
+    public String getContentType(final PipelineData pipelineData) {
+        RunData data = pipelineData.getRunData();
         return "text/xml";
     }
 
     /**
      * {@inheritDoc}
      */
-    protected final void doOutput(final RunData data) throws Exception {
+    protected final void doOutput(final PipelineData pipelineData) throws Exception {
+        RunData data = pipelineData.getRunData();
         try {
             final ItemI item = ObjectUtils.getIfNull(TurbineUtils.getDataItem(data), () -> getItemBySearch(data));
             if (item == null) {

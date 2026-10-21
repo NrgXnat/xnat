@@ -104,7 +104,7 @@ public class TestMarshallerCacheService {
         String xml = _service.marshal(list);
         assertThat(xml).isNotNull().isNotEmpty();
         // TODO: This doesn't work, even when the generic list is in the same package as MarshalableThingy. It fails with the exception:
-        // [javax.xml.bind.JAXBException: class org.nrg.framework.test.models.MarshalableThingy nor any of its super class is known to this context.]
+        // [jakarta.xml.bind.JAXBException: class org.nrg.framework.test.models.MarshalableThingy nor any of its super class is known to this context.]
         // Figure this out!
         // MarshalableGenericList<MarshalableThingy> genericList = new MarshalableGenericList<MarshalableThingy>();
         // genericList.add(thingy1);

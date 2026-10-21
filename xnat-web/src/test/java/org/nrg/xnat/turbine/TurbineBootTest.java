@@ -1,0 +1,142 @@
+package org.nrg.xnat.turbine;
+
+import org.apache.turbine.services.TurbineServices;
+import org.apache.turbine.util.TurbineConfig;
+import org.junit.Test;
+
+import java.io.File;
+
+import static org.junit.Assert.assertNotNull;
+
+/**
+ * Boots XNAT's actual Turbine 5.1 service container (WEB-INF/conf/TurbineResources.properties plus
+ * the YAAFI roleConfiguration.xml / componentConfiguration.xml) via {@link TurbineConfig}, outside a
+ * servlet container, and asserts the core render + service-container services initialize.
+ *
+ * <p>This is the Phase-0b "Rung 2" boot test: it validates the migrated config (service classnames,
+ * YAAFI XML, Fulcrum roles, the custom Velocity loader wiring) before a full Tomcat deploy.
+ */
+public class TurbineBootTest {
+
+    private static String webappRoot() {
+        for (final String candidate : new String[]{"src/main/webapp", "xnat-web/src/main/webapp"}) {
+            if (new File(candidate, "WEB-INF/conf/TurbineResources.properties").isFile()) {
+                return new File(candidate).getAbsolutePath();
+            }
+        }
+        throw new IllegalStateException("Could not locate xnat-web webapp root from " + new File(".").getAbsolutePath());
+    }
+
+    @Test
+    public void turbineServiceContainerBoots() throws Exception {
+        final String root = webappRoot();
+        // The custom Velocity loader resolves templates (incl. the velocimacro library) against
+        // XDATServlet.WEBAPP_ROOT, which is normally set during servlet init. Point it at the webapp.
+        org.nrg.xdat.servlet.XDATServlet.WEBAPP_ROOT = root;
+        final TurbineConfig config = new TurbineConfig(root, "/WEB-INF/conf/TurbineResources.properties");
+        try {
+            config.initialize();
+            for (final String service : new String[]{
+                    "AvalonComponentService", "VelocityService", "TemplateService",
+                    "RunDataService", "AssemblerBrokerService", "ServletService",
+                    "PullService", "SessionService"}) {
+                assertNotNull("Turbine service did not initialize: " + service,
+                              TurbineServices.getInstance().getService(service));
+                System.out.println("[boot] OK: " + service);
+            }
+
+            // Exercise global pull-tool instantiation — service.init() alone does not surface a
+            // missing/renamed tool class (Turbine logs it and continues). The $ui tool (UITool)
+            // delegates to UIService, so this covers both.
+            final org.apache.turbine.services.pull.PullService pull =
+                    (org.apache.turbine.services.pull.PullService) TurbineServices.getInstance().getService("PullService");
+            final org.apache.velocity.context.Context globalTools = pull.getGlobalContext();
+            final Object ui = globalTools.get("ui");
+            assertNotNull("global pull tool $ui (UITool) did not instantiate", ui);
+            System.out.println("[boot] OK: pull tool $ui -> " + ui.getClass().getName());
+
+            // Validate the request-pipeline descriptor. Turbine.configure() JAXB-unmarshals this at
+            // servlet init; a missing file crashes there ("is parameter must not be null"). Confirm the
+            // file exists, is well-formed, and every <valve> class loads.
+            final File descriptor = new File(root, "WEB-INF/conf/turbine-classic-pipeline.xml");
+            org.junit.Assert.assertTrue("pipeline descriptor missing: " + descriptor, descriptor.isFile());
+            final org.w3c.dom.NodeList valves = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                    .newDocumentBuilder().parse(descriptor).getElementsByTagName("valve");
+            org.junit.Assert.assertTrue("pipeline has no <valve> entries", valves.getLength() > 0);
+            boolean hasHomepageValve = false;
+            for (int i = 0; i < valves.getLength(); i++) {
+                final String valve = valves.item(i).getTextContent().trim();
+                Class.forName(valve);   // throws if a valve class is missing/renamed
+                if (valve.endsWith("DefaultHomepageTargetValve")) {
+                    hasHomepageValve = true;
+                }
+            }
+            System.out.println("[boot] OK: pipeline (" + valves.getLength() + " valves, all classes load)");
+
+            // Regression guard: Turbine 5.1 dropped the template.homepage default, so without
+            // DefaultHomepageTargetValve the bare context root (/ -> /app, empty target) renders no
+            // screen and fails with "Couldn't map Template null to any Screen class!".
+            org.junit.Assert.assertTrue("pipeline is missing DefaultHomepageTargetValve — empty-target "
+                    + "/app requests (the site root) would fail with 'Couldn't map Template null'", hasHomepageValve);
+            System.out.println("[boot] OK: DefaultHomepageTargetValve wired (homepage default restored)");
+
+            // Fulcrum security: Turbine 5.1's PullService.populateContext() looks up a TurbineUserManager
+            // (role org.apache.fulcrum.security.UserManager) on every screen render. Confirm the
+            // in-memory turbine security stack resolves through the service broker.
+            final Object userManager = TurbineServices.getInstance().getService("org.apache.fulcrum.security.UserManager");
+            assertNotNull("Fulcrum TurbineUserManager not registered — PullService needs it per render", userManager);
+            org.junit.Assert.assertTrue("UserManager is not a TurbineUserManager: " + userManager.getClass(),
+                    userManager instanceof org.apache.fulcrum.security.model.turbine.TurbineUserManager);
+            System.out.println("[boot] OK: security UserManager -> " + userManager.getClass().getName());
+
+            // Velocity 2.4.1 method introspection: MethodMap.<clinit> calls commons-lang3
+            // MethodUtils.getMethodObject() (added in 3.15+). XNAT forced lang3 3.11, so every
+            // $obj.method() render died with ExceptionInInitializerError. Force the static init.
+            Class.forName("org.apache.velocity.util.introspection.MethodMap");
+            System.out.println("[boot] OK: Velocity MethodMap init (commons-lang3 introspection)");
+
+            // TurbineUtils.resourceExists() must resolve through the VelocityService's custom loader,
+            // not the Velocity singleton — otherwise Index.vm's landing-page check always fails
+            // ("Custom site login landing page cannot be found!").
+            org.junit.Assert.assertTrue("resourceExists() cannot find a known template (/screens/Index.vm)",
+                    org.nrg.xdat.turbine.utils.TurbineUtils.GetInstance().resourceExists("/screens/Index.vm"));
+            System.out.println("[boot] OK: resourceExists(/screens/Index.vm)");
+
+            // ExecutePageValve resolves the page module via TemplateService.getDefaultPageName();
+            // for a request with no explicit target template it uses getDefaultPage(), which must be a
+            // real module. With default.extension unset this was the bare "Default" -> ClassNotFoundException
+            // ("Page not found: Default") on some post-login redirects.
+            final org.apache.turbine.services.template.TemplateService ts =
+                    (org.apache.turbine.services.template.TemplateService) TurbineServices.getInstance().getService("TemplateService");
+            org.junit.Assert.assertNotEquals("TemplateService default page is the bare 'Default' (no real module)",
+                    "Default", ts.getDefaultPage());
+            System.out.println("[boot] OK: TemplateService default page -> " + ts.getDefaultPage());
+
+            // Velocity 2.x #if semantics: directive.if.empty_check=true (the 2.x default) makes empty
+            // strings/collections and zero numbers falsy in #if($ref). XNAT's templates carry ~2,000
+            // bare-reference #if sites written against 1.7 truthiness (any non-null, non-false object
+            // is TRUE), so TurbineResources.properties turns empty_check off. Evaluate a probe through
+            // the service's actual engine to pin that the setting reaches the runtime.
+            final Object velocityService = TurbineServices.getInstance().getService("VelocityService");
+            final java.lang.reflect.Field engineField = velocityService.getClass().getDeclaredField("velocity");
+            engineField.setAccessible(true);
+            final org.apache.velocity.app.VelocityEngine engine =
+                    (org.apache.velocity.app.VelocityEngine) engineField.get(velocityService);
+            final org.apache.velocity.VelocityContext probe = new org.apache.velocity.VelocityContext();
+            probe.put("emptyString", "");
+            probe.put("emptyList", new java.util.ArrayList<>());
+            final java.io.StringWriter probeOut = new java.io.StringWriter();
+            engine.evaluate(probe, probeOut, "empty-check-probe",
+                    "#if($emptyString)S#{else}s#end#if($emptyList)L#{else}l#end");
+            org.junit.Assert.assertEquals("directive.if.empty_check must be OFF (Velocity 1.7 #if "
+                    + "truthiness): empty string/collection must be truthy in #if($ref)", "SL", probeOut.toString());
+            System.out.println("[boot] OK: #if empty_check disabled (1.7 truthiness preserved)");
+        } finally {
+            try {
+                config.dispose();
+            } catch (Exception ignored) {
+                // best-effort teardown
+            }
+        }
+    }
+}

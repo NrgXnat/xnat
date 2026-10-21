@@ -32,8 +32,10 @@ import org.nrg.xnat.restlet.services.prearchive.PrearchiveBatchMove;
 import org.nrg.xnat.restlet.services.prearchive.PrearchiveBatchRebuild;
 import org.nrg.xnat.restlet.transaction.monitor.SQListenerRepresentation;
 import org.restlet.*;
+import org.restlet.routing.*;
+import org.restlet.representation.*;
 import org.restlet.resource.Resource;
-import org.restlet.util.Template;
+import org.restlet.routing.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +52,20 @@ public class XNATApplication extends Application {
     }
 
     @Override
-    public synchronized Restlet createRoot() {
+    public synchronized Restlet createInboundRoot() {
         Router securedRouter = new Router(getContext());
+        // Restore the two Restlet 1.1 router defaults that XNAT's routing was written against
+        // (2.x changed BOTH):
+        //   * matching mode STARTS_WITH (2.x: EQUALS) — resources read the trailing path via
+        //     getResourceRef().getRemainingPart(): file up/download by name
+        //     (.../resources/{ID}/files/{name}), catalog subpaths, DICOMDIR. Under EQUALS those
+        //     longer URIs match no route and 404.
+        //   * routing mode BEST_MATCH (2.x: FIRST_MATCH) — with STARTS_WITH many routes match a
+        //     given URI as a prefix; BEST_MATCH picks the most specific (longest) one. Without it,
+        //     FIRST_MATCH picks the first-attached prefix route, so e.g. a subject PUT
+        //     (.../subjects/{ID}) can be intercepted by .../subjects or .../projects/{ID}.
+        securedRouter.setDefaultMatchingMode(Template.MODE_STARTS_WITH);
+        securedRouter.setRoutingMode(Router.MODE_BEST_MATCH);
 
         initializeRouteTable();
 
@@ -60,6 +74,14 @@ public class XNATApplication extends Application {
         List<Class<? extends Resource>> publicRoutes = addExtensionRoutes(securedRouter);
 
         Router rootRouter = new Router(getContext());
+        // Same Restlet 1.1 defaults as securedRouter above (2.x changed both). rootRouter carries the
+        // XnatSecureGuard catch-all (attached at "") PLUS every public secure=false extension route. Under
+        // 2.x FIRST_MATCH the guard (attached first) wins over the more-specific public routes attached after
+        // it, so every secure=false route (e.g. /services/auth used by the E-Sign password check, and
+        // /services/sendEmailVerification, /services/ipwhitelist, ...) 404s. BEST_MATCH restores "most specific
+        // route wins"; STARTS_WITH keeps the guard's "" a proper prefix catch-all.
+        rootRouter.setDefaultMatchingMode(Template.MODE_STARTS_WITH);
+        rootRouter.setRoutingMode(Router.MODE_BEST_MATCH);
 
         XnatSecureGuard guard = new XnatSecureGuard();
         guard.setNext(securedRouter);
@@ -111,7 +133,7 @@ public class XNATApplication extends Application {
         if (_log.isInfoEnabled()) {
             logAttachedRoute(uri, clazz, matchingMode);
         }
-        Route route = router.attach(uri.intern(), clazz);
+        TemplateRoute route = router.attach(uri.intern(), new XnatServerResourceFinder(getContext(), clazz.asSubclass(org.restlet.resource.ServerResource.class)));
         if (matchingMode != null) {
             route.setMatchingMode(matchingMode);
         }

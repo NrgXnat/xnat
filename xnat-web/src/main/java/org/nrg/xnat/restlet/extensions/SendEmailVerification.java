@@ -18,17 +18,17 @@ import org.nrg.xnat.restlet.XnatRestlet;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.Resource;
-import org.restlet.resource.Variant;
+import org.restlet.representation.Variant;
 
 import java.util.Date;
 import java.util.List;
 
 @XnatRestlet(value = {"/services/sendEmailVerification"}, secure = false)
-public class SendEmailVerification extends Resource {
+public class SendEmailVerification extends SecureResource {
 
     private final EmailRequestLogService requests = XDAT.getContextService().getBean(EmailRequestLogService.class);
 

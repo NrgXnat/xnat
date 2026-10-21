@@ -36,7 +36,7 @@ import org.nrg.xnat.exceptions.XFTItemNotFoundException;
 import org.nrg.xnat.exceptions.XNATException;
 import org.nrg.xnat.utils.WorkflowUtils;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.*;

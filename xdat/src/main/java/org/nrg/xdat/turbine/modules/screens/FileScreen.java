@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.ecs.ConcreteElement;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.services.ContextService;
@@ -18,8 +19,8 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.utils.FileUtils;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,8 +31,9 @@ import java.io.FileInputStream;
  */
 public abstract class FileScreen extends SecureScreen {
 
-    public String getContentType(RunData data)
+    public String getContentType(PipelineData pipelineData)
     {
+        RunData data = pipelineData.getRunData();
  	   return "application/octet-stream";
     }
 
@@ -40,8 +42,9 @@ public abstract class FileScreen extends SecureScreen {
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
-    protected void doBuildTemplate(RunData data, Context context)
+    protected void doBuildTemplate(PipelineData pipelineData, Context context)
             throws Exception {
+        RunData data = pipelineData.getRunData();
         File f = getDownloadFile(data,context);
         if (f==null || !f.exists())
         {

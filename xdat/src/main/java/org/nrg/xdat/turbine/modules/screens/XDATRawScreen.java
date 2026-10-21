@@ -16,8 +16,8 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
 import org.xml.sax.SAXException;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerConfigurationException;
 import java.io.IOException;
 

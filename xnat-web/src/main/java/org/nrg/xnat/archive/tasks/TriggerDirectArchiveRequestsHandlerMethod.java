@@ -1,7 +1,7 @@
 package org.nrg.xnat.archive.tasks;
 
 import lombok.extern.slf4j.Slf4j;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.framework.task.services.XnatTaskService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;

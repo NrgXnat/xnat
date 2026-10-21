@@ -14,6 +14,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -43,7 +44,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +65,10 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @Api
+// OpenAPI-3 tag: springfox auto-derived the group name "site-config-api" from the class name, and
+// page/admin/content.jsp deep-links to /xapi/swagger-ui.html#/site-config-api. springdoc defaults the
+// tag to the class simple name ("SiteConfigApi"), so name it explicitly to preserve that anchor.
+@Tag(name = "site-config-api", description = "Site Configuration API")
 @XapiRestController
 @RequestMapping(value = "/siteConfig")
 @Slf4j

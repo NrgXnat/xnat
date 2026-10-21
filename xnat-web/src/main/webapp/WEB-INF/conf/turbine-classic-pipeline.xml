@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Turbine 4.0+ request-processing pipeline. Turbine 2.3.3 (XNAT's prior version) had a hard-coded
+  doGet() flow; 4.0 replaced it with this configurable Valve pipeline, loaded by Turbine.configure()
+  from pipeline.default.descriptor (default: this path). XNAT's old config had no such file, so the
+  servlet failed at init with "is parameter must not be null" (JAXB unmarshalling a null stream).
+
+  This is the classic render pipeline MINUS the Turbine-security valves (Login / SessionValidation /
+  ACLCreation): XNAT authenticates via Spring Security + XDAT (each SecureScreen does its own
+  isAuthorized()), and historically ran the Turbine SecurityService with PassiveUserManager (no-op).
+  The Turbine SecurityService is disabled in TurbineResources.properties, so those valves are omitted.
+  Add them back (with a passive SecurityService) only if a screen is found to require data.getACL().
+-->
+<pipeline name="default">
+    <valves>
+        <valve>org.apache.turbine.pipeline.DefaultSetEncodingValve</valve>
+        <valve>org.apache.turbine.pipeline.DetermineActionValve</valve>
+        <valve>org.apache.turbine.pipeline.DetermineTargetValve</valve>
+        <!-- Restores Turbine 2.3.3's template.homepage default (dropped in the 4.0 rewrite): a bare
+             entry request with no screen target (e.g. the context root / -> /app via the `app`
+             welcome-file) would otherwise reach TemplatePage with a null template and fail with
+             "Couldn't map Template null to any Screen class!". Must sit after DetermineTargetValve
+             (which sets the target from the request) and before ExecutePageValve. -->
+        <valve>org.nrg.xnat.turbine.pipeline.DefaultHomepageTargetValve</valve>
+        <valve>org.apache.turbine.pipeline.ExecutePageValve</valve>
+        <!-- MUST come AFTER ExecutePageValve: the action runs inside ExecutePageValve (DefaultPage ->
+             ActionLoader), and DetermineRedirectRequestedValve sends the redirect at the START of its
+             invoke() (before invokeNext). If placed before ExecutePageValve it checks getRedirectURI()
+             before the action has set it -> the 302 is never sent and the browser gets a blank 200.
+             (DefaultPage skips rendering when a redirect is set, so ordering it here is safe.) -->
+        <valve>org.apache.turbine.pipeline.DetermineRedirectRequestedValve</valve>
+        <valve>org.apache.turbine.pipeline.CleanUpValve</valve>
+    </valves>
+</pipeline>

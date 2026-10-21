@@ -18,8 +18,8 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
-import org.restlet.resource.StringRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

@@ -1,7 +1,7 @@
 package org.nrg.xnat.tracking.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.nrg.xnat.event.archive.ArchiveEventI;
 
 import javax.annotation.Nullable;

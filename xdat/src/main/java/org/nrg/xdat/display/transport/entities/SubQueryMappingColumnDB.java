@@ -9,7 +9,7 @@ package org.nrg.xdat.display.transport.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 
 /**

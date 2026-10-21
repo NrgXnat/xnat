@@ -9,7 +9,7 @@
 
 package org.nrg.xnat.restlet.servlet;
 
-import com.noelios.restlet.ext.servlet.ServerServlet;
+import org.restlet.ext.servlet.ServerServlet;
 import org.nrg.dcm.scp.DicomSCPManager;
 import org.nrg.dcm.scp.exceptions.DicomNetworkException;
 import org.nrg.dcm.scp.exceptions.UnknownDicomHelperInstanceException;
@@ -18,8 +18,8 @@ import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
 import java.security.GeneralSecurityException;
 
 import java.io.Serial;

@@ -7,6 +7,7 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.filter.ThresholdFilter;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.classic.util.LogbackMDCAdapter;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
@@ -103,7 +104,7 @@ public class DefaultLoggingServiceRedirectTest {
     /** A JSON appender name with a quote must not corrupt customFields (Jackson-built, not concatenated). */
     @Test
     public void jsonFormatEscapesAwkwardAppenderNames() {
-        final LoggerContext context = new LoggerContext();
+        final LoggerContext context = newLoggerContext();
         final Logger        logger  = context.getLogger("weird");
         logger.setAdditive(false);
         logger.addAppender(fileAppender(context, "we\"ird"));
@@ -122,7 +123,7 @@ public class DefaultLoggingServiceRedirectTest {
     /** Reproducible dup case: a logger already carrying a ConsoleAppender must not gain a second one. */
     @Test
     public void dropsFileAppenderInsteadOfDuplicatingWhenConsoleAlreadyPresent() {
-        final LoggerContext context = new LoggerContext();
+        final LoggerContext context = newLoggerContext();
         final Logger        root    = context.getLogger(Logger.ROOT_LOGGER_NAME);
         root.addAppender(fileAppender(context, "logfile"));
         final ConsoleAppender<ILoggingEvent> existing = startedConsole(context, "console");
@@ -139,7 +140,7 @@ public class DefaultLoggingServiceRedirectTest {
     /** The source==null fallback: root with no appender of its own gets an untagged "CONSOLE". */
     @Test
     public void addsUntaggedFallbackConsoleToRootWhenItHasNone() {
-        final LoggerContext context = new LoggerContext();
+        final LoggerContext context = newLoggerContext();
         final Logger        x       = context.getLogger("x");
         x.setAdditive(false);
         x.addAppender(fileAppender(context, "security"));
@@ -176,7 +177,7 @@ public class DefaultLoggingServiceRedirectTest {
 
     @Test
     public void stopsDetachedFileAppenders() throws Exception {
-        final LoggerContext context = new LoggerContext();
+        final LoggerContext context = newLoggerContext();
         final Path          tmp     = Files.createTempFile("redirect-test", ".log");
         try {
             final FileAppender<ILoggingEvent> file = new FileAppender<>();
@@ -205,7 +206,7 @@ public class DefaultLoggingServiceRedirectTest {
 
     @Test
     public void sharesOneConsoleAcrossLoggersReferencingTheSameFileAppender() {
-        final LoggerContext context = new LoggerContext();
+        final LoggerContext context = newLoggerContext();
         final FileAppender<ILoggingEvent> shared = fileAppender(context, "shared");
         final Logger a = context.getLogger("a");
         final Logger b = context.getLogger("b");
@@ -223,7 +224,7 @@ public class DefaultLoggingServiceRedirectTest {
 
     @Test
     public void copiesSourceFiltersOntoTheConsole() {
-        final LoggerContext context = new LoggerContext();
+        final LoggerContext context = newLoggerContext();
         final Logger        logger  = context.getLogger("org.nrg.xnat.security");
         logger.setAdditive(false);
         final FileAppender<ILoggingEvent> file   = fileAppender(context, "security");
@@ -251,8 +252,22 @@ public class DefaultLoggingServiceRedirectTest {
 
     // ---- helpers ----
 
-    private LoggerContext contextWithFileAppenders() {
+    /**
+     * A bare {@code new LoggerContext()} has no {@code MDCAdapter}. Through logback 1.2 that did not matter,
+     * because {@link LoggingEvent#getMDCPropertyMap()} read the <em>static</em> {@code MDC.getMDCAdapter()},
+     * which SLF4J always initialises. Logback 1.4+ moved the adapter onto the context
+     * ({@code LoggerContext.mdcAdapter}) and {@code getMDCPropertyMap()} dereferences it without a null check,
+     * so encoding an event through a hand-built context throws {@code NullPointerException}. Logback wires this
+     * itself in {@code LogbackServiceProvider.initialize()}; a test that builds its own context must do the same.
+     */
+    private static LoggerContext newLoggerContext() {
         final LoggerContext context = new LoggerContext();
+        context.setMDCAdapter(new LogbackMDCAdapter());
+        return context;
+    }
+
+    private LoggerContext contextWithFileAppenders() {
+        final LoggerContext context = newLoggerContext();
         final Logger security = context.getLogger("org.nrg.xnat.security");
         security.setAdditive(false);
         security.addAppender(fileAppender(context, "security"));

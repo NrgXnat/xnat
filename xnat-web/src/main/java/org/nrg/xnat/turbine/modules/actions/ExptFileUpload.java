@@ -9,11 +9,12 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import org.apache.commons.fileupload.FileItem;
+import jakarta.servlet.http.Part;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.turbine.pipeline.PipelineData;
 import org.apache.turbine.util.RunData;
-import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.fulcrum.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.CatCatalogBean;
@@ -43,7 +44,7 @@ import org.nrg.xnat.turbine.utils.XNATUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.xml.sax.SAXException;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.Calendar;
@@ -54,7 +55,8 @@ public class ExptFileUpload extends SecureAction {
     private static final Logger logger = Logger.getLogger(ExptFileUpload.class);
 
     @Override
-    public void doPerform(RunData data, Context context) throws Exception{        
+    public void doPerform(PipelineData pipelineData, Context context) throws Exception{
+        RunData data = pipelineData.getRunData();        
         ParameterParser params = data.getParameters();
         HttpSession session = data.getSession();
         String uploadID= null;
@@ -66,7 +68,7 @@ public class ExptFileUpload extends SecureAction {
         }
         if (uploadID!=null)session.setAttribute(uploadID + "Upload", 0);
             try {
-                FileItem fi = params.getFileItem("image_archive");
+                Part fi = params.getPart("image_archive");
                 if (fi != null) {
                     String cache_path = ArcSpecManager.GetInstance().getGlobalCachePath();
 
@@ -117,7 +119,7 @@ public class ExptFileUpload extends SecureAction {
                     } else {
                         //PLACE UPLOADED IMAGE INTO FOLDER
                         File uploaded = new File(cache_path + filename) ;
-                        fi.write(uploaded);
+                        java.nio.file.Files.copy(fi.getInputStream(), uploaded.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                     }
 
                     if (uploadID != null) {
@@ -256,7 +258,8 @@ public class ExptFileUpload extends SecureAction {
         }
     }
 
-    public void doFinalize(RunData data, Context context) throws Exception {
+    public void doFinalize(PipelineData pipelineData, Context context) throws Exception {
+        RunData data = pipelineData.getRunData();
         ItemI temp = TurbineUtils.GetItemBySearch(data,false);
         XnatImagesessiondata tempMR = (XnatImagesessiondata) org.nrg.xdat.base.BaseElement.GetGeneratedItem(temp);
         

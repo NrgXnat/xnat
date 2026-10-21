@@ -11,7 +11,7 @@ package org.nrg.xnat.restlet;
 
 import org.restlet.Application;
 import org.restlet.Context;
-import org.restlet.VirtualHost;
+import org.restlet.routing.VirtualHost;
 
 public class XNATVirtualHost extends VirtualHost {
 

@@ -39,7 +39,7 @@ function selectDefault(elementName){
   		</TR>
   	<TR>
   		<TD COLSPAN=2>
-  		<FORM name="search$velocityCount" method="post" action="$link.setAction("DisplaySearchAction")">
+  		<FORM name="search$foreach.count" method="post" action="$link.setAction("DisplaySearchAction")">
   			<TABLE>
 			  #set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplaysByDesc())
 			  	  <TR><TH>Pivot Element</TH><TD colspan=2>
@@ -79,7 +79,7 @@ function selectDefault(elementName){
 			  #set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplaysByDesc())
 				  #foreach ($typeObject in $typeObjects)
 				  	<li style="border-bottom:1px solid #6D99B6;padding:3px 5px 5px 5px;">
-						<a href="#" onClick="return showSpan('panel$typeObject.getElementName()')" id="tab$velocityCount">#escapeHTML($typeObject.getDescription())</a>
+						<a href="#" onClick="return showSpan('panel$typeObject.getElementName()')" id="tab$foreach.count">#escapeHTML($typeObject.getDescription())</a>
 					</li>
 				  #end
 			  </ul>

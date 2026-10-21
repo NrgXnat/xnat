@@ -1,0 +1,5 @@
+# configure-email.local.sh — git-ignored local secrets for configure-email.sh.
+# Copy to configure-email.local.sh (next to the script) and fill in. chmod 600.
+ADMIN_PASS='CHANGE_ME'                 # the site admin password on this box
+SMTP_USER='automation@xnatworks.io'    # the Gmail/Workspace account that sends
+SMTP_PASS='CHANGE_ME'                  # a Google App Password (16 chars), NOT the login password

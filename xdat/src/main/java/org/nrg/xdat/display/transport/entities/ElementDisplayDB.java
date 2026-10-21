@@ -14,7 +14,7 @@ import org.python.apache.commons.compress.utils.Lists;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.List;
 
 /**

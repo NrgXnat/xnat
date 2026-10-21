@@ -75,17 +75,17 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                                     #set ($backColor = 0)
                                 #end
                                 <td class="checkbox">
-                                    <input type="checkbox" class="to" name="to$velocityCount" #if($emailTo.equalsIgnoreCase($usrEmail))checked#end>
+                                    <input type="checkbox" class="to" name="to$foreach.count" #if($emailTo.equalsIgnoreCase($usrEmail))checked#end>
                                 </td>
                                 <td class="checkbox">
-                                    <input type="checkbox" class="cc" name="cc$velocityCount">
+                                    <input type="checkbox" class="cc" name="cc$foreach.count">
                                 </td>
                                 <td class="checkbox">
-                                    <input type="checkbox" class="bcc" name="bcc$velocityCount">
+                                    <input type="checkbox" class="bcc" name="bcc$foreach.count">
                                 </td>
                                 <td class="full-name">
                                     $!usr.getStringProperty("firstname") $!usr.getStringProperty("lastname")
-                                    <input type="hidden" name="EMAILID_$velocityCount" value="$usrEmail">
+                                    <input type="hidden" name="EMAILID_$foreach.count" value="$usrEmail">
                                 </td>
 
                             </tr>
@@ -228,13 +228,13 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 ##											#set ($backColor = 0)
 ##										#end
 ##										#if ($emailTo.equalsIgnoreCase($usrEmail))
-##											<td> <input type="checkbox" name="to$velocityCount" CHECKED> </td>
+##											<td> <input type="checkbox" name="to$foreach.count" CHECKED> </td>
 ##										#else
-##											<td> <input type="checkbox" name="to$velocityCount"> </td>
+##											<td> <input type="checkbox" name="to$foreach.count"> </td>
 ##										#end
-##										<td> <input type="checkbox" name="cc$velocityCount"> </td>
-##										<td> <input type="checkbox" name="bcc$velocityCount"> </td>
-##										<td> $!usr.getStringProperty("firstname") $!usr.getStringProperty("lastname")<input type="hidden" name="EMAILID_$velocityCount" value="$usrEmail"></td>
+##										<td> <input type="checkbox" name="cc$foreach.count"> </td>
+##										<td> <input type="checkbox" name="bcc$foreach.count"> </td>
+##										<td> $!usr.getStringProperty("firstname") $!usr.getStringProperty("lastname")<input type="hidden" name="EMAILID_$foreach.count" value="$usrEmail"></td>
 ##
 ##										</tr>
 ##										#set ($rowCount = $rowCount + 1)

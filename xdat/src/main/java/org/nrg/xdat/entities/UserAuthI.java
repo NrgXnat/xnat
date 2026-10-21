@@ -11,9 +11,9 @@ package org.nrg.xdat.entities;
 
 import org.springframework.security.core.GrantedAuthority;
 
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
 import java.util.Collection;
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonSubTypes;

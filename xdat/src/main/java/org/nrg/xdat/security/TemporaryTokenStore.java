@@ -15,7 +15,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 import java.util.Calendar;
 import java.util.Map.Entry;
 import java.util.UUID;

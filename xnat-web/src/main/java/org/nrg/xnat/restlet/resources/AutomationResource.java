@@ -26,10 +26,9 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 
 import java.io.IOException;
@@ -169,20 +168,18 @@ public abstract class AutomationResource extends SecureResource {
         return buffer.toString();
     }
 
-    protected Properties decodeProperties(final Representation entity, final MediaType mediaType) throws ServerException {
+    protected Properties decodeProperties(final String body, final MediaType mediaType) throws ServerException {
         final Properties properties;
         if (mediaType.equals(MediaType.APPLICATION_WWW_FORM)) {
-            try {
-                properties = new Properties();
-                for (final NameValuePair entry : URLEncodedUtils.parse(entity.getText(), StandardCharsets.UTF_8)) {
-                    properties.setProperty(entry.getName(), entry.getValue());
-                }
-            } catch (IOException e) {
-                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred trying to read the submitted form body.", e);
+            // The body is already read via SecureResource#getRequestBodyText(): under Restlet 2.6 the
+            // container drains a www-form body, so the entity is not the raw text. See item 1-24.
+            properties = new Properties();
+            for (final NameValuePair entry : URLEncodedUtils.parse(body, StandardCharsets.UTF_8)) {
+                properties.setProperty(entry.getName(), entry.getValue());
             }
         } else {
             try {
-                properties = getSerializer().deserializeJson(entity.getText(), Properties.class);
+                properties = getSerializer().deserializeJson(body, Properties.class);
             } catch (IOException e) {
                 throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred processing the script properties", e);
             }

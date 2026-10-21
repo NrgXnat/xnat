@@ -1,4 +1,4 @@
-# Handoff: porting an XNAT plugin to 1.11 with an AI coding agent
+# Handoff: porting an XNAT plugin to 1.12 with an AI coding agent
 
 **For the human:** point your agent at this file *and* at `docs/plugin-migration-guide.md`, name the
 plugin repository, and let it work. This file is the procedure and the discipline; the guide is the
@@ -25,7 +25,7 @@ rules are the parts that were learned expensively; the mechanics are the easy ha
 A port is done when **all** of these hold. Anything less, say so plainly rather than reporting success:
 
 1. `./gradlew clean <pluginJarTask>` is green, tests included.
-2. The plugin jar loads into a **running 1.11 instance** and the instance boots clean — see
+2. The plugin jar loads into a **running 1.12 instance** and the instance boots clean — see
    *compile-clean is not boot-clean* below. Compilation alone is **not** done. You stand that instance
    up yourself; see *Where the instance comes from* in Phase 4.
 3. Any bug you fixed has had its **class** swept, with the audit scope and result stated.
@@ -75,11 +75,17 @@ a cycle and, worse, invites you to "fix" code that was never broken.
 Watch for: coordinate renames (`turbine:turbine`, `velocity-engine-core`), the `-jakarta` Hibernate
 artifacts, `mavenLocal` scoping, and the JDK 21 toolchain with `fork = true`.
 
-**If `1.11.0-SNAPSHOT` itself will not resolve, do not downgrade `vXnat`.** It is published to the XNAT
-Artifactory (`libs-snapshot`, since 2026-09-10), so the causes are, in order: the `libs-snapshot` repository
-missing from the build, a stale `~/.m2` copy shadowing it, or an unscoped `mavenLocal()`. Check those three,
-then stop and report — a lower version that *does* resolve is the javax line, which builds and then kills the
-webapp at load.
+**Build against `vXnat = "1.12.0-SNAPSHOT"`, never `1.11.0-SNAPSHOT`.** The Jakarta line was renumbered 1.11 → 1.12
+on 2026-10-21. Since 2026-10-16, `1.11.0-SNAPSHOT` on the XNAT Artifactory is **develop's javax build**. It
+resolves cleanly and then kills the webapp at load, and a leftover Jakarta `1.11.0-SNAPSHOT` in `~/.m2` can make
+it look fine on one machine only. If the plugin you are porting already says `1.11.0-SNAPSHOT`, change it.
+
+**If `1.12.0-SNAPSHOT` itself will not resolve, do not downgrade `vXnat`.** First check whether it has been
+published at all: `curl -s -o /dev/null -w '%{http_code}' https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.12.0-SNAPSHOT/maven-metadata.xml`
+(404 = not yet; build core locally per guide Route 2). After that, the causes are, in order: the `libs-snapshot`
+repository missing from the build, a stale `~/.m2` copy shadowing it, or an unscoped `mavenLocal()`. Check
+those, then stop and report: a lower version that *does* resolve is the javax line, which builds and then kills
+the webapp at load.
 
 ---
 
@@ -135,7 +141,7 @@ earlier ones are clean:
 ./gradlew clean <pluginJarTask>                           # the artifact
 ```
 
-Then **deploy to a real 1.11 instance and read the startup log.** This is not optional; see below.
+Then **deploy to a real 1.12 instance and read the startup log.** This is not optional; see below.
 
 ### Where the instance comes from — you create it
 

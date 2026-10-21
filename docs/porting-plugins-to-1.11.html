@@ -1,4 +1,4 @@
-<title>Porting Plugins to XNAT 1.11</title>
+<title>Porting Plugins to XNAT 1.12</title>
 <style>
   :root {
     --ground:#f7f7f5; --surface:#ffffff; --surface-2:#eeeeeb; --ink:#17181a; --ink-2:#4f5257;
@@ -144,7 +144,7 @@
     <div class="lbl">Contents</div>
     <ol>
       <li><a href="#stop">Read first</a></li>
-      <li><a href="#requires">1.11 requires</a></li>
+      <li><a href="#requires">1.12 requires</a></li>
       <li><a href="#prereq">Before you start</a></li>
       <li><a href="#matrix">API matrix</a></li>
       <li><a href="#choose">Choose a path</a></li>
@@ -160,27 +160,27 @@
 
   <main>
     <header class="mast">
-      <div class="eyebrow"><span>Plugin authors</span><span class="sep">/</span><span>XNAT 1.11</span>
+      <div class="eyebrow"><span>Plugin authors</span><span class="sep">/</span><span>XNAT 1.12</span>
         <span class="sep">/</span><span>Jakarta · Tomcat 10</span></div>
-      <h1>Porting your plugin to XNAT 1.11</h1>
-      <p class="standfirst">1.11 moves XNAT to Jakarta EE and Tomcat 10.1. Your plugin needs at minimum a
+      <h1>Porting your plugin to XNAT 1.12</h1>
+      <p class="standfirst">1.12 moves XNAT to Jakarta EE and Tomcat 10.1. Your plugin needs at minimum a
         rebuild, and — if it touches Restlet, Turbine or Hibernate — source changes. Read the first three
         sections whichever way you work, then pick a track.</p>
     </header>
 
     <section id="stop" class="danger">
       <span class="tag">Read this first</span>
-      <p><strong>A javax-compiled plugin doesn't "mostly work" on 1.11 — it takes the whole site down.</strong></p>
+      <p><strong>A javax-compiled plugin doesn't "mostly work" on 1.12 — it takes the whole site down.</strong></p>
       <p>If your jar implements Spring's <code>WebApplicationInitializer</code> (most plugins with a REST API
         do, indirectly), XNAT throws <code>AbstractMethodError</code> during context startup, the entire web
         application fails to start, and <strong>every URL returns 404</strong> — with no database error and
         nothing in the logs naming your plugin. Diagnosing that from the symptom alone is close to impossible
         unless you already suspect it.</p>
-      <p>Every plugin on a 1.11 site must be rebuilt for Jakarta. <strong>There is no mixed mode.</strong></p>
+      <p>Every plugin on a 1.12 site must be rebuilt for Jakarta. <strong>There is no mixed mode.</strong></p>
     </section>
 
     <section id="requires">
-      <h2 class="sec">What 1.11 requires</h2>
+      <h2 class="sec">What 1.12 requires</h2>
       <div class="facts">
         <div class="fact"><span class="k">Tomcat</span><span class="v">10.1</span></div>
         <div class="fact"><span class="k">Java</span><span class="v">21</span></div>
@@ -193,26 +193,35 @@
     </section>
 
     <section id="prereq">
-      <h2 class="sec">Before you start: get 1.11 on your machine</h2>
-      <div class="card" style="border-left-color:var(--safe);">
-        <span class="tag" style="color:var(--safe);background:var(--safe-soft);">Changed 2026-09-10</span>
-        <p class="lead"><strong><code>1.11.0-SNAPSHOT</code> is now published to the XNAT Artifactory.</strong>
-          A build landed on 2026-09-10 (<code>1.11.0-20260910.185426-1</code>), so a plugin can resolve 1.11
-          from a remote repository. Building core yourself is no longer the only way in.</p>
-        <p>1.11 itself is still unreleased — what exists is a timestamped snapshot, and it moves when someone
-          publishes again. Which of the two routes below you want depends on what you are doing, not on which
-          is "proper".</p>
+      <h2 class="sec">Before you start: get 1.12 on your machine</h2>
+      <div class="card" style="border-left-color:var(--danger);">
+        <span class="tag" style="color:var(--danger);background:var(--danger-soft);">Changed 2026-10-21</span>
+        <p class="lead"><strong>The Jakarta line is now <code>1.12.0-SNAPSHOT</code>. Do not build against
+          <code>1.11.0-SNAPSHOT</code>.</strong> <code>develop</code>, which is still javax / Tomcat 9, moved to
+          <code>1.11.0-SNAPSHOT</code> and has been publishing it to the XNAT Artifactory since 2026-10-16. That
+          version now resolves to <strong>javax core</strong>: a Jakarta plugin pointed at it fails to compile
+          wherever it is resolved from the Artifactory, yet may still build cleanly on a machine that has an old
+          Jakarta <code>1.11.0-SNAPSHOT</code> in <code>~/.m2</code>.</p>
+        <p><strong><code>1.12.0-SNAPSHOT</code> is not yet published to the Artifactory</strong> (as of
+          2026-10-21; publishing is manual). Until it is, build core yourself (below). Check the current state
+          rather than trusting this card: <code>404</code> means not yet, <code>200</code> means the Artifactory
+          route works.</p>
+        <pre>curl -s -o /dev/null -w '%{http_code}\n' \
+  https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.12.0-SNAPSHOT/maven-metadata.xml</pre>
+        <p>1.12 itself is unreleased: what exists, once published, is a timestamped snapshot that moves whenever
+          someone publishes again. Which of the two routes below you want depends on what you are doing, not
+          on which is "proper".</p>
       </div>
 
-      <h3>Resolve it from the Artifactory</h3>
+      <h3>Resolve it from the Artifactory (once published)</h3>
       <p>Nothing to build. Add the XNAT repositories to your plugin — most plugins already list them, in which
-        case bumping <code>vXnat</code> to <code>1.11.0-SNAPSHOT</code> is the whole change:</p>
+        case setting <code>vXnat</code> to <code>1.12.0-SNAPSHOT</code> is the whole change:</p>
       <pre>repositories {
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-release" }
     maven { url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot" }
     mavenCentral()
 }</pre>
-      <p>Every coordinate a plugin build reaches for is published at that version:</p>
+      <p>A core publish puts every coordinate a plugin build reaches for at that version:</p>
       <ul class="tight">
         <li><code>org.nrg:parent</code> — the BOM your <code>dependencyManagement</code> imports</li>
         <li><code>org.nrg.xnat:web</code>, <code>org.nrg.xdat:core</code>, <code>org.nrg:framework</code></li>
@@ -221,33 +230,37 @@
         <li><code>xnat-data-builder</code> — the Gradle plugin your <code>plugins {}</code> block applies</li>
       </ul>
       <p>To see which snapshot you are about to build against, ask the repository rather than guessing:</p>
-      <pre>curl -s https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.11.0-SNAPSHOT/maven-metadata.xml \
+      <pre>curl -s https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.12.0-SNAPSHOT/maven-metadata.xml \
   | grep -E '&lt;timestamp&gt;|&lt;buildNumber&gt;'</pre>
       <div class="card" style="border-left-color:var(--danger);">
         <span class="tag" style="color:var(--danger);background:var(--danger-soft);">The one trap on this route</span>
         <p><strong>A stale local publish silently wins.</strong> <code>mavenLocal()</code> is listed first in
-          most plugin builds, so an older <code>1.11.0-SNAPSHOT</code> sitting in <code>~/.m2</code> from a
+          most plugin builds, so an older <code>1.12.0-SNAPSHOT</code> sitting in <code>~/.m2</code> from a
           previous session shadows the Artifactory copy — and because the version string is identical, nothing
           tells you which one you got. If you are switching to this route, clear the old one:</p>
         <pre>rm -rf ~/.m2/repository/org/nrg</pre>
+        <p>The same mechanism is what makes the 1.11 → 1.12 renumbering easy to miss: a plugin still on
+          <code>1.11.0-SNAPSHOT</code> keeps compiling against a leftover Jakarta copy in <code>~/.m2</code>
+          while everyone else resolves develop's javax build.</p>
       </div>
 
       <h3>Or build core yourself</h3>
-      <p>Still the right move in three cases: you are <strong>changing core</strong> alongside your plugin; you
+      <p>The only route until <code>1.12.0-SNAPSHOT</code> is published, and after that still the right move in
+        three cases: you are <strong>changing core</strong> alongside your plugin; you
         need a <strong>cutover commit newer</strong> than the published snapshot; or you want the
         <strong>Docker test stack</strong>, which lives in the same clone and is the subject of the next
         section. Clone the XNAT core repository next to your plugin and publish it locally:</p>
       <pre>git clone https://github.com/NrgXnat/xnat.git
 cd xnat
-git checkout feature/jakarta-cutover     # until 1.11 is merged and released
-./gradlew publishToMavenLocal            # installs 1.11.0-SNAPSHOT into ~/.m2</pre>
+git checkout feature/jakarta-cutover     # until the Jakarta line is merged and released
+./gradlew publishToMavenLocal            # installs 1.12.0-SNAPSHOT into ~/.m2</pre>
       <p>One root invocation is enough — <code>publishToMavenLocal</code> runs in all 21 modules, and the
         satellite projects were merged into this repository, so there is nothing else to build first.</p>
       <h4>Confirm it worked before moving on</h4>
       <p>Two seconds here saves an hour debugging a resolution error that names the wrong thing:</p>
-      <pre>ls ~/.m2/repository/org/nrg/parent/1.11.0-SNAPSHOT         # the BOM
+      <pre>ls ~/.m2/repository/org/nrg/parent/1.12.0-SNAPSHOT         # the BOM
 ls ~/.m2/repository/org/nrg/xnat/build/xnat-data-builder   # the Gradle plugin
-ls ~/.m2/repository/org/nrg/xnat/web/1.11.0-SNAPSHOT       # xnat-web</pre>
+ls ~/.m2/repository/org/nrg/xnat/web/1.12.0-SNAPSHOT       # xnat-web</pre>
       <p>All three must exist. <strong>The middle one matters most and is the easiest to overlook:</strong>
         plugins apply <code>xnat-data-builder</code> in their <code>plugins {}</code> block, so if it's
         missing the build fails <em>before</em> any dependency resolution — with an error about the plugin
@@ -256,8 +269,8 @@ ls ~/.m2/repository/org/nrg/xnat/web/1.11.0-SNAPSHOT       # xnat-web</pre>
         <span class="tag">Look wrong, aren't</span>
         <p><code>xnat-data-builder</code> publishes under a Gradle plugin-marker coordinate
           (<code>org/nrg/xnat/build/…</code>) rather than the usual artifact path, and
-          <code>dicom-edit6</code> carries its own version line — <code>6.9.0</code>, not
-          <code>1.11.0-SNAPSHOT</code>. Neither indicates a failed publish.</p>
+          <code>dicom-edit6</code> carries its own version line — <code>6.10.x</code>, not
+          <code>1.12.0-SNAPSHOT</code>. Neither indicates a failed publish.</p>
       </div>
 
       <h3>The two reference documents</h3>
@@ -271,7 +284,7 @@ ls ~/.m2/repository/org/nrg/xnat/web/1.11.0-SNAPSHOT       # xnat-web</pre>
 xnat/docs/plugin-migration-guide.md          # the reference catalog</pre>
 
       <h3>And it is your test instance — you don't need a server from anyone</h3>
-      <p>Finishing a port takes a <em>running</em> 1.11 instance: a plugin that compiles can still fail at
+      <p>Finishing a port takes a <em>running</em> 1.12 instance: a plugin that compiles can still fail at
         load, and that failure stays invisible until you boot it. The same clone ships a Docker stack that
         boots the cutover WAR on Tomcat 10.1 / JDK 21, with PostgreSQL and ActiveMQ alongside. An agent with
         Docker access can stand this up itself.</p>
@@ -287,9 +300,10 @@ docker compose logs -f xnat        # confirm your plugin is named as loaded</pre
           Artifactory route, put the published WAR there yourself and skip the build — you still need the clone
           for <code>docker-compose.yml</code> and the scripts, but not for a 20-minute Gradle run:</p>
         <pre>curl -L -o docker-context/xnat.war \
-  https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/xnat/web/xnat-web/1.11.0-SNAPSHOT/xnat-web-1.11.0-20260910.185426-1.war</pre>
-        <p>That URL names one specific build. For whatever is newest, read
-          <code>maven-metadata.xml</code> in the same directory and substitute the timestamp it reports.</p>
+  https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/xnat/web/xnat-web/1.12.0-SNAPSHOT/xnat-web-1.12.0-&lt;timestamp&gt;-&lt;build&gt;.war</pre>
+        <p>Read <code>maven-metadata.xml</code> in that directory for the newest timestamp and build number.
+          Do not take the WAR from <code>…/xnat-web/1.11.0-SNAPSHOT/</code>: since 2026-10-16 its newest builds
+          are develop's javax WAR, which no Jakarta plugin can load into.</p>
       </div>
       <div class="card">
         <span class="tag">Four things that bite people</span>
@@ -308,12 +322,12 @@ docker compose logs -f xnat        # confirm your plugin is named as loaded</pre
       <p>First boot runs schema creation and takes a few minutes — read the log rather than polling the port.
         For a genuinely clean slate, <code>docker compose down -v</code> before bringing it up again.</p>
       <div class="facts">
-        <div class="fact"><span class="k">Build against</span><span class="v">1.11.0-SNAPSHOT</span>
-          <span class="n">In your plugin: <code>vXnat = "1.11.0-SNAPSHOT"</code></span></div>
-        <div class="fact"><span class="k">Resolves from</span><span class="v">Artifactory</span>
-          <span class="n"><code>libs-snapshot</code> by default; <code>~/.m2</code> only if you built core
-            yourself — then keep <code>mavenLocal</code> scoped to <code>org.nrg.*</code>, see step B3.</span></div>
-        <div class="fact"><span class="k">After 1.11 releases</span><span class="v">1.11.0</span>
+        <div class="fact"><span class="k">Build against</span><span class="v">1.12.0-SNAPSHOT</span>
+          <span class="n">In your plugin: <code>vXnat = "1.12.0-SNAPSHOT"</code> — never 1.11, which is now javax</span></div>
+        <div class="fact"><span class="k">Resolves from</span><span class="v">~/.m2 for now</span>
+          <span class="n"><code>libs-snapshot</code> once 1.12 is published; until then <code>~/.m2</code>
+            from building core yourself — keep <code>mavenLocal</code> scoped to <code>org.nrg.*</code>, see step B3.</span></div>
+        <div class="fact"><span class="k">After 1.12 releases</span><span class="v">1.12.0</span>
           <span class="n">Then it resolves from the release repository and this whole step goes away.</span></div>
       </div>
     </section>
@@ -437,7 +451,7 @@ docker compose logs -f xnat        # confirm your plugin is named as loaded</pre
         <h3>Paste this, with the repository name filled in</h3>
         <p>Start the session <strong>in your plugin's clone</strong>, with the XNAT clone from the previous
           section nearby. Fill in the one path and paste:</p>
-        <pre class="prompt">Port this plugin (the repository in the current directory) to XNAT 1.11
+        <pre class="prompt">Port this plugin (the repository in the current directory) to XNAT 1.12
 (Jakarta / Tomcat 10).
 
 The XNAT core clone is at &lt;path-to-xnat-clone&gt;. Before editing anything, read
@@ -445,13 +459,15 @@ both of these from it, and follow the handoff's phases in order:
   &lt;path-to-xnat-clone&gt;/docs/ai/jakarta-plugin-port-handoff.md   (procedure)
   &lt;path-to-xnat-clone&gt;/docs/plugin-migration-guide.md           (reference)
 
-Build against vXnat = "1.11.0-SNAPSHOT". It is published to the XNAT
-Artifactory (libs-snapshot, since 2026-09-10), so it should resolve from
-there; I may also have a local publish in ~/.m2. If dependency resolution
-cannot find org.nrg:parent:1.11.0-SNAPSHOT, check in order that the
-libs-snapshot repository is declared, that a stale ~/.m2 copy is not shadowing
-it, and that mavenLocal() is scoped to org.nrg.* -- then stop and tell me
-rather than downgrading the version to something that does resolve.
+Build against vXnat = "1.12.0-SNAPSHOT" -- never 1.11.0-SNAPSHOT, which on
+the XNAT Artifactory is now develop's javax build. 1.12.0-SNAPSHOT resolves
+from the Artifactory (libs-snapshot) once published, otherwise from a local
+publish in ~/.m2. If dependency resolution cannot find
+org.nrg:parent:1.12.0-SNAPSHOT, check in order that it has been published
+(or that I published core locally), that the libs-snapshot repository is
+declared, that a stale ~/.m2 copy is not shadowing it, and that mavenLocal()
+is scoped to org.nrg.* -- then stop and tell me rather than downgrading the
+version to something that does resolve.
 
 Branch feature/tomcat10 off this plugin's develop, or main if it has no develop.
 
@@ -478,7 +494,7 @@ Constraints:
 Report these as three separate claims, not one:
   1. it compiles
   2. the tests pass
-  3. the jar loads into a running 1.11 instance and it boots clean
+  3. the jar loads into a running 1.12 instance and it boots clean
 Only (3) means done. Include the startup log line that shows the plugin loading,
 and confirm no AbstractMethodError and no SEVERE.
 
@@ -532,7 +548,7 @@ grep -rlE 'javax\.(persistence|servlet|validation|mail|jms|xml\.bind)' src/main/
           source changes too.</p></div>
 
       <div class="step"><span class="n">B3</span><h3>Update the build file</h3>
-        <pre>buildscript { ext { vXnat = "1.11.0-SNAPSHOT" } }
+        <pre>buildscript { ext { vXnat = "1.12.0-SNAPSHOT" } }
 dependencyManagement.imports { mavenBom "org.nrg:parent:${vXnat}" }
 
 repositories {
@@ -554,7 +570,7 @@ compileOnly "org.apache.fulcrum:fulcrum-pool:1.0.5"</pre>
         <p class="why">Do not compile yet. A dependency that can't resolve produces "cannot find symbol" errors
           all over your source, and you will waste a cycle "fixing" code that was never broken. A common one:
           <code>hibernate-core</code> fails with an <em>empty</em> version rather than a helpful message,
-          because the javax coordinate isn't managed by the 1.11 BOM.</p></div>
+          because the javax coordinate isn't managed by the 1.12 BOM.</p></div>
 
       <div class="step"><span class="n">B5</span><h3>Sweep the namespace — by package, never by prefix</h3>
         <pre>find src -name '*.java' -exec sed -i '' -E \
@@ -604,9 +620,9 @@ protected void doBuildTemplate(PipelineData pipelineData, Context context) throw
           version will sit alongside the new one and both may get deployed.</p></div>
 
       <div class="step" style="border-left:3px solid var(--danger);"><span class="n">B11</span>
-        <h3>Deploy to a real 1.11 instance and read the startup log</h3>
+        <h3>Deploy to a real 1.12 instance and read the startup log</h3>
         <p class="lead">This step is not optional, and it is the one most often skipped.</p>
-        <p>If you don't have a 1.11 instance, make one — the XNAT clone from the prerequisite ships the Docker
+        <p>If you don't have a 1.12 instance, make one — the XNAT clone from the prerequisite ships the Docker
           stack, and <a href="#prereq">the commands are up there</a>. Register the jar in
           <code>docker/plugins.manifest</code>, stage it, boot, and watch the log. You are looking for your
           plugin's "Found plugin" line, and for the absence of <code>AbstractMethodError</code> and

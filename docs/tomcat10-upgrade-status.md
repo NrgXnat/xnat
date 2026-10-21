@@ -1138,8 +1138,8 @@ file for packages (…aspectjweaver-1.8.10.jar)`. Gradle scans the test classpat
 `aspectjweaver` reaches it through `org.nrg.xnat:web`. A/B: the untouched `feature/tomcat10` (`7aacab3`) fails
 identically, so the merge did not cause it; that branch's tests had simply not been run on JDK 25. Fixed the way core
 is (1-33): an in-repo `gradle/gradle-daemon-jvm.properties` with `toolchainVersion=21`. The other five passed on the
-JDK 25 daemon. **Open:** the plugin-migration guide's gotcha covers compile and custom task actions, but not this
-`:test` symptom or the in-repo daemon pin.
+JDK 25 daemon. Added to the plugin-migration guide's build gotchas (`224c6d6dc`), which previously covered only
+compile and custom task actions and suggested per-developer `JAVA_HOME` instead of the in-repo pin.
 
 **Verified.** Tests: container-service 375, dicomweb 400, DQR 106, 0 failures. xsync, pipeline and dashboards have
 no Java tests. Jars rebuilt from the committed merges (manifests `Implementation-Dirty: false`), sha1-matched on

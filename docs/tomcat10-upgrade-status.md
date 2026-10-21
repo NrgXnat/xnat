@@ -1105,6 +1105,62 @@ and the migrated plugins' `vXnat`. Once develop publishes its own 1.11.0-SNAPSHO
 version will resolve **javax** core. The bump also makes the 1-23 "remove spring-security-oauth2 in 1.12"
 deprecation due on this branch.
 
+## 1-45 🟢 — six plugin `feature/tomcat10` branches caught up with their development branches; deployed to dave-tc11-2 (2026-10-21)
+
+**Scope.** All 22 plugins deployed on dave-tc11-2 were checked. For each, `origin/feature/tomcat10` was compared
+against the repo's development branch, counting non-merge commits with no patch-equivalent on the tomcat10 branch
+(`rev-list --cherry-pick`). 16 were fully up to date. 6 were behind: container-service (12, vs **`dev`**, not
+`main`: `main` is its release line), xsync (6), xnat-dicomweb (4), dicom-query-retrieve (3), pipeline_engine (raw 9,
+but a per-file check showed only 2 real changes: PLUGINS-197 `Pipelines.vm` and xnat-tools 1.9.0) and dashboards (1).
+Each was merged (not rebased), and all six now build against **`1.12.0-SNAPSHOT`**. Two of the incoming changes need
+the 1.12 core: container-service's status updater runs on `NodeLockService` (core #85), and dicomweb #19 stops
+bundling dcm4che/OpenCV, relying on the core WAR.
+
+| Plugin | Merge | Ported or decided |
+|---|---|---|
+| container-service | `f382f09c` → 4.0.0-SNAPSHOT | dev's new `BuildDirCleanupClaim` entity: `javax.persistence` → `jakarta` (its javadoc: the entity exists only so hbm2ddl creates the table). `build.gradle`: kept the SLF4J reload4j test-provider pin, took dev's Gradle 9 test wiring and Kubernetes client 17 |
+| xsync | `4b86b96` → 1.9.0-SNAPSHOT | clean merge |
+| xnat-dicomweb | `b412ee8` → 1.4.0-SNAPSHOT | jakarta servlet API kept. The reflective `invokeGetOrCreate` shim dropped for develop's direct 3-arg call (core declares only the 3-arg form, `DirectArchiveSessionService.java:71`). **Daemon pinned to JDK 21** (below) |
+| dicom-query-retrieve | `0ab875c` → 3.2.0-SNAPSHOT | `Pacs.java`: develop's new `@Enumerated` field, imports in `jakarta.persistence` |
+| pipeline_engine_ui | `42cd573` | clean merge. develop's commented-out logging excludes change nothing that ships: the jar's entry list is identical to the deployed one |
+| dashboards | `609e750` | dropped the defunct radiologics repositories, kept the `org.nrg`-scoped `mavenLocal` |
+
+**Bug class (as 1-33/1-44): develop code is written for the pre-cutover stack.** Swept every line the six repos
+received (~10k) with the 1-44 pattern set, which already proved it can match. Two hits, both fixed: the
+`BuildDirCleanupClaim` and `Pacs` `javax.persistence` imports. Incoming templates: DQR's `SeriesRequested.vm`
+(`#if` on a Boolean) and pipeline's `Pipelines.vm` (jQuery only), neither affected by Velocity 2. **Jar-content diff
+against the deployed jars:** dicomweb no longer bundles etherj (no source references), dcm4che3 or `org.opencv`.
+Confirmed core's WAR supplies dcm4che 5.35 `imageio`/`imageio-opencv`/`json` and `weasis-core-img` (72
+`org.opencv` classes). DQR dropped a stray bundled copy of a dcm4che class that core ships.
+
+**Pre-existing, found on the way: xnat-dicomweb's `:test` fails on a JDK 22+ Gradle daemon** with `failed to scan jar
+file for packages (…aspectjweaver-1.8.10.jar)`. Gradle scans the test classpath inside the daemon JVM, and
+`aspectjweaver` reaches it through `org.nrg.xnat:web`. A/B: the untouched `feature/tomcat10` (`7aacab3`) fails
+identically, so the merge did not cause it; that branch's tests had simply not been run on JDK 25. Fixed the way core
+is (1-33): an in-repo `gradle/gradle-daemon-jvm.properties` with `toolchainVersion=21`. The other five passed on the
+JDK 25 daemon. **Open:** the plugin-migration guide's gotcha covers compile and custom task actions, but not this
+`:test` symptom or the in-repo daemon pin.
+
+**Verified.** Tests: container-service 375, dicomweb 400, DQR 106, 0 failures. xsync, pipeline and dashboards have
+no Java tests. Jars rebuilt from the committed merges (manifests `Implementation-Dirty: false`), sha1-matched on
+upload. On the box the six old jars were removed by exact name, so the four renamed ones cannot load twice (backup
+`/home/xnat/plugins.bak-pre-develop-merge-20261021-101618`); 22 installed. Boot: 71 s, every failure signature 0,
+21 "Found plugin" + raphaeljs. `Node lock "containers:status-updater": elected` in `tasks.log`, and
+`xhbm_build_dir_cleanup_claim` created. Post-boot warnings are the same known set as the core-only boot (xsync
+`ElementSecurity` ×3, the `ConvertJsonToJsonb` null column, JupyterHub directory cleanup). **Nothing pushed.** The six
+branches declare `1.12.0-SNAPSHOT`, which is only in this machine's `~/.m2`, so they cannot build anywhere else until
+1.12 core is published.
+
+**Same session, on the box:** the `/home/xnat/tomcat` symlink (→ `tomcat-11`) had been replaced by a plain directory
+holding only `logs/` and `temp/`. `tomcat.service` runs `/home/xnat/tomcat/bin/startup.sh`, so any restart would
+have failed. The running JVM survived only because it resolved the link at launch. It had happened before
+(`tomcat.stray-20260921-163628`). Relinked; the directory was moved to `tomcat.stray-20261021-093331`. **Cause not
+found.** No `sudo` command removed the link: the Sep 22 10:59 deploy's own `test -L` guard passed, and there were
+no sudo commands afterwards, and nothing in root's cron. The link went between Sep 22 10:59 and 22:41. `logs/` and
+`temp/` were probably recreated by Tomcat's own log rotation and temp-file writes after the link was gone.
+`application.log`/`xdat.log` last wrote at 22:39–22:41 that night, so something in-process (e.g. a recursive delete
+reaching `CATALINA_TMPDIR`'s parent) is the lead.
+
 ## ⚪ Note — automation hard-disabled makes script delete 500 (not a cutover bug)
 
 On dave-tc11 `/xapi/automation/enabled` is **false**: `_automationEnabled` (from the `automation.enabled`

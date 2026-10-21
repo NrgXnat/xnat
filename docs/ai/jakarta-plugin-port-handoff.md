@@ -80,9 +80,9 @@ on 2026-10-21. Since 2026-10-16, `1.11.0-SNAPSHOT` on the XNAT Artifactory is **
 resolves cleanly and then kills the webapp at load, and a leftover Jakarta `1.11.0-SNAPSHOT` in `~/.m2` can make
 it look fine on one machine only. If the plugin you are porting already says `1.11.0-SNAPSHOT`, change it.
 
-**If `1.12.0-SNAPSHOT` itself will not resolve, do not downgrade `vXnat`.** First check whether it has been
-published at all: `curl -s -o /dev/null -w '%{http_code}' https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.12.0-SNAPSHOT/maven-metadata.xml`
-(404 = not yet; build core locally per guide Route 2). After that, the causes are, in order: the `libs-snapshot`
+**If `1.12.0-SNAPSHOT` itself will not resolve, do not downgrade `vXnat`.** It has been on the Artifactory since
+2026-10-21; first check it still is: `curl -s -o /dev/null -w '%{http_code}' https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.12.0-SNAPSHOT/maven-metadata.xml`
+(404 = gone; build core locally per guide Route 2). After that, the causes are, in order: the `libs-snapshot`
 repository missing from the build, a stale `~/.m2` copy shadowing it, or an unscoped `mavenLocal()`. Check
 those, then stop and report: a lower version that *does* resolve is the javax line, which builds and then kills
 the webapp at load.

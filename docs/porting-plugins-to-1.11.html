@@ -202,18 +202,19 @@
           version now resolves to <strong>javax core</strong>: a Jakarta plugin pointed at it fails to compile
           wherever it is resolved from the Artifactory, yet may still build cleanly on a machine that has an old
           Jakarta <code>1.11.0-SNAPSHOT</code> in <code>~/.m2</code>.</p>
-        <p><strong><code>1.12.0-SNAPSHOT</code> is not yet published to the Artifactory</strong> (as of
-          2026-10-21; publishing is manual). Until it is, build core yourself (below). Check the current state
-          rather than trusting this card: <code>404</code> means not yet, <code>200</code> means the Artifactory
-          route works.</p>
+        <p><strong><code>1.12.0-SNAPSHOT</code> is published to the Artifactory</strong> (first snapshot
+          <code>1.12.0-20261021.164311-1</code>, from <code>feature/jakarta-cutover</code> at
+          <code>95f79cc70f</code>). Publishing is manual, so the snapshot lags the branch between publishes.
+          To confirm it is there: <code>200</code> means the Artifactory route works; <code>404</code> means it
+          is gone and you build core yourself (below).</p>
         <pre>curl -s -o /dev/null -w '%{http_code}\n' \
   https://nrgxnat.jfrog.io/artifactory/libs-snapshot-local/org/nrg/parent/1.12.0-SNAPSHOT/maven-metadata.xml</pre>
-        <p>1.12 itself is unreleased: what exists, once published, is a timestamped snapshot that moves whenever
+        <p>1.12 itself is unreleased: what exists is a timestamped snapshot that moves whenever
           someone publishes again. Which of the two routes below you want depends on what you are doing, not
           on which is "proper".</p>
       </div>
 
-      <h3>Resolve it from the Artifactory (once published)</h3>
+      <h3>Resolve it from the Artifactory</h3>
       <p>Nothing to build. Add the XNAT repositories to your plugin — most plugins already list them, in which
         case setting <code>vXnat</code> to <code>1.12.0-SNAPSHOT</code> is the whole change:</p>
       <pre>repositories {
@@ -245,8 +246,7 @@
       </div>
 
       <h3>Or build core yourself</h3>
-      <p>The only route until <code>1.12.0-SNAPSHOT</code> is published, and after that still the right move in
-        three cases: you are <strong>changing core</strong> alongside your plugin; you
+      <p>The right move in three cases: you are <strong>changing core</strong> alongside your plugin; you
         need a <strong>cutover commit newer</strong> than the published snapshot; or you want the
         <strong>Docker test stack</strong>, which lives in the same clone and is the subject of the next
         section. Clone the XNAT core repository next to your plugin and publish it locally:</p>
@@ -324,9 +324,9 @@ docker compose logs -f xnat        # confirm your plugin is named as loaded</pre
       <div class="facts">
         <div class="fact"><span class="k">Build against</span><span class="v">1.12.0-SNAPSHOT</span>
           <span class="n">In your plugin: <code>vXnat = "1.12.0-SNAPSHOT"</code> — never 1.11, which is now javax</span></div>
-        <div class="fact"><span class="k">Resolves from</span><span class="v">~/.m2 for now</span>
-          <span class="n"><code>libs-snapshot</code> once 1.12 is published; until then <code>~/.m2</code>
-            from building core yourself — keep <code>mavenLocal</code> scoped to <code>org.nrg.*</code>, see step B3.</span></div>
+        <div class="fact"><span class="k">Resolves from</span><span class="v">libs-snapshot</span>
+          <span class="n">The XNAT Artifactory snapshot repository, or <code>~/.m2</code> if you build core
+            yourself — keep <code>mavenLocal</code> scoped to <code>org.nrg.*</code>, see step B3.</span></div>
         <div class="fact"><span class="k">After 1.12 releases</span><span class="v">1.12.0</span>
           <span class="n">Then it resolves from the release repository and this whole step goes away.</span></div>
       </div>
@@ -461,10 +461,10 @@ both of these from it, and follow the handoff's phases in order:
 
 Build against vXnat = "1.12.0-SNAPSHOT" -- never 1.11.0-SNAPSHOT, which on
 the XNAT Artifactory is now develop's javax build. 1.12.0-SNAPSHOT resolves
-from the Artifactory (libs-snapshot) once published, otherwise from a local
-publish in ~/.m2. If dependency resolution cannot find
-org.nrg:parent:1.12.0-SNAPSHOT, check in order that it has been published
-(or that I published core locally), that the libs-snapshot repository is
+from the Artifactory (libs-snapshot), or from a local publish in ~/.m2 if
+I built core myself. If dependency resolution cannot find
+org.nrg:parent:1.12.0-SNAPSHOT, check in order that it is still on the
+Artifactory (or that I published core locally), that the libs-snapshot repository is
 declared, that a stale ~/.m2 copy is not shadowing it, and that mavenLocal()
 is scoped to org.nrg.* -- then stop and tell me rather than downgrading the
 version to something that does resolve.

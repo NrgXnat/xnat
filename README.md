@@ -8,7 +8,7 @@ under a unified Gradle 9 build. The full git history of `xnat-web` is preserved 
 ```
 xnat/
 ├── settings.gradle           # Subproject registration (21 includes)
-├── build.gradle              # Root build: sets group and version for all modules
+├── build.gradle              # Root build: sets group and version for all modules (dicom-edit6 sets its own version)
 ├── gradle.properties         # Global build properties (version, parallel, cache, JVM args)
 ├── gradlew / gradlew.bat     # Gradle Wrapper — use these instead of a local gradle install
 ├── gradle/
@@ -71,8 +71,8 @@ xnat/
 |------|---------|
 | `settings.gradle` | Lists all 21 subprojects; changing this file adds or removes a module from the build |
 | `gradle.properties` | Sets `version`, enables parallel builds, build cache, daemon, and JVM heap (`-Xmx4g`) |
-| `build.gradle` (root) | Minimal — sets `group = 'org.nrg'` and propagates `version` to all subprojects |
-| `gradle/libs.versions.toml` | Version Catalog: ~155 version entries and 260+ library definitions extracted from `parent/pom.xml` |
+| `build.gradle` (root) | Minimal — sets `group = 'org.nrg'` and propagates `version` to all subprojects. `dicom-edit6` replaces that version with the `dicom-edit6` entry in `gradle/libs.versions.toml` |
+| `gradle/libs.versions.toml` | Version Catalog: ~155 version entries and 260+ library definitions |
 | `buildSrc/src/main/groovy/buildlogic.java-common-conventions.gradle` | Shared config applied to every module: Java 21 toolchain, repository list, JaCoCo, publishing, test setup |
 | `buildSrc/src/main/groovy/buildlogic.java-library-conventions.gradle` | Extends common conventions and adds the `java-library` plugin (for modules that export an API) |
 | `parent/build.gradle` | Publishes the BOM (`org.nrg:parent`) so external XNAT plugins can consume unified dependency constraints |
@@ -100,7 +100,7 @@ xnat/
 
 # Build the deployable WAR
 ./gradlew :xnat-web:war
-ls -lh xnat-web/build/libs/xnat-web-1.10.2.war
+ls -lh xnat-web/build/libs/xnat-web-*.war
 ```
 
 ## Branches
@@ -111,7 +111,7 @@ ls -lh xnat-web/build/libs/xnat-web-1.10.2.war
 | `releases/<version>-rc` | Release candidate, cut from `develop` and promoted to `main` | `<version>-RC-SNAPSHOT` |
 | `releases/1.9.3.4` | 1.9.3.4 release reference | 1.9.3.4 |
 | `releases/1.9.3.5` | 1.9.3.5 release reference | 1.9.3.5 |
-| `develop` | Active development | 1.10.3-SNAPSHOT |
+| `develop` | Active development | 1.11.0-SNAPSHOT |
 
 Release tags `1.9.3.4`, `1.10.0`, `1.10.1` and `1.10.2` are reachable from `main`; tag `1.9.3.5` is reachable from `releases/1.9.3.5`.
 
@@ -121,6 +121,8 @@ Release tags `1.9.3.4`, `1.10.0`, `1.10.1` and `1.10.2` are reachable from `main
 - [FAQ](./docs/faq.md) — dependency management, build troubleshooting, common tasks
 - [Plugin Migration Guide](./docs/plugin-migration-guide.md) — how to adapt external XNAT plugins to build against this monorepo
 - [Upgrading DicomEdit 6](./dicom-edit6/UPGRADING.md) — script, runtime and API changes in each dicom-edit6 release
+- [Installing the OpenCV Native Library](./docs/installing-opencv-native.md) — installing the native library XNAT 1.10.2 and later need for JPEG-family DICOM pixel data, on sites that don't run the XNAT container image
+- [Mirroring the OpenCV Codecs](./docs/mirroring-opencv-codecs.md) — mirroring the OpenCV codec jars and native libraries into Artifactory, and how the build and container image use them
 
 ## Miscellaneous
 

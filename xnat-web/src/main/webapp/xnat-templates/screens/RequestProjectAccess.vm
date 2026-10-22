@@ -2,7 +2,7 @@
     <input type="hidden" name="project" value="$project.getId()"/>
     <table>
         <tr>
-            <td><h3>$project.getName() Access Request</h3>
+            <td><h3>#escapeCleanHTML($!project.getName()) Access Request</h3>
             </td>
         </tr>
         <tr>
@@ -18,7 +18,7 @@
             <td>&nbsp;</td>
         </tr>
         <tr>
-            <td>What level of access would you like to request for the $project.getName() study?</td>
+            <td>What level of access would you like to request for the #escapeCleanHTML($!project.getName()) study?</td>
         </tr>
         <tr>
             <td>&nbsp;</td>

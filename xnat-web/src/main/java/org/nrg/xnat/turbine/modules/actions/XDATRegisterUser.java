@@ -15,7 +15,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.ActionLoader;
-import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.framework.utilities.Reflection;
@@ -25,6 +24,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
@@ -62,16 +62,26 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
 
     @Override
     public void doPerform(final RunData data, final Context context) throws Exception {
-        SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
-        boolean isProjectAccessRequest = hasPAR(data);
+        // Require a valid CSRF token and a POST before any other work (the CSRF check validates the token only for
+        // POST, PUT and DELETE).
+        try {
+            SecureAction.isCsrfTokenOk(data);
+        } catch (Exception e) {
+            data.setMessage("Due to a technical issue, the requested action cannot be performed.");
+            data.setScreenTemplate("Login.vm");
+            return;
+        }
+        if (!isPostRequest(data)) {
+            data.setMessage("Due to a technical issue, the requested action cannot be performed.");
+            data.setScreenTemplate("Login.vm");
+            return;
+        }
 
-        if( !(this instanceof RegisterExternalLogin) ){  // Don't block ldap account creation.
-            if((isProjectAccessRequest && siteConfig.getSecurityExternalUserParDisabled()) ||
-                    !isProjectAccessRequest && siteConfig.getSecurityNewUserRegistrationDisabled() ){
-                data.setMessage("New user registration is not allowed on " + siteConfig.getSiteId());
-                data.setScreenTemplate("Error.vm");
-                return;
-            }
+        SiteConfigPreferences siteConfig  = XDAT.getSiteConfigPreferences();
+        if (registrationDisallowed(data, siteConfig)) {
+            data.setMessage(registrationDisallowedMessage(data, siteConfig));
+            data.setScreenTemplate("Error.vm");
+            return;
         }
 
         if (!validate(data, context)) {
@@ -112,7 +122,7 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
         if (userAuth != null) {
             return;
         }
-        final UserI found = Users.createUser(TurbineUtils.GetDataParameterHash(data));
+        final UserI found = Users.createUser(allowlistRegistrationParameters(TurbineUtils.GetDataParameterHash(data)));
         XnatProviderManager xnatProviderManager = XDAT.getContextService().getBeanSafely(XnatProviderManager.class);
         if (xnatProviderManager != null) {
             Map<String, XnatAuthenticationProvider> providers = xnatProviderManager.getVisibleEnabledProviders();
@@ -186,7 +196,8 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
             }
         }
 
-        if (StringUtils.isNotBlank(parID)) {
+        if (StringUtils.isNotBlank(parID) && hasValidPar(data)) {
+            // Accept the PAR only when it was sent to the email being registered.
             log.debug("Got registration request for PAR {} with verification hash {}", parID, hash);
             final AcceptProjectAccess action = new AcceptProjectAccess();
             context.put("user", user);
@@ -194,7 +205,9 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
         } else if (getPreferences().getUserRegistration() && !getPreferences().getEmailVerification()) {
             if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
                 data.setAction(nextAction);
-                ((VelocityAction) ActionLoader.getInstance().getInstance(nextAction)).doPerform(data, context);
+                // Dispatch through exec(...) so the target action's perform() runs its isAuthorized() check; a
+                // direct doPerform(...) call would skip it.
+                ActionLoader.getInstance().exec(data, nextAction);
             } else if (!StringUtils.isBlank(nextPage) && !StringUtils.equals(nextPage, Turbine.getConfiguration().getString("template.home"))) {
                 data.setScreenTemplate(nextPage);
             }
@@ -248,5 +261,116 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
         log.debug("Sent 'POST' request to URL: {}, got response: {}", GOOGLE_RECAPTCHA_URL, responseCode);
 
         return new BufferedReader(new InputStreamReader(con.getInputStream()));
+    }
+
+    /**
+     * Decides whether the registration-disabled switches refuse this request. Each switch has its own check:
+     * <ul>
+     *   <li>{@code securityExternalUserParDisabled} applies when {@link #isPendingParGuid(RunData)} finds a pending
+     *       request for the guid, whatever the email;</li>
+     *   <li>{@code securityNewUserRegistrationDisabled} applies unless {@link #hasValidPar(RunData)} finds a pending
+     *       request sent to the email being registered.</li>
+     * </ul>
+     * External-login (LDAP/OpenID) account creation is never blocked here.
+     *
+     * @param data       The run data for the current request.
+     * @param siteConfig The site configuration preferences.
+     *
+     * @return {@code true} if registration must be refused.
+     */
+    boolean registrationDisallowed(final RunData data, final SiteConfigPreferences siteConfig) {
+        if (this instanceof RegisterExternalLogin) {
+            return false; // Don't block ldap account creation.
+        }
+        return (isPendingParGuid(data) && siteConfig.getSecurityExternalUserParDisabled())
+               || (!hasValidPar(data) && siteConfig.getSecurityNewUserRegistrationDisabled());
+    }
+
+    /**
+     * The message explaining why {@link #registrationDisallowed(RunData, SiteConfigPreferences)} refused the request.
+     * When a pending invitation exists for the submitted guid but was sent to a different email, and par registration
+     * is allowed, registering with the invited email would succeed, so the message says so. Any other refusal shows
+     * the generic site message.
+     *
+     * @param data       The run data for the current request.
+     * @param siteConfig The site configuration preferences.
+     *
+     * @return The message to display.
+     */
+    String registrationDisallowedMessage(final RunData data, final SiteConfigPreferences siteConfig) {
+        if (!siteConfig.getSecurityExternalUserParDisabled() && isPendingParGuid(data) && !hasValidPar(data)) {
+            return "This project invitation could not be applied, because it was sent to a different email address. "
+                   + "To accept it, register using the email address the invitation was sent to, or contact the project owner.";
+        }
+        return "New user registration is not allowed on " + siteConfig.getSiteId();
+    }
+
+    /**
+     * Indicates whether the submitted {@code par} guid identifies a pending project access request, whatever the email
+     * being registered. It is used only for the external-user-par-disabled switch (see
+     * {@link #registrationDisallowed(RunData, SiteConfigPreferences)}). The new-user-registration-disabled switch, and
+     * whether the PAR enables, verifies or grants the account, use {@link #hasValidPar(RunData)}, which also requires
+     * the email to match.
+     *
+     * @param data The run data for the current request.
+     *
+     * @return {@code true} if a pending request matches the submitted guid.
+     */
+    boolean isPendingParGuid(final RunData data) {
+        return pendingParForSubmittedGuid(data) != null;
+    }
+
+    /**
+     * Treats a registration as backed by a project access request only when a pending PAR exists for the submitted guid
+     * and was sent to the email being registered.
+     *
+     * @param data The run data for the current request.
+     *
+     * @return {@code true} only if a pending PAR matches the submitted guid and the registering email.
+     */
+    @Override
+    protected boolean hasValidPar(final RunData data) {
+        final ProjectAccessRequest request = pendingParForSubmittedGuid(data);
+        if (request == null) {
+            return false;
+        }
+        // The submitted email is XML-escaped when read, so un-escape it, then compare it to the invited email
+        // ignoring case.
+        final String submitted = StringUtils.trim(TurbineUtils.unescapeParam((String) TurbineUtils.GetPassedParameter(XDAT_USER_EMAIL, data)));
+        return StringUtils.isNotBlank(request.getEmail()) && StringUtils.isNotBlank(submitted)
+               && StringUtils.equalsIgnoreCase(StringUtils.trim(request.getEmail()), submitted);
+    }
+
+    /**
+     * Returns the pending project access request identified by the submitted {@code par} guid (from the request
+     * parameter or the session), or {@code null}. Only a request that is still pending (not yet approved) is
+     * returned.
+     *
+     * @param data The run data for the current request.
+     *
+     * @return The pending project access request, or {@code null}.
+     */
+    private ProjectAccessRequest pendingParForSubmittedGuid(final RunData data) {
+        final String guid = parIdentifier(data);
+        if (StringUtils.isBlank(guid)) {
+            return null;
+        }
+        final ProjectAccessRequest request;
+        try {
+            request = ProjectAccessRequest.RequestPARByGUID(guid, Users.getGuest());
+        } catch (Exception e) {
+            return null;
+        }
+        // Pending means not yet acted on: neither approved nor rejected (both set approval_date / approved).
+        return request != null && request.getApprovalDate() == null && request.getApproved() == null ? request : null;
+    }
+
+    private static String parIdentifier(final RunData data) {
+        final String fromParameter = (String) TurbineUtils.GetPassedParameter(XDAT_USER_PAR, data);
+        if (StringUtils.isNotBlank(fromParameter)) {
+            return fromParameter;
+        }
+        final Object fromSession = data.getSession().getAttribute(XDAT_USER_PAR);
+        return fromSession == null ? null : fromSession.toString();
     }
 }

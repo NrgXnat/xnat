@@ -1,6 +1,6 @@
 <p>
     Hello,<br>
-    We received a request to access the $projectOM.getName() $displayManager.getSingularDisplayNameForProject().toLowerCase() from a user on $system as a $access_level. Granting this kind of access in this $displayManager.getSingularDisplayNameForProject().toLowerCase() will
+    We received a request to access the #escapeCleanHTML($!projectOM.getName()) $displayManager.getSingularDisplayNameForProject().toLowerCase() from a user on $system as a $access_level. Granting this kind of access in this $displayManager.getSingularDisplayNameForProject().toLowerCase() will
  #if($access_level=="owner")
     mean the user can read, edit and manage anything affiliated with this $displayManager.getSingularDisplayNameForProject().toLowerCase().
  #elseif($access_level=="member")

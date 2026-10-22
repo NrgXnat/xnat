@@ -14,7 +14,6 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -58,40 +57,6 @@ public class MizerExceptionTests {
     }
 
     @Test
-    public void rewrapPreservesCauseAndPrependsContext() {
-        final IOException inner = new IOException("disk full");
-        final ScriptErrorContext ctx = ScriptErrorContext.empty()
-                .withFilePath("/tmp/x.dcm")
-                .withScriptLine(5);
-        final MizerContextException decorated = MizerException.rewrap(inner, ctx);
-        assertSame(inner, decorated.getCause());
-        assertTrue(decorated.getMessage(), decorated.getMessage().startsWith("file=/tmp/x.dcm; line 5: "));
-        assertTrue(decorated.getMessage(), decorated.getMessage().endsWith("disk full"));
-    }
-
-    @Test
-    public void rewrapWithEmptyContextUsesCauseMessageAlone() {
-        final IOException inner = new IOException("disk full");
-        final MizerContextException decorated = MizerException.rewrap(inner, ScriptErrorContext.empty());
-        assertEquals("disk full", decorated.getMessage());
-        assertSame(inner, decorated.getCause());
-    }
-
-    @Test
-    public void rewrapInheritsMizerContextFromCause() {
-        // a MizerContextException with a (possibly null) MizerContext field
-        final MizerContextException original = new MizerContextException(null, "first error");
-        final MizerContextException decorated = MizerException.rewrap(original, ScriptErrorContext.empty().withScriptIndex(2));
-        assertSame(original, decorated.getCause());
-        assertTrue(decorated.getMessage(), decorated.getMessage().startsWith("script #2: "));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void rewrapRejectsNullCause() {
-        MizerException.rewrap(null, ScriptErrorContext.empty());
-    }
-
-    @Test
     public void formatCauseChainReturnsEmptyForNoCauses() {
         final RuntimeException simple = new RuntimeException("just one");
         assertEquals("", MizerException.formatCauseChain(simple, "just one"));
@@ -119,21 +84,6 @@ public class MizerExceptionTests {
     @Test
     public void formatCauseChainHandlesNull() {
         assertEquals("", MizerException.formatCauseChain(null, ""));
-    }
-
-    @Test
-    public void rewrapMessageIsActionable() {
-        // End-to-end shape check: caller catches at boundary, rewraps, surfaces message.
-        final NumberFormatException inner = new NumberFormatException("For input string: \"abc\"");
-        final ScriptErrorContext ctx = ScriptErrorContext.empty()
-                .withScriptIndex(1)
-                .withScriptLine(7)
-                .withStatementText("age := parseInt(\"abc\")");
-        final MizerContextException decorated = MizerException.rewrap(inner, ctx);
-        final String msg = decorated.getMessage();
-        assertTrue(msg, msg.contains("script #1"));
-        assertTrue(msg, msg.contains("line 7"));
-        assertTrue(msg, msg.contains("For input string: \"abc\""));
     }
 
     @Test

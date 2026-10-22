@@ -9,20 +9,12 @@
 
 package org.nrg.dicom.mizer.exceptions;
 
-import org.nrg.dicom.mizer.service.MizerContext;
 import org.nrg.dicom.mizer.service.MizerService;
 
 /**
  * The primary class used to distinguish exceptions from operations in the {@link MizerService} and its components.
  *
- * <p>Also exposes static helpers for decorating in-flight exceptions with {@link ScriptErrorContext}
- * information without losing the original cause or stack trace, and for rendering cause chains for
- * user-facing surfaces.
- *
- * <p>Intended use of {@link #rewrap}: wrap a try/catch at a well-defined boundary (script-applicator,
- * file-applicator, CLI entry point) and call {@link #rewrap(Throwable, ScriptErrorContext)} to attach
- * whatever context that boundary knows about. The resulting exception's message reads outside-in
- * (boundary added latest is leftmost), and the original cause chain is preserved.
+ * <p>Also exposes static helpers for rendering exceptions and their cause chains for user-facing surfaces.
  */
 public class MizerException extends Exception {
     /**
@@ -51,58 +43,6 @@ public class MizerException extends Exception {
      */
     public MizerException(final String message, final Throwable cause) {
         super(message, cause);
-    }
-
-    /**
-     * Decorate a thrown exception with the supplied {@link ScriptErrorContext}.
-     *
-     * <p>If {@code cause} is already a {@link MizerContextException}, the returned exception
-     * preserves the original {@link MizerContext}. Otherwise the returned exception's mizer
-     * context is {@code null}.
-     *
-     * <p>The returned exception's message is {@code "<context-prefix>: <cause-message>"}.
-     * If the supplied context is empty, the cause message is used as-is.
-     *
-     * @param cause the in-flight exception (must not be {@code null})
-     * @param ctx   the context to attach (may be {@code null} or {@link ScriptErrorContext#EMPTY})
-     * @return a new {@link MizerContextException} wrapping {@code cause}
-     */
-    public static MizerContextException rewrap(final Throwable cause, final ScriptErrorContext ctx) {
-        if (cause == null) {
-            throw new IllegalArgumentException("cause must not be null");
-        }
-        final String prefix = (ctx == null) ? "" : ctx.format();
-        final String causeMsg = describeMessage(cause);
-        final String message = prefix.isEmpty() ? causeMsg : prefix + ": " + causeMsg;
-
-        final MizerContext mizerContext = (cause instanceof MizerContextException)
-                ? ((MizerContextException) cause).getContext()
-                : null;
-        return new MizerContextException(mizerContext, message, cause);
-    }
-
-    /**
-     * Decorate a thrown exception with both a {@link MizerContext} and a {@link ScriptErrorContext}.
-     * Use this overload when the boundary has access to a {@link MizerContext} that the cause
-     * may not already carry (e.g., the top-level service layer).
-     */
-    public static MizerContextException rewrap(final Throwable cause, final MizerContext mizerContext, final ScriptErrorContext ctx) {
-        if (cause == null) {
-            throw new IllegalArgumentException("cause must not be null");
-        }
-        final String prefix = (ctx == null) ? "" : ctx.format();
-        final String causeMsg = describeMessage(cause);
-        final String message = prefix.isEmpty() ? causeMsg : prefix + ": " + causeMsg;
-
-        final MizerContext effective;
-        if (mizerContext != null) {
-            effective = mizerContext;
-        } else if (cause instanceof MizerContextException) {
-            effective = ((MizerContextException) cause).getContext();
-        } else {
-            effective = null;
-        }
-        return new MizerContextException(effective, message, cause);
     }
 
     /**

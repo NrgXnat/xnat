@@ -12,9 +12,9 @@ import java.util.Objects;
 
 /**
  * Immutable bundle of optional location/identifier fields that pinpoint where in an
- * anonymization run an error originated. Designed to be attached to a thrown exception
- * (typically via {@link MizerException#rewrap}) so the user-facing message can include
- * file path, script index/line, statement text, and DICOM tag information.
+ * anonymization run an error originated. {@link #format()} renders it as the prefix of a
+ * user-facing message, so the message can include file path, script index/line, statement
+ * text, and DICOM tag information.
  *
  * <p>All fields are optional. Use the fluent {@code with*} methods to build up a context;
  * each call returns a new instance.

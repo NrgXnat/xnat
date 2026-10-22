@@ -10,10 +10,6 @@ public class ScriptVariableMismatchException extends MizerException {
     private static final long serialVersionUID = -223133238805109993L;
 
     public ScriptVariableMismatchException(final String baseMessage, final Collection<String> labels) {
-        this(baseMessage, labels, null);
-    }
-
-    public ScriptVariableMismatchException(final String baseMessage, final Collection<String> labels, final Throwable cause) {
-        super(baseMessage + (labels.isEmpty() ? "" : ": " + String.join(",", labels)), cause);
+        super(baseMessage + (labels.isEmpty() ? "" : ": " + String.join(",", labels)));
     }
 }

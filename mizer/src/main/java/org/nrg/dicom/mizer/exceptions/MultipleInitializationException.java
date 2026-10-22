@@ -17,11 +17,7 @@ import org.nrg.dicom.mizer.variables.Variable;
  */
 public class MultipleInitializationException extends MizerException {
     public MultipleInitializationException(final Variable variable, final Value current, final Value override) {
-        this(variable, current, override, null);
-    }
-
-    public MultipleInitializationException(final Variable variable, final Value current, final Value override, final Throwable cause) {
-        super("You attempted to set the value of the variable " + variable.getName() + " to " + override.asString() + " but it has already initialized with the value " + current.asString(), cause);
+        super("You attempted to set the value of the variable " + variable.getName() + " to " + override.asString() + " but it has already initialized with the value " + current.asString());
         _variable = variable;
         _current = current;
         _override = override;

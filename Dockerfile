@@ -72,18 +72,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         dcmtk \
     && rm -rf /var/lib/apt/lists/*
 
-# Drop the trust anchors the compromised eMudhra intermediates chain to (CVE-2026-91403)
+# Drop the trust anchors the compromised intermediates chain to (CVE-2026-91403)
 # until the Temurin cacerts is fixed upstream. Fails the build if either survives.
 RUN ks="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java.home = //p')/lib/security/cacerts" \
-    && bad() { out="$(keytool -list -v -keystore "$ks" -storepass changeit 2>/dev/null)" \
-         && case "$out" in *"Alias name: "*) ;; *) echo "cannot list $ks" >&2; return 1 ;; esac \
-         && printf '%s\n' "$out" | while IFS= read -r l; do \
+    && bad() { out="$(keytool -list -v -keystore "$ks" -storepass changeit 2>&1)" || { printf '%s\n' "$out" >&2; return 1; }; \
+         case "$out" in *"Alias name: "*) ;; *) printf 'cannot list %s\n%s\n' "$ks" "$out" >&2; return 1 ;; esac; \
+         printf '%s\n' "$out" | while IFS= read -r l; do \
               case "$l" in "Alias name: "*) a=${l#Alias name: } ;; \
                 "Owner: "*"emSign ECC Root CA - G3"*|"Owner: "*"AAA Certificate Services"*) printf '%s\n' "$a" ;; esac; \
             done; } \
     && aliases="$(bad)" \
     && printf '%s\n' "$aliases" | while IFS= read -r a; do [ -z "$a" ] || keytool -delete -alias "$a" -keystore "$ks" -storepass changeit; done \
-    && left="$(bad)" && [ -z "$left" ]
+    && left="$(bad)" \
+    && { [ -z "$left" ] || { printf 'anchors still in %s: %s\n' "$ks" "$left" >&2; exit 1; }; }
 
 # -----------------------------------------------------------------------------
 # OpenCV native for dcm4che's image codecs.

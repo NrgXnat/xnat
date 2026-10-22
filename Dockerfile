@@ -60,10 +60,9 @@ RUN chmod +x /usr/local/bin/*.sh
 
 # Diagnostic / runtime tools expected by deploy environments
 # (dcmtk for DICOM debug, netcat/ping for connectivity checks, unzip
-# for the WAR expansion below). ca-certificates must be the 20260816
-# bundle or later (USN-8944-1), which drops the same roots as the cacerts
-# layer below for curl and other OS tools. The check is part of the layer,
-# so a cached copy of it can't carry an older bundle either.
+# for the WAR expansion below).
+# The build fails if ca-certificates is older than 20260816 (USN-8944-1).
+# Remove that check once the base image ships 20260816 or later.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
         curl \
@@ -78,15 +77,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && { dpkg --compare-versions "$v" ge 20260816 \
          || { echo "ca-certificates $v is older than the 20260816 bundle" >&2; exit 1; }; }
 
-# Remove the trust anchors the compromised eMudhra intermediates chain to (CVE-2026-91403):
-# emSign ECC Root CA - G3, and AAA Certificate Services, which cross-signs them. The current
-# Temurin stores (tomcat:9-jdk21-temurin, tomcat:9.0-jdk8-temurin-noble) no longer include AAA,
-# so on those bases only G3 goes. Older bases such as tomcat:9.0.93-jdk8 still have AAA, and
-# removing it also drops other chains that end there. The build fails if keytool's output isn't
-# in the expected format or if either root survives. The removal holds only while nothing copies
-# the OS bundle back into cacerts: Temurin's /__cacert_entrypoint.sh does that when
-# USE_SYSTEM_CA_CERTS=1, and the XNAT entrypoint doesn't run it. Remove this layer once Temurin
-# ships the fixed cacerts.
+# Delete the emSign ECC Root CA - G3 and AAA Certificate Services roots from the JVM cacerts
+# (CVE-2026-91403). This only holds if nothing copies the OS bundle back into cacerts
+# (USE_SYSTEM_CA_CERTS). Remove this layer once the Temurin base's cacerts has neither root.
 RUN set -eu; \
     ks="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java.home = //p')/lib/security/cacerts"; \
     list() { \

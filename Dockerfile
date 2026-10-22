@@ -60,7 +60,10 @@ RUN chmod +x /usr/local/bin/*.sh
 
 # Diagnostic / runtime tools expected by deploy environments
 # (dcmtk for DICOM debug, netcat/ping for connectivity checks, unzip
-# for the WAR expansion below).
+# for the WAR expansion below). ca-certificates must be the 20260816
+# bundle or later (USN-8944-1), which drops the same roots as the cacerts
+# layer below for curl and other OS tools. The check is part of the layer,
+# so a cached copy of it can't carry an older bundle either.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
         curl \
@@ -70,21 +73,42 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         net-tools \
         traceroute \
         dcmtk \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && v="$(dpkg-query -W -f='${Version}' ca-certificates)" \
+    && { dpkg --compare-versions "$v" ge 20260816 \
+         || { echo "ca-certificates $v is older than the 20260816 bundle" >&2; exit 1; }; }
 
-# Drop the trust anchors the compromised intermediates chain to (CVE-2026-91403)
-# until the Temurin cacerts is fixed upstream. Fails the build if either survives.
-RUN ks="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java.home = //p')/lib/security/cacerts" \
-    && bad() { out="$(keytool -list -v -keystore "$ks" -storepass changeit 2>&1)" || { printf '%s\n' "$out" >&2; return 1; }; \
-         case "$out" in *"Alias name: "*) ;; *) printf 'cannot list %s\n%s\n' "$ks" "$out" >&2; return 1 ;; esac; \
-         printf '%s\n' "$out" | while IFS= read -r l; do \
-              case "$l" in "Alias name: "*) a=${l#Alias name: } ;; \
-                "Owner: "*"emSign ECC Root CA - G3"*|"Owner: "*"AAA Certificate Services"*) printf '%s\n' "$a" ;; esac; \
-            done; } \
-    && aliases="$(bad)" \
-    && printf '%s\n' "$aliases" | while IFS= read -r a; do [ -z "$a" ] || keytool -delete -alias "$a" -keystore "$ks" -storepass changeit; done \
-    && left="$(bad)" \
-    && { [ -z "$left" ] || { printf 'anchors still in %s: %s\n' "$ks" "$left" >&2; exit 1; }; }
+# Remove the trust anchors the compromised eMudhra intermediates chain to (CVE-2026-91403):
+# emSign ECC Root CA - G3, and AAA Certificate Services, which cross-signs them. The current
+# Temurin stores (tomcat:9-jdk21-temurin, tomcat:9.0-jdk8-temurin-noble) no longer include AAA,
+# so on those bases only G3 goes. Older bases such as tomcat:9.0.93-jdk8 still have AAA, and
+# removing it also drops other chains that end there. The build fails if keytool's output isn't
+# in the expected format or if either root survives. The removal holds only while nothing copies
+# the OS bundle back into cacerts: Temurin's /__cacert_entrypoint.sh does that when
+# USE_SYSTEM_CA_CERTS=1, and the XNAT entrypoint doesn't run it. Remove this layer once Temurin
+# ships the fixed cacerts.
+RUN set -eu; \
+    ks="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java.home = //p')/lib/security/cacerts"; \
+    list() { \
+        o="$(keytool -list -v -keystore "$ks" -storepass changeit 2>&1)" \
+            || { printf 'keytool cannot list %s:\n%s\n' "$ks" "$o" >&2; return 1; }; \
+        printf '%s\n' "$o"; \
+    }; \
+    targets() { \
+        printf '%s\n' "$1" | awk '/^Alias name: /{a=substr($0,13)} /^Owner: /&&/emSign ECC Root CA - G3|AAA Certificate Services/{print a}'; \
+    }; \
+    before="$(list)"; \
+    case "$before" in \
+        *"Alias name: "*"Owner: CN="*) ;; \
+        *) printf 'unexpected keytool output for %s:\n%s\n' "$ks" "$before" >&2; exit 1 ;; \
+    esac; \
+    targets "$before" | while IFS= read -r a; do \
+        echo "removing $a"; \
+        keytool -delete -alias "$a" -keystore "$ks" -storepass changeit; \
+    done; \
+    after="$(list)"; \
+    left="$(targets "$after")"; \
+    if [ -n "$left" ]; then printf 'still in %s: %s\n' "$ks" "$left" >&2; exit 1; fi
 
 # -----------------------------------------------------------------------------
 # OpenCV native for dcm4che's image codecs.

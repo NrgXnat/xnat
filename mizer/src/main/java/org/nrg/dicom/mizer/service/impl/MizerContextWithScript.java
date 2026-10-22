@@ -6,6 +6,7 @@ import com.google.common.io.CharStreams;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -77,11 +78,7 @@ public class MizerContextWithScript extends MizerContextBase {
     }
 
     public InputStream getScriptInputStream() {
-        try {
-            return new ByteArrayInputStream(getScriptAsString().getBytes("UTF-8"));
-        } catch(UnsupportedEncodingException e) {
-            throw new IllegalStateException("UTF-8 encoding not supported by this JVM (critical environment misconfiguration)", e);
-        }
+        return new ByteArrayInputStream(getScriptAsString().getBytes(StandardCharsets.UTF_8));
     }
 
     public String getScriptAsString() {

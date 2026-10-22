@@ -454,9 +454,9 @@ public class BaseMizerService implements MizerService {
 
     private static final Pattern   VALID_VERSION_FORMAT    = Pattern.compile("^\\s*version\\s+\"(?<version>[\\d.]+)\"\\s*$", Pattern.MULTILINE);
     private static final Pattern   INVALID_VERSION_FORMAT  = Pattern.compile("^.*(?<expression>version\\s*[:]?=\\s*\"[\\d.]+\").*$", Pattern.MULTILINE);
-    private static final String    INVALID_VERSION_MESSAGE = "The Mizer service failed to find a Mizer implementation that knows how to handle your"
+    private static final String    INVALID_VERSION_MESSAGE = "The Mizer service failed to find a Mizer implementation that knows how to handle your "
                                                              + "script, but also found what appears to be a malformed version declaration. The "
-                                                             + "version declaration should be use the format 'version \"X.Y\"', where X.Y is a valid "
+                                                             + "version declaration should use the format 'version \"X.Y\"', where X.Y is a valid "
                                                              + "version such as \"6.1\". The statement in your script is: %s";
 
     private final List<Mizer> _mizers;

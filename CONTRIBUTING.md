@@ -226,13 +226,15 @@ Direct commits to `main` and `releases/*` are not allowed.
    git checkout -b feature/XNAT-1234-short-description
    ```
 
-2. Make changes, commit with a message referencing the ticket:
+2. Make changes and commit them with a message in the format described under
+   [Commit Messages](#commit-messages):
 
    ```bash
-   git commit -m "XNAT-1234 Short description of the change"
+   git commit -m "fix(import): keep a failed upload's partial session out of the archive"
    ```
 
-3. Push and open a pull request targeting `develop`.
+3. Push and open a pull request targeting `develop`. Give the pull request a title in the same
+   format as a commit subject.
 
 4. A bug fix applying to both `develop-1.9.x` and `develop` should be committed to
    `develop-1.9.x` first, then cherry-picked to `develop`:
@@ -241,6 +243,79 @@ Direct commits to `main` and `releases/*` are not allowed.
    git checkout develop
    git cherry-pick <commit-sha>
    ```
+
+## Commit Messages
+
+Commit messages follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/):
+
+```text
+<type>(<scope>)!: <summary>
+
+<body>
+
+<footers>
+```
+
+- **Type** (required): the kind of change.
+
+  | Type | Use for |
+  |------|---------|
+  | `feat` | A new feature or capability |
+  | `fix` | A bug fix |
+  | `perf` | Making something faster or use less, without changing what it does |
+  | `refactor` | Restructuring code without fixing a bug or adding a feature |
+  | `test` | Adding or correcting tests only |
+  | `docs` | Documentation only |
+  | `build` | The Gradle build or dependencies |
+  | `ci` | GitHub Actions workflows |
+  | `chore` | Anything else that doesn't change shipped code, such as a release version bump |
+
+- **Scope** (optional): the module or area the change is in, in lowercase, such as `import`,
+  `archive`, `xft`, `xdat`, `dicom-edit6`, `mizer`, `ui`, `deps` or `release`. Leave it out when
+  the change has no single home.
+- **`!`** (optional): marks a change that breaks backward compatibility. It goes after the scope,
+  right before the colon: `fix(xft)!:`, not `fix!(xft):`. Tools that read Conventional Commits
+  can't parse the second form, so changelogs and other output built from the history miss the
+  commit.
+- **Summary** (required): one line in the imperative mood ("add", "keep", "stop"), starting
+  lowercase, with no trailing period. Say what the change does, not which ticket it is for.
+- **Body** (optional): what changed and why, wrapped at 72 columns. Name the Github Issue # or
+  Jira ticket here (`XNAT-1234`) rather than in the summary.
+- **Footers** (optional): a breaking change needs a `BREAKING CHANGE:` footer as well as the `!`,
+  saying what broke and what callers or sites have to change.
+
+For example:
+
+```text
+feat: add NodeLockService for Postgres advisory-lock leader election
+fix(dicom-edit6): keep retained private values intact in retainPrivateTags
+perf(ingest): reduce file I/O during DICOM ingest and de-identification
+build(deps): let plugins take dcm4che artifacts from XNAT
+chore(release): bump develop to 1.10.3-SNAPSHOT after cutting 1.10.2-rc
+```
+
+and, for a breaking change:
+
+```text
+fix(xft)!: stop the JVM finalizer from running a save's change-info insert
+
+DBItemCache named its change-info insert finalize(), so besides the
+call from PoolDBUtils.sendBatch, the JVM ran it on its finalizer thread
+for every collected cache. [...] The method is now addChangeInfo(), and
+sendBatch calls it as before.
+
+BREAKING CHANGE: DBItemCache.finalize() is now addChangeInfo(). Code
+that called finalize() to add the change-info row has to call
+addChangeInfo() instead.
+```
+
+Pull requests are squash-merged, so each one becomes a single commit on `develop`. GitHub takes
+that commit's subject from the commit when the pull request has one commit, and from the pull
+request title when it has more. That's why the title has to follow the same format. GitHub adds
+the pull request number, as in `(#121)`, so don't add it yourself. Whoever merges can edit the
+subject in the merge dialog, so check it there before confirming.
+
+Older commits use an `XNAT-1234 Summary` form. Don't copy it in new commits.
 
 ## Code Standards
 

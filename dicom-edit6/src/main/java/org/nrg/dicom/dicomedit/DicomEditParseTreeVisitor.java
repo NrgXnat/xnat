@@ -104,6 +104,8 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
     @Override
     public Value visitScript(DE6Parser.ScriptContext ctx) {
         logger.debug("Encountered script.");
+        // The applicator reuses this visitor for every object, so forget the last object's statement.
+        this.currentStatement = null;
         // ANTLR's generated statement() builds a fresh list by scanning all children on every
         // call, so hoist it rather than calling it per iteration; and keep getText() behind an
         // isDebugEnabled() check, since it is evaluated as an argument either way.

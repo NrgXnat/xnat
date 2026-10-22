@@ -19,6 +19,7 @@ import org.nrg.test.workers.resources.ResourceManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,8 +50,8 @@ import static org.junit.Assert.assertTrue;
  * </pre>
  *
  * <p>{@link #errorNamesTheMistypedVariable()}, {@link #errorNamesTheSourceLine()},
- * {@link #errorQuotesTheFailingStatement()} and {@link #errorDoesNotLeakRawNullPointerText()}
- * all fail against the pre-fix code.
+ * {@link #errorQuotesTheFailingStatement()}, {@link #errorDoesNotLeakRawNullPointerText()} and
+ * {@link #errorReadsInFull()} all fail against the pre-fix code.
  * {@link #failureIsReportedAsAnError()} and {@link #failedScriptDoesNotModifyTheTag()} held
  * before the fix too and are here to pin invariants the fix must not break.
  */
@@ -115,6 +116,16 @@ public class MistypedVariableErrorMessageTests {
         assertFalse("error message should explain the null variable rather than surface raw NPE text,"
                     + " but was: " + message,
                 message.contains(RAW_NPE_FRAGMENT));
+    }
+
+    /**
+     * The tests above look for fragments; this pins how they are joined, in the messages the importer
+     * returns to the uploader.
+     */
+    @Test
+    public void errorReadsInFull() {
+        assertEquals(Collections.singletonList("Failed to apply script: line 2; stmt=`(0010,0010):=patientName`: Variable 'patientName' is null."),
+                result.getMessages());
     }
 
     @Test

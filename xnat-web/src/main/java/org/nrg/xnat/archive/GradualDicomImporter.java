@@ -456,8 +456,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             // A ServerException is the server's own failure, such as a failed write or a script or processor error.
             throw e;
         } catch (Throwable t) {
-            String msg = String.join(": ","unable to read DICOM object " + name, t.getMessage());
-            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, msg, t);
+            throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to read DICOM object " + name, t);
         } finally {
             // Only safe here: the dataset holds references into the staged pixels and write() reads
             // them. The received object's own spool files went with it when it closed, above.
@@ -484,7 +483,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         return Collections.emptyList();
     }
 
-    private void handleAnonymizationError(AtomicBoolean isNew, SessionData session,File outputFile, Throwable e) throws ServerException {
+    void handleAnonymizationError(AtomicBoolean isNew, SessionData session,File outputFile, Throwable e) throws ServerException {
         // Site-wide and other system-level anonymization failures surface as a 500 caused by the underlying error.
         // One that is already a ServerException is carried as it is: ServerException(Status, Throwable) delegates to
         // Exception(Throwable), whose message is cause.toString(), so every wrap prepends another
@@ -553,7 +552,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
 
     /** Runs one script, in memory or against the written file. */
     @FunctionalInterface
-    private interface ScriptApplication {
+    interface ScriptApplication {
         AnonymizationResult apply(final MizerContext context) throws MizerException;
     }
 
@@ -568,7 +567,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
      *
      * @return false if a script rejected the instance, in which case nothing of it is kept.
      */
-    private boolean applyScripts(final ScriptApplication apply, final SessionData session, final AtomicBoolean isNew, final File outputFile) throws ServerException, ClientException {
+    boolean applyScripts(final ScriptApplication apply, final SessionData session, final AtomicBoolean isNew, final File outputFile) throws ServerException, ClientException {
         // check to see of this session came in through an application that may have performed anonymization
         // prior to transfer, e.g. the XNAT Upload Assistant.
         if (!session.getPreventAnon() && DefaultAnonUtils.getService().isSiteWideScriptEnabled()) {
@@ -622,7 +621,9 @@ public class GradualDicomImporter extends ImporterHandlerA {
                                     String.join("\n", inlineResult.getMessages()));
                     handleAnonymizationError(isNew, session, outputFile, error, error);
                 }
-            } catch (ClientException e) {
+            } catch (ClientException | ServerException e) {
+                // Thrown by handleAnonymizationError, which has already cleaned up: a ServerException here is its
+                // own cleanup failing, and catching it below would run that cleanup a second time.
                 throw e;
             } catch (MizerException e) {
                 if (isScriptFailure(e)) {

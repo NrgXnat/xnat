@@ -1036,13 +1036,12 @@ public class DefaultGroupsAndPermissionsCache extends AbstractXftItemAndCacheEve
     }
 
     /**
-     * Evicts the user's caches, then rebuilds their group IDs, actions and browseables. A rebuild walks every group
-     * the user is in for each secured data type and action. For someone in many groups that takes longer than the gap
-     * between a new project's events, so rebuilds for one user run one at a time, and events that arrive during one
-     * share a single further rebuild.
+     * Rebuilds the user's group IDs, actions and browseables, which the caller has already cleared. A rebuild walks
+     * every group the user is in for each secured data type and action. For someone in many groups that takes longer
+     * than the gap between a new project's events, so rebuilds for one user run one at a time, and events that arrive
+     * during one share a single further rebuild.
      */
     private void rebuildUserCaches(final String username) {
-        evictUserCaches(username);
         _userCacheRebuilds.run(username, () -> {
             // A rebuild that was running when this was asked for may have cached data from before the change.
             evictUserCaches(username);

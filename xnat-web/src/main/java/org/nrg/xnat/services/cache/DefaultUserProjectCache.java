@@ -797,12 +797,14 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
-     * Drops the deleted project's cached per-user access levels.
+     * Drops the deleted project's cached per-user access levels, then its lock. Nothing takes the lock again: once the
+     * project is gone, access checks and group events for it return before reaching it.
      */
     private void evictUserAccessLevels(final String projectId) {
         synchronized (getUserAccessLock(projectId)) {
             evict(CACHE_PROJECT_USER_ACCESS, projectId);
         }
+        _userAccessLocks.remove(projectId);
     }
 
     private void evictProjectCache(final String projectId) {

@@ -442,9 +442,9 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
             }
             return value;
         }
-        // Reached by a variable the script reads only as a function argument or a list element:
-        // DiscoverVariablesTreeVisitor does not descend into those, so the variable is never
-        // registered or seeded from the context, even when a value is supplied.
+        // Defensive only. Variable discovery registers every identifier a script can read --
+        // as an idValue, a function argument or a list element -- so a name reaching evaluation
+        // is always present in the map and this branch is not reachable from a parsed script.
         throw new ParseCancellationException("Unknown variable: '" + id + "'");
     }
 

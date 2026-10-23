@@ -30,6 +30,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import reactor.bus.Event;
 import reactor.fn.Consumer;
 
@@ -193,7 +195,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
     public DicomSCPInstance updateDicomSCPInstance(final DicomSCPInstance instance) throws NotFoundException, DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         if (hasDicomSCPInstance(instance.getId())) {
             _dicomSCPInstanceService.update(instance);
-            cycleDicomSCPPort(instance.getPort());
+            cycleDicomSCPPortsAfterCommit(Collections.singleton(instance.getPort()));
             return instance;
         }
         throw new NotFoundException("Could not find DICOM SCP instance with ID " + instance.getId());
@@ -223,7 +225,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
         }
         log.debug("Updating Dicom SCP Instance {}", instance.getId());
         _dicomSCPInstanceService.update(instance);
-        cycleDicomSCPPort(instance.getPort());
+        cycleDicomSCPPortsAfterCommit(Collections.singleton(instance.getPort()));
         return instance;
     }
 
@@ -315,7 +317,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
             log.debug("Created new DicomSCPInstance {}, but it's not enabled, so I'm not cycling its port {}", instance.getId(), instance.getPort());
         } else {
             log.debug("{} DicomSCPInstance {}, cycling port {}", isNewInstance ? "Created" : "Modified", instance.getId(), instance.getPort());
-            cycleDicomSCPPort(instance.getPort());
+            cycleDicomSCPPortsAfterCommit(Collections.singleton(instance.getPort()));
         }
 
         return instance;
@@ -354,7 +356,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
         }
 
         log.debug("Deleted {} DICOM SCP instances affecting {} ports, so cycling each of those: {}", ids.size(), ports.size(), StringUtils.join(ports, ", "));
-        cycleDicomSCPPorts(ports);
+        cycleDicomSCPPortsAfterCommit(ports);
     }
 
     public void deleteDicomSCPInstance(final int id) throws DicomNetworkException, UnknownDicomHelperInstanceException, NotFoundException, GeneralSecurityException {
@@ -680,11 +682,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
         }
         try {
             instance.setEnabled(enabled);
-            if (enabled) {
-                _dicomSCPStore.start(instance.getPort());
-            } else {
-                _dicomSCPStore.stop(instance.getPort());
-            }
+            cycleDicomSCPPortsAfterCommit(Collections.singleton(instance.getPort()));
             return saveDicomSCPInstance(instance);
         } catch (NrgServiceException | GeneralSecurityException e) {
             // Shouldn't happen: we just retrieved it and enabled doesn't count towards duplicate properties.
@@ -704,5 +702,27 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
     private List<Triple<String, Integer, Boolean>> cycleDicomSCPPorts(final Set<Integer> updated) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         log.debug("I'm going to cycle {} ports that have been added or updated: {}", updated.size(), updated);
         return _dicomSCPStore.cycle(updated);
+    }
+
+    /**
+     * Cycles the ports once the current transaction commits, so the cycle reads the committed receiver definitions. A
+     * cycle inside the transaction could be undone by another thread's cycle that can't see this transaction's changes
+     * yet. Outside a transaction, cycles right away.
+     */
+    private void cycleDicomSCPPortsAfterCommit(final Set<Integer> ports) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            cycleDicomSCPPorts(ports);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    cycleDicomSCPPorts(ports);
+                } catch (DicomNetworkException | UnknownDicomHelperInstanceException | GeneralSecurityException e) {
+                    log.error("An error occurred cycling DICOM SCP ports {} after committing their receiver changes", ports, e);
+                }
+            }
+        });
     }
 }

@@ -13,6 +13,11 @@ import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Tracks the DICOM SCP receiver on each port. Callers on different threads (startup, initialization tasks, the REST
+ * API) start and stop receivers concurrently, so every method holds this store's lock: a receiver dropped from the
+ * store while it's still starting would go on to bind its port with nothing left to stop it.
+ */
 @Slf4j
 public class DicomSCPStore {
     private final Map<Integer, DicomSCP> _dicomSCPs = new HashMap<>();
@@ -23,15 +28,15 @@ public class DicomSCPStore {
         _manager = manager;
     }
 
-    public Set<Integer> ports() {
+    public synchronized Set<Integer> ports() {
         return ImmutableSet.copyOf(_dicomSCPs.keySet());
     }
 
-    public Collection<? extends DicomSCP> get() {
-        return _dicomSCPs.values();
+    public synchronized Collection<? extends DicomSCP> get() {
+        return new ArrayList<>(_dicomSCPs.values());
     }
 
-    public List<Triple<String, Integer, Boolean>> start(final Integer port) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
+    public synchronized List<Triple<String, Integer, Boolean>> start(final Integer port) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         if (_dicomSCPs.containsKey(port)) {
             log.debug("Request to start DICOM SCP on port {}, but that already exists. Removing and stopping existing instance.", port);
             final DicomSCP dicomSCP = _dicomSCPs.remove(port);
@@ -47,11 +52,11 @@ public class DicomSCPStore {
     }
 
     @Nonnull
-    public DicomSCP get(final int port) {
+    public synchronized DicomSCP get(final int port) {
         return _dicomSCPs.get(port);
     }
 
-    public List<Triple<String, Integer, Boolean>> stop(final int port) {
+    public synchronized List<Triple<String, Integer, Boolean>> stop(final int port) {
         if (!_dicomSCPs.containsKey(port)) {
             log.debug("Request to stop DICOM SCP on port {}, but that doesn't exist.", port);
             return Collections.emptyList();
@@ -67,7 +72,7 @@ public class DicomSCPStore {
         return isStarted ? convertReceivers(aeTitles, port, false) : Collections.emptyList();
     }
 
-    public List<Triple<String, Integer, Boolean>> cycle(final Set<Integer> updated) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
+    public synchronized List<Triple<String, Integer, Boolean>> cycle(final Set<Integer> updated) throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         final List<Triple<String, Integer, Boolean>> results = new ArrayList<>();
 
         final Set<Integer> disabled = new HashSet<>(Sets.difference(ports(), _manager.getPortsWithEnabledInstances()));
@@ -81,7 +86,7 @@ public class DicomSCPStore {
         return results;
     }
 
-    public List<Triple<String, Integer, Boolean>> stopAll() throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
+    public synchronized List<Triple<String, Integer, Boolean>> stopAll() throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         return stop(ports());
     }
 

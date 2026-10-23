@@ -24,8 +24,6 @@ import java.util.Objects;
  *
  */
 public class TagPathFactory  {
-    private static final int MAX_INPUT_IN_MESSAGE = 120;
-    private static final Logger logger = LoggerFactory.getLogger(TagPathFactory.class);
 
     public static TagPath createDE6Instance(final String string) {
 
@@ -54,15 +52,8 @@ public class TagPathFactory  {
             parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
             return parser.tagpath();
         } catch (Exception e) {
-            throw new ScriptEvaluationRuntimeException("Failed creating DE6 Tagpath from '" + truncate(string, MAX_INPUT_IN_MESSAGE) + "': " + e.getMessage(), e);
+            throw new ScriptEvaluationRuntimeException("Failed creating DE6 Tagpath: " + string, e);
         }
-    }
-
-    private static String truncate(final String s, final int max) {
-        if (s == null || s.length() <= max) {
-            return s;
-        }
-        return s.substring(0, max - 1) + "…";
     }
 
     protected static TagPathParser.TagpathContext createTagPathParseTree(String tagPathString) {
@@ -72,4 +63,6 @@ public class TagPathFactory  {
         parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
         return parser.tagpath();
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(TagPathFactory.class);
 }

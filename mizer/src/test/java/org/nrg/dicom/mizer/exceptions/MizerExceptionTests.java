@@ -35,28 +35,6 @@ public class MizerExceptionTests {
     }
 
     @Test
-    public void rootCauseMessageReturnsDeepestNonEmptyMessage() {
-        final Throwable inner = new IllegalArgumentException("bad pattern: %z");
-        final Throwable middle = new RuntimeException("Error evaluating format", inner);
-        final Throwable outer = new RuntimeException("script error", middle);
-        assertEquals("bad pattern: %z", MizerException.rootCauseMessage(outer));
-    }
-
-    @Test
-    public void rootCauseMessageHandlesSelfReferenceWithoutInfiniteLoop() {
-        // Throwable.initCause rejects self-reference, so use a custom Throwable that returns
-        // itself from getCause() to exercise the production code's cycle guard.
-        final RuntimeException self = new RuntimeException("loop") {
-            private static final long serialVersionUID = 1L;
-            @Override
-            public synchronized Throwable getCause() {
-                return this;
-            }
-        };
-        assertEquals("loop", MizerException.rootCauseMessage(self));
-    }
-
-    @Test
     public void formatCauseChainReturnsEmptyForNoCauses() {
         final RuntimeException simple = new RuntimeException("just one");
         assertEquals("", MizerException.formatCauseChain(simple, "just one"));

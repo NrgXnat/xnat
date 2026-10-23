@@ -448,7 +448,6 @@ public class DicomObjectFactory {
             try {
                 return dataset.getBytes(tag);
             } catch (IOException e) {
-                logger.trace("getBytes failed for tag {}: {} (returning null)", TagUtils.toString(tag), e.getMessage(), e);
                 return null;
             }
         }
@@ -586,10 +585,10 @@ public class DicomObjectFactory {
                     case "M" -> Optional.of(Period.ofMonths(length));
                     case "W" -> Optional.of(Period.ofWeeks(length));
                     case "D" -> Optional.of(Period.ofDays(length));
-                    default -> throw new IllegalArgumentException(String.format("Unknown age format in tag %s: '%s'", TagUtils.toString(tag), ageString));
+                    default -> throw new IllegalArgumentException(String.format("Unknown age format in tag %d: '%s'", tag, ageString));
                 };
             } catch (Exception e) {
-                throw new IllegalArgumentException(String.format("Error parsing age in tag %s with value '%s': %s", TagUtils.toString(tag), ageString, e.getMessage()), e);
+                throw new IllegalArgumentException(String.format("Error parsing age in tag %d: '%s'", tag, ageString));
             }
         }
 
@@ -747,8 +746,8 @@ public class DicomObjectFactory {
                     }
                 }
                 // If no unused private creator's slot.
-                logger.error("Could not allocate new private creator ID slot in group {} for creator: {}",
-                        TagUtils.toHexString(group << 16), privateCreator);
+                System.err.println("Could not allocate new private creator ID slot in group " +
+                        TagUtils.toHexString(group << 16) + " for creator: " + privateCreator);
                 return -1;
             }
             return -1;

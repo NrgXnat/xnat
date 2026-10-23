@@ -43,8 +43,7 @@ public class IncludeChecker {
             directive.setLine( line);
             if( directive.isImport()) {
                 try {
-                    URL url = directive.getImportURL().orElseThrow(() -> new MizerException(
-                            "Could not parse import URL from directive: " + line));
+                    URL url = directive.getImportURL().orElseThrow(() -> new MizerException(""));
                     if( knownURLs.contains( url)) {
                         throw new MizerException( "Skipping previously loaded URL: " + url);
                     }

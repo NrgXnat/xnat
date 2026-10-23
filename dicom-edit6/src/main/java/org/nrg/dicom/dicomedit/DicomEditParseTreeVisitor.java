@@ -106,17 +106,9 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
         logger.debug("Encountered script.");
         // The applicator reuses this visitor for every object, so forget the last object's statement.
         this.currentStatement = null;
-        // ANTLR's generated statement() builds a fresh list by scanning all children on every
-        // call, so hoist it rather than calling it per iteration; and keep getText() behind an
-        // isDebugEnabled() check, since it is evaluated as an argument either way.
-        final List<DE6Parser.StatementContext> statements = ctx.statement();
-        final boolean debug = logger.isDebugEnabled();
-        for (int i = 0; i < statements.size(); i++) {
-            final DE6Parser.StatementContext statement = statements.get(i);
-            if (debug) {
-                logger.debug("visit statement {}: {}", i, statement.getText());
-            }
-            this.visit(statement);
+        for (int i = 0; i < ctx.statement().size(); i++) {
+            logger.debug("visit statement " + i + ": " + ctx.statement(i).getText());
+            this.visit(ctx.statement(i));
         }
         return new ConstantValue(null);
     }

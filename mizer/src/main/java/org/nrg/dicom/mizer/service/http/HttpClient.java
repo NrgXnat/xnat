@@ -57,7 +57,8 @@ public class HttpClient implements IHttpClient {
         try {
             connection = (HttpURLConnection) (_proxy == null ? url.openConnection() : url.openConnection(_proxy));
         } catch (ClassCastException e) {
-            throw new IOException("unable to make HTTP/HTTPS connection to URL " + url);
+            throw new IOException("Unable to establish HTTP/HTTPS connection to URL '" + url
+                    + "' (connection was not HttpURLConnection: " + e.getMessage() + ")", e);
         }
 
         if (url.getUserInfo() != null) {

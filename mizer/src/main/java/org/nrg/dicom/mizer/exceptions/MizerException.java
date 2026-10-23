@@ -55,6 +55,30 @@ public class MizerException extends Exception {
     }
 
     /**
+     * Walk the cause chain and return the deepest {@link Throwable#getMessage()} that is non-null
+     * and non-empty; falls back to {@link #describeMessage(Throwable)} on the original.
+     *
+     * <p>Useful at user-facing boundaries that want to surface "what actually went wrong"
+     * even when the top-level message is generic.
+     */
+    public static String rootCauseMessage(final Throwable t) {
+        Throwable current = t;
+        Throwable deepest = t;
+        while (current != null) {
+            final String m = current.getMessage();
+            if (m != null && !m.isEmpty()) {
+                deepest = current;
+            }
+            final Throwable next = current.getCause();
+            if (next == null || next == current) {
+                break;
+            }
+            current = next;
+        }
+        return describeMessage(deepest);
+    }
+
+    /**
      * Render the cause chain as a multi-line string of {@code "\ncaused by: <message>"} entries.
      * Skips any cause whose message is already a substring of {@code alreadyShown} or of a previously
      * emitted line, so the result does not duplicate information already visible at the top of the

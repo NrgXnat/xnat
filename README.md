@@ -100,20 +100,20 @@ xnat/
 
 # Build the deployable WAR
 ./gradlew :xnat-web:war
-ls -lh xnat-web/build/libs/xnat-web-1.10.2.war
+ls -lh xnat-web/build/libs/xnat-web-1.10.2.1.war
 ```
 
 ## Branches
 
 | Branch | Purpose | Version |
 |--------|---------|---------|
-| `main` | Latest release (each release candidate is merged in and tagged) | 1.10.2 |
-| `releases/<version>-rc` | Release candidate, cut from `develop` and promoted to `main` | `<version>-RC-SNAPSHOT` |
+| `main` | Latest release (each release candidate is merged in and tagged) | 1.10.2.1 |
+| `releases/<version>-rc` | Release candidate, cut from `develop` (or from a release tag for a patch release) and promoted to `main` | `<version>-RC-SNAPSHOT` |
 | `releases/1.9.3.4` | 1.9.3.4 release reference | 1.9.3.4 |
 | `releases/1.9.3.5` | 1.9.3.5 release reference | 1.9.3.5 |
-| `develop` | Active development | 1.10.3-SNAPSHOT |
+| `develop` | Active development | 1.11.0-SNAPSHOT |
 
-Release tags `1.9.3.4`, `1.10.0`, `1.10.1` and `1.10.2` are reachable from `main`; tag `1.9.3.5` is reachable from `releases/1.9.3.5`.
+Release tags `1.9.3.4`, `1.10.0`, `1.10.1`, `1.10.2` and `1.10.2.1` are reachable from `main`; tag `1.9.3.5` is reachable from `releases/1.9.3.5`.
 
 ## Documentation
 

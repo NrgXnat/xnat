@@ -29,9 +29,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import reactor.bus.Event;
 import reactor.fn.Consumer;
 
@@ -71,6 +74,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
     private final String                                              _primaryDicomObjectIdentifierBeanId;
     private final Set<String>                                         _dicomObjectIdentifierBeanIds;
     private final AtomicBoolean                                       _isEnableDicomReceiver;
+    private final TransactionTemplate                                 _newTransaction;
 
     private static final Pattern AE_TITLE_PATTERN                 = Pattern.compile("(?=[^\\\\]*[^\\s\\\\]+$)(?=^[^\\s\\\\]+[^\\\\]*)[ -~]{1,16}");
     private static final String  ENABLE_DICOM_RECEIVER_PREFERENCE = "enableDicomReceiver";
@@ -80,6 +84,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
                            final DicomSCPInstanceService dicomSCPInstanceService,
                            final XnatUserProvider receivedFileUserProvider,
                            final ApplicationContext context,
+                           final PlatformTransactionManager transactionManager,
                            final SiteConfigPreferences siteConfigPreferences,
                            final DicomObjectIdentifier<XnatProjectdata> primaryDicomObjectIdentifier,
                            final Map<String, DicomObjectIdentifier<XnatProjectdata>> dicomObjectIdentifiers) {
@@ -87,6 +92,8 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
         _executor                = dicomScpExecutor;
         _dicomSCPInstanceService = dicomSCPInstanceService;
         _context                 = context;
+        _newTransaction          = new TransactionTemplate(transactionManager);
+        _newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
         String primaryBeanId = null;
 
@@ -427,7 +434,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
     }
 
     public List<DicomSCPInstance> getEnabledDicomSCPInstancesByPort(final int port) {
-        return _dicomSCPInstanceService.findAllByPort(port);
+        return _dicomSCPInstanceService.findAllByPort(port).stream().filter(DicomSCPInstance::isEnabled).collect(Collectors.toList());
     }
 
     public DicomSCPInstance enableDicomSCPInstance(final int id) throws NotFoundException {
@@ -717,11 +724,15 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                try {
-                    cycleDicomSCPPorts(ports);
-                } catch (DicomNetworkException | UnknownDicomHelperInstanceException | GeneralSecurityException e) {
-                    log.error("An error occurred cycling DICOM SCP ports {} after committing their receiver changes", ports, e);
-                }
+                // The committed transaction's session is still bound to this thread, and its entities may be older
+                // than the database by now, so read the receivers in a new transaction.
+                _newTransaction.executeWithoutResult(status -> {
+                    try {
+                        cycleDicomSCPPorts(ports);
+                    } catch (DicomNetworkException | UnknownDicomHelperInstanceException | GeneralSecurityException | RuntimeException e) {
+                        log.error("An error occurred cycling DICOM SCP ports {} after committing their receiver changes", ports, e);
+                    }
+                });
             }
         });
     }

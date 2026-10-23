@@ -10,6 +10,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -71,7 +72,7 @@ public class TestDicomSCPStore {
         @SuppressWarnings("unchecked") final DicomObjectIdentifier<XnatProjectdata> identifier = mock(DicomObjectIdentifier.class);
 
         _manager = new DicomSCPManager(new DicomScpExecutor(Executors.newCachedThreadPool()), _service, mock(XnatUserProvider.class),
-                                       context, preferences, identifier, Map.of("dicomObjectIdentifier", identifier));
+                                       context, mock(PlatformTransactionManager.class), preferences, identifier, Map.of("dicomObjectIdentifier", identifier));
     }
 
     @After
@@ -155,6 +156,17 @@ public class TestDicomSCPStore {
         for (final TransactionSynchronization synchronization : TransactionSynchronizationManager.getSynchronizations()) {
             synchronization.afterCommit();
         }
+        assertTrue(isListening(_port));
+    }
+
+    /**
+     * A receiver starts from the definitions it read, so a change committed while it starts can't make it fail.
+     */
+    @Test
+    public void startUsesTheReceiversItRead() throws Exception {
+        // As if the receiver was renamed after the start read it.
+        when(_service.findByAETitleAndPort(AE_TITLE, _port)).thenReturn(Optional.empty());
+        newStore().start(_port);
         assertTrue(isListening(_port));
     }
 

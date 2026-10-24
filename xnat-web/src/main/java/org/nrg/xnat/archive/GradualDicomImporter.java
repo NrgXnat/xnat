@@ -53,7 +53,6 @@ import org.nrg.xnat.helpers.prearchive.PrearcDatabase.Either;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.SessionFileLockException;
 import org.nrg.xnat.helpers.prearchive.SessionData;
-import org.nrg.xnat.helpers.prearchive.SessionException;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
 import org.nrg.xnat.processors.ArchiveProcessor;
@@ -73,8 +72,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -341,7 +338,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
                 }
                 session = eitherGetOrCreateSession(initialize, prearchiveRoot, project, dataset, isNew);
             } catch (Exception e) {
-                if (isDestinationTaken(e)) {
+                if (ImportFailures.isDestinationTaken(e)) {
                     // Another session is already at the requested prearchive folder. It holds a different study, or
                     // this instance would have joined it, so the request is at fault.
                     throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "unable to import DICOM object " + name
@@ -581,8 +578,15 @@ public class GradualDicomImporter extends ImporterHandlerA {
                         return false;
                     }
                     else if (anonResult instanceof AnonymizationResultError) {
-                        // Errors of this type are script evaluation problems.
-                        handleAnonymizationError(isNew, session, outputFile, new ServerException(String.join("\n",anonResult.getMessages())));
+                        // Errors of this type are script evaluation problems. Carry the result's own
+                        // throwable as the cause: it is the only route by which the ScriptErrorContext
+                        // locating the failure reaches a caller, and the C-STORE responder needs the
+                        // line and tag as fields rather than as prose. Building this from the messages
+                        // alone flattened it to a string and lost them.
+                        handleAnonymizationError(isNew, session, outputFile,
+                                new ServerException(Status.SERVER_ERROR_INTERNAL,
+                                        String.join("\n", anonResult.getMessages()),
+                                        ((AnonymizationResultError) anonResult).getCause()));
                     }
                 } else {
                     log.debug("Anonymization is not enabled, allowing session {} {} {} to proceed without " +
@@ -639,23 +643,6 @@ public class GradualDicomImporter extends ImporterHandlerA {
             }
         }
         return true;
-    }
-
-    /**
-     * Whether creating the session failed because another session is already at its prearchive folder: the database's
-     * unique constraint refused the row (PostgreSQL reports SQLState 23505 rather than an
-     * {@link SQLIntegrityConstraintViolationException}), or, for a session with no project, the prearchive's own check
-     * for duplicates gave up.
-     */
-    static boolean isDestinationTaken(final Throwable e) {
-        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
-            if (cause instanceof SQLIntegrityConstraintViolationException
-                || cause instanceof SQLException sql && "23505".equals(sql.getSQLState())
-                || cause instanceof SessionException session && session.getError() == SessionException.Error.AlreadyExists) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

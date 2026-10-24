@@ -47,17 +47,17 @@ public class GradualDicomImporterFailureStatusTest {
     @Test
     public void anotherSessionAtTheDestinationIsTheUploadersFault() {
         // As PostgreSQL reports it, wrapped or not, and as the prearchive's own duplicate check does for no project.
-        assertTrue(GradualDicomImporter.isDestinationTaken(new SQLException("duplicate key value violates unique constraint \"prearchive_study\"", "23505")));
-        assertTrue(GradualDicomImporter.isDestinationTaken(new Exception(new SQLException("duplicate key", "23505"))));
-        assertTrue(GradualDicomImporter.isDestinationTaken(new SQLIntegrityConstraintViolationException("duplicate key")));
-        assertTrue(GradualDicomImporter.isDestinationTaken(new SessionException(SessionException.Error.AlreadyExists, "Trying to add an existing session")));
+        assertTrue(ImportFailures.isDestinationTaken(new SQLException("duplicate key value violates unique constraint \"prearchive_study\"", "23505")));
+        assertTrue(ImportFailures.isDestinationTaken(new Exception(new SQLException("duplicate key", "23505"))));
+        assertTrue(ImportFailures.isDestinationTaken(new SQLIntegrityConstraintViolationException("duplicate key")));
+        assertTrue(ImportFailures.isDestinationTaken(new SessionException(SessionException.Error.AlreadyExists, "Trying to add an existing session")));
     }
 
     @Test
     public void otherFailuresToCreateTheSessionAreTheServers() {
-        assertFalse(GradualDicomImporter.isDestinationTaken(new SQLException("connection refused", "08001")));
-        assertFalse(GradualDicomImporter.isDestinationTaken(new SessionException(SessionException.Error.DatabaseError, "Multiple records")));
-        assertFalse(GradualDicomImporter.isDestinationTaken(new IllegalStateException("no database")));
+        assertFalse(ImportFailures.isDestinationTaken(new SQLException("connection refused", "08001")));
+        assertFalse(ImportFailures.isDestinationTaken(new SessionException(SessionException.Error.DatabaseError, "Multiple records")));
+        assertFalse(ImportFailures.isDestinationTaken(new IllegalStateException("no database")));
     }
 
     @Test

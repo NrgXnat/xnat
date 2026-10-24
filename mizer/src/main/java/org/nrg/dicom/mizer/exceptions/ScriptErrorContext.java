@@ -43,6 +43,13 @@ public final class ScriptErrorContext {
     }
 
     /**
+     * @return whether no field is set, in which case {@link #format()} and {@link #formatCompact()} are both empty
+     */
+    public boolean isEmpty() {
+        return scriptLine == null && statementText == null;
+    }
+
+    /**
      * Render the populated fields into a stable, single-line prefix suitable for
      * prepending to an exception message. Empty contexts return an empty string.
      *
@@ -60,6 +67,20 @@ public final class ScriptErrorContext {
             sb.append("stmt=`").append(truncate(statementText, 120)).append('`');
         }
         return sb.toString();
+    }
+
+    /**
+     * Render the smallest useful locator, for channels with a hard length budget — notably the
+     * DICOM C-STORE-RSP Error Comment (0000,0902), which PS3.4 Table B.2-1 permits on a failure
+     * status but whose VR LO caps it at 64 characters, most of which the reason text needs.
+     *
+     * <p>Includes the line only. Deliberately omits the statement text, which is unbounded and
+     * would consume the whole budget. Returns the empty string when no line is set.
+     *
+     * <p>Example: {@code line 11}
+     */
+    public String formatCompact() {
+        return scriptLine == null ? "" : "line " + scriptLine;
     }
 
     private static String truncate(final String s, final int max) {

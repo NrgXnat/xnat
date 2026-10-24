@@ -14,10 +14,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xnat.archive.services.DirectArchiveSessionService;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
+import org.nrg.xnat.helpers.prearchive.SessionException;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus;
 import org.nrg.xnat.helpers.uri.URIManager;
 
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Map;
@@ -44,6 +47,27 @@ public final class ImportFailures {
     public static boolean endsEarly(final Throwable e) {
         for (Throwable cause = e; cause != null; cause = cause.getCause()) {
             if (cause instanceof ReceivedDicomObject.TruncatedObjectException) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether creating the session failed because another session is already at its prearchive folder: the database's
+     * unique constraint refused the row (PostgreSQL reports SQLState 23505 rather than an
+     * {@link SQLIntegrityConstraintViolationException}), or, for a session with no project, the prearchive's own check
+     * for duplicates gave up.
+     *
+     * <p>Lives here rather than on the importer so that callers outside the import path -- the C-STORE responder, which
+     * turns this into its own DICOM status -- can ask without loading {@link GradualDicomImporter} and the Spring
+     * lookup its class initialization performs.
+     */
+    public static boolean isDestinationTaken(final Throwable e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLIntegrityConstraintViolationException
+                || cause instanceof SQLException sql && "23505".equals(sql.getSQLState())
+                || cause instanceof SessionException session && session.getError() == SessionException.Error.AlreadyExists) {
                 return true;
             }
         }

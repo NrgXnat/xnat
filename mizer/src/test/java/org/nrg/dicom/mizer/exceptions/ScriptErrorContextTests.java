@@ -11,10 +11,37 @@ package org.nrg.dicom.mizer.exceptions;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 public class ScriptErrorContextTests {
+
+    @Test
+    public void formatCompactOmitsTheStatementSoItFitsAnErrorComment() {
+        // The whole point: Error Comment (0000,0902) is VR LO, capped at 64 characters, and the
+        // statement text is unbounded.
+        final ScriptErrorContext ctx = ScriptErrorContext.empty()
+                .withStatementText("(0010,0010) := format[\"{0}^{1}\", subject, session]")
+                .withScriptLine(11);
+        assertEquals("line 11", ctx.formatCompact());
+    }
+
+    @Test
+    public void formatCompactIsEmptyWithoutALine() {
+        assertEquals("", ScriptErrorContext.empty().formatCompact());
+        // Not the same condition as isEmpty(): this context has a field, just not the line.
+        final ScriptErrorContext statementOnly = ScriptErrorContext.empty().withStatementText("(0010,0010):=subject");
+        assertFalse(statementOnly.isEmpty());
+        assertEquals("", statementOnly.formatCompact());
+    }
+
+    @Test
+    public void isEmptyOnlyWhenNoFieldIsSet() {
+        assertTrue(ScriptErrorContext.empty().isEmpty());
+        assertFalse(ScriptErrorContext.empty().withScriptLine(11).isEmpty());
+    }
 
     @Test
     public void emptyContextRendersAsEmptyString() {

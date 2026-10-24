@@ -9,6 +9,7 @@
 
 package org.nrg.dicom.dicomedit;
 
+import org.nrg.dicom.mizer.exceptions.MizerContextException;
 import org.nrg.dicom.mizer.exceptions.RejectedInstanceException;
 import org.nrg.dicom.mizer.exceptions.ScriptErrorContext;
 import org.nrg.dicom.mizer.objects.*;
@@ -165,14 +166,20 @@ public class BaseScriptApplicator implements ScriptApplicatorI {
         } catch (RejectedInstanceException re) {
             return new AnonymizationResultReject(dicomObject, re.getMessage());
         } catch (Exception e) {
-            final String location = ScriptErrorContext.empty()
+            final ScriptErrorContext ctx = ScriptErrorContext.empty()
                     .withScriptLine(visitor.getCurrentStatementLine())
-                    .withStatementText(visitor.getCurrentStatementText())
-                    .format();
+                    .withStatementText(visitor.getCurrentStatementText());
+            final String location = ctx.format();
             final String reason = MizerException.describeMessage(e);
-            final String msg = "Failed to apply script: " + (location.isEmpty() ? reason : location + ": " + reason);
+            final String located = location.isEmpty() ? reason : location + ": " + reason;
+            final String msg = "Failed to apply script: " + located;
             logger.error(msg, e);
-            return new AnonymizationResultError(visitor.getDicomObject(), msg, e);
+            // Carry the decorated exception, not the raw one: it wraps e, so nothing is lost, and it is
+            // the only thing holding the ScriptErrorContext as fields rather than as rendered text. A
+            // caller with a length budget -- the C-STORE responder's 64-character Error Comment -- needs
+            // the line without the prose around it.
+            final MizerContextException decorated = new MizerContextException(null, ctx, located, e);
+            return new AnonymizationResultError(visitor.getDicomObject(), msg, decorated);
         }
     }
 

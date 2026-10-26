@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,6 +42,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.nrg.xdat.services.cache.GroupsAndPermissionsCache.ACTIONS;
 import static org.nrg.xnat.services.cache.DefaultGroupsAndPermissionsCache.CACHE_ACTIONS;
@@ -134,16 +134,18 @@ public class DefaultGroupsAndPermissionsCacheRebuildOrderTest {
     }
 
     @Test(timeout = 30_000)
-    public void aRebuildThatFailsEvictsWhatItCached() {
+    public void aRebuildThatFailsEvictsWhatItCachedAndTheOthersStillRebuild() throws Exception {
         released.countDown();
         doThrow(new IllegalStateException("connection pool exhausted")).when(cache).getBrowseableElementDisplays("alice");
 
-        final Throwable thrown = catchThrowable(() -> handle(event(XdatUsergroup.SCHEMA_ELEMENT_NAME, "group")).get(10, TimeUnit.SECONDS));
+        handle(event(XdatUsergroup.SCHEMA_ELEMENT_NAME, "group")).get(10, TimeUnit.SECONDS);
 
-        assertThat(thrown).hasRootCauseInstanceOf(IllegalStateException.class);
         final InOrder order = inOrder(cache);
         order.verify(cache).getBrowseableElementDisplays("alice");
         order.verify(cache).clearUserCache("alice");
+        for (final String member : MEMBERS) {
+            verify(cache).getBrowseableElementDisplays(member);
+        }
     }
 
     private Future<Boolean> handle(final XftItemEventI event) {

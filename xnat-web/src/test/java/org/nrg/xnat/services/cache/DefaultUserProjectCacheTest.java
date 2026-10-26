@@ -1,6 +1,7 @@
 package org.nrg.xnat.services.cache;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.util.concurrent.Uninterruptibles;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -25,6 +26,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -161,6 +168,58 @@ public class DefaultUserProjectCacheTest {
         cache.handleEventImpl(groupEvent("project_member", OPERATION_REMOVE_USERS, "user"));
         verify(cache, never()).getCacheItem(eq(CACHE_PROJECT_USER_ACCESS), any(), any());
         verify(cache, never()).cacheObject(eq(CACHE_PROJECT_USER_ACCESS), anyString(), any());
+    }
+
+    // A check builds a user's levels without the project's lock, and builds them again if they were dropped meanwhile.
+
+    @Test
+    public void levelsDroppedWhileTheyWereBuiltAreBuiltAgain() throws Exception {
+        final DefaultUserProjectCache cache = buildCache();
+        @SuppressWarnings("unchecked") final Cache<String, String> nothingCached = mock(Cache.class);
+        doReturn(nothingCached).when(cache).getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class);
+
+        final AtomicInteger builds = new AtomicInteger();
+        final List<AccessLevel> levels = cache.buildUserAccessLevels("project", "user", () -> {
+            if (builds.incrementAndGet() == 1) {
+                // The user is removed from the project while their first levels are built.
+                cache.handleEventImpl(groupEvent("project_member", OPERATION_REMOVE_USERS, "user"));
+                return Arrays.asList(Edit, Member);
+            }
+            return Collections.emptyList();
+        });
+        assertThat(builds).hasValue(2);
+        assertThat(levels).isEmpty();
+    }
+
+    @Test(timeout = 30_000)
+    public void checksOnOneProjectDoNotWaitForEachOthersBuilds() throws Exception {
+        final DefaultUserProjectCache cache = buildCache();
+        final CountDownLatch building = new CountDownLatch(1);
+        final CountDownLatch release  = new CountDownLatch(1);
+        final ExecutorService other   = Executors.newSingleThreadExecutor();
+        try {
+            final Future<List<AccessLevel>> slow = other.submit(() -> cache.buildUserAccessLevels("project", "slow", () -> {
+                building.countDown();
+                Uninterruptibles.awaitUninterruptibly(release);
+                return Collections.singletonList(Read);
+            }));
+            building.await();
+            assertThat(cache.buildUserAccessLevels("project", "fast", () -> Collections.singletonList(Read))).containsExactly(Read);
+            release.countDown();
+            assertThat(slow.get(10, TimeUnit.SECONDS)).containsExactly(Read);
+        } finally {
+            release.countDown();
+            other.shutdownNow();
+        }
+    }
+
+    /** A cache with nothing cached for the project, whose writes go nowhere. */
+    private static DefaultUserProjectCache buildCache() throws IOException {
+        final SerializerService serializer = mock(SerializerService.class);
+        when(serializer.toJson(any())).thenReturn("written");
+        final DefaultUserProjectCache cache = groupEventCache(serializer);
+        doReturn(null).when(cache).getCacheItem(eq(CACHE_PROJECT_USER_ACCESS), any(), any());
+        return cache;
     }
 
     /** A cache that knows the project, as after its creation event, and has it in the project cache. */

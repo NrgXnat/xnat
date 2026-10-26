@@ -14,7 +14,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -428,8 +427,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         // derived from permissions, such as Edit for a member, which no group change names. Dropping the entries has
         // hasAccess() rebuild them from the current memberships. That also covers the groups an addition moved the users
         // out of, which the event reports in its removed groups property rather than in an event of its own.
-        synchronized (getUserAccessLock(projectId)) {
-            // Levels that aren't cached can't be stale, so there's nothing to load and drop.
+        final ProjectAccessLock lock = getUserAccessLock(projectId);
+        synchronized (lock) {
+            // Counted even when nothing is cached: a check may be building levels from before the change.
+            lock.drops++;
             final String serialized = getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class).get(projectId);
             if (StringUtils.isBlank(serialized)) {
                 return true;
@@ -538,18 +539,61 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     }
 
     /**
-     * Gets the lock that guards building, changing and dropping one project's per-user access levels, so a membership
-     * change can't be overwritten by an access check that read the levels before it. Reading cached levels doesn't
-     * take it.
+     * Gets the lock that guards caching, changing and dropping one project's per-user access levels. Reading cached
+     * levels doesn't take it, and neither does building a user's levels: see {@link #buildUserAccessLevels}.
      */
-    private Object getUserAccessLock(final String projectId) {
-        return _userAccessLocks.computeIfAbsent(projectId, key -> new Object());
+    private ProjectAccessLock getUserAccessLock(final String projectId) {
+        return _userAccessLocks.computeIfAbsent(projectId, key -> new ProjectAccessLock());
+    }
+
+    /**
+     * One project's lock, and the number of times its users' levels have been dropped under it.
+     */
+    private static final class ProjectAccessLock {
+        private long drops;
+    }
+
+    /**
+     * Builds the user's levels for a project, without the project's lock so that checks on the project don't wait for
+     * each other's queries, and caches them under the lock. If levels were dropped while these were built, they may
+     * have been read before the change that dropped them, so they're built again under the lock.
+     */
+    List<AccessLevel> buildUserAccessLevels(final String projectId, final String userId, final AccessLevelsBuilder builder) throws UserNotFoundException, UserInitException {
+        final ProjectAccessLock lock = getUserAccessLock(projectId);
+        final long drops;
+        synchronized (lock) {
+            drops = lock.drops;
+        }
+        List<AccessLevel> built = builder.build();
+        synchronized (lock) {
+            if (lock.drops != drops) {
+                built = builder.build();
+            }
+            final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
+            if (!userAccessLevels.containsKey(userId)) {
+                userAccessLevels.put(userId, new ArrayList<>(built));
+                try {
+                    cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+                } catch (IOException e) {
+                    throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+                }
+            }
+            return userAccessLevels.get(userId);
+        }
+    }
+
+    /**
+     * Builds one user's access levels for a project.
+     */
+    @FunctionalInterface
+    interface AccessLevelsBuilder {
+        List<AccessLevel> build() throws UserNotFoundException, UserInitException;
     }
 
     private Map<String, ArrayList<AccessLevel>> getUserAccessLevelsForProject(final String projectId) {
         final String serialized = getCacheItem(CACHE_PROJECT_USER_ACCESS, projectId, String.class);
         if (StringUtils.isBlank(serialized)) {
-            return Collections.emptyMap();
+            return new HashMap<>();
         }
         return deserializeUserAccessLevels(serialized);
     }
@@ -701,24 +745,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 return true;
             }
 
-            // Cached levels are read without the lock. Only a check that has to build the user's levels takes it.
             List<AccessLevel> levels = getCachedUserAccessLevels(projectId, userId);
             if (levels == null) {
-                synchronized (getUserAccessLock(projectId)) {
-                    final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
-
-                    // If the user isn't already cached...
-                    if (!userAccessLevels.containsKey(userId)) {
-                        // Cache the user!
-                        userAccessLevels.put(userId, new ArrayList<>(Permissions.getAllUserProjectAccess(ObjectUtils.defaultIfNull(user, new XDATUser(userId)), projectId)));
-                        try {
-                            cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
-                        } catch (IOException e) {
-                            throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
-                        }
-                    }
-                    levels = userAccessLevels.get(userId);
-                }
+                levels = buildUserAccessLevels(projectId, userId, () -> Permissions.getAllUserProjectAccess(user != null ? user : new XDATUser(userId), projectId));
             }
             return CollectionUtils.containsAny(levels, ACCESS_LEVELS.get(accessLevel));
         } catch (UserInitException e) {
@@ -787,7 +816,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      * group and stay cached.
      */
     private void dropNonMemberAccessLevels(final String projectId) {
-        synchronized (getUserAccessLock(projectId)) {
+        final ProjectAccessLock lock = getUserAccessLock(projectId);
+        synchronized (lock) {
+            lock.drops++;
             final String serialized = getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class).get(projectId);
             if (StringUtils.isBlank(serialized)) {
                 return;
@@ -808,7 +839,9 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      * project is gone, access checks and group events for it return before reaching it.
      */
     private void evictUserAccessLevels(final String projectId) {
-        synchronized (getUserAccessLock(projectId)) {
+        final ProjectAccessLock lock = getUserAccessLock(projectId);
+        synchronized (lock) {
+            lock.drops++;
             evict(CACHE_PROJECT_USER_ACCESS, projectId);
         }
         _userAccessLocks.remove(projectId);
@@ -909,7 +942,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private final Map<String, String>               _aliasMapping       = new HashMap<>();
     private final ArrayListMultimap<String, String> _projectsAndAliases = ArrayListMultimap.create();
     private final AtomicBoolean                     _initialized        = new AtomicBoolean(false);
-    private final Map<String, Object>               _userAccessLocks    = new ConcurrentHashMap<>();
+    private final Map<String, ProjectAccessLock>    _userAccessLocks    = new ConcurrentHashMap<>();
 
     private final GroupsAndPermissionsCache  _cache;
     private final SerializerService          _serializer;

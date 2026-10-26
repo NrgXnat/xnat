@@ -19,7 +19,6 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.services.ToolService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -57,7 +56,6 @@ public class MigrateDicomSCPInstanceConfiguration extends AbstractInitializingTa
     }
 
     @Override
-    @Transactional
     protected void callImpl() throws InitializingTaskException {
         try {
             log.debug( "Look for tool {} preferences.", TOOL_ID);

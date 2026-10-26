@@ -124,7 +124,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatInvestigatordata.SCHEMA_ELEMENT_NAME),
-              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP.or(XftItemEventCriteria.IS_ALL_DATA_ADMIN_OR_ACCESS)).build(),
+              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP.or(XftItemEventCriteria.IS_ALL_DATA_ADMIN_OR_ACCESS).or(PREDICATE_IS_MEMBERSHIP_OPERATION)).build(),
               XftItemEventCriteria.builder().xsiType(XdatUser.SCHEMA_ELEMENT_NAME).action(UPDATE).predicate(PREDICATE_IS_ROLE_OPERATION).build());
         _cache      = cache;
         _serializer = serializer;
@@ -885,6 +885,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return new MapSqlParameterSource(QUERY_KEY_PROJECT_ID, projectId).addValue(QUERY_KEY_ACCESS_LEVEL, accessLevel);
     }
 
+    // Membership changes in any group, so those in a project's custom groups reach handleGroupEvent too
+    private static final Predicate<XftItemEventI> PREDICATE_IS_MEMBERSHIP_OPERATION = event -> {
+        final Map<String, ?> properties = event.getProperties();
+        return !properties.isEmpty() && StringUtils.equalsAny((String) properties.get(OPERATION), OPERATION_ADD_USERS, OPERATION_REMOVE_USERS);
+    };
     private static final Predicate<XftItemEventI> PREDICATE_IS_ROLE_OPERATION = event -> {
         final Map<String, ?> properties = event.getProperties();
         return !properties.isEmpty() && StringUtils.equalsAny((String) properties.get(OPERATION), OPERATION_ADD_ROLE, OPERATION_DELETE_ROLE);

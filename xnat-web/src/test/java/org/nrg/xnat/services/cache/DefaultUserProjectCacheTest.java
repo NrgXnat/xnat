@@ -153,7 +153,9 @@ public class DefaultUserProjectCacheTest {
             when(custom.getTag()).thenReturn("project");
             groups.when(() -> Groups.getGroup("project_reviewers")).thenReturn(custom);
 
-            cache.handleEventImpl(groupEvent("project_reviewers", OPERATION_REMOVE_USERS, "user"));
+            final XftItemEventI event = groupEvent("project_reviewers", OPERATION_REMOVE_USERS, "user");
+            assertThat(cache.matches(event)).as("the cache subscribes to a custom group's membership changes").isTrue();
+            cache.handleEventImpl(event);
         }
         assertThat(levels).containsOnlyKeys("other");
         verify(cache).cacheObject(CACHE_PROJECT_USER_ACCESS, "project", "written");

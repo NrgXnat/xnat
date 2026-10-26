@@ -55,8 +55,9 @@ public class TestDicomSCPManagerCommits {
 
     @Before
     public void setUp() throws IOException {
-        try (final ServerSocket socket = new ServerSocket(0)) {
+        try (final ServerSocket socket = new ServerSocket(0); final ServerSocket other = new ServerSocket(0)) {
             _port = socket.getLocalPort();
+            _otherPort = other.getLocalPort();
         }
 
         final ApplicationContext context = mock(ApplicationContext.class);
@@ -74,6 +75,7 @@ public class TestDicomSCPManagerCommits {
         _manager.stop();
         inTransaction(() -> {
             _service.findAllByPort(_port).forEach(_service::delete);
+            _service.findAllByPort(_otherPort).forEach(_service::delete);
             return null;
         });
     }
@@ -89,6 +91,22 @@ public class TestDicomSCPManagerCommits {
         inTransaction(() -> _manager.disableDicomSCPInstance((int) first.getId()));
 
         assertThat(_manager.stop()).extracting(Triple::getLeft).containsExactly("SECOND");
+    }
+
+    /**
+     * Moving a receiver to another port takes it off its old port, where another receiver keeps running.
+     */
+    @Test
+    public void movingAReceiverToAnotherPortTakesItOffTheOldPort() throws Exception {
+        final DicomSCPInstance first = save("FIRST");
+        save("SECOND");
+
+        // As the REST API's update does: change a detached copy of the receiver, then update with it.
+        final DicomSCPInstance moved = inTransaction(() -> _manager.findById(first.getId()));
+        moved.setPort(_otherPort);
+        inTransaction(() -> _manager.update(moved, false));
+
+        assertThat(_manager.stop()).containsExactlyInAnyOrder(Triple.of("SECOND", _port, false), Triple.of("FIRST", _otherPort, false));
     }
 
     /**
@@ -156,5 +174,6 @@ public class TestDicomSCPManagerCommits {
     private DicomSCPInstanceService    _service;
     private PlatformTransactionManager _transactionManager;
     private int                        _port;
+    private int                        _otherPort;
     private DicomSCPManager            _manager;
 }

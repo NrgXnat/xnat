@@ -80,7 +80,14 @@ public class DicomSCPStore {
             log.debug("Found {} DICOM SCPs without enabled DICOM SCP instances, stopping on ports: {}", disabled.size(), disabled);
             results.addAll(stop(disabled));
         }
-        final Set<Integer> modified = Sets.difference(updated, disabled);
+        final Set<Integer> modified = new HashSet<>(Sets.difference(updated, disabled));
+        // A receiver moved to another port is still running on its old port, which the change didn't name.
+        for (final int port : ports()) {
+            if (!modified.contains(port) && runsOtherReceivers(port)) {
+                log.debug("The DICOM SCP on port {} runs AE titles other than the port's enabled receivers, cycling it too", port);
+                modified.add(port);
+            }
+        }
         log.debug("Got request to cycle {} updated DICOM SCPs, cycling ports: {}", modified.size(), modified);
         results.addAll(start(modified));
         return results;
@@ -88,6 +95,18 @@ public class DicomSCPStore {
 
     public synchronized List<Triple<String, Integer, Boolean>> stopAll() throws DicomNetworkException, UnknownDicomHelperInstanceException, GeneralSecurityException {
         return stop(ports());
+    }
+
+    /**
+     * Whether the receiver started on this port runs AE titles other than the port's enabled receivers.
+     */
+    private boolean runsOtherReceivers(final int port) {
+        final DicomSCP dicomSCP = _dicomSCPs.get(port);
+        if (!dicomSCP.isStarted()) {
+            return false;
+        }
+        final Set<String> enabled = _manager.getEnabledDicomSCPInstancesByPort(port).stream().map(DicomSCPInstance::getAeTitle).collect(Collectors.toSet());
+        return !enabled.equals(new HashSet<>(dicomSCP.getAeTitles()));
     }
 
     @Nonnull

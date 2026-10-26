@@ -395,18 +395,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return true;
         }
 
-        final Pair<String, String> idAndAccess = Groups.getProjectIdAndAccessFromGroupId(eventId);
-        if (idAndAccess.equals(ImmutablePair.<String, String>nullPair())) {
+        final String projectId = getProjectForGroup(eventId);
+        if (StringUtils.isBlank(projectId)) {
             log.info("Got a non-project-related group event, which I'm not supposed to handle: {}", event);
             return false;
         }
-
-        final String projectId = idAndAccess.getLeft();
-        if (StringUtils.isBlank(projectId)) {
-            return false;
-        }
-
-        final AccessLevel access = AccessLevel.getAccessLevel(idAndAccess.getRight());
 
         // When groups are created for projects, the groups are created *before* the project. We need to check whether the
         // project is already cached, so we don't try to refresh the cache before the project's actually in.
@@ -424,15 +417,10 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
 
         //noinspection unchecked
-        final Collection<String> users          = (Collection<String>) properties.get(Groups.USERS);
-        final boolean            isAddOperation = StringUtils.equals(operation, OPERATION_ADD_USERS);
-        final XnatProjectdata    project        = getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
+        final Collection<String> users   = (Collection<String>) properties.get(Groups.USERS);
+        final XnatProjectdata    project = getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
         if (project == null) {
-            if (isAddOperation) {
-                log.debug("Users had access level {} added for project {}, but that project's not in the cache: {}", access, projectId, users);
-            } else {
-                log.debug("Users had access level {} revoked for project {}, but that project's not in the cache: {}", access, projectId, users);
-            }
+            log.debug("The groups of users {} in project {} changed, but that project's not in the cache", users, projectId);
             return true;
         }
 
@@ -441,7 +429,12 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         // hasAccess() rebuild them from the current memberships. That also covers the groups an addition moved the users
         // out of, which the event reports in its removed groups property rather than in an event of its own.
         synchronized (getUserAccessLock(projectId)) {
-            final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
+            // Levels that aren't cached can't be stale, so there's nothing to load and drop.
+            final String serialized = getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class).get(projectId);
+            if (StringUtils.isBlank(serialized)) {
+                return true;
+            }
+            final Map<String, ArrayList<AccessLevel>> userAccessLevels = deserializeUserAccessLevels(serialized);
             applyMembershipChange(userAccessLevels, users);
             try {
                 cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
@@ -528,6 +521,20 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
      */
     static void applyMembershipChange(final Map<String, ArrayList<AccessLevel>> userAccessLevels, final Collection<String> users) {
         users.forEach(userAccessLevels::remove);
+    }
+
+    /**
+     * The ID of the project a group belongs to: from the ID of a project's owner, member or collaborator group, or from
+     * the tag of any other group, such as a custom group made for a project. Null for a group that belongs to no project
+     * or no longer exists.
+     */
+    private static String getProjectForGroup(final String groupId) {
+        final Pair<String, String> idAndAccess = Groups.getProjectIdAndAccessFromGroupId(groupId);
+        if (!idAndAccess.equals(ImmutablePair.<String, String>nullPair())) {
+            return idAndAccess.getLeft();
+        }
+        final UserGroupI group = getGroup(groupId);
+        return group == null ? null : group.getTag();
     }
 
     /**

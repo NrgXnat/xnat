@@ -2,10 +2,15 @@ package org.nrg.xnat.services.cache;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.nrg.framework.jcache.JCacheHelper;
 import org.nrg.framework.services.SerializerService;
+import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.AccessLevel;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.event.XftItemEventI;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -32,13 +37,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.nrg.xnat.services.cache.DefaultUserProjectCache.CACHE_PROJECT_USER_ACCESS;
 import static org.nrg.xdat.security.helpers.AccessLevel.Collaborator;
 import static org.nrg.xdat.security.helpers.AccessLevel.Delete;
 import static org.nrg.xdat.security.helpers.AccessLevel.Edit;
 import static org.nrg.xdat.security.helpers.AccessLevel.Member;
 import static org.nrg.xdat.security.helpers.AccessLevel.Owner;
 import static org.nrg.xdat.security.helpers.AccessLevel.Read;
+import static org.nrg.xdat.security.helpers.Groups.OPERATION_REMOVE_USERS;
+import static org.nrg.xnat.services.cache.DefaultUserProjectCache.CACHE_PROJECT_USER_ACCESS;
 
 public class DefaultUserProjectCacheTest {
     private static final List<String> USER = Collections.singletonList("user");
@@ -117,6 +123,65 @@ public class DefaultUserProjectCacheTest {
 
         cache.handleEventImpl(projectEvent(XftItemEventI.DELETE, Collections.emptyMap()));
         verify(cache).evict(CACHE_PROJECT_USER_ACCESS, "project");
+    }
+
+    // A user removed from a project's custom group keeps no cached levels from it, and a group change with nothing
+    // cached for the project loads nothing just to drop it.
+
+    @Test
+    public void aCustomGroupChangeDropsItsUsersEntries() throws IOException {
+        final SerializerService serializer = mock(SerializerService.class);
+        final DefaultUserProjectCache cache = groupEventCache(serializer);
+        final Map<String, ArrayList<AccessLevel>> levels = new HashMap<>();
+        levels.put("user", new ArrayList<>(Collections.singletonList(Read)));
+        levels.put("other", new ArrayList<>(Arrays.asList(Edit, Member)));
+        @SuppressWarnings("unchecked") final Cache<String, String> accessLevels = mock(Cache.class);
+        when(accessLevels.get("project")).thenReturn("cached");
+        doReturn(accessLevels).when(cache).getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class);
+        doReturn(levels).when(serializer).deserializeJson(eq("cached"), any(TypeReference.class));
+        when(serializer.toJson(any())).thenReturn("written");
+
+        try (final MockedStatic<Groups> groups = Mockito.mockStatic(Groups.class, Mockito.CALLS_REAL_METHODS)) {
+            final UserGroupI custom = mock(UserGroupI.class);
+            when(custom.getTag()).thenReturn("project");
+            groups.when(() -> Groups.getGroup("project_reviewers")).thenReturn(custom);
+
+            cache.handleEventImpl(groupEvent("project_reviewers", OPERATION_REMOVE_USERS, "user"));
+        }
+        assertThat(levels).containsOnlyKeys("other");
+        verify(cache).cacheObject(CACHE_PROJECT_USER_ACCESS, "project", "written");
+    }
+
+    @Test
+    public void aGroupChangeWithNothingCachedLoadsNothing() {
+        final DefaultUserProjectCache cache = groupEventCache(mock(SerializerService.class));
+        @SuppressWarnings("unchecked") final Cache<String, String> accessLevels = mock(Cache.class);
+        doReturn(accessLevels).when(cache).getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class);
+
+        cache.handleEventImpl(groupEvent("project_member", OPERATION_REMOVE_USERS, "user"));
+        verify(cache, never()).getCacheItem(eq(CACHE_PROJECT_USER_ACCESS), any(), any());
+        verify(cache, never()).cacheObject(eq(CACHE_PROJECT_USER_ACCESS), anyString(), any());
+    }
+
+    /** A cache that knows the project, as after its creation event, and has it in the project cache. */
+    private static DefaultUserProjectCache groupEventCache(final SerializerService serializer) {
+        final DefaultUserProjectCache cache = projectEventCache(serializer);
+        cache.handleEventImpl(projectEvent(XftItemEventI.CREATE, Collections.emptyMap()));
+        doReturn(mock(XnatProjectdata.class)).when(cache).getCacheItem(eq(DefaultUserProjectCache.CACHE_PROJECTS), any(), any());
+        doNothing().when(cache).cacheObject(anyString(), anyString(), any());
+        return cache;
+    }
+
+    private static XftItemEventI groupEvent(final String groupId, final String operation, final String user) {
+        final XftItemEventI event = mock(XftItemEventI.class);
+        when(event.getXsiType()).thenReturn(XdatUsergroup.SCHEMA_ELEMENT_NAME);
+        when(event.getId()).thenReturn(groupId);
+        when(event.getAction()).thenReturn(XftItemEventI.UPDATE);
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put(XftItemEventI.OPERATION, operation);
+        properties.put(Groups.USERS, Collections.singleton(user));
+        doReturn(properties).when(event).getProperties();
+        return event;
     }
 
     private static DefaultUserProjectCache projectEventCache() {

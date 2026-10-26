@@ -725,14 +725,19 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
             @Override
             public void afterCommit() {
                 // The committed transaction's session is still bound to this thread, and its entities may be older
-                // than the database by now, so read the receivers in a new transaction.
-                _newTransaction.executeWithoutResult(status -> {
-                    try {
-                        cycleDicomSCPPorts(ports);
-                    } catch (DicomNetworkException | UnknownDicomHelperInstanceException | GeneralSecurityException | RuntimeException e) {
-                        log.error("An error occurred cycling DICOM SCP ports {} after committing their receiver changes", ports, e);
-                    }
-                });
+                // than the database by now, so read the receivers in a new transaction. Nothing may be thrown from
+                // here: the save has committed, and an exception would reach its caller.
+                try {
+                    _newTransaction.executeWithoutResult(status -> {
+                        try {
+                            cycleDicomSCPPorts(ports);
+                        } catch (DicomNetworkException | UnknownDicomHelperInstanceException | GeneralSecurityException | RuntimeException e) {
+                            log.error("An error occurred cycling DICOM SCP ports {} after committing their receiver changes", ports, e);
+                        }
+                    });
+                } catch (RuntimeException e) {
+                    log.error("Couldn't open or commit the transaction to cycle DICOM SCP ports {} after committing their receiver changes", ports, e);
+                }
             }
         });
     }

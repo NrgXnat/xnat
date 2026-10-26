@@ -10,6 +10,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -33,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -49,11 +51,12 @@ public class TestDicomSCPStore {
     private final AtomicBoolean       _committed = new AtomicBoolean(true);
     private final List<DicomSCPStore> _stores    = new ArrayList<>();
 
-    private volatile Thread         _savingThread;
-    private int                     _port;
-    private DicomSCPInstance        _instance;
-    private DicomSCPInstanceService _service;
-    private DicomSCPManager         _manager;
+    private volatile Thread            _savingThread;
+    private int                        _port;
+    private DicomSCPInstance           _instance;
+    private DicomSCPInstanceService    _service;
+    private PlatformTransactionManager _transactionManager;
+    private DicomSCPManager            _manager;
 
     @Before
     public void setUp() throws IOException {
@@ -71,8 +74,9 @@ public class TestDicomSCPStore {
         when(preferences.isEnableDicomReceiver()).thenReturn(true);
         @SuppressWarnings("unchecked") final DicomObjectIdentifier<XnatProjectdata> identifier = mock(DicomObjectIdentifier.class);
 
+        _transactionManager = mock(PlatformTransactionManager.class);
         _manager = new DicomSCPManager(new DicomScpExecutor(Executors.newCachedThreadPool()), _service, mock(XnatUserProvider.class),
-                                       context, mock(PlatformTransactionManager.class), preferences, identifier, Map.of("dicomObjectIdentifier", identifier));
+                                       context, _transactionManager, preferences, identifier, Map.of("dicomObjectIdentifier", identifier));
     }
 
     @After
@@ -168,6 +172,22 @@ public class TestDicomSCPStore {
         when(_service.findByAETitleAndPort(AE_TITLE, _port)).thenReturn(Optional.empty());
         newStore().start(_port);
         assertTrue(isListening(_port));
+    }
+
+    /**
+     * A cycle that can't open its transaction after a save commits is logged. It doesn't fail the commit, which has
+     * already happened.
+     */
+    @Test
+    public void aCycleThatCannotOpenItsTransactionIsOnlyLogged() throws Exception {
+        when(_transactionManager.getTransaction(any())).thenThrow(new CannotCreateTransactionException("No connection available"));
+        TransactionSynchronizationManager.initSynchronization();
+
+        _manager.saveDicomSCPInstance(_instance);
+
+        for (final TransactionSynchronization synchronization : TransactionSynchronizationManager.getSynchronizations()) {
+            synchronization.afterCommit();
+        }
     }
 
     /**

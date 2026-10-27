@@ -1729,6 +1729,23 @@ YAHOO.util.Event.onContentReady("actionsMenu", function () {
 	#end
 #end
 
+## Writes the site-wide alert message inside a $tag element. The admin UI tells admins they can use HTML
+## for links and emphasis, so the message is rendered as markup, but only after DOMPurify has stripped
+## anything that can run script. The message is escaped on the server, so it reaches the browser as
+## text, and it stays text if DOMPurify isn't loaded. The script then sanitizes that text and swaps it in
+## as markup. DOMPurify drops target by default; it is allowed so a link can open in a new tab. The
+## caller must load scripts/lib/dompurify/purify.min.js before calling this macro.
+#macro(siteWideAlertMessage $tag)
+<$tag class="siteWideAlertMessage">$!esc.html($siteConfig.siteWideAlertMessage)</$tag>
+<script>
+	(function (message) {
+		if (window.DOMPurify && message) {
+			message.innerHTML = DOMPurify.sanitize(message.textContent, { ADD_ATTR: ['target'] });
+		}
+	})(document.currentScript && document.currentScript.previousElementSibling);
+</script>
+#end
+
 ##Used to load globally scoped VM files and inject them into parent VMs.
 #macro(addGlobalCustomScreens $subFolder)
 	#if($siteConfig.uiDebugExtensionPoints)<div class="extension">/templates/screens/$subFolder</div>#end

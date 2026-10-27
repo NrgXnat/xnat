@@ -293,7 +293,7 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
         }
 
         final UserI                            user             = getUser();
-        final Pair<List<String>, List<String>> deniedAndMissing = getDeniedAndMissingProjectsFromPrearcSources(user, triples);
+        final Pair<List<String>, List<String>> deniedAndMissing = getDeniedAndMissingProjectsFromPrearcSources(getProjectAccessPredicate(user), triples);
         final List<String>                     denied           = deniedAndMissing.getLeft();
         final List<String>                     missing          = deniedAndMissing.getRight();
         if (!denied.isEmpty()) {
@@ -324,9 +324,20 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
         return representTable(table, mediaType, new Hashtable<String, Object>());
     }
 
-    protected static Pair<List<String>, List<String>> getDeniedAndMissingProjectsFromPrearcSources(final UserI user, final Collection<SessionDataTriple> triples) {
-        final ProjectAccessPredicate predicate = new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit);
-        final List<String>           missing   = predicate.getMissing();
+    /**
+     * Gets the check of which projects' prearchive sessions the user may act on. By default the user needs edit access
+     * to the project itself, which only project owners and site administrators have.
+     *
+     * @param user The user acting on the sessions.
+     *
+     * @return The check to run on each project.
+     */
+    protected ProjectAccessPredicate getProjectAccessPredicate(final UserI user) {
+        return new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit);
+    }
+
+    protected static Pair<List<String>, List<String>> getDeniedAndMissingProjectsFromPrearcSources(final ProjectAccessPredicate predicate, final Collection<SessionDataTriple> triples) {
+        final List<String> missing = predicate.getMissing();
         final List<String> denied = Lists.newArrayList(Iterables.filter(Iterables.filter(Iterables.transform(triples, FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID), Predicates.not(predicate)), new Predicate<String>() {
             @Override
             public boolean apply(final String projectId) {

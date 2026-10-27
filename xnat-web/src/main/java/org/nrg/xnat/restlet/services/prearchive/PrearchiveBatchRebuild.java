@@ -10,9 +10,13 @@
 package org.nrg.xnat.restlet.services.prearchive;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.predicates.ProjectAccessPredicate;
 import org.nrg.xnat.helpers.prearchive.PrearcBatchRecovery;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcLockRecovery;
@@ -78,6 +82,21 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
 			}
 		}
 		setTriplesRepresentation(affected);
+	}
+
+	/**
+	 * Lets anyone who can edit the project's sessions rebuild them, not just the project's owners. A failed upload
+	 * leaves its sessions in ERROR until they're rebuilt, and the uploader needs to be able to do that. This is the
+	 * same check the session's details page and archiving use.
+	 */
+	@Override
+	protected ProjectAccessPredicate getProjectAccessPredicate(final UserI user) {
+		return new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit) {
+			@Override
+			protected boolean evaluate(final UserI user, final List<Map<String, Object>> properties, final String projectId) {
+				return PrearcUtils.canModifyPrearchive(user, projectId);
+			}
+		};
 	}
 
 	/**

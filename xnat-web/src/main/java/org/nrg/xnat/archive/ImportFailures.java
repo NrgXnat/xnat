@@ -40,9 +40,10 @@ public final class ImportFailures {
      * The note a marked session's log gets. It leaves out why the import failed: that can name the uploader's file,
      * which no anonymization script sees. The uploader gets the reason in the response, and the server log keeps it.
      */
-    public static final String FAILED_PARTWAY = "An import into this session failed partway, at a file that may not belong to this session. "
-                                                + "Files after that point were not read, so this session may be missing some. "
-                                                + "Import the study again to add them, or rebuild and archive this session if it is complete.";
+    public static final String FAILED_PARTWAY = "The import failed while processing a file that may not belong to this session. "
+                                                + "The remaining files were not read, so this session may be incomplete. "
+                                                + "Import the study again to add any missing files. "
+                                                + "If the session is already complete, rebuild and archive it.";
 
     /**
      * Whether the instance ends before its last value does: a Part 10 file cut short, such as one still being copied.

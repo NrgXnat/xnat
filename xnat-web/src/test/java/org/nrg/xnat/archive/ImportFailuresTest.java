@@ -85,7 +85,7 @@ public class ImportFailuresTest {
 
         // The note only: the reason can name the uploader's file.
         mockedPrearcUtils.verify(() -> PrearcUtils.log(PROJECT, TIMESTAMP, SESSION, ImportFailures.FAILED_PARTWAY));
-        assertTrue("the REST tests look for this", ImportFailures.FAILED_PARTWAY.contains("failed partway"));
+        assertTrue("the REST tests look for this", ImportFailures.FAILED_PARTWAY.contains("The import failed while processing a file"));
         mockedPrearcDatabase.verify(() -> PrearcDatabase.setStatus(SESSION, TIMESTAMP, PROJECT, PrearcStatus.ERROR));
         verify(directArchive, never()).handleFailedUpload(any(), any());
     }

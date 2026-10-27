@@ -1,6 +1,9 @@
 ## Description
 <!-- What changed and why, in your own words — the user-facing story and the technical one. Link the work: the ticket ("XNAT-1234"), "Closes #123" (auto-closes on merge, so only if this PR fully resolves it), "Related to #123", or the merge order if this is stacked on another PR. Detail meant to outlive this PR belongs in the code, the docs, or the ticket. If you used AI to help draft this, read it and edit it before you post. -->
 
+## Release note
+<!-- Write this yourself, for the people who install, administer, and use this software rather than for reviewers: it may be copied into the release notes as written. In a few sentences, say what changed from their point of view, who it affects, and anything they need to do about it, such as a configuration change or a step before or after upgrading. Call out any change to existing behavior, even a fix. If nothing is user-visible (a refactor, or a build-, CI-, or test-only change), write "None" so we know it wasn't skipped. -->
+
 ## Risks and impact
 <!-- Every change carries some risk; this is where you name the risks you know about. Answer the sections that apply and delete the rest. How much attention each deserves is your call. -->
 
@@ -14,7 +17,7 @@
 <!-- Which edge cases did you consider? DICOM type 2 elements are required to be present but may be empty; private tags, multiframe objects, and non-conforming data from real scanners all show up in the wild. On bad data, does this fail loudly or quietly? -->
 
 ### Upgrade and compatibility
-<!-- How do you know an existing site can take this upgrade? Say what you checked in the data model, schema, REST API, and dependencies, and whether a plugin compiled against the old signatures still loads. If something does break, name it and say who has to change. If there is a schema migration, how long does it run on a large archive, and does the site need to be down for it? -->
+<!-- Only a major release may break backward compatibility; if this PR does and its milestone isn't one, raise it with the maintainers before it merges. In XNAT versions the leading 1 never changes and the second number is the major version, so 1.11 and 1.12 are major releases and 1.10.x is not. Plugins and other libraries follow semantic versioning, where only a change to the first number is major. How do you know an existing site can take this upgrade? Say what you checked in the data model, schema, REST API, and dependencies, and whether a plugin compiled against the old signatures still loads. If something does break, name it and say who has to change. If there is a schema migration, how long does it run on a large archive, and does the site need to be down for it? -->
 
 ### Performance and scale
 <!-- At what scale do we expect this to run — study size, session count, concurrent uploads? How have you verified that it holds up? -->

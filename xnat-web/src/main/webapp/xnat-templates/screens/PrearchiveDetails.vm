@@ -9,7 +9,7 @@
 #if(!$session)
 	#set($allowArchive=false)
 	#if($notBuilt)
-	<div class="alert">This session hasn't been built yet, so its details aren't available. Rebuild it to see them and archive it.</div>
+	<div class="alert">This session hasn't been built yet, so its details aren't available. Rebuild it from the Actions box to see them and archive it.</div>
 	#else
 	<div class="alert">Empty sessions cannot be archived.</div>
 	#end
@@ -100,6 +100,9 @@
         </li>
     #end
 	#if($canModify)
+    <li class="yuimenuitem">
+			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestRebuild()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Rebuild</a>
+    </li>
     <li class="yuimenuitem">
 			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestDelete()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Delete</a>
     </li>

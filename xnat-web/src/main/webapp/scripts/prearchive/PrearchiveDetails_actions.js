@@ -37,6 +37,53 @@ XNAT.app.prearchiveActions={
 		closeModalPanel("delete_scan");
 	    showMessage("page_body", "Error", "Failed to delete session. ("+ o.message + ")");
 	},
+	requestRebuild:function(){
+        xmodal.confirm({
+          content: "Are you sure you want to rebuild this session?",
+          okAction: function(){
+        	  XNAT.app.prearchiveActions.doRebuild();
+          },
+          cancelAction: function(){
+          }
+        });
+	},
+	doRebuild:function(){
+		// The same request as Rebuild in the prearchive list. It queues the rebuild, and never archives the session.
+		this.rebuildCallback={
+            success:this.waitForRebuild,
+            failure:function(o){
+        		closeModalPanel("rebuild_session");
+        	    showMessage("page_body", "Error", "Failed to rebuild session. ("+ o.statusText + ")");
+        	},
+            cache:false, // Turn off caching for IE
+            scope:this
+        };
+
+		openModalPanel("rebuild_session","Rebuilding session");
+
+        YAHOO.util.Connect.asyncRequest('POST',serverRoot+"/REST/services/prearchive/rebuild?src=" + encodeURIComponent(this.url) + "&XNAT_CSRF=" + csrfToken,this.rebuildCallback,null,this);
+	},
+	waitForRebuild:function(){
+		// Reloads once the session has left the build, so the page shows what the build made of it.
+		var statusCallback={
+            success:function(o){
+        		var rows = JSON.parse(o.responseText).ResultSet.Result;
+        		var status = rows.length > 0 ? rows[0].status : "";
+        		if (status == "QUEUED_BUILDING" || status == "BUILDING" || status == "_BUILDING") {
+        			var actions = this;
+        			setTimeout(function(){ actions.waitForRebuild(); }, 2000);
+        		} else {
+        			window.location.reload();
+        		}
+        	},
+            failure:function(o){
+        		window.location.reload();
+        	},
+            cache:false, // Turn off caching for IE
+            scope:this
+        };
+        YAHOO.util.Connect.asyncRequest('GET',serverRoot+"/REST" + this.url+"?format=json",statusCallback,null,this);
+	},
 	requestMoveDialog:function(){
         if(this.projects==undefined){
 			this.projCallback={

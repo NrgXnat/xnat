@@ -34,6 +34,7 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.archive.ArchivingException;
+import org.nrg.xnat.archive.ImportFailures;
 import org.nrg.xnat.archive.Operation;
 import org.nrg.xnat.archive.PrearcSessionArchiver;
 import org.nrg.xnat.archive.entities.DirectArchiveSession;
@@ -242,7 +243,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
      */
     private void moveFailedUpload(SessionData session) throws NotFoundException {
         final long id = session.getId();
-        final ArchivingException failure = new ArchivingException("An import into this session failed partway, so it may be missing files. The import failed with: " + session.getMessage());
+        final ArchivingException failure = new ArchivingException(ImportFailures.FAILED_PARTWAY);
         // Claimed before anything on the filesystem is touched, as a delete is: from here the importer refuses the
         // next file of any upload into this session. A session a file reached since the trigger read its list isn't
         // claimed; a later run moves it once it is idle again.

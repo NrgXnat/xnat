@@ -26,8 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -82,10 +80,12 @@ public class ImportFailuresTest {
     }
 
     @Test
-    public void aPrearchiveSessionIsMarkedErrorWithTheReasonInItsLog() throws Exception {
+    public void aPrearchiveSessionIsMarkedErrorWithANoteInItsLog() throws Exception {
         ImportFailures.markFailed(Collections.singletonList(PREARCHIVE_URI), cause);
 
-        mockedPrearcUtils.verify(() -> PrearcUtils.log(eq(PROJECT), eq(TIMESTAMP), eq(SESSION), contains("failed partway")));
+        // The note only: the reason can name the uploader's file.
+        mockedPrearcUtils.verify(() -> PrearcUtils.log(PROJECT, TIMESTAMP, SESSION, ImportFailures.FAILED_PARTWAY));
+        assertTrue("the REST tests look for this", ImportFailures.FAILED_PARTWAY.contains("failed partway"));
         mockedPrearcDatabase.verify(() -> PrearcDatabase.setStatus(SESSION, TIMESTAMP, PROJECT, PrearcStatus.ERROR));
         verify(directArchive, never()).handleFailedUpload(any(), any());
     }

@@ -126,6 +126,7 @@ Release tags `1.9.3.4`, `1.10.0`, `1.10.1` and `1.10.2` are reachable from `main
 
 ### dcm4che 2
 
-XNAT 1.10._x_ includes a number of dcm4che 2.0.29 libraries in its dependencies. However all references to dcm4che 2.0.29 and its APIs have been removed since
-1.10.0 in favor of the latest 5._x_ version of dcm4che. The older version is provided solely for compatibility with plugins and other code that has not yet been
-migrated to the newer version and will be removed in XNAT 1.11.
+XNAT 1.10._x_ shipped dcm4che 2.0.29 alongside dcm4che 5._x_ only for plugins that had not yet migrated; XNAT itself has not used dcm4che 2 since 1.10.0.
+XNAT 1.11 no longer includes dcm4che 2: the `org.nrg:parent` BOM no longer manages its versions and the WAR no longer ships its jars. Plugins that still use it
+must migrate to dcm4che 5 or bundle it themselves. See [dcm4che 2 Is No Longer Provided](./docs/plugin-migration-guide.md#8-dcm4che-2-is-no-longer-provided-1110)
+in the plugin migration guide.

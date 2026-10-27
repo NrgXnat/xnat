@@ -94,16 +94,6 @@ dependencies {
         api libs.jackson.module.jaxb.annotations
         api libs.jackson.module.parameter.names
 
-        // DCM4CHE (v2)
-        api libs.dcm4che.core
-        api libs.dcm4che.iod
-        api libs.dcm4che.image
-        api libs.dcm4che.imageio
-        api libs.dcm4che.imageio.rle
-        api libs.dcm4che.net
-        api libs.dcm4che.tool.dcmecho
-        api libs.dcm4che.tool.dcmqr
-
         // DCM4CHE5
         api libs.dcm4che5.dcm4che.core
         api libs.dcm4che5.dcm4che.dict

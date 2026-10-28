@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.ARCHIVING;
@@ -59,7 +61,8 @@ import static org.nrg.xnat.helpers.prearchive.PrearcUtils.PrearcStatus.ARCHIVING
  * that fails doesn't stop the sessions after it; the upload still fails, naming each session that failed. It fails
  * with 500 if any session failed on the server, with no client error behind it. Otherwise it fails with the status of
  * the client errors when they agree, such as 409 for a session already archived under the same label, and with 400
- * when they don't.
+ * when they don't. Any upload, committed or not, keeps its sessions from the idle-timeout rebuild until it is over;
+ * whatever is left of them in the prearchive then goes back to it.
  */
 public class DicomZipImporterCommitTest {
     private static final String PROJECT   = "PROJ";
@@ -210,15 +213,120 @@ public class DicomZipImporterCommitTest {
         assertThat(thrown.getSuppressed()).hasSize(1);
     }
 
+    @Test
+    public void eachSessionIsKeptFromTheIdleTimeoutRebuildBeforeTheCommitBuildsIt() throws Exception {
+        // A long upload can leave an early session idle past the idle time before the commit gets to it.
+        for (final String folder : Arrays.asList("FIRST", "SECOND")) {
+            when(handlers.get(folder).rebuild()).thenAnswer(invocation -> {
+                mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit(folder, TIMESTAMP, PROJECT, true));
+                return true;
+            });
+        }
+
+        committedUpload(true).call();
+
+        // Archived, they have no rows left to give back.
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit(any(), any(), any(), eq(false)), never());
+    }
+
+    @Test
+    public void sessionsTheCommitLeavesInThePrearchiveGoBackToTheIdleTimeoutRebuild() throws Exception {
+        for (final String folder : Arrays.asList("FIRST", "SECOND")) {
+            mockedPrearcDatabase.when(() -> PrearcDatabase.getSessionIfExists(folder, TIMESTAMP, PROJECT)).thenReturn(new SessionData());
+        }
+
+        committedUpload(false).call();
+
+        for (final String folder : Arrays.asList("FIRST", "SECOND")) {
+            mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit(folder, TIMESTAMP, PROJECT, false));
+        }
+    }
+
+    @Test
+    public void aSessionAlreadyKeptFromTheIdleTimeoutRebuildIsLeftAsItIs() throws Exception {
+        mockedPrearcDatabase.when(() -> PrearcDatabase.getSession("FIRST", TIMESTAMP, PROJECT))
+                            .thenReturn(new SessionData().setFolderName("FIRST").setTimestamp(TIMESTAMP).setProject(PROJECT).setUrl("/prearchive/FIRST").setPreventAutoCommit(true));
+        mockedPrearcDatabase.when(() -> PrearcDatabase.getSessionIfExists("FIRST", TIMESTAMP, PROJECT)).thenReturn(new SessionData());
+
+        committedUpload(false).call();
+
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit(eq("FIRST"), any(), any(), anyBoolean()), never());
+    }
+
+    @Test
+    public void aFailedUploadGivesItsSessionsBackToTheIdleTimeoutRebuild() throws Exception {
+        importers.closeOnDemand();
+        importers = Mockito.mockConstruction(GradualDicomImporter.class, (importer, context) -> {
+            if (context.getCount() == 1) {
+                when(importer.call()).thenReturn(Collections.singletonList(FIRST));
+            } else {
+                when(importer.call()).thenThrow(new ClientException("unable to read DICOM object second.dcm"));
+            }
+        });
+        mockedPrearcDatabase.when(() -> PrearcDatabase.getSessionIfExists("FIRST", TIMESTAMP, PROJECT)).thenReturn(new SessionData());
+
+        assertThat(catchThrowable(() -> committedUpload(true).call())).isInstanceOf(ClientException.class);
+
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit("FIRST", TIMESTAMP, PROJECT, true));
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit("FIRST", TIMESTAMP, PROJECT, false));
+    }
+
+    @Test
+    public void aSessionOnlyASkippedEntryWroteIntoIsKeptFromTheIdleTimeoutRebuildToo() throws Exception {
+        // With Ignore-Unparsable the upload carries on past an entry that failed after it went into its session.
+        importers.closeOnDemand();
+        importers = Mockito.mockConstruction(GradualDicomImporter.class, (importer, context) -> {
+            if (context.getCount() == 1) {
+                when(importer.call()).thenThrow(new ClientException("unable to read DICOM object first.dcm"));
+                when(importer.getSessionUri()).thenReturn(FIRST);
+            } else {
+                when(importer.call()).thenAnswer(invocation -> {
+                    mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit("FIRST", TIMESTAMP, PROJECT, true));
+                    return Collections.singletonList(SECOND);
+                });
+            }
+        });
+        mockedPrearcDatabase.when(() -> PrearcDatabase.getSessionIfExists("FIRST", TIMESTAMP, PROJECT)).thenReturn(new SessionData());
+        final Map<String, Object> params = new HashMap<>();
+        params.put(DicomZipImporter.IGNORE_UNPARSABLE_PARAM, "true");
+
+        upload(params).call();
+
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit("FIRST", TIMESTAMP, PROJECT, false));
+    }
+
+    @Test
+    public void anUploadWithoutACommitAlsoKeepsItsSessionsFromTheIdleTimeoutRebuildUntilItIsOver() throws Exception {
+        // Built and archived at idle mid-upload, a session could miss files further on, or a failure further on.
+        for (final String folder : Arrays.asList("FIRST", "SECOND")) {
+            mockedPrearcDatabase.when(() -> PrearcDatabase.getSessionIfExists(folder, TIMESTAMP, PROJECT)).thenReturn(new SessionData());
+        }
+
+        upload(new HashMap<>()).call();
+
+        for (final String folder : Arrays.asList("FIRST", "SECOND")) {
+            mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit(folder, TIMESTAMP, PROJECT, true));
+            mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit(folder, TIMESTAMP, PROJECT, false));
+            verify(handlers.get(folder), never()).rebuild();
+        }
+    }
+
     private static PrearcSession sessionNamed(final String folder) {
         return Mockito.argThat(session -> folder.equals(session.getFolderName()));
     }
 
-    /**
-     * An importer for a zip of two entries, each of which the mocked {@link GradualDicomImporter} files into its own
-     * session, uploaded with action=commit and, if asked, auto-archive=true.
-     */
+    /** {@link #upload(Map)} with action=commit and, if asked, auto-archive=true. */
     private DicomZipImporter committedUpload(final boolean autoArchive) throws IOException {
+        final Map<String, Object> params = new HashMap<>();
+        params.put("action", "commit");
+        if (autoArchive) {
+            params.put(RequestUtil.AUTO_ARCHIVE, RequestUtil.TRUE);
+        }
+        return upload(params);
+    }
+
+    /** An importer for a zip of two entries, each of which the mocked {@link GradualDicomImporter} files into its own session. */
+    private DicomZipImporter upload(final Map<String, Object> params) throws IOException {
         final ByteArrayOutputStream zip = new ByteArrayOutputStream();
         try (final ZipOutputStream out = new ZipOutputStream(zip)) {
             for (final String name : Arrays.asList("first.dcm", "second.dcm")) {
@@ -230,12 +338,6 @@ public class DicomZipImporterCommitTest {
         final FileWriterWrapperI upload = mock(FileWriterWrapperI.class);
         when(upload.getName()).thenReturn("upload.zip");
         when(upload.getInputStream()).thenReturn(new ByteArrayInputStream(zip.toByteArray()));
-
-        final Map<String, Object> params = new HashMap<>();
-        params.put("action", "commit");
-        if (autoArchive) {
-            params.put(RequestUtil.AUTO_ARCHIVE, RequestUtil.TRUE);
-        }
         return new DicomZipImporter(null, user, upload, params);
     }
 }

@@ -34,6 +34,7 @@ import org.nrg.xnat.utils.PhaseTimer;
 import org.restlet.data.Status;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -52,6 +53,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     public static final String DEFAULT_BACKUP_FOLDER = "merge";
     public static final String CATALOG_BACKUP        = "catalog_bk";
     public static final String XML_EXTENSION         = ".xml";
+    public static final String LOGS_FOLDER           = "logs";
 
     private final PrearcSession _prearcSession;
 
@@ -64,6 +66,23 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     @Override
     public String getCacheBKDirName() {
         return DEFAULT_BACKUP_FOLDER;
+    }
+
+    /**
+     * Keeps the prearchive session's log, the notes {@link PrearcUtils#log} writes into its logs folder, out of the
+     * archive. The merge leaves log files behind only when it moves files one by one: when the archived session has no
+     * logs folder yet, the logs folder is renamed into it whole. Once the merge has succeeded, a logs folder it brought
+     * in is removed. A failed merge moves it back to the prearchive with everything else.
+     */
+    @Override
+    public XnatImagesessiondata call() throws ClientException, ServerException, IOException {
+        final File                 logs    = new File(destDIR, LOGS_FOLDER);
+        final boolean              existed = logs.exists();
+        final XnatImagesessiondata merged  = super.call();
+        if (!existed) {
+            FileUtils.DeleteFile(logs);
+        }
+        return merged;
     }
 
     @Override

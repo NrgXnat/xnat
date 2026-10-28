@@ -281,10 +281,12 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
      * the response status and message are set appropriately and <b>null</b> is returned. Otherwise a list of one or more
      * triples is returned.
      *
+     * @param action What the user is trying to do to the sessions, such as "delete", for the message when that's refused.
+     *
      * @return A list of triples if successful, otherwise null.
      */
     @Nullable
-    protected List<SessionDataTriple> getSessionDataTriples() {
+    protected List<SessionDataTriple> getSessionDataTriples(final String action) {
         final UriToSessionDataTriple  transformer = new UriToSessionDataTriple();
         final List<SessionDataTriple> triples     = Lists.transform(getSources(), transformer);
         if (transformer.hasMalformedUrls()) {
@@ -293,14 +295,14 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
         }
 
         final UserI                            user             = getUser();
-        final Pair<List<String>, List<String>> deniedAndMissing = getDeniedAndMissingProjectsFromPrearcSources(user, triples);
+        final Pair<List<String>, List<String>> deniedAndMissing = getDeniedAndMissingProjectsFromPrearcSources(getProjectAccessPredicate(user), triples);
         final List<String>                     denied           = deniedAndMissing.getLeft();
         final List<String>                     missing          = deniedAndMissing.getRight();
         if (!denied.isEmpty()) {
             if (!missing.isEmpty()) {
-                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to delete prearchive sessions in one or more projects: " + StringUtils.join(denied, ", ") + ". Also found one or more missing projects: " + StringUtils.join(missing, ", ") + ".");
+                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to " + action + " prearchive sessions in one or more projects: " + StringUtils.join(denied, ", ") + ". Also found one or more missing projects: " + StringUtils.join(missing, ", ") + ".");
             } else {
-                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to delete prearchive sessions in one or more projects: " + StringUtils.join(denied, ", "));
+                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to " + action + " prearchive sessions in one or more projects: " + StringUtils.join(denied, ", "));
             }
             return null;
         }
@@ -324,9 +326,20 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
         return representTable(table, mediaType, new Hashtable<String, Object>());
     }
 
-    protected static Pair<List<String>, List<String>> getDeniedAndMissingProjectsFromPrearcSources(final UserI user, final Collection<SessionDataTriple> triples) {
-        final ProjectAccessPredicate predicate = new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit);
-        final List<String>           missing   = predicate.getMissing();
+    /**
+     * Gets the check of which projects' prearchive sessions the user may act on. By default the user needs edit access
+     * to the project itself, which only project owners and site administrators have.
+     *
+     * @param user The user acting on the sessions.
+     *
+     * @return The check to run on each project.
+     */
+    protected ProjectAccessPredicate getProjectAccessPredicate(final UserI user) {
+        return new ProjectAccessPredicate(XDAT.getContextService().getBean(PermissionsServiceI.class), XDAT.getNamedParameterJdbcTemplate(), user, AccessLevel.Edit);
+    }
+
+    protected static Pair<List<String>, List<String>> getDeniedAndMissingProjectsFromPrearcSources(final ProjectAccessPredicate predicate, final Collection<SessionDataTriple> triples) {
+        final List<String> missing = predicate.getMissing();
         final List<String> denied = Lists.newArrayList(Iterables.filter(Iterables.filter(Iterables.transform(triples, FUNCTION_SESSION_DATA_TRIPLE_TO_PROJECT_ID), Predicates.not(predicate)), new Predicate<String>() {
             @Override
             public boolean apply(final String projectId) {

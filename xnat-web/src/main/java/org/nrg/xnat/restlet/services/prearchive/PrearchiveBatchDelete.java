@@ -42,7 +42,7 @@ public class PrearchiveBatchDelete extends BatchPrearchiveActionsA {
             return;
         }
 
-        final List<SessionDataTriple> triples = getSessionDataTriples();
+        final List<SessionDataTriple> triples = getSessionDataTriples("delete");
         if (triples == null) {
             return;
         }

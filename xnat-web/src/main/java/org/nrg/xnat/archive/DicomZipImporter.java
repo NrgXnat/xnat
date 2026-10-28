@@ -368,9 +368,10 @@ public final class DicomZipImporter extends ImporterHandlerA {
             }
         } catch (ServerException | ClientException e) {
             // The entry may have been the first in its session, so no entry returned that session. Skipped or not,
-            // it went into the session, and a failed import marks it with the others.
+            // it went into the session, so the session is held with the others and a failed import marks it with them.
             if (importer.getSessionUri() != null) {
                 failedEntrySessions.add(importer.getSessionUri());
+                holdForUpload(importer.getSessionUri());
             }
             throw e;
         }

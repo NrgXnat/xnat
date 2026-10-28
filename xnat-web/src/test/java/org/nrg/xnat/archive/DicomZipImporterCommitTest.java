@@ -272,6 +272,30 @@ public class DicomZipImporterCommitTest {
     }
 
     @Test
+    public void aSessionOnlyASkippedEntryWroteIntoIsKeptFromTheIdleTimeoutRebuildToo() throws Exception {
+        // With Ignore-Unparsable the upload carries on past an entry that failed after it went into its session.
+        importers.closeOnDemand();
+        importers = Mockito.mockConstruction(GradualDicomImporter.class, (importer, context) -> {
+            if (context.getCount() == 1) {
+                when(importer.call()).thenThrow(new ClientException("unable to read DICOM object first.dcm"));
+                when(importer.getSessionUri()).thenReturn(FIRST);
+            } else {
+                when(importer.call()).thenAnswer(invocation -> {
+                    mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit("FIRST", TIMESTAMP, PROJECT, true));
+                    return Collections.singletonList(SECOND);
+                });
+            }
+        });
+        mockedPrearcDatabase.when(() -> PrearcDatabase.getSessionIfExists("FIRST", TIMESTAMP, PROJECT)).thenReturn(new SessionData());
+        final Map<String, Object> params = new HashMap<>();
+        params.put(DicomZipImporter.IGNORE_UNPARSABLE_PARAM, "true");
+
+        upload(params).call();
+
+        mockedPrearcDatabase.verify(() -> PrearcDatabase.setPreventAutoCommit("FIRST", TIMESTAMP, PROJECT, false));
+    }
+
+    @Test
     public void anUploadWithoutACommitAlsoKeepsItsSessionsFromTheIdleTimeoutRebuildUntilItIsOver() throws Exception {
         // Built and archived at idle mid-upload, a session could miss files further on, or a failure further on.
         for (final String folder : Arrays.asList("FIRST", "SECOND")) {

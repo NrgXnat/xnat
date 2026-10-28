@@ -732,6 +732,8 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
                         try {
                             cycleDicomSCPPorts(ports);
                         } catch (DicomNetworkException | UnknownDicomHelperInstanceException | GeneralSecurityException | RuntimeException e) {
+                            // A failed query may have marked the transaction rollback-only, and committing it would throw.
+                            status.setRollbackOnly();
                             log.error("An error occurred cycling DICOM SCP ports {} after committing their receiver changes", ports, e);
                         }
                     });

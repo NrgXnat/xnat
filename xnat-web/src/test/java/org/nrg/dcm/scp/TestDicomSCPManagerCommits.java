@@ -1,5 +1,10 @@
 package org.nrg.dcm.scp;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.ThrowableProxy;
+import ch.qos.logback.core.read.ListAppender;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.After;
 import org.junit.Before;
@@ -11,11 +16,16 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xnat.DicomObjectIdentifier;
+import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -31,6 +41,8 @@ import java.util.concurrent.Future;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -60,14 +72,7 @@ public class TestDicomSCPManagerCommits {
             _otherPort = other.getLocalPort();
         }
 
-        final ApplicationContext context = mock(ApplicationContext.class);
-        when(context.getBean(DicomFileNamer.class)).thenReturn(mock(DicomFileNamer.class));
-        final SiteConfigPreferences preferences = mock(SiteConfigPreferences.class);
-        when(preferences.isEnableDicomReceiver()).thenReturn(true);
-        @SuppressWarnings("unchecked") final DicomObjectIdentifier<XnatProjectdata> identifier = mock(DicomObjectIdentifier.class);
-
-        _manager = new DicomSCPManager(new DicomScpExecutor(Executors.newCachedThreadPool()), _service, mock(XnatUserProvider.class),
-                                       context, _transactionManager, preferences, identifier, Map.of(IDENTIFIER, identifier));
+        _manager = newManager(_service);
     }
 
     @After
@@ -155,6 +160,50 @@ public class TestDicomSCPManagerCommits {
         }
 
         assertThat(_manager.stop()).extracting(Triple::getLeft).containsExactly("AFTER");
+    }
+
+    /**
+     * A query that fails in a cycle after a commit is logged once, with its own exception. The receiver service joins
+     * the cycle's transaction, so the failed query marks that transaction rollback-only. Before, committing it then
+     * failed too, and a second error blamed the transaction.
+     */
+    @Test
+    public void aQueryThatFailsInACycleAfterCommitIsLoggedOnce() {
+        final QueryTimeoutException   failure = new QueryTimeoutException("The query timed out");
+        final DicomSCPInstanceService target  = mock(DicomSCPInstanceService.class, delegatesTo(_service));
+        doThrow(failure).when(target).getPortsWithEnabledInstances();
+        // Each call joins the caller's transaction, as it does through the @Transactional service.
+        final TransactionInterceptor transactional = new TransactionInterceptor();
+        transactional.setTransactionManager(_transactionManager);
+        transactional.setTransactionAttributeSource(new MatchAlwaysTransactionAttributeSource());
+        final ProxyFactory factory = new ProxyFactory(target);
+        factory.addAdvice(transactional);
+        _manager = newManager((DicomSCPInstanceService) factory.getProxy());
+
+        final Logger                      logger   = (Logger) LoggerFactory.getLogger(DicomSCPManager.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            save("FIRST");
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        assertThat(appender.list).filteredOn(event -> event.getLevel() == Level.ERROR)
+                                 .extracting(event -> ((ThrowableProxy) event.getThrowableProxy()).getThrowable())
+                                 .containsExactly(failure);
+    }
+
+    private DicomSCPManager newManager(final DicomSCPInstanceService service) {
+        final ApplicationContext context = mock(ApplicationContext.class);
+        when(context.getBean(DicomFileNamer.class)).thenReturn(mock(DicomFileNamer.class));
+        final SiteConfigPreferences preferences = mock(SiteConfigPreferences.class);
+        when(preferences.isEnableDicomReceiver()).thenReturn(true);
+        @SuppressWarnings("unchecked") final DicomObjectIdentifier<XnatProjectdata> identifier = mock(DicomObjectIdentifier.class);
+
+        return new DicomSCPManager(new DicomScpExecutor(Executors.newCachedThreadPool()), service, mock(XnatUserProvider.class),
+                                   context, _transactionManager, preferences, identifier, Map.of(IDENTIFIER, identifier));
     }
 
     private DicomSCPInstance save(final String aeTitle) {

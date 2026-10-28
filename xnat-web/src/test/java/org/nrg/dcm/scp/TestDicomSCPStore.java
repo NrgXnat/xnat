@@ -65,7 +65,7 @@ public class TestDicomSCPStore {
 
         _service = mock(DicomSCPInstanceService.class);
         when(_service.getPortsWithEnabledInstances()).thenAnswer(invocation -> visible() ? Set.of(_port) : Set.of());
-        when(_service.findAllByPort(_port)).thenAnswer(invocation -> visible() ? List.of(_instance) : List.of());
+        when(_service.findAllByPort(_port, true)).thenAnswer(invocation -> visible() ? List.of(_instance) : List.of());
         when(_service.findByAETitleAndPort(AE_TITLE, _port)).thenAnswer(invocation -> visible() ? Optional.of(_instance) : Optional.empty());
 
         final ApplicationContext context = mock(ApplicationContext.class);
@@ -99,7 +99,7 @@ public class TestDicomSCPStore {
         final CountDownLatch starting = new CountDownLatch(1);
         final CountDownLatch release  = new CountDownLatch(1);
         final AtomicBoolean  first    = new AtomicBoolean(true);
-        when(_service.findAllByPort(_port)).thenAnswer(invocation -> {
+        when(_service.findAllByPort(_port, true)).thenAnswer(invocation -> {
             // Hold the first start just before it binds the port.
             if (first.getAndSet(false)) {
                 starting.countDown();

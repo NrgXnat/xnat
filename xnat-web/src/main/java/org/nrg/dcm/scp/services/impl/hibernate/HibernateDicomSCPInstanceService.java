@@ -29,6 +29,14 @@ public class HibernateDicomSCPInstanceService extends AbstractHibernateEntitySer
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<DicomSCPInstance> findAllByPort(final int port, final boolean enabled) {
+        return getDao().findByProperties(ImmutableMap.of("port", port, "enabled", enabled));
+    }
+
+    /**
      * findByAETitleAndPort
      * *
      *

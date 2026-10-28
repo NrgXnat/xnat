@@ -434,7 +434,7 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
     }
 
     public List<DicomSCPInstance> getEnabledDicomSCPInstancesByPort(final int port) {
-        return _dicomSCPInstanceService.findAllByPort(port).stream().filter(DicomSCPInstance::isEnabled).collect(Collectors.toList());
+        return _dicomSCPInstanceService.findAllByPort(port, true);
     }
 
     public DicomSCPInstance enableDicomSCPInstance(final int id) throws NotFoundException {

@@ -53,23 +53,45 @@ XNAT.app.prearchiveActions={
             success:this.waitForRebuild,
             failure:function(o){
         		closeModalPanel("rebuild_session");
-        	    showMessage("page_body", "Error", "Failed to rebuild session. ("+ o.statusText + ")");
+        	    showMessage("page_body", "Error", "Failed to rebuild session: " + escapeHTML(this.rebuildFailureReason(o)));
         	},
             cache:false, // Turn off caching for IE
             scope:this
         };
 
 		openModalPanel("rebuild_session","Rebuilding session");
+		this.rebuildChecks = 0;
 
         YAHOO.util.Connect.asyncRequest('POST',serverRoot+"/REST/services/prearchive/rebuild?src=" + encodeURIComponent(this.url) + "&XNAT_CSRF=" + csrfToken,this.rebuildCallback,null,this);
 	},
+	rebuildFailureReason:function(o){
+		// A request refused before any session is looked at, for permissions for example, gets a status page that
+		// gives the reason. Otherwise the body lists the sessions that were rebuilt, and only the status says why
+		// this one wasn't.
+		var text = o.responseText ? o.responseText.trim() : "";
+		if (text && "<{".indexOf(text.charAt(0)) < 0) {
+			return text;
+		}
+		var heading = new DOMParser().parseFromString(text, "text/html").querySelector("h3");
+		if (heading && heading.textContent.trim()) {
+			return heading.textContent.trim();
+		}
+		if (o.status == 403) {
+			return "you can't rebuild this session. It may be locked by another operation, which only a site administrator can clear.";
+		}
+		if (o.status == 409) {
+			return "another operation holds this session. Try again once it has finished.";
+		}
+		return "the server answered with status " + o.status + ".";
+	},
 	waitForRebuild:function(){
-		// Reloads once the session has left the build, so the page shows what the build made of it.
+		// Reloads once the session has left the build, so the page shows what the build made of it. After 5 minutes
+		// (150 checks, 2 seconds apart) it reloads anyway, so a stalled queue or build can't leave the modal up.
 		var statusCallback={
             success:function(o){
         		var rows = JSON.parse(o.responseText).ResultSet.Result;
         		var status = rows.length > 0 ? rows[0].status : "";
-        		if (status == "QUEUED_BUILDING" || status == "BUILDING" || status == "_BUILDING") {
+        		if ((status == "QUEUED_BUILDING" || status == "BUILDING" || status == "_BUILDING") && ++this.rebuildChecks < 150) {
         			var actions = this;
         			setTimeout(function(){ actions.waitForRebuild(); }, 2000);
         		} else {

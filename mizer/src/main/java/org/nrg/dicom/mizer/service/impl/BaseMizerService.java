@@ -37,6 +37,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.nrg.dicom.mizer.values.Value.EMPTY_VARIABLES;
 
@@ -291,7 +292,8 @@ public class BaseMizerService implements MizerService {
             final WorkOnCopyOp<AnonymizationResult> anonymizeOp = new WorkOnCopyOp<>(dicomFile, stagingDirectoryFor(dicomFile), callOnFile);
             return new TransactionRunner<AnonymizationResult>().runTransaction(anonymizeOp);
         } catch (RollbackException | TransactionException e) {
-            throw new MizerException(e);
+            throw new MizerException("Anonymization transaction failed for file '" + dicomFile.getAbsolutePath()
+                    + "': " + e.getMessage(), e);
         }
     }
 
@@ -410,7 +412,23 @@ public class BaseMizerService implements MizerService {
                 throw new MizerException(String.format(INVALID_VERSION_MESSAGE, matcher.group("expression")));
             }
         }
-        throw new MizerException("The Mizer service failed to find a Mizer implementation that knows how to handle your script");
+        final String requested = extractRequestedVersion(context);
+        final String supported = _mizers.stream()
+                .flatMap(m -> m.getSupportedVersions().stream())
+                .map(Object::toString)
+                .distinct()
+                .collect(Collectors.joining(", "));
+        throw new MizerException(String.format(
+                "No Mizer implementation handles script version '%s'. Supported versions: [%s].",
+                requested, supported.isEmpty() ? "none registered" : supported));
+    }
+
+    private static String extractRequestedVersion(final MizerContext context) {
+        if (!(context instanceof MizerContextWithScript)) {
+            return "<unknown>";
+        }
+        final Matcher matcher = VALID_VERSION_FORMAT.matcher(((MizerContextWithScript) context).getScriptAsString());
+        return matcher.find() ? matcher.group("version") : "<not declared>";
     }
 
     @Nonnull
@@ -434,10 +452,11 @@ public class BaseMizerService implements MizerService {
         return mizerContext;
     }
 
+    private static final Pattern   VALID_VERSION_FORMAT    = Pattern.compile("^\\s*version\\s+\"(?<version>[\\d.]+)\"\\s*$", Pattern.MULTILINE);
     private static final Pattern   INVALID_VERSION_FORMAT  = Pattern.compile("^.*(?<expression>version\\s*[:]?=\\s*\"[\\d.]+\").*$", Pattern.MULTILINE);
-    private static final String    INVALID_VERSION_MESSAGE = "The Mizer service failed to find a Mizer implementation that knows how to handle your"
+    private static final String    INVALID_VERSION_MESSAGE = "The Mizer service failed to find a Mizer implementation that knows how to handle your "
                                                              + "script, but also found what appears to be a malformed version declaration. The "
-                                                             + "version declaration should be use the format 'version \"X.Y\"', where X.Y is a valid "
+                                                             + "version declaration should use the format 'version \"X.Y\"', where X.Y is a valid "
                                                              + "version such as \"6.1\". The statement in your script is: %s";
 
     private final List<Mizer> _mizers;

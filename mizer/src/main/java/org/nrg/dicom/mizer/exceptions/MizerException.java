@@ -13,6 +13,8 @@ import org.nrg.dicom.mizer.service.MizerService;
 
 /**
  * The primary class used to distinguish exceptions from operations in the {@link MizerService} and its components.
+ *
+ * <p>Also exposes static helpers for rendering exceptions and their cause chains for user-facing surfaces.
  */
 public class MizerException extends Exception {
     /**
@@ -41,5 +43,51 @@ public class MizerException extends Exception {
      */
     public MizerException(final String message, final Throwable cause) {
         super(message, cause);
+    }
+
+    /**
+     * Render the most useful single-line description of a throwable: its message if non-empty,
+     * otherwise the simple class name. Never returns null or the empty string.
+     */
+    public static String describeMessage(final Throwable t) {
+        final String m = t.getMessage();
+        return (m != null && !m.isEmpty()) ? m : t.getClass().getSimpleName();
+    }
+
+    /**
+     * Render the cause chain as a multi-line string of {@code "\ncaused by: <message>"} entries.
+     * Skips any cause whose message is already a substring of {@code alreadyShown} or of a previously
+     * emitted line, so the result does not duplicate information already visible at the top of the
+     * exception's own message.
+     *
+     * <p>Returns the empty string if the throwable has no cause, or every cause is redundant.
+     *
+     * <p>Intended for user-facing surfaces like {@code AnonymizationResultError.getMessage()} that
+     * want the full diagnostic chain without forcing the user to read a stack trace.
+     *
+     * @param t           the top-level throwable (may be {@code null})
+     * @param alreadyShown text already visible to the user; causes whose messages are substrings of
+     *                    this are not re-emitted (may be {@code null} or empty)
+     */
+    public static String formatCauseChain(final Throwable t, final String alreadyShown) {
+        if (t == null) {
+            return "";
+        }
+        final StringBuilder shown = new StringBuilder(alreadyShown == null ? "" : alreadyShown);
+        final StringBuilder out = new StringBuilder();
+        Throwable current = t.getCause();
+        while (current != null) {
+            final String msg = describeMessage(current);
+            if (!shown.toString().contains(msg)) {
+                out.append("\ncaused by: ").append(msg);
+                shown.append('\n').append(msg);
+            }
+            final Throwable next = current.getCause();
+            if (next == null || next == current) {
+                break;
+            }
+            current = next;
+        }
+        return out.toString();
     }
 }

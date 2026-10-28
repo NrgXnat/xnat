@@ -62,7 +62,7 @@ public class PrearchiveBatchRebuild extends BatchPrearchiveActionsA {
 			return;
 		}
 
-		final List<SessionDataTriple> triples = getSessionDataTriples();
+		final List<SessionDataTriple> triples = getSessionDataTriples("rebuild");
 		if (triples == null) {
 			return;
 		}

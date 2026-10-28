@@ -281,10 +281,12 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
      * the response status and message are set appropriately and <b>null</b> is returned. Otherwise a list of one or more
      * triples is returned.
      *
+     * @param action What the user is trying to do to the sessions, such as "delete", for the message when that's refused.
+     *
      * @return A list of triples if successful, otherwise null.
      */
     @Nullable
-    protected List<SessionDataTriple> getSessionDataTriples() {
+    protected List<SessionDataTriple> getSessionDataTriples(final String action) {
         final UriToSessionDataTriple  transformer = new UriToSessionDataTriple();
         final List<SessionDataTriple> triples     = Lists.transform(getSources(), transformer);
         if (transformer.hasMalformedUrls()) {
@@ -298,9 +300,9 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
         final List<String>                     missing          = deniedAndMissing.getRight();
         if (!denied.isEmpty()) {
             if (!missing.isEmpty()) {
-                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to delete prearchive sessions in one or more projects: " + StringUtils.join(denied, ", ") + ". Also found one or more missing projects: " + StringUtils.join(missing, ", ") + ".");
+                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to " + action + " prearchive sessions in one or more projects: " + StringUtils.join(denied, ", ") + ". Also found one or more missing projects: " + StringUtils.join(missing, ", ") + ".");
             } else {
-                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to delete prearchive sessions in one or more projects: " + StringUtils.join(denied, ", "));
+                getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "Invalid permissions for user " + user.getUsername() + " to " + action + " prearchive sessions in one or more projects: " + StringUtils.join(denied, ", "));
             }
             return null;
         }

@@ -328,7 +328,7 @@ public abstract class BatchPrearchiveActionsA extends SecureResource {
 
     /**
      * Gets the check of which projects' prearchive sessions the user may act on. By default the user needs edit access
-     * to the project itself, which only project owners and site administrators have.
+     * to the project itself, which project owners and all-data administrators have.
      *
      * @param user The user acting on the sessions.
      *

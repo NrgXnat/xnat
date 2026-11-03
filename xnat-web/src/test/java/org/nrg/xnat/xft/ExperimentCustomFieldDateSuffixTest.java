@@ -11,11 +11,14 @@ package org.nrg.xnat.xft;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Hashtable;
+import java.util.Map;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -23,6 +26,7 @@ import org.junit.Test;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.references.XFTPseudonymManager;
 import org.nrg.xft.references.XFTReferenceManager;
@@ -135,6 +139,57 @@ public class ExperimentCustomFieldDateSuffixTest {
         item.setProperty(EXPERIMENT_FIELD + ".seconds", "15");
 
         assertDateTime(item.getDateProperty(EXPERIMENT_FIELD), 2000, Calendar.JANUARY, 1, 13, 3, 15);
+    }
+
+    @Test
+    public void splitParametersThroughSetPropertiesPopulateExperimentCustomField() throws Exception {
+        // The archiver and the Turbine edit action hand the request parameters to setProperties(Map) as a whole.
+        final XFTItem             item   = XFTItem.NewItem("xnat:petSessionData", null);
+        final Map<String, String> params = new Hashtable<>();
+        params.put(EXPERIMENT_FIELD + ".hours", "13");
+        params.put(EXPERIMENT_FIELD + ".minutes", "3");
+        params.put(EXPERIMENT_FIELD + ".seconds", "15");
+        params.put(EXPERIMENT_FIELD + ".year", "2012");
+        params.put(EXPERIMENT_FIELD + ".date", "22");
+        params.put(EXPERIMENT_FIELD + ".month", "1");
+
+        item.setProperties(params, true);
+
+        assertDateTime(item.getDateProperty(EXPERIMENT_FIELD), 2012, Calendar.FEBRUARY, 22, 13, 3, 15);
+    }
+
+    @Test
+    public void nonNumericTimeParameterIsRejected() throws Exception {
+        final XFTItem item = XFTItem.NewItem("xnat:petSessionData", null);
+
+        try {
+            item.setProperty(EXPERIMENT_FIELD + ".hours", "abc");
+            fail("Expected InvalidValueException");
+        } catch (InvalidValueException e) {
+            assertEquals("Invalid Date.hours", e.getMessage());
+        }
+    }
+
+    @Test
+    public void timeOnlyParametersOnSubjectStringFieldUseYear2000BaseDate() throws Exception {
+        final XFTItem item = XFTItem.NewItem("xnat:subjectData", null);
+
+        item.setProperty(SUBJECT_FIELD + ".hours", "13");
+        item.setProperty(SUBJECT_FIELD + ".minutes", "3");
+        item.setProperty(SUBJECT_FIELD + ".seconds", "15");
+
+        assertDateTime(item.getDateProperty(SUBJECT_FIELD), 2000, Calendar.JANUARY, 1, 13, 3, 15);
+    }
+
+    @Test
+    public void timeOnlyParametersOnDateTimeFieldUseYear2000BaseDate() throws Exception {
+        final XFTItem item = XFTItem.NewItem("xnat:petSessionData", null);
+
+        item.setProperty("xnat:petSessionData/start_time_injection.hours", "13");
+        item.setProperty("xnat:petSessionData/start_time_injection.minutes", "3");
+        item.setProperty("xnat:petSessionData/start_time_injection.seconds", "15");
+
+        assertDateTime(item.getDateProperty("xnat:petSessionData/start_time_injection"), 2000, Calendar.JANUARY, 1, 13, 3, 15);
     }
 
     private static void setSplitDateTime(final XFTItem item, final String field, final String year, final String month, final String day,

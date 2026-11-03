@@ -10,19 +10,46 @@
 package org.nrg.xnat.restlet.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
- * A file in a user's cache that an import reads with {@code src}, such as a zip from the Compressed Uploader. Once the
- * import has run, the file isn't needed, and {@link #delete()} removes it with the folders it leaves empty, up to and
- * including the cache folder named in {@code src}.
+ * A file in a user's cache that an import reads with {@code src}, such as a zip from the Compressed Uploader, or one
+ * that an import with {@code async=true} {@link #store(Path, FileWriterWrapperI) stored} there. Once the import has run,
+ * the file isn't needed, and {@link #delete()} removes it with the folders it leaves empty, up to and including the
+ * cache folder named in {@code src}.
  */
 @Slf4j
 class CachedUpload {
+    /**
+     * Writes a file sent in a request to a new folder in the user's cache, so an import can read it after the request
+     * has ended. The file keeps the name it was sent with, since importers tell zip from tar by its extension.
+     *
+     * @param cache  The user's cache folder.
+     * @param upload The file sent in the request.
+     *
+     * @return The stored file.
+     */
+    static CachedUpload store(final Path cache, final FileWriterWrapperI upload) throws Exception {
+        final Path         folder = Files.createDirectories(cache.resolve("import-" + UUID.randomUUID()));
+        final CachedUpload stored = new CachedUpload(cache, folder, folder.resolve(fileName(upload.getName())));
+        try {
+            upload.write(stored.getFile());
+        } catch (Exception e) {
+            stored.delete();
+            throw e;
+        }
+        return stored;
+    }
+
     /**
      * @param cache  The user's cache folder.
      * @param folder The cache folder named in {@code src}.
@@ -55,6 +82,18 @@ class CachedUpload {
         } catch (IOException e) {
             log.warn("Couldn't delete the import's upload {} from the user's cache", _file, e);
         }
+    }
+
+    File getFile() {
+        return _file.toFile();
+    }
+
+    /**
+     * The last element of the name the file was sent with, or "upload" if that names no file.
+     */
+    private static String fileName(final String name) {
+        final String fileName = FilenameUtils.getName(name);
+        return StringUtils.isBlank(fileName) || fileName.equals(".") || fileName.equals("..") ? "upload" : fileName;
     }
 
     private static boolean isEmptyFolder(final Path folder) throws IOException {

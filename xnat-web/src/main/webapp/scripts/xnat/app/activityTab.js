@@ -222,7 +222,7 @@ var XNAT = getObject(XNAT);
         let messages = "";
         let entryList = payload ? (payload['entryList'] || []) : [];
         if (entryList.length === 0 && succeeded == null) {
-            return [null, lastProgressIdx];
+            return {succeeded: null, lastProgressIdx: lastProgressIdx};
         }
         entryList.forEach(function(e, i) {
             if (i <= lastProgressIdx) {

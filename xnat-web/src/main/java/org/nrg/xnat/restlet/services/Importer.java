@@ -121,6 +121,7 @@ public class Importer extends SecureResource {
     String listenerControl = null;
     boolean httpSessionListener = false;
     boolean async = false; // when importing a previously uploaded file, no need to keep the connection open while we import
+    CachedUpload cachedUpload = null; // the file named by src, deleted from the user's cache once the import has run
 
     final Map<String, Object> params = new Hashtable<>();
 
@@ -269,11 +270,11 @@ public class Importer extends SecureResource {
                     (importerExecutorService = XDAT.getContextService()
                             .getBeanSafely("threadPoolExecutorFactoryBean", ThreadPoolExecutor.class)) != null) {
                 String task = prearchive ? "prearchival" : "archival";
-                importerExecutorService.submit(importer);
+                importerExecutorService.submit(() -> callAndDeleteUpload(importer));
                 returnString("Submitted for " + task, Status.SUCCESS_OK);
                 return;
             } else {
-                response = importer.call();
+                response = callAndDeleteUpload(importer);
             }
 
             if (entity != null && APPLICATION_XMIRC.equals(entity.getMediaType())) {
@@ -288,6 +289,21 @@ public class Importer extends SecureResource {
             respondToException(e, (e.status != null) ? e.status : Status.SERVER_ERROR_INTERNAL);
         } catch (IllegalArgumentException | FileUploadException e) {
             respondToException(e, Status.CLIENT_ERROR_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Runs the import, then deletes the file named by {@code src} from the user's cache, whether the import succeeded
+     * or failed: the import has read it, and nothing else uses it. A request rejected before the import runs keeps its
+     * file, so it can be corrected and sent again.
+     */
+    private List<String> callAndDeleteUpload(final ImporterHandlerA importer) throws ClientException, ServerException {
+        try {
+            return importer.call();
+        } finally {
+            if (cachedUpload != null) {
+                cachedUpload.delete();
+            }
         }
     }
 
@@ -439,6 +455,8 @@ public class Importer extends SecureResource {
         File f = org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser(), (String) map.get("XNAME"), (String) map.get("_REMAINDER"));
 
         if (f.exists()) {
+            final File cache = org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser());
+            cachedUpload = new CachedUpload(cache.toPath(), cache.toPath().resolve((String) map.get("XNAME")), f.toPath());
             return new StoredFile(f, true);
         } else {
             throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "Unknown src file.", new Exception());

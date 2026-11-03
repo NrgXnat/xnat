@@ -4371,7 +4371,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 
     /**
      * The formats a date/time stored as text in a string or LONGVARCHAR field can have: {@link Date#toString()}, which
-     * is what the split-parameter path writes, and the date/time forms {@link DateUtils#parseDateTime(String)} accepts.
+     * is what the split-parameter path writes, and the dated forms {@link DateUtils} accepts (its day-without-year
+     * forms are left out, since they would land on 1970). The time forms include the DICOM TM shape {@code HHmmss}.
      */
     private static final String[] STORED_DATE_TIME_FORMATS = {"EEE MMM dd HH:mm:ss z yyyy",
                                                               "yyyy-MM-dd HH:mm:ss.SSS",
@@ -4379,8 +4380,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                                                               "yyyy-MM-dd HH:mm:ss z",
                                                               "yyyy-MM-dd HH:mm:ss",
                                                               "yyyy-MM-dd'T'HH:mm:ss",
-                                                              "yyyy-MM-dd"};
-    private static final String[] STORED_TIME_FORMATS      = {"HH:mm:ss", "HH:mm:ss z"};
+                                                              "yyyy-MM-dd",
+                                                              "MM/dd/yyyy"};
+    private static final String[] STORED_TIME_FORMATS      = {"HH:mm:ss", "HH:mm:ss z", "HHmmss"};
 
     /**
      * Returns the value already stored in a date-like field as a {@link Date} so that split

@@ -117,6 +117,21 @@ public class ExperimentCustomFieldDateSuffixTest {
     }
 
     @Test
+    public void storedDicomTimeAndSlashDateAreUpdatedNotReplaced() throws Exception {
+        // A DICOM TM value and MM/dd/yyyy are kept: strict parsing of HHmmss stops short of "20120222" (see the
+        // replaced cases) but accepts "130315".
+        final XFTItem timeItem = XFTItem.NewItem("xnat:petSessionData", null);
+        timeItem.setProperty(EXPERIMENT_FIELD, "130315");
+        timeItem.setProperty(EXPERIMENT_FIELD + ".hours", "9");
+        assertDateTime(timeItem.getDateProperty(EXPERIMENT_FIELD), 2000, Calendar.JANUARY, 1, 9, 3, 15);
+
+        final XFTItem dateItem = XFTItem.NewItem("xnat:petSessionData", null);
+        dateItem.setProperty(EXPERIMENT_FIELD, "02/22/2012");
+        dateItem.setProperty(EXPERIMENT_FIELD + ".hours", "9");
+        assertDateTime(dateItem.getDateProperty(EXPERIMENT_FIELD), 2012, Calendar.FEBRUARY, 22, 9, 0, 0);
+    }
+
+    @Test
     public void storedValueThatIsNotADateOrTimeIsReplacedFromBaseDate() throws Exception {
         // A DICOM DA value, a date with trailing text and free text must not be read as a date or time
         // (lenient SimpleDateFormat would take "20120222" as 20:12:02); they are replaced from the base date.

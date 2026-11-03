@@ -190,6 +190,17 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
     }
 
     /**
+     * The labels of the enabled receivers that archive directly, for the notice that tells site admins direct archive
+     * is deprecated.
+     */
+    public List<String> getDirectArchiveReceivers() {
+        return getDicomSCPInstancesList().stream()
+                                         .filter(instance -> instance.isEnabled() && instance.isDirectArchive())
+                                         .map(DicomSCPInstance::getLabel)
+                                         .collect(Collectors.toList());
+    }
+
+    /**
      * Sets the submitted {@link DicomSCPInstance DICOM SCP instance} definition. If the {@link DicomSCPInstance#getId()
      * instance ID} matches an existing DICOM SCP instance, that instance will be updated. If not, the {@link NotFoundException}
      * is thrown.

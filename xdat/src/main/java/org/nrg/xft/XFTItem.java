@@ -4367,6 +4367,37 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 	    return null;
 	}
 
+    /**
+     * Returns the value already stored in a date-like field as a {@link Date} so that split
+     * {@code .hours/.minutes/.seconds/.year/.month/.date} parameters can update it. String and LONGVARCHAR fields
+     * store the date as text, either a full date/time or a bare time, so both forms are parsed; a value that is
+     * neither yields null and the caller starts from the default base date.
+     *
+     * @param stored The value currently stored in the field, possibly null.
+     *
+     * @return The stored value as a date, or null if there is none or it can't be parsed.
+     */
+    private static Date parseStoredDateTime(final Object stored) {
+        if (stored == null) {
+            return null;
+        }
+        if (stored instanceof Date date) {
+            return date;
+        }
+        final String text = stored.toString();
+        try {
+            return DateUtils.parseDateTime(text);
+        } catch (ParseException ignored) {
+            // Not a date/time, fall through to a bare time.
+        }
+        try {
+            return DateUtils.parseTime(text);
+        } catch (ParseException e) {
+            log.warn("Ignoring stored value '{}' that is neither a date/time nor a time", text);
+            return null;
+        }
+    }
+
 	@SuppressWarnings("deprecation")
     private void setXMLPropertyChild(String xmlPath, Object value,boolean parseValue) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,InvalidValueException
 	{
@@ -4682,7 +4713,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             			        }else{
             						throw new FieldNotFoundException(xmlPath);
             			        }
-            			    }else if (secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("dateTime") || secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("string"))
+            			    }else if (secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("dateTime") || secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("string") || secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("LONGVARCHAR"))
             			    {
                                 // TODO: We don't support nulling out a date in this manner, so just ignore nulls for these cases.
             			        if (value != null && (xmlPath.equalsIgnoreCase("date")
@@ -4693,10 +4724,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             			                || xmlPath.equalsIgnoreCase("hours")
             			                || xmlPath.equalsIgnoreCase("seconds")))
             			        {
-            			            Date date = (Date)getProperty(secondToLastField.getId());
+            			            Date date = parseStoredDateTime(getProperty(secondToLastField.getId()));
             			            if (date==null)
             			            {
-            			                GregorianCalendar cal = new GregorianCalendar(1,1,2000);
+            			                GregorianCalendar cal = new GregorianCalendar(2000, Calendar.JANUARY, 1);
             			    			date= cal.getTime();
             			            }
 

@@ -139,7 +139,7 @@ public class ExperimentCustomFieldDateSuffixTest {
 
     private static void setSplitDateTime(final XFTItem item, final String field, final String year, final String month, final String day,
                                          final String hours, final String minutes, final String seconds) throws Exception {
-        // Same order as the DCA PET form: time selects first, then addDateFields() appends year/date/month.
+        // The order a form posting time selects first and the date fields afterwards produces.
         item.setProperty(field + ".hours", hours);
         item.setProperty(field + ".minutes", minutes);
         item.setProperty(field + ".seconds", seconds);

@@ -69,7 +69,7 @@ public class DisplayCriteria implements SQLClause {
                 return translated;
             }
         }
-        return field + "_" + XftStringUtils.cleanColumnName(getWhere_value());
+        return XftStringUtils.createSubqueryFieldAlias(field, getWhere_value());
     }
 
     public String getSQLClause(QueryOrganizerI qo) throws Exception {

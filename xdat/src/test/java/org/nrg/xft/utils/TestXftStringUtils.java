@@ -23,30 +23,33 @@ public class TestXftStringUtils {
     }
 
     /**
-     * XNAT-6374: SubQueryField aliases are built as {@code <FIELD_ID>_<value>}, where the value is a
-     * custom variable name or a workflow pipeline name. Two values that differ only after PostgreSQL's
-     * 63-byte identifier limit produced the same column name, and the query then failed with
-     * "column reference ... is ambiguous". The lengths and shared prefixes here match the cases that were reported.
+     * XNAT-6374: the column a subquery display field (a custom variable or a pipeline's workflow status) gets in the generated
+     * SQL. Distinct values must get distinct columns, whether they differ past PostgreSQL's 63-character identifier limit or
+     * only in characters that cleaning or lower-casing merges.
      */
     @Test
-    public void testSubQueryFieldAliasesStayDistinctPastTheIdentifierLimit() {
-        // Custom variables on a data type — the case XNAT-6374 was filed for.
-        final String customVar1 = XftStringUtils.formatPostgreSQLIdentifier(XftStringUtils.cleanColumnName("XNAT_MRSESSIONDATA_FIELD_MAP_radiotherapy_planning_dose_constraint_alpha"));
-        final String customVar2 = XftStringUtils.formatPostgreSQLIdentifier(XftStringUtils.cleanColumnName("XNAT_MRSESSIONDATA_FIELD_MAP_radiotherapy_planning_dose_constraint_beta"));
-        assertThat(customVar1).hasSize(63);
-        assertThat(customVar2).hasSize(63).isNotEqualTo(customVar1);
+    public void testCreateSubqueryFieldAlias() {
+        // Custom variables that differ only past the identifier limit.
+        final String alpha = XftStringUtils.createSubqueryFieldAlias("XNAT_MRSESSIONDATA_FIELD_MAP", "radiotherapy_planning_dose_constraint_alpha");
+        final String beta  = XftStringUtils.createSubqueryFieldAlias("XNAT_MRSESSIONDATA_FIELD_MAP", "radiotherapy_planning_dose_constraint_beta");
+        assertThat(alpha).hasSize(63);
+        assertThat(beta).hasSize(63).isNotEqualToIgnoringCase(alpha);
 
-        // Container-service pipeline names on the Processing Dashboard — same alias, same collision.
-        // Two wrappers over one pipeline, differing only in the "-scan" / "-session" suffix.
-        final String pipeline1 = XftStringUtils.formatPostgreSQLIdentifier(XftStringUtils.cleanColumnName("WRK_STATUS_CID_example_segmentation_pipeline_with_a_long_name_v3-scan"));
-        final String pipeline2 = XftStringUtils.formatPostgreSQLIdentifier(XftStringUtils.cleanColumnName("WRK_STATUS_CID_example_segmentation_pipeline_with_a_long_name_v3-session"));
-        assertThat(pipeline1).hasSize(63);
-        assertThat(pipeline2).hasSize(63).isNotEqualTo(pipeline1);
+        // Pipeline names that differ only past the limit, in characters that cleaning also changes.
+        final String scan    = XftStringUtils.createSubqueryFieldAlias("WRK_STATUS_CID", "example_segmentation_pipeline_with_a_long_name_v3-scan");
+        final String session = XftStringUtils.createSubqueryFieldAlias("WRK_STATUS_CID", "example_segmentation_pipeline_with_a_long_name_v3-session");
+        assertThat(scan).hasSizeLessThanOrEqualTo(63);
+        assertThat(session).hasSizeLessThanOrEqualTo(63).isNotEqualToIgnoringCase(scan);
 
-        // Truncation alone is what collided: without the hash suffix both sides are identical.
-        assertThat(pipeline1.substring(0, 54)).isEqualTo(pipeline2.substring(0, 54));
+        // Values that clean to the same string, well under the limit.
+        assertThat(XftStringUtils.createSubqueryFieldAlias("XNAT_MRSESSIONDATA_FIELD_MAP", "dose-alpha")).isNotEqualToIgnoringCase(XftStringUtils.createSubqueryFieldAlias("XNAT_MRSESSIONDATA_FIELD_MAP", "dose_alpha"));
+        assertThat(XftStringUtils.createSubqueryFieldAlias("WRK_STATUS", "model_v2.4-scan")).isNotEqualToIgnoringCase(XftStringUtils.createSubqueryFieldAlias("WRK_STATUS", "model_v2_4-scan"));
+        assertThat(XftStringUtils.createSubqueryFieldAlias("WRK_STATUS", "batch process-session")).isNotEqualToIgnoringCase(XftStringUtils.createSubqueryFieldAlias("WRK_STATUS", "batch_process-session"));
 
-        // Values inside the limit must pass through untouched, so existing column names do not move.
-        assertThat(XftStringUtils.formatPostgreSQLIdentifier(XftStringUtils.cleanColumnName("WRK_STATUS_CID_short_pipeline-session"))).isEqualTo("WRK_STATUS_CID_short_pipeline_session");
+        // Values that differ only in case.
+        assertThat(XftStringUtils.createSubqueryFieldAlias("XNAT_MRSESSIONDATA_FIELD_MAP", "Segment")).isNotEqualToIgnoringCase(XftStringUtils.createSubqueryFieldAlias("XNAT_MRSESSIONDATA_FIELD_MAP", "segment"));
+
+        // A value that cleaning and lower-casing leave alone keeps the column name it always had.
+        assertThat(XftStringUtils.createSubqueryFieldAlias("XNAT_MRSESSIONDATA_FIELD_MAP", "dose_alpha")).isEqualTo("XNAT_MRSESSIONDATA_FIELD_MAP_dose_alpha");
     }
 }

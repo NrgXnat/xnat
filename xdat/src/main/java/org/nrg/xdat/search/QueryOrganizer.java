@@ -193,7 +193,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     int indexDot = s.indexOf(".");
                     String FIELDID = s.substring(0,indexDot);
                     String VALUE = s.substring(indexDot+1);
-                    String alias = FIELDID + "_" + XftStringUtils.cleanColumnName(VALUE);
+                    String alias = XftStringUtils.createSubqueryFieldAlias(FIELDID, VALUE);
                     VALUE = StringUtils.replace(StringUtils.replace(VALUE, "_com_", ","), "_col_", ":");
 
                     final StringBuilder sb = new StringBuilder();
@@ -1359,19 +1359,14 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     fieldPath = fieldPath.substring(14);
                 }
 
-                // The key into selected/tables must stay the full cleaned name: addSubqueryToJoin()
-                // registered this subquery's join under exactly that key. Only the emitted SQL
-                // alias is shortened — the same treatment XftStringUtils.CreateAlias() already
-                // gives ordinary columns — so that Postgres' 63-byte truncation cannot collapse
-                // two long pipeline names onto one column name (XNAT-6374).
-                String key  = XftStringUtils.cleanColumnName(StringUtils.replace(fieldPath, ".", "_"));
-                String temp = XftStringUtils.formatPostgreSQLIdentifier(key);
-                if (! selected.contains(key.toLowerCase()))
+                final int dot = fieldPath.indexOf(".");
+                String temp = XftStringUtils.createSubqueryFieldAlias(fieldPath.substring(0, dot), fieldPath.substring(dot + 1));
+                if (! selected.contains(temp.toLowerCase()))
                 {
-                    selected.add(key.toLowerCase());
-                    String alias = key;
-                    if(tables.containsKey(key)){
-                        alias = tables.get(key);
+                    selected.add(temp.toLowerCase());
+                    String alias = temp;
+                    if(tables.containsKey(temp)){
+                        alias = tables.get(temp);
                     }
                     SchemaElement se = SchemaElement.GetElement(elementName);
                     SQLQueryField df = (SQLQueryField) se.getDisplayField(fieldPath.substring(0, fieldPath.indexOf(".")));

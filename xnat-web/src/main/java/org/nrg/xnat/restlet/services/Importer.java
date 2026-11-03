@@ -20,6 +20,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.archive.GradualDicomImporter;
 import org.nrg.xnat.helpers.file.StoredFile;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
@@ -200,6 +201,9 @@ public class Importer extends SecureResource {
                 }
             }
             parseOverrideValue();
+            if (PrearcUtils.parseParam(params, GradualDicomImporter.DIRECT_ARCHIVE_PARAM, false)) {
+                logger.warn("User {} imported with the {} parameter. Direct archive is deprecated and will be removed in a future release; set the project to auto-archive in its prearchive settings instead.", user.getUsername(), GradualDicomImporter.DIRECT_ARCHIVE_PARAM);
+            }
             ImporterHandlerA importer;
             if (fw.size() == 0 && handler != null && !HANDLERS_ALLOWING_CALLS_WITHOUT_FILES.contains(handler)) {
 

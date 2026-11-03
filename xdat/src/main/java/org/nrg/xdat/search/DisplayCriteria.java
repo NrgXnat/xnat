@@ -63,8 +63,15 @@ public class DisplayCriteria implements SQLClause {
         if (StringUtils.isBlank(getWhere_value())) {
             return df.getSQLContent(qo);
         }
+        final String xmlPath = getElementName() + ".SUBQUERYFIELD_" + field + "." + getWhere_value();
+        if (qo instanceof QueryOrganizer) {
+            final String alias = ((QueryOrganizer) qo).getSubqueryFieldAlias(xmlPath);
+            if (StringUtils.isNotBlank(alias)) {
+                return alias;
+            }
+        }
         if (!StringUtils.equals(getElementName(), qo.getRootElement().getFullXMLName())) {
-            final String translated = qo.translateStandardizedPath(getElementName() + ".SUBQUERYFIELD_" + field + "." + getWhere_value());
+            final String translated = qo.translateStandardizedPath(xmlPath);
             if (StringUtils.isNotBlank(translated)) {
                 return translated;
             }

@@ -42,6 +42,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     private final List<String>                        subqueryFields = new ArrayList<>();
     private final Map<String, QueryOrganizer>         addOns         = new HashMap<>();//0:elementName,1:QueryOrganizer
     private final Map<String, DisplayFieldReferenceI> subqueries     = new HashMap<>();
+    private final Map<String, String>                 subqueryFieldAliases = new HashMap<>();
 
     public QueryOrganizer(String elementName, UserI u, String level, Map<String, CachedRootQuery> rootQueries) throws ElementNotFoundException {
         super(elementName, u, level, rootQueries);
@@ -1351,9 +1352,10 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
             String elementName = XftStringUtils.GetRootElementName(xmlPath);
             String fieldPath = xmlPath.substring(xmlPath.indexOf(".")+1);
 
-            if (!selected.contains(fieldPath.toLowerCase()))
+            // Compared case-sensitively: values such as Segment and segment are different subquery fields.
+            if (!selected.contains(fieldPath))
             {
-                selected.add(fieldPath.toLowerCase());
+                selected.add(fieldPath);
                 if (fieldPath.startsWith("SUBQUERYFIELD_"))
                 {
                     fieldPath = fieldPath.substring(14);
@@ -1391,6 +1393,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     }
 
                     fieldAliases.put(xmlPath.toLowerCase(),column);
+                    subqueryFieldAliases.put(getSubqueryFieldKey(xmlPath), column);
                 }else{
                     fieldAliases.put(fieldPath.toLowerCase(),temp);
                 }
@@ -1650,6 +1653,24 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
         }else{
             return fieldAliases.get(copy.toLowerCase());
         }
+    }
+
+    /**
+     * Gets the column that {@link #buildQuery()} emitted for a subquery field. Unlike {@link #getFieldAlias(String)}, this
+     * compares the field's value case-sensitively, so values such as Segment and segment find their own columns.
+     *
+     * @param xmlPath The subquery field's path, as <b>element.SUBQUERYFIELD_fieldId.value</b>.
+     *
+     * @return The emitted column name, or null if no such subquery field was built.
+     */
+    public String getSubqueryFieldAlias(final String xmlPath) {
+        return subqueryFieldAliases.get(getSubqueryFieldKey(xmlPath));
+    }
+
+    // Element names and field IDs match case-insensitively elsewhere in the search engine, so only the value keeps its case.
+    private static String getSubqueryFieldKey(final String xmlPath) {
+        final int valueStart = xmlPath.indexOf(".", xmlPath.indexOf(".") + 1) + 1;
+        return valueStart == 0 ? xmlPath.toLowerCase() : xmlPath.substring(0, valueStart).toLowerCase() + xmlPath.substring(valueStart);
     }
 
     public String translateStandardizedPath(String xmlPath) throws FieldNotFoundException{

@@ -468,8 +468,8 @@ public class DisplaySearch implements TableSearchI {
                     String content = this.getSQLContent(df, qo);
                     if (df instanceof SQLQueryField) {
                         String df_value = (dfr.getValue() == null) ? "NULL" : dfr.getValue().toString();
-                        content = qo.getFieldAlias(df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" +
-                                                          df.getId() + "." + df_value);
+                        content = getSubqueryFieldColumn(qo, df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" +
+                                                             df.getId() + "." + df_value);
                     }
 
                     select.append((added.size() == 0) ? "SELECT " : ", ");
@@ -566,7 +566,7 @@ public class DisplaySearch implements TableSearchI {
                         if (matched) {
                             String df_value = (dfr.getValue() == null) ? "NULL" : dfr.getValue().toString();
 
-                            content = qo.getFieldAlias(df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() + "." + df_value);
+                            content = getSubqueryFieldColumn(qo, df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() + "." + df_value);
                         } else {
                             content = "1";
                         }
@@ -867,6 +867,11 @@ public class DisplaySearch implements TableSearchI {
             }
         }
         return al;
+    }
+
+    // The raw value is checked first, so values that differ only in case or punctuation keep their own columns.
+    private static String getSubqueryFieldColumn(final QueryOrganizer qo, final String xmlPath) {
+        return StringUtils.defaultIfBlank(qo.getSubqueryFieldAlias(xmlPath), qo.getFieldAlias(xmlPath));
     }
 
     public String getSQLContent(DisplayField df2, QueryOrganizer qo) throws FieldNotFoundException {

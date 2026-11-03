@@ -98,6 +98,7 @@ import java.io.Serializable;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,6 +109,7 @@ import java.util.GregorianCalendar;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -4368,10 +4370,26 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 	}
 
     /**
+     * The formats a date/time stored as text in a string or LONGVARCHAR field can have: {@link Date#toString()}, which
+     * is what the split-parameter path writes, and the date/time forms {@link DateUtils#parseDateTime(String)} accepts.
+     */
+    private static final String[] STORED_DATE_TIME_FORMATS = {"EEE MMM dd HH:mm:ss z yyyy",
+                                                              "yyyy-MM-dd HH:mm:ss.SSS",
+                                                              "yyyy-MM-dd HH:mm:ss.S",
+                                                              "yyyy-MM-dd HH:mm:ss z",
+                                                              "yyyy-MM-dd HH:mm:ss",
+                                                              "yyyy-MM-dd'T'HH:mm:ss",
+                                                              "yyyy-MM-dd"};
+    private static final String[] STORED_TIME_FORMATS      = {"HH:mm:ss", "HH:mm:ss z"};
+
+    /**
      * Returns the value already stored in a date-like field as a {@link Date} so that split
      * {@code .hours/.minutes/.seconds/.year/.month/.date} parameters can update it. String and LONGVARCHAR fields
      * store the date as text, either a full date/time or a bare time, so both forms are parsed; a value that is
      * neither yields null and the caller starts from the default base date.
+     *
+     * Parsing is strict and must consume the whole value: a lenient parse would read a DICOM DA value such as
+     * {@code 20120222} as the time 20:12:02 and silently turn it into a date.
      *
      * @param stored The value currently stored in the field, possibly null.
      *
@@ -4384,18 +4402,29 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
         if (stored instanceof Date date) {
             return date;
         }
-        final String text = stored.toString();
-        try {
-            return DateUtils.parseDateTime(text);
-        } catch (ParseException ignored) {
-            // Not a date/time, fall through to a bare time.
+        final String text = stored.toString().trim();
+        for (final String format : STORED_DATE_TIME_FORMATS) {
+            final Date date = parseWhole(text, format);
+            if (date != null) {
+                return date;
+            }
         }
-        try {
-            return DateUtils.parseTime(text);
-        } catch (ParseException e) {
-            log.warn("Ignoring stored value '{}' that is neither a date/time nor a time", text);
-            return null;
+        for (final String format : STORED_TIME_FORMATS) {
+            final Date date = parseWhole(text, format);
+            if (date != null) {
+                return date;
+            }
         }
+        log.warn("Ignoring stored value '{}' that is neither a date/time nor a time", text);
+        return null;
+    }
+
+    private static Date parseWhole(final String text, final String format) {
+        final SimpleDateFormat parser = new SimpleDateFormat(format, Locale.US);
+        parser.setLenient(false);
+        final ParsePosition position = new ParsePosition(0);
+        final Date          date     = parser.parse(text, position);
+        return date != null && position.getIndex() == text.length() ? date : null;
     }
 
 	@SuppressWarnings("deprecation")

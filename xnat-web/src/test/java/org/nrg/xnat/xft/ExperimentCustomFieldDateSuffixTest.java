@@ -98,6 +98,35 @@ public class ExperimentCustomFieldDateSuffixTest {
     }
 
     @Test
+    public void timeParametersUpdateExistingStoredDateStringFromAnotherZone() throws Exception {
+        final XFTItem item = XFTItem.NewItem("xnat:petSessionData", null);
+        item.setProperty(EXPERIMENT_FIELD, "Wed Feb 22 13:03:15 PST 2012");
+
+        item.setProperty(EXPERIMENT_FIELD + ".minutes", "9");
+
+        final Calendar calendar = Calendar.getInstance();
+        calendar.setTime(item.getDateProperty(EXPERIMENT_FIELD));
+        assertEquals(2012, calendar.get(Calendar.YEAR));
+        assertEquals(Calendar.FEBRUARY, calendar.get(Calendar.MONTH));
+        assertEquals(9, calendar.get(Calendar.MINUTE));
+        assertEquals(15, calendar.get(Calendar.SECOND));
+    }
+
+    @Test
+    public void storedValueThatIsNotADateOrTimeIsReplacedFromBaseDate() throws Exception {
+        // A DICOM DA value, a date with trailing text and free text must not be read as a date or time
+        // (lenient SimpleDateFormat would take "20120222" as 20:12:02); they are replaced from the base date.
+        for (final String stored : new String[]{"20120222", "2012-02-22 notes", "120 MBq"}) {
+            final XFTItem item = XFTItem.NewItem("xnat:petSessionData", null);
+            item.setProperty(EXPERIMENT_FIELD, stored);
+
+            item.setProperty(EXPERIMENT_FIELD + ".hours", "9");
+
+            assertDateTime(item.getDateProperty(EXPERIMENT_FIELD), 2000, Calendar.JANUARY, 1, 9, 0, 0);
+        }
+    }
+
+    @Test
     public void timeOnlyParametersUseYear2000BaseDate() throws Exception {
         final XFTItem item = XFTItem.NewItem("xnat:petSessionData", null);
 

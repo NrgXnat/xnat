@@ -157,13 +157,7 @@ public class CSVPresenter extends PresentationA {
 		                    }
 					    }
 
-						Object v;
-						if (dfr.getElementName().equalsIgnoreCase(search.getRootElement().getFullXMLName()))
-						{
-							v = row.get(DisplayFieldAliasCache.getAlias(dfr.getRowID()));
-						}else{
-							v = row.get(DisplayFieldAliasCache.getAlias(dfr.getElementSQLName() + "_" + dfr.getRowID()));
-						}
+						Object v = row.get(DisplayFieldAliasCache.getAlias(dfr, search.getRootElement().getFullXMLName()));
 
 	                    if (v != null)
 	                    {

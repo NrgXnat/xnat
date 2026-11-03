@@ -476,12 +476,7 @@ public class DisplaySearch implements TableSearchI {
                     select.append(content);
                     select.append(" AS ");
 
-                    SchemaElementI se = df.getParentDisplay().getSchemaElement();
-                    if (se.getFullXMLName().equalsIgnoreCase(this.getRootElement().getFullXMLName())) {
-                        select.append(DisplayFieldAliasCache.getAlias(dfrRowID));
-                    }else{
-                        select.append(DisplayFieldAliasCache.getAlias(dfr.getElementSQLName() + "_" + dfrRowID));
-                    }
+                    select.append(DisplayFieldAliasCache.getAlias(dfr, this.getRootElement().getFullXMLName()));
                     added.add(dfr.getElementName() + dfrRowID);
                 }
 

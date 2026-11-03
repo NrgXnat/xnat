@@ -32,7 +32,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -128,8 +127,8 @@ public class TestDicomSCPStore {
             cycle.get(10, SECONDS);
 
             final DicomSCP tracked = store.get(_port);
-            assertEquals("the port should be listening exactly when the store tracks a started receiver on it",
-                         tracked != null && tracked.isStarted(), isListening(_port));
+            assertTrue("the port should be listening exactly when the store tracks a started receiver on it",
+                       awaitListening(_port, tracked != null && tracked.isStarted()));
         } finally {
             release.countDown();
             threads.shutdownNow();
@@ -213,6 +212,24 @@ public class TestDicomSCPStore {
         try (final ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
         }
+    }
+
+    /**
+     * Closing a server socket does not free its port at once. The JDK keeps the listening socket open until the thread
+     * blocked in accept() has woken, and dcm4che's listener does not wait for that thread, so for a moment after a
+     * receiver stops the kernel still completes connections on its port. A probe in that moment looks like an orphaned
+     * receiver. Wait for the port to settle into the expected state; a receiver that is truly orphaned stays listening
+     * past the deadline and still fails.
+     */
+    private static boolean awaitListening(final int port, final boolean expected) throws InterruptedException {
+        final long deadline = System.nanoTime() + SECONDS.toNanos(5);
+        while (isListening(port) != expected) {
+            if (System.nanoTime() > deadline) {
+                return false;
+            }
+            Thread.sleep(50);
+        }
+        return true;
     }
 
     private static boolean isListening(final int port) {

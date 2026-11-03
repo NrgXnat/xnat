@@ -730,8 +730,19 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         }
     }
 
+    /**
+     * After a failed build or archive. A session whose directory is not its own to move stays in ERROR where it is: a
+     * merge receives into the archived experiment's directory, and an archive that failed after saving leaves the
+     * experiment owning it, so moving it would take the archived files to the prearchive too.
+     */
     private void moveToPrearchive(long id, SessionData target, Exception origException)
             throws NotFoundException {
+        if (!ownsSessionDirectory(target)) {
+            log.warn("Leaving DirectArchiveSession id={} {} in ERROR at {} because the directory is not this session's alone",
+                     id, target.getSessionDataTriple(), target.getUrl());
+            directArchiveSessionHibernateService.setStatusToError(id, origException);
+            return;
+        }
         doPrearchiveMove(id, target, Rebuild, null, origException);
     }
 
@@ -855,6 +866,10 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         // Reuse the existing session's ID
         incomingSession.setId(existingSession.getId());
 
+        // Get or reuse an open Merge workflow (pipeline_name='Merged').
+        // Creates and persists a new one if none exists.
+        PersistentWorkflowI workflow = getOrCreateMergeWorkflow(user, existingSession);
+
         // For each incoming scan, merge into existing session
         List<XnatImagescandataI> existingScans = existingSession.getScans_scan();
         for (XnatImagescandataI incomingScan : incomingSession.getScans_scan()) {
@@ -864,7 +879,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
             if (matchingScan != null) {
                 // CASE A: Appending files to an existing scan -- merge catalogs
                 log.debug("Merging files into existing scan {} (UID={})", matchingScan.getId(), matchingScan.getUid());
-                mergeScanCatalogs(incomingScan, matchingScan, target.getProject(), location, overwriteFiles, user);
+                mergeScanCatalogs(incomingScan, matchingScan, target.getProject(), location, overwriteFiles, workflow.buildEvent());
             } else {
                 // CASE B: New scan -- check for scan ID collision
                 XnatImagescandataI idCollision = MergeUtils.getMatchingScan(incomingScan, existingScans);
@@ -882,10 +897,6 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
         // Set up scan resources with archive paths
         setupScans(existingSession, location);
-
-        // Get or reuse an open Merge workflow (pipeline_name='Merged').
-        // Creates and persists a new one if none exists.
-        PersistentWorkflowI workflow = getOrCreateMergeWorkflow(user, existingSession);
 
         // Save updated session to DB (UPDATE, not CREATE).
         // Because the workflow has pipeline_name='Merged', EventServiceItemSaveAspect
@@ -910,9 +921,9 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                 new PendingMergeInfo(target.getProject(), target.getTag(), target.getName()));
     }
 
-    private void mergeScanCatalogs(XnatImagescandataI incomingScan, XnatImagescandataI existingScan,
-                                   String project, String rootPath, boolean overwriteFiles,
-                                   UserI user) throws Exception {
+    void mergeScanCatalogs(XnatImagescandataI incomingScan, XnatImagescandataI existingScan,
+                           String project, String rootPath, boolean overwriteFiles,
+                           EventMetaI eventMeta) throws Exception {
         String fixedRootPath = rootPath.endsWith(File.separator) ? rootPath : rootPath + File.separator;
         for (XnatAbstractresourceI incomingResource : incomingScan.getFile()) {
             if (!(incomingResource instanceof XnatResourcecatalog incomingCatalog)) {
@@ -940,7 +951,7 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
                                 CatalogUtils.addOrUpdateEntry(existingCatData, existingDcm,
                                         incomingEntry.getUri(), incomingEntry.getUri(),
                                         new File(existingCatData.catFile.getParentFile(), incomingEntry.getUri()),
-                                        null, null);
+                                        null, eventMeta);
                             } else {
                                 log.debug("Skipping duplicate DICOM entry with UID={} (append mode)", dcmEntry.getUid());
                             }

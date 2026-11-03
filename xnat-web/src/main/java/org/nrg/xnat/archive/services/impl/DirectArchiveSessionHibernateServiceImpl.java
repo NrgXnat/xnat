@@ -148,7 +148,9 @@ public class DirectArchiveSessionHibernateServiceImpl
 
     @Override
     public void setStatusToError(long id, Exception e) throws NotFoundException {
-        setStatus(get(id), PrearcStatus.ERROR, e.getMessage());
+        // Cut to the 255-character message column, as claimIdleFailedUpload does: an update that failed on a longer
+        // message would leave the session building or archiving.
+        setStatus(get(id), PrearcStatus.ERROR, StringUtils.abbreviate(e.getMessage(), 255));
     }
 
     @Override

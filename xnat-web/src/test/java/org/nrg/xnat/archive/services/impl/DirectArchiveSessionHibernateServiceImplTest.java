@@ -8,6 +8,7 @@ import java.util.Set;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -267,6 +268,19 @@ public class DirectArchiveSessionHibernateServiceImplTest {
         status = null;
 
         assertThatThrownBy(() -> service.claimIdleFailedUpload(SESSION_ID, new Exception("the upload broke"))).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    public void anErrorMessageIsCutToFitItsColumn() throws Exception {
+        // Saved whole, a longer message failed the update and left the session archiving.
+        status = PrearcStatus.ARCHIVING;
+
+        service.setStatusToError(SESSION_ID, new Exception("x".repeat(400)));
+
+        final ArgumentCaptor<DirectArchiveSession> saved = ArgumentCaptor.forClass(DirectArchiveSession.class);
+        verify(dao).update(saved.capture());
+        assertThat(saved.getValue().getStatus()).isEqualTo(PrearcStatus.ERROR);
+        assertThat(saved.getValue().getMessage()).hasSize(255);
     }
 
     @Test

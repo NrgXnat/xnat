@@ -832,10 +832,10 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
 
     // ---- Direct-to-archive merge (append/overwrite) support ----
 
-    private void archiveMerge(long id, SessionData target,
-                              XnatImagesessiondata incomingSession,
-                              UserI user, String location,
-                              String overwriteMode) throws Exception {
+    void archiveMerge(long id, SessionData target,
+                      XnatImagesessiondata incomingSession,
+                      UserI user, String location,
+                      String overwriteMode) throws Exception {
         // Look up the existing archived session from XNAT DB
         XnatExperimentdata existing = findArchivedExperiment(target.getProject(), incomingSession.getLabel(), user);
 
@@ -869,56 +869,62 @@ public class DirectArchiveSessionServiceImpl implements DirectArchiveSessionServ
         // Get or reuse an open Merge workflow (pipeline_name='Merged').
         // Creates and persists a new one if none exists.
         PersistentWorkflowI workflow = getOrCreateMergeWorkflow(user, existingSession);
+        try {
+            // For each incoming scan, merge into existing session
+            List<XnatImagescandataI> existingScans = existingSession.getScans_scan();
+            for (XnatImagescandataI incomingScan : incomingSession.getScans_scan()) {
+                // Find matching scan by SeriesInstanceUID in existing session
+                XnatImagescandataI matchingScan = MergeUtils.getMatchingScanByUID(incomingScan, existingScans);
 
-        // For each incoming scan, merge into existing session
-        List<XnatImagescandataI> existingScans = existingSession.getScans_scan();
-        for (XnatImagescandataI incomingScan : incomingSession.getScans_scan()) {
-            // Find matching scan by SeriesInstanceUID in existing session
-            XnatImagescandataI matchingScan = MergeUtils.getMatchingScanByUID(incomingScan, existingScans);
-
-            if (matchingScan != null) {
-                // CASE A: Appending files to an existing scan -- merge catalogs
-                log.debug("Merging files into existing scan {} (UID={})", matchingScan.getId(), matchingScan.getUid());
-                mergeScanCatalogs(incomingScan, matchingScan, target.getProject(), location, overwriteFiles, workflow.buildEvent());
-            } else {
-                // CASE B: New scan -- check for scan ID collision
-                XnatImagescandataI idCollision = MergeUtils.getMatchingScan(incomingScan, existingScans);
-                if (idCollision != null) {
-                    // Scan ID exists but different SeriesInstanceUID -- rename incoming scan
-                    String newId = generateUniqueScanId(incomingScan, existingScans);
-                    log.info("Scan ID collision: renaming incoming scan {} to {} (UID={})",
-                            incomingScan.getId(), newId, incomingScan.getUid());
-                    renameScanOnDisk(incomingScan, newId, location);
+                if (matchingScan != null) {
+                    // CASE A: Appending files to an existing scan -- merge catalogs
+                    log.debug("Merging files into existing scan {} (UID={})", matchingScan.getId(), matchingScan.getUid());
+                    mergeScanCatalogs(incomingScan, matchingScan, target.getProject(), location, overwriteFiles, workflow.buildEvent());
+                } else {
+                    // CASE B: New scan -- check for scan ID collision
+                    XnatImagescandataI idCollision = MergeUtils.getMatchingScan(incomingScan, existingScans);
+                    if (idCollision != null) {
+                        // Scan ID exists but different SeriesInstanceUID -- rename incoming scan
+                        String newId = generateUniqueScanId(incomingScan, existingScans);
+                        log.info("Scan ID collision: renaming incoming scan {} to {} (UID={})",
+                                incomingScan.getId(), newId, incomingScan.getUid());
+                        renameScanOnDisk(incomingScan, newId, location);
+                    }
+                    // Add new scan to existing session
+                    existingSession.addScans_scan(incomingScan);
                 }
-                // Add new scan to existing session
-                existingSession.addScans_scan(incomingScan);
             }
+
+            // Set up scan resources with archive paths
+            setupScans(existingSession, location);
+
+            // Save updated session to DB (UPDATE, not CREATE).
+            // Because the workflow has pipeline_name='Merged', EventServiceItemSaveAspect
+            // will trigger SessionEvent.Status.MERGED for event service subscribers.
+            PrearcSessionArchiver.preArchive(user, existingSession, EMPTY_MAP, existingSession);
+            saveSession(existingSession, workflow.buildEvent(), false);
+            PrearcSessionArchiver.postArchive(user, existingSession, EMPTY_MAP);
+
+            // Finalize catalogs
+            cleanupScans(existingSession, location, workflow.buildEvent());
+
+            // Clean up the session XML
+            Files.deleteIfExists(sessionXmlPath(location));
+
+            // Delete the DirectArchiveSession tracking entry for this batch
+            directArchiveSessionHibernateService.delete(id);
+
+            // Do NOT complete the workflow here -- it stays In Progress because more files
+            // may arrive. Track this experiment for eventual workflow completion by the
+            // periodic triggerArchive handler when no new files arrive within the timeout.
+            pendingMergeCompletions.put(existingSession.getId(),
+                    new PendingMergeInfo(target.getProject(), target.getTag(), target.getName()));
+        } catch (Exception e) {
+            // archive() fails only a workflow it created itself. Left open, this one would refuse every prearchive
+            // archive into the experiment.
+            failWorkflow(workflow, e);
+            throw e;
         }
-
-        // Set up scan resources with archive paths
-        setupScans(existingSession, location);
-
-        // Save updated session to DB (UPDATE, not CREATE).
-        // Because the workflow has pipeline_name='Merged', EventServiceItemSaveAspect
-        // will trigger SessionEvent.Status.MERGED for event service subscribers.
-        PrearcSessionArchiver.preArchive(user, existingSession, EMPTY_MAP, existingSession);
-        saveSession(existingSession, workflow.buildEvent(), false);
-        PrearcSessionArchiver.postArchive(user, existingSession, EMPTY_MAP);
-
-        // Finalize catalogs
-        cleanupScans(existingSession, location, workflow.buildEvent());
-
-        // Clean up the session XML
-        Files.deleteIfExists(sessionXmlPath(location));
-
-        // Delete the DirectArchiveSession tracking entry for this batch
-        directArchiveSessionHibernateService.delete(id);
-
-        // Do NOT complete the workflow here -- it stays In Progress because more files
-        // may arrive. Track this experiment for eventual workflow completion by the
-        // periodic triggerArchive handler when no new files arrive within the timeout.
-        pendingMergeCompletions.put(existingSession.getId(),
-                new PendingMergeInfo(target.getProject(), target.getTag(), target.getName()));
     }
 
     void mergeScanCatalogs(XnatImagescandataI incomingScan, XnatImagescandataI existingScan,

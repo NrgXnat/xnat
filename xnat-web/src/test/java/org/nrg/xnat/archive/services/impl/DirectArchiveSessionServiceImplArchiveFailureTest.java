@@ -2,6 +2,7 @@ package org.nrg.xnat.archive.services.impl;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -20,6 +21,7 @@ import org.nrg.xdat.bean.CatDcmentryBean;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata;
@@ -28,6 +30,9 @@ import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.helpers.merge.MergeUtils;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
@@ -37,8 +42,10 @@ import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.utils.CatalogUtils;
 import org.nrg.xnat.utils.CatalogUtils.CatalogData;
+import org.nrg.xnat.utils.WorkflowUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -220,6 +227,33 @@ public class DirectArchiveSessionServiceImplArchiveFailureTest {
             catalogUtils.verify(() -> CatalogUtils.addOrUpdateEntry(eq(archivedData), eq(archivedEntry), eq("1.dcm"), eq("1.dcm"),
                                                                     any(File.class), isNull(), eq(event)));
             catalogUtils.verify(() -> CatalogUtils.writeCatalogToFile(archivedData));
+        }
+    }
+
+    @Test
+    public void aMergeThatFailsFailsItsWorkflow() throws Exception {
+        // archive() fails only a workflow it created itself. A merge workflow left open refused every later prearchive
+        // archive into the experiment.
+        final XnatImagesessiondata archived = mock(XnatImagesessiondata.class);
+        final XnatImagesessiondata incoming = mock(XnatImagesessiondata.class);
+        when(incoming.getLabel()).thenReturn(SESSION);
+        when(archived.getId()).thenReturn("XNAT_E00001");
+        when(archived.getScans_scan()).thenThrow(failure);
+        mockedExperiments.when(() -> BaseXnatExperimentdata.GetExptByProjectIdentifier(eq(PROJECT), eq(SESSION), any(), anyBoolean()))
+                         .thenReturn(archived);
+        final PersistentWorkflowI workflow = mock(PersistentWorkflowI.class);
+        when(workflow.getPipelineName()).thenReturn(EventUtils.MERGE);
+        when(workflow.getJustification()).thenReturn("Direct-to-archive upload");
+        when(workflow.getLaunchTimeDate()).thenReturn(new Date());
+
+        try (final MockedStatic<PersistentWorkflowUtils> workflows = Mockito.mockStatic(PersistentWorkflowUtils.class);
+             final MockedStatic<WorkflowUtils> workflowUtils = Mockito.mockStatic(WorkflowUtils.class)) {
+            workflows.when(() -> PersistentWorkflowUtils.getOpenWorkflows(any(), eq("XNAT_E00001"))).thenAnswer(invocation -> List.of(workflow));
+
+            assertThatThrownBy(() -> service.archiveMerge(SESSION_ID, session(PrearcStatus.ARCHIVING), incoming, null,
+                                                          sessionDirectory.getPath(), PrearcUtils.DELETE)).isSameAs(failure);
+
+            workflowUtils.verify(() -> WorkflowUtils.fail(eq(workflow), any()));
         }
     }
 

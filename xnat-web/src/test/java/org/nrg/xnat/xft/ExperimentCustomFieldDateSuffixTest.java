@@ -84,17 +84,17 @@ public class ExperimentCustomFieldDateSuffixTest {
     }
 
     @Test
-    public void timeParametersUpdateExistingStoredTimeString() throws Exception {
+    public void timeParametersUpdateExistingStoredTimeStringOnBaseDate() throws Exception {
         final XFTItem item = XFTItem.NewItem("xnat:petSessionData", null);
         item.setProperty(EXPERIMENT_FIELD, "13:03:15");
 
         item.setProperty(EXPERIMENT_FIELD + ".hours", "9");
 
-        final Calendar calendar = Calendar.getInstance();
-        calendar.setTime(item.getDateProperty(EXPERIMENT_FIELD));
-        assertEquals(9, calendar.get(Calendar.HOUR_OF_DAY));
-        assertEquals(3, calendar.get(Calendar.MINUTE));
-        assertEquals(15, calendar.get(Calendar.SECOND));
+        // A bare time is put on the same base date as an empty field, not on the 1970 epoch, and the field now
+        // holds a Date, which DBAction.ValueParser writes as Date.toString().
+        final Date expected = new GregorianCalendar(2000, Calendar.JANUARY, 1, 9, 3, 15).getTime();
+        assertDateTime(item.getDateProperty(EXPERIMENT_FIELD), 2000, Calendar.JANUARY, 1, 9, 3, 15);
+        assertEquals(expected.toString(), item.getProperty(EXPERIMENT_FIELD).toString());
     }
 
     @Test

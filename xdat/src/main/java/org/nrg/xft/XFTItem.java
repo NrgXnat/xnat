@@ -4410,13 +4410,23 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             }
         }
         for (final String format : STORED_TIME_FORMATS) {
-            final Date date = parseWhole(text, format);
-            if (date != null) {
-                return date;
+            final Date time = parseWhole(text, format);
+            if (time != null) {
+                return onBaseDate(time);
             }
         }
         log.warn("Ignoring stored value '{}' that is neither a date/time nor a time", text);
         return null;
+    }
+
+    /**
+     * Puts a bare time on the base date that an empty field starts from, so that a stored {@code HH:mm:ss} and an
+     * empty field end up with the same date part once the split parameters have been applied.
+     */
+    private static Date onBaseDate(final Date time) {
+        final Calendar parsed = Calendar.getInstance();
+        parsed.setTime(time);
+        return new GregorianCalendar(2000, Calendar.JANUARY, 1, parsed.get(Calendar.HOUR_OF_DAY), parsed.get(Calendar.MINUTE), parsed.get(Calendar.SECOND)).getTime();
     }
 
     private static Date parseWhole(final String text, final String format) {

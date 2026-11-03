@@ -1371,6 +1371,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     SchemaElement se = SchemaElement.GetElement(elementName);
                     SQLQueryField df = (SQLQueryField) se.getDisplayField(fieldPath.substring(0, fieldPath.indexOf(".")));
                     fieldPath=alias + "." + df.getSQLContent(this);
+                    String column = temp;
                     if (se.getFullXMLName().equalsIgnoreCase(rootElementFullXMLName) || containsOptimizedJoin(SchemaElement.GetElement(rootElement.getFullXMLName()),se))
                     {
                         if (counter++==0)
@@ -1380,16 +1381,16 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                             sb.append(", ").append(fieldPath).append(" AS ").append(temp);
                         }
                     }else{
-                        alias = XftStringUtils.formatPostgreSQLIdentifier(XftStringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp);
+                        column = XftStringUtils.formatPostgreSQLIdentifier(XftStringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp);
                         if (counter++==0)
                         {
-                            sb.append(se.getSQLName()).append(".").append(temp).append(" AS ").append(alias);
+                            sb.append(se.getSQLName()).append(".").append(temp).append(" AS ").append(column);
                         }else{
-                            sb.append(", ").append(se.getSQLName()).append(".").append(temp).append(" AS ").append(alias);
+                            sb.append(", ").append(se.getSQLName()).append(".").append(temp).append(" AS ").append(column);
                         }
                     }
 
-                    fieldAliases.put(xmlPath.toLowerCase(),temp);
+                    fieldAliases.put(xmlPath.toLowerCase(),column);
                 }else{
                     fieldAliases.put(fieldPath.toLowerCase(),temp);
                 }

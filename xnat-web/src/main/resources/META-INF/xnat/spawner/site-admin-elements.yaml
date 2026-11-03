@@ -1982,8 +1982,10 @@ dicomScpEditor:
             offText: "Direct to archive: <b>Disabled</b> (use prearchive)"
             description: >
                 Enable or Disable Direct Archive for DICOM Receiver (if disabled, data comes through the prearchive).
-                <b>Direct Archive is deprecated</b> and will be removed in a future release. Turn it off and set the
-                projects this receiver serves to auto-archive in their prearchive settings.
+                <b>Direct Archive is deprecated</b> and will be removed in a future release. While it is on, this
+                receiver archives every session it can route to a project, whatever that project's prearchive setting.
+                Before turning it off, set each project that should archive automatically to auto-archive in its
+                prearchive settings.
         directArchiveOverwrite:
             kind: panel.input.switchbox
             name: directArchiveOverwrite

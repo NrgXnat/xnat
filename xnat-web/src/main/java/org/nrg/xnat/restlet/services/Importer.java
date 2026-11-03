@@ -57,6 +57,8 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class Importer extends SecureResource {
@@ -64,6 +66,8 @@ public class Importer extends SecureResource {
     private static final String COMMIT = "commit";
     private static final String ACTION = "action";
     private final Logger logger = LoggerFactory.getLogger(Importer.class);
+    /** Users already warned that the Direct-Archive parameter is deprecated. Each is warned once per node, not on every import. */
+    private static final Set<String> WARNED_OF_DIRECT_ARCHIVE = ConcurrentHashMap.newKeySet();
 
     public Importer(Context context, Request request, Response response) {
         super(context, request, response);
@@ -201,8 +205,8 @@ public class Importer extends SecureResource {
                 }
             }
             parseOverrideValue();
-            if (PrearcUtils.parseParam(params, GradualDicomImporter.DIRECT_ARCHIVE_PARAM, false)) {
-                logger.warn("User {} imported with the {} parameter. Direct archive is deprecated and will be removed in a future release; set the project to auto-archive in its prearchive settings instead.", user.getUsername(), GradualDicomImporter.DIRECT_ARCHIVE_PARAM);
+            if (PrearcUtils.parseParam(params, GradualDicomImporter.DIRECT_ARCHIVE_PARAM, false) && WARNED_OF_DIRECT_ARCHIVE.add(user.getUsername())) {
+                logger.warn("User {} imported with the {} parameter. Direct archive is deprecated and will be removed in a future release; set the project to auto-archive in its prearchive settings instead. This is logged once per user until XNAT restarts.", user.getUsername(), GradualDicomImporter.DIRECT_ARCHIVE_PARAM);
             }
             ImporterHandlerA importer;
             if (fw.size() == 0 && handler != null && !HANDLERS_ALLOWING_CALLS_WITHOUT_FILES.contains(handler)) {

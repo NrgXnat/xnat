@@ -4391,11 +4391,12 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
      * Parsing is strict and must consume the whole value: a lenient parse would read a DICOM DA value such as
      * {@code 20120222} as the time 20:12:02 and silently turn it into a date.
      *
-     * @param stored The value currently stored in the field, possibly null.
+     * @param stored  The value currently stored in the field, possibly null.
+     * @param fieldId The id of the field, for the log.
      *
      * @return The stored value as a date, or null if there is none or it can't be parsed.
      */
-    private static Date parseStoredDateTime(final Object stored) {
+    private static Date parseStoredDateTime(final Object stored, final String fieldId) {
         if (stored == null) {
             return null;
         }
@@ -4415,7 +4416,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
                 return onBaseDate(time);
             }
         }
-        log.warn("Ignoring stored value '{}' that is neither a date/time nor a time", text);
+        // The value is not logged: custom fields can hold DICOM-derived values.
+        log.warn("Replacing the {}-character value stored in {}, which is neither a date/time nor a time", text.length(), fieldId);
         return null;
     }
 
@@ -4763,7 +4765,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             			                || xmlPath.equalsIgnoreCase("hours")
             			                || xmlPath.equalsIgnoreCase("seconds")))
             			        {
-            			            Date date = parseStoredDateTime(getProperty(secondToLastField.getId()));
+            			            Date date = parseStoredDateTime(getProperty(secondToLastField.getId()), secondToLastField.getId());
             			            if (date==null)
             			            {
             			                GregorianCalendar cal = new GregorianCalendar(2000, Calendar.JANUARY, 1);

@@ -1,6 +1,9 @@
 package org.nrg.dicom.mizer.objects;
 
+import org.dcm4che3.data.Attributes;
+import org.dcm4che3.data.BulkData;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.data.VR;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nrg.dicom.mizer.exceptions.MizerException;
@@ -348,6 +351,67 @@ public class DicomObjectFactoryTests {
     public void getBytes() {
         DicomObjectI dobj = createDicomObject_All_VRs();
         assertEquals(OB_VM1.encodedValue, encodeHex(dobj.getBytes(OB_VM1.tag)));
+    }
+
+    @Test
+    public void getStringOfEmptyBinaryValue() {
+        Attributes attrs = new Attributes();
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.setBytes(0x00291010, VR.OB, new byte[0]);
+        attrs.setBytes(0x00291011, VR.OW, new byte[0]);
+        attrs.setNull(0x00291012, VR.UC);
+        DicomObjectI dobj = new DicomObjectFactory.MizerDicomObject(attrs);
+        assertEquals("", dobj.getString(0x00291010));
+        assertEquals("", dobj.getString(0x00291011));
+        assertEquals("", dobj.getString(0x00291012));
+    }
+
+    @Test
+    public void getStringOfUnreadableBinaryValue() {
+        Attributes attrs = new Attributes();
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.newFragments(0x00291010, VR.OB, 2).add(new byte[0]);
+        attrs.setValue(0x00291011, VR.OB, new BulkData(null, "file:/nonexistent.dcm?offset=0&length=4", false));
+        Attributes item = new Attributes();
+        item.setString(0x00290010, VR.LO, "p1");
+        item.newFragments(0x00291010, VR.OB, 2).add(new byte[0]);
+        attrs.newSequence(0x00291020, 1).add(item);
+        DicomObjectI dobj = new DicomObjectFactory.MizerDicomObject(attrs);
+        assertEquals("", dobj.getString(0x00291010));
+        assertEquals("", dobj.getString(0x00291011));
+        assertEquals("", dobj.getString(0x00291020, 0, 0x00291010));
+    }
+
+    @Test
+    public void getStringOfBinaryValueWithTrailingNul() {
+        byte[] value = {'A', 'B', 'C', 0};
+        Attributes attrs = new Attributes();
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.setBytes(0x00291010, VR.OB, value);
+        Attributes item = new Attributes();
+        item.setString(0x00290010, VR.LO, "p1");
+        item.setBytes(0x00291010, VR.OB, value);
+        attrs.newSequence(0x00291020, 1).add(item);
+        DicomObjectI dobj = new DicomObjectFactory.MizerDicomObject(attrs);
+        assertEquals("ABC", dobj.getString(0x00291010));
+        assertEquals("ABC", dobj.getString(0x00291020, 0, 0x00291010));
+    }
+
+    @Test
+    public void getStringsOfUcUseTheCharacterSet() {
+        byte[] value = "Müller\\B".getBytes(StandardCharsets.ISO_8859_1);
+        Attributes attrs = new Attributes();
+        attrs.setString(Tag.SpecificCharacterSet, VR.CS, "ISO_IR 100");
+        attrs.setString(0x00290010, VR.LO, "p1");
+        attrs.setBytes(0x00291010, VR.UC, value);
+        Attributes item = new Attributes();
+        item.setString(0x00290010, VR.LO, "p1");
+        item.setBytes(0x00291010, VR.UC, value);
+        attrs.newSequence(0x00291020, 1).add(item);
+        DicomObjectI dobj = new DicomObjectFactory.MizerDicomObject(attrs);
+        assertArrayEquals(new String[]{"Müller", "B"}, dobj.getStrings(0x00291010));
+        assertEquals("Müller\\B", dobj.getString(0x00291010));
+        assertArrayEquals(new String[]{"Müller", "B"}, dobj.getStrings(0x00291020, 0, 0x00291010));
     }
 
     @Test

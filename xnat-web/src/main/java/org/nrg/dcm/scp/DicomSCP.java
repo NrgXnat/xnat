@@ -250,7 +250,6 @@ public class DicomSCP {
         }
 
         final String aeTitle = instance.getAeTitle();
-        final int port = getPort();
         if (StringUtils.isBlank(aeTitle)) {
             throw new IllegalArgumentException("Can only add service to named AE");
         }
@@ -269,7 +268,7 @@ public class DicomSCP {
         getDicomServicesByApplicationEntity().put(applicationEntity,
                 new CStoreService.Specifier(aeTitle,
                         _manager.getUserProvider(),
-                        _manager.getDicomObjectIdentifier(aeTitle, port),
+                        _manager.getDicomObjectIdentifier(instance),
                         _manager.getDicomFileNamer(fileNamer),
                         _manager)
                         .build());

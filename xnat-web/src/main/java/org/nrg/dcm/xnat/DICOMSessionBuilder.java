@@ -623,13 +623,15 @@ public class DICOMSessionBuilder extends SessionBuilder implements Closeable {
 
             nScans.set(scanToSeries.size());
 
+            // one site-preference read for the whole session rather than one database round trip per scan
+            final boolean separateSecondaryDicomOnArchive = CatalogBuilder.readSeparateSecondaryDicomOnArchive();
             for (final Map.Entry<String,Series> nse : scanToSeries.entrySet()) {  // Number->Series entry
                 try {
                     final Map<DicomAttributeIndex,String> scanSpec = ImmutableMap.of(SeriesInstanceUID,
                             nse.getValue().getUID());
                     final DICOMScanBuilder scanBuilder = DICOMScanBuilder.fromStore(store, sessionLog,
                             nse.getKey(), nse.getValue(), scanSpec, catalogWriterFactory, useRelativePaths(),
-                            scanBeanFactories, scanBeanBuilders, scanTypeAttrs);
+                            scanBeanFactories, scanBeanBuilders, scanTypeAttrs, separateSecondaryDicomOnArchive);
 
                     XnatImagescandataBean scan = scanBuilder.call();
 

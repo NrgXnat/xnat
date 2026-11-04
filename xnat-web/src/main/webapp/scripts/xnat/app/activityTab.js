@@ -278,7 +278,11 @@ var XNAT = getObject(XNAT);
             return '<div class="prog success">' + urls.length +
                 ' session(s) successfully uploaded to ' + dest + ': ' + urlsHtml + '</div>';
         } else {
-            return '<div class="prog error">Extraction/Review failed: ' + message + '</div>' +
+            // A failed upload names any sessions it archived before the failure: link them as a success does
+            const details = escapeHtml(message).replace(/\/archive\/projects\/[^\s;<]+/g, function (url) {
+                return '<a target="_blank" href="' + XNAT.url.rootUrl('/data' + url) + '">' + url.replace(/.*\//, '') + '</a>';
+            });
+            return '<div class="prog error">Extraction/Review failed: ' + details + '</div>' +
                 '<div class="warning">Check the ' + getPrearcLink() +
                 ', DICOM/ECAT data may be available there for manual review.</div>';
         }

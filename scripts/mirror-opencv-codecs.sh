@@ -3,8 +3,9 @@
 # Mirror the Weasis OpenCV codecs into nrgxnat/libs-release-local.
 #
 # dcm4che 5 resolves compressed DICOM to the OpenCV-backed ImageIO plugins, which reach XNAT through
-# org.dcm4che:dcm4che-imageio-opencv. That artifact is already in Artifactory; the Weasis library
-# behind it and the per-platform native binaries are not. See docs/mirroring-opencv-codecs.md.
+# org.dcm4che:dcm4che-imageio-opencv. That artifact is already in Artifactory; the Weasis BOM and
+# library behind it and the per-platform native binaries are not. See
+# docs/mirroring-opencv-codecs.md.
 #
 # Dry run (default) downloads every artifact, verifies it against the checksum published upstream,
 # and reports what would be deployed. Nothing leaves the machine.
@@ -28,18 +29,21 @@ SRC="https://raw.githubusercontent.com/nroduit/mvn-repo/master"
 DST="https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
 READ="https://nrgxnat.jfrog.io/nrgxnat/libs-release"
 
+WEASIS_BOM="org/weasis/core/weasis-core-img-bom/5.0.0"
 WEASIS="org/weasis/core/weasis-core-img/5.0.0"
 OPENCV="org/weasis/thirdparty/org/opencv/libopencv_java/5.0.0-dcm"
+OPENCV_WIN="org/weasis/thirdparty/org/opencv/opencv_java/5.0.0-dcm"
 
-# weasis-core-img-bom is deliberately absent: it already resolves from Artifactory.
+# dcm4che's parent POM imports weasis-core-img-bom, so Gradle can't read any dcm4che POM without it.
 #
-# These are every platform upstream actually publishes, less linux-armv7a. Note that Weasis's POM
-# declares windows-x86-64 and windows-x86 too, but no Windows binary exists in the repository --
-# a Windows workstation cannot get this native from here at all.
+# These are every platform upstream actually publishes, less linux-armv7a. The Windows native is
+# published, and declared in Weasis's POM, under a different artifactId: opencv_java, without the
+# "lib" prefix. There is no 32-bit Windows build.
 #
 # Upstream also carries "-dyn" variants of each Linux native, dynamically linked and smaller. The
 # POM names the statically linked ones, so those are what resolve; do not substitute them.
 ARTIFACTS=(
+  "$WEASIS_BOM/weasis-core-img-bom-5.0.0.pom"
   "$WEASIS/weasis-core-img-5.0.0.pom"
   "$WEASIS/weasis-core-img-5.0.0.jar"
   "$OPENCV/libopencv_java-5.0.0-dcm.pom"
@@ -47,6 +51,8 @@ ARTIFACTS=(
   "$OPENCV/libopencv_java-5.0.0-dcm-linux-aarch64.so"     # arm64 nodes and CI
   "$OPENCV/libopencv_java-5.0.0-dcm-macosx-aarch64.dylib" # Apple silicon development
   "$OPENCV/libopencv_java-5.0.0-dcm-macosx-x86-64.dylib"  # Intel Mac development
+  "$OPENCV_WIN/opencv_java-5.0.0-dcm.pom"
+  "$OPENCV_WIN/opencv_java-5.0.0-dcm-windows-x86-64.dll" # Tomcat on Windows
 )
 
 publish=false

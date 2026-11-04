@@ -61,6 +61,8 @@ RUN chmod +x /usr/local/bin/*.sh
 # Diagnostic / runtime tools expected by deploy environments
 # (dcmtk for DICOM debug, netcat/ping for connectivity checks, unzip
 # for the WAR expansion below).
+# The build fails if ca-certificates is older than 20260816 (USN-8944-1).
+# Remove that check once the base image ships 20260816 or later.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
         curl \
@@ -70,15 +72,46 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         net-tools \
         traceroute \
         dcmtk \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && v="$(dpkg-query -W -f='${Version}' ca-certificates)" \
+    && { dpkg --compare-versions "$v" ge 20260816 \
+         || { echo "ca-certificates $v is older than the 20260816 bundle" >&2; exit 1; }; }
+
+# Delete the emSign ECC Root CA - G3 and AAA Certificate Services roots from the JVM cacerts
+# (CVE-2026-91403). This only holds if nothing copies the OS bundle back into cacerts
+# (USE_SYSTEM_CA_CERTS). Remove this layer once the Temurin base's cacerts has neither root.
+RUN set -eu; \
+    ks="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java.home = //p')/lib/security/cacerts"; \
+    list() { \
+        o="$(keytool -list -v -keystore "$ks" -storepass changeit 2>&1)" \
+            || { printf 'keytool cannot list %s:\n%s\n' "$ks" "$o" >&2; return 1; }; \
+        printf '%s\n' "$o"; \
+    }; \
+    targets() { \
+        printf '%s\n' "$1" | awk '/^Alias name: /{a=substr($0,13)} /^Owner: /&&/emSign ECC Root CA - G3|AAA Certificate Services/{print a}'; \
+    }; \
+    before="$(list)"; \
+    case "$before" in \
+        *"Alias name: "*"Owner: CN="*) ;; \
+        *) printf 'unexpected keytool output for %s:\n%s\n' "$ks" "$before" >&2; exit 1 ;; \
+    esac; \
+    targets "$before" | while IFS= read -r a; do \
+        echo "removing $a"; \
+        keytool -delete -alias "$a" -keystore "$ks" -storepass changeit; \
+    done; \
+    after="$(list)"; \
+    left="$(targets "$after")"; \
+    if [ -n "$left" ]; then printf 'still in %s: %s\n' "$ks" "$left" >&2; exit 1; fi
 
 # -----------------------------------------------------------------------------
 # OpenCV native for dcm4che's image codecs.
 #
-# dcm4che 5 resolves every JPEG-family transfer syntax to the OpenCV-backed ImageIO plugins in
-# org.dcm4che:dcm4che-imageio-opencv, which is Java glue over this binary. Without it, anything
-# decoding compressed pixel data -- snapshots, thumbnails, montages, and redaction by the
-# alterPixels anonymization function -- fails with "No Reader for format: jpeg2000-cv registered".
+# dcm4che 5 decodes JPEG-family pixel data with the ImageIO readers in
+# org.dcm4che:dcm4che-imageio-opencv, which call this library. Without it, snapshots, thumbnails,
+# montages and alterPixels redaction of JPEG-family data fail with
+# "UnsatisfiedLinkError: 'long org.opencv.core.Mat.n_Mat(int, int, int)'", and Native DICOM
+# Pre-Compression is skipped. "No Reader for format: jpeg2000-cv registered" means the jar is
+# missing, not this library.
 #
 # It is fetched rather than copied from the build context because the context is assembled by the
 # reusable CI workflow and carries only the WAR. /usr/java/packages/lib is already on the JVM's

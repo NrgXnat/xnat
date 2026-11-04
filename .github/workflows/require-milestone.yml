@@ -1,0 +1,43 @@
+name: Require Milestone
+
+# Every PR into develop needs a milestone. GitHub has no native setting for
+# that, so this check fails until one is set and the "develop protection"
+# ruleset lists "Require milestone" as a required status check. Setting or
+# clearing the milestone re-runs the check, so nobody has to re-run it by hand.
+#
+# Issues are handled separately by needs-milestone-label.yml, since GitHub
+# can't block issue creation.
+
+on:
+  pull_request:
+    branches:
+      - develop
+    # milestoned/demilestoned re-run the check when the milestone changes;
+    # edited covers a PR retargeted to develop after it was opened.
+    types: [opened, reopened, synchronize, edited, milestoned, demilestoned]
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: require-milestone-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  require-milestone:
+    name: Require milestone
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR milestone
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          # Read the milestone live rather than from the event payload, so a
+          # manual re-run after setting the milestone passes too.
+          milestone=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '.milestone.title // empty')
+          if [ -z "$milestone" ]; then
+            echo "::error::This PR has no milestone. Set one in the PR sidebar; this check re-runs automatically."
+            exit 1
+          fi
+          echo "Milestone: $milestone"

@@ -57,7 +57,7 @@ Redacting compressed pixel data needs the OpenCV native library (`libopencv_java
 `java.library.path`. Without it, `alterPixels` fails on every JPEG-family object with "Unable to
 transcode pixel data from ... A codec for the transfer syntax is required to redact pixels in a
 compressed object.", caused by an `UnsatisfiedLinkError`. Uncompressed and RLE objects do not need
-it. The XNAT image installs the native; [mirroring-opencv-codecs.md](../docs/mirroring-opencv-codecs.md)
+it. The XNAT image installs the native; [installing-opencv-native.md](../docs/installing-opencv-native.md)
 covers installing it anywhere else.
 
 Redaction stages pixel data in scratch files under `java.io.tmpdir`, or under the directory named by
@@ -78,6 +78,7 @@ syntax, and more than that for a compressed one.
 - **pixelmed is no longer a dependency.** Code that uses it has to declare `com.dclunie:pixelmed`
   itself. The XNAT WAR still ships pixelmed for plugins built against it, until 1.11.
 - **Released dependencies only.** The published 6.9.1 POM depends on mizer and framework
-  `1.10.1-SNAPSHOT`. 6.10.0 is published only by the build that releases those modules.
+  `1.10.1-SNAPSHOT`. 6.10.0 is published by the XNAT 1.10.2 release build and depends on mizer
+  and framework 1.10.2.
 - **7.0.0 snapshots are withdrawn.** Builds published as `7.0.0-SNAPSHOT` or `7.0.0-RC-SNAPSHOT` are
-  replaced by 6.10.0; use `6.10.0-SNAPSHOT` until 6.10.0 is released.
+  replaced by 6.10.0; use 6.10.0 instead.

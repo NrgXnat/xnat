@@ -152,6 +152,31 @@ public class DirectArchiveSessionHibernateServiceImpl
     }
 
     @Override
+    public boolean claimIdleFailedUpload(long id, Exception e) throws NotFoundException {
+        // The message column holds 255 characters, and a failure that names a file path can run longer; an update
+        // that failed on it would leave the session receiving.
+        if (getDao().claimIdleFailedUpload(id, StringUtils.abbreviate(e.getMessage(), 255)) == 1) {
+            return true;
+        }
+        log.warn("Leaving DirectArchiveSession id={} in status {}: it is no longer an idle session with a failed upload", id, get(id).getStatus());
+        return false;
+    }
+
+    @Override
+    public boolean markFailedUpload(long id, Exception e) throws NotFoundException {
+        if (getDao().markFailedUpload(id, StringUtils.abbreviate(e.getMessage(), 255)) == 1) {
+            return true;
+        }
+        log.warn("Not marking the failed upload into DirectArchiveSession id={}: it is in status {}, no longer receiving", id, get(id).getStatus());
+        return false;
+    }
+
+    @Override
+    public boolean hasFailedUpload(long id) throws NotFoundException {
+        return Boolean.TRUE.equals(get(id).getFailedUpload());
+    }
+
+    @Override
     public void setStatusToQueuedBuilding(long id) throws NotFoundException {
         if (!setStatusToQueuedBuilding(id, false)) {
             throw new IllegalStateException("DirectArchiveSession id=" + id + " is not in a status that can be queued for building");

@@ -10,6 +10,7 @@
 package org.nrg.xnat.processor.services.impl;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.xnat.archive.ImportScope;
 import org.nrg.xnat.entities.ArchiveProcessorInstance;
 import org.nrg.xnat.processor.dao.ArchiveProcessorInstanceDAO;
 import org.nrg.xnat.processor.services.ArchiveProcessorInstanceService;
@@ -48,7 +49,11 @@ public class HibernateArchiveProcessorInstanceService extends AbstractHibernateE
 
     @Override
     public List<ArchiveProcessorInstance> getAllEnabledSiteProcessorsInOrderForLocation(final String location) {
-        return getDao().getEnabledSiteArchiveProcessorsInOrderForLocation(location);
+        // The importer asks this for every received instance at each of its processing locations, and each ask
+        // is a Hibernate query. Within one import scope (the instances of one association, one uploaded archive,
+        // one inbox request) the answer is read once per location; the processor instances are fully loaded
+        // (every collection is eager) and read-only to the importer, so sharing them within the scope is safe.
+        return ImportScope.scoped("archive-processors:" + location, () -> getDao().getEnabledSiteArchiveProcessorsInOrderForLocation(location));
     }
 
     @Override

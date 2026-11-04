@@ -10,11 +10,11 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.modules.ActionLoader;
-import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
@@ -32,19 +32,28 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 @SuppressWarnings({"unused", "DuplicatedCode"})
 @Slf4j
 public class XDATRegisterUser extends VelocitySecureAction {
-    public static final String XDAT_USER_FIRSTNAME = "xdat:user.firstname";
-    public static final String XDAT_USER_LASTNAME  = "xdat:user.lastname";
-    public static final String XDAT_USER_LOGIN     = "xdat:user.login";
-    public static final String XDAT_USER_EMAIL     = "xdat:user.email";
-    public static final String XDAT_USER_PAR       = "par";
+    public static final String XDAT_USER_FIRSTNAME        = "xdat:user.firstname";
+    public static final String XDAT_USER_LASTNAME         = "xdat:user.lastname";
+    public static final String XDAT_USER_LOGIN            = "xdat:user.login";
+    public static final String XDAT_USER_EMAIL            = "xdat:user.email";
+    public static final String XDAT_USER_PRIMARY_PASSWORD = "xdat:user.primary_password";
+    public static final String XDAT_USER_PAR              = "par";
+
+    // The registration form's fields. A new user is built from these parameters only, matched by exact key, so the
+    // key that builds the user is the same one the auth record, validation and duplicate check read. Whether the
+    // account is enabled and verified is decided below.
+    private static final Set<String> ALLOWED_REGISTRATION_FIELDS = ImmutableSet.of(
+            XDAT_USER_LOGIN, XDAT_USER_EMAIL, XDAT_USER_PRIMARY_PASSWORD, XDAT_USER_FIRSTNAME, XDAT_USER_LASTNAME);
 
     public XDATRegisterUser() {
         this("Register.vm");
@@ -68,12 +77,19 @@ public class XDATRegisterUser extends VelocitySecureAction {
             return;
         }
 
+        // Registration must be a POST: the CSRF check validates the token only for POST, PUT and DELETE.
+        if (!isPostRequest(data)) {
+            data.setMessage("Due to a technical issue, the requested action cannot be performed.");
+            data.setScreenTemplate("Login.vm");
+            return;
+        }
+
         if (!validate(data, context)) {
             return;
         }
 
         try {
-            final UserI found = Users.createUser(TurbineUtils.GetDataParameterHash(data));
+            final UserI found = Users.createUser(allowlistRegistrationParameters(TurbineUtils.GetDataParameterHash(data)));
 
             if (found.getID() != null) {
                 //This shouldn't have a pk yet
@@ -103,7 +119,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                 if (matches.size() == 0 && matches2.size() == 0) {
                     final ParameterParser parameters = data.getParameters();
                     final String          operation  = parameters.getString("operation");
-                    final String          tempPass   = parameters.getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
+                    final String          tempPass   = parameters.getString(XDAT_USER_PRIMARY_PASSWORD); // the object in found will have run the password through escape character encoding, potentially altering it
 
                     // If this is a register operation, we don't want to validate the password because there isn't one: we're just
                     // creating the XNAT account to correspond with the auth account.
@@ -118,14 +134,16 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         // NEW USER
                         found.setPassword(tempPass);
 
-                        final boolean hasParData             = hasPAR(data);
+                        // A PAR counts only when a pending request for the submitted guid was sent to the email being
+                        // registered.
+                        final boolean hasParData             = hasValidPar(data);
                         final boolean autoApprovePar         = _preferences.getPar();
                         final boolean autoEnable             = _preferences.getUserRegistration();
                         final boolean autoVerify             = !_preferences.getEmailVerification();
-                        final String  authMethod             = parameters.getString("authMethod");
-                        final String  providerId             = parameters.getString("providerId");
-                        final boolean isProviderAutoEnabled  = parameters.getBoolean("providerAutoEnabled", false);
-                        final boolean isProviderAutoVerified = parameters.getBoolean("providerAutoVerified", false);
+                        // The provider flags apply only to registration through an external provider, and
+                        // RegisterExternalLogin passes them in the context, not as request parameters.
+                        final boolean isProviderAutoEnabled  = isServerProvidedFlag(context, "providerAutoEnabled");
+                        final boolean isProviderAutoVerified = isServerProvidedFlag(context, "providerAutoVerified");
 
                         // Approve them if:
                         //  -- we autoapprove registered users
@@ -134,7 +152,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         // Verify them if:
                         //  -- we autoverify users (don't require email verification)
                         //  -- authenticating provider autoverifies users
-                        //  -- this user has a PAR (includes email so address is already verified)
+                        //  -- this user has a PAR whose invited email matches (so the address is already verified)
                         final boolean enabled  = autoEnable || isProviderAutoEnabled || autoApprovePar && hasParData;
                         final boolean verified = autoVerify || isProviderAutoVerified || hasParData;
 
@@ -227,7 +245,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
         if ((getPreferences().getUserRegistration() && !getPreferences().getEmailVerification()) || ((getPreferences().getUserRegistration() || getPreferences().getPar()) && hasPAR(data))) {
             if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
                 data.setAction(nextAction);
-                ((VelocityAction) ActionLoader.getInstance().getInstance(nextAction)).doPerform(data, context);
+                // Dispatch through exec(...) so the target action's perform() runs its isAuthorized() check; a
+                // direct doPerform(...) call would skip it.
+                ActionLoader.getInstance().exec(data, nextAction);
             } else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(Turbine.getConfiguration().getString("template.home"))) {
                 data.setScreenTemplate(nextPage);
             }
@@ -237,6 +257,39 @@ public class XDATRegisterUser extends VelocitySecureAction {
     @Override
     protected boolean isAuthorized(final RunData data) {
         return true;
+    }
+
+    /**
+     * Indicates whether a provider registration flag ({@code providerAutoEnabled} or {@code providerAutoVerified}) is
+     * set in the Velocity context, where RegisterExternalLogin puts it. Only {@link Boolean#TRUE} counts.
+     *
+     * @param context The Velocity context for the current request.
+     * @param key     The context key for the flag.
+     *
+     * @return {@code true} only if the context holds {@link Boolean#TRUE} for the key.
+     */
+    static boolean isServerProvidedFlag(final Context context, final String key) {
+        return Boolean.TRUE.equals(context.get(key));
+    }
+
+    /**
+     * Keeps only the {@link #ALLOWED_REGISTRATION_FIELDS registration form fields}, matched by exact key ignoring case.
+     * Every other parameter is dropped, including other spellings of the same field (a slash, {@code '@'} or
+     * {@code ELEMENT_} path, or no separator).
+     *
+     * @param parameters The raw request parameters.
+     *
+     * @return A copy containing only the allowed entries, with their original keys and values.
+     */
+    protected static Map<String, String> allowlistRegistrationParameters(final Map<String, String> parameters) {
+        // Keep the original key and value so the entry matches what GetPassedParameter returns for that key.
+        final Map<String, String> allowed = new HashMap<>();
+        for (final Map.Entry<String, String> entry : parameters.entrySet()) {
+            if (ALLOWED_REGISTRATION_FIELDS.contains(entry.getKey().toLowerCase())) {
+                allowed.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return allowed;
     }
 
     protected void handleInvalid(final RunData data, final Context context, final String message) {
@@ -263,6 +316,32 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
     protected boolean hasPAR(final RunData data) {
         return data.getParameters().containsKey(XDAT_USER_PAR) || data.getSession().getAttribute(XDAT_USER_PAR) != null;
+    }
+
+    /**
+     * Indicates whether a pending project access request exists for the submitted guid and was sent to the email being
+     * registered. Such a registration may be enabled and verified automatically. Unlike {@link #hasPAR(RunData)}, a
+     * {@code par} parameter on its own is not enough. This class can't look up project access requests, so it returns
+     * {@code false}; the web module overrides it.
+     *
+     * @param data The run data for the current request.
+     *
+     * @return {@code true} if a pending request matches the submitted guid and the registering email.
+     */
+    protected boolean hasValidPar(final RunData data) {
+        return false;
+    }
+
+    /**
+     * Indicates whether the current request is a POST. {@link SecureAction#isCsrfTokenOk(RunData)} validates the
+     * token only for POST, PUT and DELETE.
+     *
+     * @param data The run data for the current request.
+     *
+     * @return {@code true} only if the request method is POST.
+     */
+    protected static boolean isPostRequest(final RunData data) {
+        return StringUtils.equalsIgnoreCase("POST", data.getRequest().getMethod());
     }
 
     protected SiteConfigPreferences getPreferences() {

@@ -19,6 +19,8 @@ import org.apache.tools.ant.taskdefs.Delete;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.net.TransferCapability;
+import org.hsqldb.DatabaseManager;
+import org.hsqldb.lib.HsqlArrayList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,11 +30,17 @@ import org.nrg.util.FileURIOpener;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -197,6 +206,29 @@ public class EnumeratedMetadataStoreTest {
     }
 
     @Test
+    public void holdsOneConnectionOpenBetweenQueries() throws IOException, SQLException {
+        // Every query opens and closes its own connection; only a connection held for the store's
+        // lifetime stops HSQLDB syncing its log to disk after each of them (Database.closeIfLast).
+        try (final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(TAGS, FileURIOpener.getInstance())) {
+            assertEquals(0, store.getSize());   // a query has come and gone
+            final HsqlArrayList<?> uris = DatabaseManager.getDatabaseURIs();
+            String uri = null;
+            for (int i = 0; i < uris.size(); i++) {
+                if (uris.get(i).toString().contains("org.nrg.dcm.db")) {
+                    uri = uris.get(i).toString();
+                }
+            }
+            assertNotNull("the store's database is registered with HSQLDB", uri);
+            try (final Connection probe = DriverManager.getConnection("jdbc:hsqldb:" + uri, "sa", "");
+                 final Statement statement = probe.createStatement();
+                 final ResultSet sessions = statement.executeQuery("SELECT COUNT(*) FROM INFORMATION_SCHEMA.SYSTEM_SESSIONS")) {
+                assertTrue(sessions.next());
+                assertEquals("the store's anchor connection plus this probe", 2, sessions.getInt(1));
+            }
+        }
+    }
+
+    @Test
     public void testRemoveMapOfIntegerString() throws IOException, SQLException {
         try (final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(TAGS, FileURIOpener.getInstance())) {
             assertEquals(0, store.getSize());
@@ -260,6 +292,18 @@ public class EnumeratedMetadataStoreTest {
     public void testGetSize() throws IOException, SQLException {
         try (final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(TAGS, FileURIOpener.getInstance())) {
             assertEquals(0, store.getSize());
+            store.add(Collections.singletonList(toURI(tempDir)));
+            assertEquals(fileNames.length, store.getSize());
+        }
+    }
+
+    @Test
+    public void aWriteInProgressIsNotPartOfTheDirectory() throws IOException, SQLException {
+        // What a re-send left behind when the process writing it died: a whole, readable copy of one of the files.
+        try (final InputStream in = new GZIPInputStream(Files.newInputStream(new File(tempDir, fileNames[0]).toPath()))) {
+            Files.copy(in, new File(tempDir, ".xnat-tmp-upload-left-behind.part").toPath());
+        }
+        try (final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(TAGS, FileURIOpener.getInstance())) {
             store.add(Collections.singletonList(toURI(tempDir)));
             assertEquals(fileNames.length, store.getSize());
         }

@@ -14,7 +14,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -77,6 +76,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
@@ -124,7 +124,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
               XftItemEventCriteria.getXsiTypeCriteria(XnatProjectdata.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatDatatypeprotocol.SCHEMA_ELEMENT_NAME),
               XftItemEventCriteria.getXsiTypeCriteria(XnatInvestigatordata.SCHEMA_ELEMENT_NAME),
-              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP.or(XftItemEventCriteria.IS_ALL_DATA_ADMIN_OR_ACCESS)).build(),
+              XftItemEventCriteria.builder().xsiType(XdatUsergroup.SCHEMA_ELEMENT_NAME).predicate(XftItemEventCriteria.IS_PROJECT_GROUP.or(XftItemEventCriteria.IS_ALL_DATA_ADMIN_OR_ACCESS).or(PREDICATE_IS_MEMBERSHIP_OPERATION)).build(),
               XftItemEventCriteria.builder().xsiType(XdatUser.SCHEMA_ELEMENT_NAME).action(UPDATE).predicate(PREDICATE_IS_ROLE_OPERATION).build());
         _cache      = cache;
         _serializer = serializer;
@@ -358,11 +358,15 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                     _aliasMapping.remove(alias);
                 }
                 evictProjectCache(projectId);
+                evictUserAccessLevels(projectId);
                 break;
 
             case UPDATE:
                 log.debug("The project '{}' was updated, refreshing cache entry", projectId);
                 refreshProjectCache(projectId);
+                if (event.getProperties().containsKey("accessibility")) {
+                    dropNonMemberAccessLevels(projectId);
+                }
                 break;
 
             default:
@@ -390,18 +394,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
             return true;
         }
 
-        final Pair<String, String> idAndAccess = Groups.getProjectIdAndAccessFromGroupId(eventId);
-        if (idAndAccess.equals(ImmutablePair.<String, String>nullPair())) {
+        final String projectId = getProjectForGroup(eventId);
+        if (StringUtils.isBlank(projectId)) {
             log.info("Got a non-project-related group event, which I'm not supposed to handle: {}", event);
             return false;
         }
-
-        final String projectId = idAndAccess.getLeft();
-        if (StringUtils.isBlank(projectId)) {
-            return false;
-        }
-
-        final AccessLevel access = AccessLevel.getAccessLevel(idAndAccess.getRight());
 
         // When groups are created for projects, the groups are created *before* the project. We need to check whether the
         // project is already cached, so we don't try to refresh the cache before the project's actually in.
@@ -419,34 +416,32 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         }
 
         //noinspection unchecked
-        final Collection<String> users          = (Collection<String>) properties.get(Groups.USERS);
-        final boolean            isAddOperation = StringUtils.equals(operation, OPERATION_ADD_USERS);
-        final XnatProjectdata    project        = getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
+        final Collection<String> users   = (Collection<String>) properties.get(Groups.USERS);
+        final XnatProjectdata    project = getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
         if (project == null) {
-            if (isAddOperation) {
-                log.debug("Users had access level {} added for project {}, but that project's not in the cache: {}", access, projectId, users);
-            } else {
-                log.debug("Users had access level {} revoked for project {}, but that project's not in the cache: {}", access, projectId, users);
-            }
+            log.debug("The groups of users {} in project {} changed, but that project's not in the cache", users, projectId);
             return true;
         }
 
-        final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
-        for (final String username : users) {
-            if (isAddOperation) {
-                userAccessLevels.computeIfAbsent(username, (key) -> new ArrayList<>()).add(access);
-            } else {
-                final List<AccessLevel> levels = userAccessLevels.get(username);
-                if (levels != null) {
-                    levels.remove(access);
-                }
+        // The users' cached levels can't be patched: an entry built by hasAccess() or the extractor also holds levels
+        // derived from permissions, such as Edit for a member, which no group change names. Dropping the entries has
+        // hasAccess() rebuild them from the current memberships. That also covers the groups an addition moved the users
+        // out of, which the event reports in its removed groups property rather than in an event of its own.
+        final ProjectAccessLock lock = getUserAccessLock(projectId);
+        synchronized (lock) {
+            // Counted even when nothing is cached: a check may be building levels from before the change.
+            lock.drops++;
+            final String serialized = getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class).get(projectId);
+            if (StringUtils.isBlank(serialized)) {
+                return true;
             }
-        }
-
-        try {
-            cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
-        } catch (IOException e) {
-            throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+            final Map<String, ArrayList<AccessLevel>> userAccessLevels = deserializeUserAccessLevels(serialized);
+            applyMembershipChange(userAccessLevels, users);
+            try {
+                cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+            } catch (IOException e) {
+                throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+            }
         }
 
         return true;
@@ -518,11 +513,101 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return true;
     }
 
+    /**
+     * Applies a change to the users' membership in a project's groups to the project's per-user access levels, by
+     * dropping the users' entries so the next access check rebuilds them from the users' current groups.
+     *
+     * @param userAccessLevels The access levels for each user on the project, updated in place.
+     * @param users            The users whose membership changed.
+     */
+    static void applyMembershipChange(final Map<String, ArrayList<AccessLevel>> userAccessLevels, final Collection<String> users) {
+        users.forEach(userAccessLevels::remove);
+    }
+
+    /**
+     * The ID of the project a group belongs to: from the ID of a project's owner, member or collaborator group, or from
+     * the tag of any other group, such as a custom group made for a project. Null for a group that belongs to no project
+     * or no longer exists.
+     */
+    private static String getProjectForGroup(final String groupId) {
+        final Pair<String, String> idAndAccess = Groups.getProjectIdAndAccessFromGroupId(groupId);
+        if (!idAndAccess.equals(ImmutablePair.<String, String>nullPair())) {
+            return idAndAccess.getLeft();
+        }
+        final UserGroupI group = getGroup(groupId);
+        return group == null ? null : group.getTag();
+    }
+
+    /**
+     * Gets the lock that guards caching, changing and dropping one project's per-user access levels. Reading cached
+     * levels doesn't take it, and neither does building a user's levels: see {@link #buildUserAccessLevels}.
+     */
+    private ProjectAccessLock getUserAccessLock(final String projectId) {
+        return _userAccessLocks.computeIfAbsent(projectId, key -> new ProjectAccessLock());
+    }
+
+    /**
+     * One project's lock, and the number of times its users' levels have been dropped under it.
+     */
+    private static final class ProjectAccessLock {
+        private long drops;
+    }
+
+    /**
+     * Builds the user's levels for a project, without the project's lock so that checks on the project don't wait for
+     * each other's queries, and caches them under the lock. If levels were dropped while these were built, they may
+     * have been read before the change that dropped them, so they're built again under the lock.
+     */
+    List<AccessLevel> buildUserAccessLevels(final String projectId, final String userId, final AccessLevelsBuilder builder) throws UserNotFoundException, UserInitException {
+        final ProjectAccessLock lock = getUserAccessLock(projectId);
+        final long drops;
+        synchronized (lock) {
+            drops = lock.drops;
+        }
+        List<AccessLevel> built = builder.build();
+        synchronized (lock) {
+            if (lock.drops != drops) {
+                built = builder.build();
+            }
+            final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
+            if (!userAccessLevels.containsKey(userId)) {
+                userAccessLevels.put(userId, new ArrayList<>(built));
+                try {
+                    cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+                } catch (IOException e) {
+                    throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+                }
+            }
+            return userAccessLevels.get(userId);
+        }
+    }
+
+    /**
+     * Builds one user's access levels for a project.
+     */
+    @FunctionalInterface
+    interface AccessLevelsBuilder {
+        List<AccessLevel> build() throws UserNotFoundException, UserInitException;
+    }
+
     private Map<String, ArrayList<AccessLevel>> getUserAccessLevelsForProject(final String projectId) {
         final String serialized = getCacheItem(CACHE_PROJECT_USER_ACCESS, projectId, String.class);
         if (StringUtils.isBlank(serialized)) {
-            return Collections.emptyMap();
+            return new HashMap<>();
         }
+        return deserializeUserAccessLevels(serialized);
+    }
+
+    /**
+     * Returns the user's cached access levels for the project, or null if none are cached. Unlike {@link
+     * #getUserAccessLevelsForProject(String)}, this doesn't build the project's levels when they aren't cached.
+     */
+    private List<AccessLevel> getCachedUserAccessLevels(final String projectId, final String userId) {
+        final String serialized = getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class).get(projectId);
+        return StringUtils.isBlank(serialized) ? null : deserializeUserAccessLevels(serialized).get(userId);
+    }
+
+    private Map<String, ArrayList<AccessLevel>> deserializeUserAccessLevels(final String serialized) {
         try {
             return _serializer.deserializeJson(serialized, USER_ACCESS_LEVEL_TYPE_REF);
         } catch (IOException e) {
@@ -660,19 +745,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                 return true;
             }
 
-            final Map<String, ArrayList<AccessLevel>> userAccessLevels = getUserAccessLevelsForProject(projectId);
-
-            // If the user isn't already cached...
-            if (!userAccessLevels.containsKey(userId)) {
-                // Cache the user!
-                userAccessLevels.put(userId, new ArrayList<>(Permissions.getAllUserProjectAccess(ObjectUtils.defaultIfNull(user, new XDATUser(userId)), projectId)));
-                try {
-                    cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
-                } catch (IOException e) {
-                    throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
-                }
+            List<AccessLevel> levels = getCachedUserAccessLevels(projectId, userId);
+            if (levels == null) {
+                levels = buildUserAccessLevels(projectId, userId, () -> Permissions.getAllUserProjectAccess(user != null ? user : new XDATUser(userId), projectId));
             }
-            return CollectionUtils.containsAny(userAccessLevels.get(userId), ACCESS_LEVELS.get(accessLevel));
+            return CollectionUtils.containsAny(levels, ACCESS_LEVELS.get(accessLevel));
         } catch (UserInitException e) {
             log.error("Something bad happened trying to retrieve the user {}", userId, e);
         } catch (UserNotFoundException e) {
@@ -732,6 +809,44 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
     }
 
+    /**
+     * Drops the cached levels of users who aren't in one of the project's owner, member or collaborator groups, so
+     * their next check builds them again. A project's accessibility decides what those users can do: a project made
+     * private must stop granting the read access it gave them. The levels of users in those groups come from their
+     * group and stay cached.
+     */
+    private void dropNonMemberAccessLevels(final String projectId) {
+        final ProjectAccessLock lock = getUserAccessLock(projectId);
+        synchronized (lock) {
+            lock.drops++;
+            final String serialized = getCache(CACHE_PROJECT_USER_ACCESS, String.class, String.class).get(projectId);
+            if (StringUtils.isBlank(serialized)) {
+                return;
+            }
+            final Map<String, ArrayList<AccessLevel>> userAccessLevels = deserializeUserAccessLevels(serialized);
+            if (userAccessLevels.values().removeIf(levels -> Collections.disjoint(levels, PROJECT_GROUP_LEVELS))) {
+                try {
+                    cacheObject(CACHE_PROJECT_USER_ACCESS, projectId, _serializer.toJson(userAccessLevels));
+                } catch (IOException e) {
+                    throw new NrgServiceRuntimeException("An error occurred trying to serialize user access levels for the project " + projectId, e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Drops the deleted project's cached per-user access levels, then its lock. Nothing takes the lock again: once the
+     * project is gone, access checks and group events for it return before reaching it.
+     */
+    private void evictUserAccessLevels(final String projectId) {
+        final ProjectAccessLock lock = getUserAccessLock(projectId);
+        synchronized (lock) {
+            lock.drops++;
+            evict(CACHE_PROJECT_USER_ACCESS, projectId);
+        }
+        _userAccessLocks.remove(projectId);
+    }
+
     private void evictProjectCache(final String projectId) {
         final XnatProjectdata project = getCacheItem(CACHE_PROJECTS, projectId, XnatProjectdata.class);
         if (project == null) {
@@ -770,6 +885,11 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
         return new MapSqlParameterSource(QUERY_KEY_PROJECT_ID, projectId).addValue(QUERY_KEY_ACCESS_LEVEL, accessLevel);
     }
 
+    // Membership changes in any group, so those in a project's custom groups reach handleGroupEvent too
+    private static final Predicate<XftItemEventI> PREDICATE_IS_MEMBERSHIP_OPERATION = event -> {
+        final Map<String, ?> properties = event.getProperties();
+        return !properties.isEmpty() && StringUtils.equalsAny((String) properties.get(OPERATION), OPERATION_ADD_USERS, OPERATION_REMOVE_USERS);
+    };
     private static final Predicate<XftItemEventI> PREDICATE_IS_ROLE_OPERATION = event -> {
         final Map<String, ?> properties = event.getProperties();
         return !properties.isEmpty() && StringUtils.equalsAny((String) properties.get(OPERATION), OPERATION_ADD_ROLE, OPERATION_DELETE_ROLE);
@@ -786,6 +906,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
                                                                                                             .put(Edit, Stream.of(DELETABLE_ACCESS, WRITABLE_ACCESS).flatMap(Collection::stream).collect(Collectors.toList()))
                                                                                                             .put(Read, Stream.of(DELETABLE_ACCESS, WRITABLE_ACCESS, READABLE_ACCESS).flatMap(Collection::stream).collect(Collectors.toList())).build();
     private static final Map<String, List<AccessLevel>>      USER_GROUP_SUFFIXES              = ImmutableMap.of("owner", DELETABLE_ACCESS, "member", WRITABLE_ACCESS, "collaborator", READABLE_ACCESS);
+    private static final List<AccessLevel>                   PROJECT_GROUP_LEVELS             = Arrays.asList(Owner, Member, Collaborator);
     private static final String                              QUERY_KEY_PROJECT_ID             = "projectId";
     private static final String                              QUERY_KEY_ACCESS_LEVEL           = "accessLevel";
     private static final String                              QUERY_GET_PROJECT_BY_ID_OR_ALIAS = "SELECT DISTINCT id " +
@@ -826,6 +947,7 @@ public class DefaultUserProjectCache extends AbstractXftItemAndCacheEventHandler
     private final Map<String, String>               _aliasMapping       = new HashMap<>();
     private final ArrayListMultimap<String, String> _projectsAndAliases = ArrayListMultimap.create();
     private final AtomicBoolean                     _initialized        = new AtomicBoolean(false);
+    private final Map<String, ProjectAccessLock>    _userAccessLocks    = new ConcurrentHashMap<>();
 
     private final GroupsAndPermissionsCache  _cache;
     private final SerializerService          _serializer;

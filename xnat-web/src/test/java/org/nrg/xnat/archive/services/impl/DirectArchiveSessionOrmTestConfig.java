@@ -23,9 +23,12 @@ public class DirectArchiveSessionOrmTestConfig {
         return new HibernateEntityPackageList("org.nrg.xnat.archive.entities");
     }
 
+    /** The preferences the DAO reads, so a test can set the session idle timeout. Not a bean: Spring would autowire it. */
+    static final SiteConfigPreferences PREFERENCES = mock(SiteConfigPreferences.class);
+
     @Bean
     public DirectArchiveSessionDao directArchiveSessionDao() {
-        return new DirectArchiveSessionDao(mock(SiteConfigPreferences.class));
+        return new DirectArchiveSessionDao(PREFERENCES);
     }
 
     @Bean

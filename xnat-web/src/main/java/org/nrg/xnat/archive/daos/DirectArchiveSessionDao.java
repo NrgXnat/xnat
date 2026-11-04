@@ -68,10 +68,8 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
      */
     @Nullable
     public List<DirectArchiveSession> findReadyForArchive() {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.MINUTE, -1 * preferences.getSessionXmlRebuilderInterval());
         QueryBuilder<DirectArchiveSession> builder = newQueryBuilder();
-        builder.where(builder.and(builder.le(LAST_BUILT_DATE, cal.getTime()),
+        builder.where(builder.and(builder.le(LAST_BUILT_DATE, idleCutoff()),
                                   builder.eq(STATUS, Prearchive.PrearcStatus.RECEIVING)));
         return builder.getResults();
     }
@@ -109,6 +107,25 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
     }
 
     /**
+     * Moves a session to ERROR, recording why, only while it is still RECEIVING, still marked as one an upload failed
+     * partway into, and idle: no file since the cutoff {@link #findReadyForArchive()} uses. One conditional update, so a
+     * session that a file reached after the archive trigger read its list is left for a later run.
+     *
+     * @return the number of rows updated: 0 when the session no longer qualifies or no longer exists
+     */
+    public int claimIdleFailedUpload(final long id, final String message) {
+        return getSession().createQuery("update DirectArchiveSession set status = :error, message = :message, timestamp = :now"
+                                        + " where id = :id and status = :receiving and failedUpload = true and lastBuiltDate <= :cutoff")
+                .setParameter("error", PrearcStatus.ERROR)
+                .setParameter("message", message)
+                .setParameter("now", new Date())
+                .setParameter("id", id)
+                .setParameter("receiving", PrearcStatus.RECEIVING)
+                .setParameter("cutoff", idleCutoff())
+                .executeUpdate();
+    }
+
+    /**
      * Records that the session just received a file, touching only the timestamps. The importer calls this for every
      * file before it takes its file lock; writing the whole entity back here would put the status it had just read
      * over a delete's claim.
@@ -120,6 +137,28 @@ public class DirectArchiveSessionDao extends AbstractHibernateDAO<DirectArchiveS
                 .setParameter("now", new Date())
                 .setParameter("id", id)
                 .executeUpdate();
+    }
+
+    /**
+     * Marks a session that is still receiving as one an upload failed partway into, recording why, as one conditional
+     * update.
+     *
+     * @return the number of rows updated: 0 when the session is no longer receiving or no longer exists
+     */
+    public int markFailedUpload(final long id, final String message) {
+        return getSession().createQuery("update DirectArchiveSession set failedUpload = true, message = :message where id = :id and status = :receiving")
+                .setParameter("message", message)
+                .setParameter("id", id)
+                .setParameter("receiving", PrearcStatus.RECEIVING)
+                .executeUpdate();
+    }
+
+
+    /** A session with no file since this time has been idle for the session idle timeout. */
+    private Date idleCutoff() {
+        final Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MINUTE, -1 * preferences.getSessionXmlRebuilderInterval());
+        return cal.getTime();
     }
 
     private final SiteConfigPreferences preferences;

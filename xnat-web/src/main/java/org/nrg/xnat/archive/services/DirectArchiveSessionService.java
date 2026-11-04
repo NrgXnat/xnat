@@ -53,6 +53,17 @@ public interface DirectArchiveSessionService {
      */
     void requireReceiving(SessionData session) throws ClientException;
 
+    /**
+     * For the importer, when an upload that wrote into this session failed partway: the session is marked and keeps
+     * receiving, since other uploads may still be sending into it, and the next file to land in it clears the mark.
+     * If it goes idle still marked, the archive trigger does not archive what may be only part of the study: like a
+     * session whose build or archive failed, it moves to the prearchive in ERROR with the failure in its log. Its
+     * files stay where they are, with the session in ERROR here, when they are not this session's alone to move: it
+     * merges into an archived experiment's directory, or a file is still landing. A session that has already moved
+     * on is left alone. Archiving the session on request still archives it.
+     */
+    void handleFailedUpload(SessionData session, Exception cause);
+
     void touch(SessionData session) throws NotFoundException;
 
     SessionData findByProjectTagName(String project, String tag, String name) throws NotFoundException;

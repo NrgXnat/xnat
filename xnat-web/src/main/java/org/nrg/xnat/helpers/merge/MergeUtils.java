@@ -95,14 +95,20 @@ public class MergeUtils {
 
 
     public static void deleteRejectedFiles(Logger log, List<AnonymizationResult> anonResults, String project) throws ArchivingException {
-        final List<AnonymizationResult> rejectedList = anonResults.stream().filter(AnonymizationResultReject.class::isInstance).collect(Collectors.toList());
-        if(rejectedList.size()>0) {
+        deleteFiles(log, anonResults.stream().filter(AnonymizationResultReject.class::isInstance).map(result -> Path.of(result.getAbsolutePath())).collect(Collectors.toList()), project);
+    }
+
+    /**
+     * Deletes the files and removes their entries from the catalogs in their directories. A catalog left with no
+     * entries is deleted, and then any directory left empty.
+     */
+    public static void deleteFiles(Logger log, List<Path> files, String project) throws ArchivingException {
+        if(files.size()>0) {
             final Multimap<Path,CatalogData> resourceDirectories = ArrayListMultimap.create();
             final List<Path> reviewedDirectories = new ArrayList<>(); //just in case we have a directory of dicom that doesn't have any catalog.xml files
 
-            for (final AnonymizationResult result : rejectedList) {
+            for (final Path path : files) {
                 try {
-                    final Path path = Path.of(result.getAbsolutePath());
                     final Path parent = path.getParent();
                     if(Files.exists(path)){
                         Files.delete(path);
@@ -131,8 +137,8 @@ public class MergeUtils {
                         });
                     }
                 } catch (IOException e) {
-                    log.error("Failed to delete rejected file", e);
-                    throw new ArchivingException("Failed to delete rejected file: " + result.getAbsolutePath(), e);
+                    log.error("Failed to delete file", e);
+                    throw new ArchivingException("Failed to delete file: " + path, e);
                 } catch (ServerException e) {
                     throw new ArchivingException(e);
                 }

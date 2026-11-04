@@ -41,7 +41,13 @@ public abstract class PrearchiveSessionScreen extends SecureScreen {
 	    
 	    final File sessionXML = new File(sessionDir.getPath() + ".xml");
         final XnatImagesessiondataBean sessionBean;
-        if (sessionXML.exists() && sessionXML.length() == 0) {
+        if (!sessionXML.exists()) {
+            // Not built yet, such as a session whose upload failed before its first build: there are no details
+            // to show, but the page still shows the status and the session's log.
+            sessionBean = null;
+            context.put("status", PrearcDatabase.getSession(folder, timestamp, project).getStatus().toString());
+            context.put("notBuilt", true);
+        } else if (sessionXML.length() == 0) {
             sessionBean = null;
             context.put("status", PrearcUtils.PrearcStatus.ERROR);
         } else {

@@ -285,7 +285,7 @@ public class TestBlankValuesFunction {
         attrs.setBytes(0x00491011, VR.UN, new byte[]{ 0x43, 0x48, 0x4f, 0x43, 0x4f, 0x4c, 0x41, 0x54, 0x54, 0x45 }); // ASCII for "CHOCOLATTE"
 
         assertEquals("CHOCOLATE", original.getString(0x00180026, 0, 0x00180024));
-        assertEquals("CHOCOLATE\0", original.getString(0x00180026, 0, 0x00180025));
+        assertEquals("CHOCOLATE", original.getString(0x00180026, 0, 0x00180025));
         assertEquals("CHOCOLATE", original.getString(0x00440001));
         assertEquals("CHOCOLATE", original.getString(0x00491010));  // getString() trims padding \0
         assertEquals("CHOCOLATTE", original.getString(0x00491011));
@@ -295,7 +295,7 @@ public class TestBlankValuesFunction {
 
         assertEquals("", anon.getString(0x00180026, 0, 0x00180024));
         assertEquals("", anon.getString(0x00440001));   // String types (LO) strip padding 0 for comparisons
-        assertEquals("CHOCOLATE\0", anon.getString(0x00180026, 0, 0x00180025));   // but binary types don't
+        assertEquals("CHOCOLATE", anon.getString(0x00180026, 0, 0x00180025));   // but binary types don't, so this one is not blanked
         assertEquals("CHOCOLATE", anon.getString(0x00491010));
         assertEquals("CHOCOLATTE", anon.getString(0x00491011));
     }

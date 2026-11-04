@@ -49,6 +49,7 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     /** The row's status as the database holds it; null once the row is gone. */
     private PrearcStatus status;
 
+
     @Before
     public void setUp() {
         dao     = mock(DirectArchiveSessionDao.class);
@@ -259,6 +260,13 @@ public class DirectArchiveSessionHibernateServiceImplTest {
     public void settingBackToReceivingOnlyUndoesAQueuedForBuildingTransition() throws Throwable {
         // A claimed session must not be revived by the build path giving up on it.
         assertOnlyMovesFrom(PrearcStatus.QUEUED_BUILDING, PrearcStatus.RECEIVING, () -> service.setStatusBackToReceiving(SESSION_ID));
+    }
+
+    @Test
+    public void claimingAFailedUploadWhoseRowIsGoneThrowsNotFound() {
+        status = null;
+
+        assertThatThrownBy(() -> service.claimIdleFailedUpload(SESSION_ID, new Exception("the upload broke"))).isInstanceOf(NotFoundException.class);
     }
 
     @Test

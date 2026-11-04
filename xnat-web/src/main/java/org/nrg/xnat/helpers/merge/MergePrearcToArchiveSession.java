@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.AnonymizationResult;
 import org.nrg.dicom.mizer.objects.AnonymizationResultError;
 import org.nrg.dicom.mizer.objects.AnonymizationResultNoOp;
@@ -23,16 +24,17 @@ import org.nrg.xdat.preferences.HandlePetMr;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xnat.archive.ArchivingException;
 import org.nrg.xnat.archive.ScanIdValidator;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.nrg.xnat.utils.CatalogUtils;
+import org.nrg.xnat.utils.PhaseTimer;
 import org.restlet.data.Status;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -51,6 +53,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     public static final String DEFAULT_BACKUP_FOLDER = "merge";
     public static final String CATALOG_BACKUP        = "catalog_bk";
     public static final String XML_EXTENSION         = ".xml";
+    public static final String LOGS_FOLDER           = "logs";
 
     private final PrearcSession _prearcSession;
 
@@ -63,6 +66,23 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     @Override
     public String getCacheBKDirName() {
         return DEFAULT_BACKUP_FOLDER;
+    }
+
+    /**
+     * Keeps the prearchive session's log, the notes {@link PrearcUtils#log} writes into its logs folder, out of the
+     * archive. The merge leaves log files behind only when it moves files one by one: when the archived session has no
+     * logs folder yet, the logs folder is renamed into it whole. Once the merge has succeeded, a logs folder it brought
+     * in is removed. A failed merge moves it back to the prearchive with everything else.
+     */
+    @Override
+    public XnatImagesessiondata call() throws ClientException, ServerException, IOException {
+        final File                 logs    = new File(destDIR, LOGS_FOLDER);
+        final boolean              existed = logs.exists();
+        final XnatImagesessiondata merged  = super.call();
+        if (!existed) {
+            FileUtils.DeleteFile(logs);
+        }
+        return merged;
     }
 
     @Override
@@ -166,13 +186,16 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
     @Override
     protected XnatImagesessiondata getPostAnonSession() throws Exception {
         // Now that we're at the project level, let's re-anonymize.
+        final PhaseTimer timer = new PhaseTimer();
         boolean wasAnonymized = anonymizeSession();
+        timer.lap("anonymize");
 
         final File sessionXml = new File(srcDIR.getPath() + XML_EXTENSION);
 
         // If anonymization wasn't performed or the session XML doesn't exist yet...
         if (!wasAnonymized || !sessionXml.exists()) {
             // Return the original session XML.
+            PhaseTimer.LOG.info("Project anonymization of {} changed nothing: {}", srcDIR, timer);
             return src;
         }
 
@@ -197,6 +220,7 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
 
         final Boolean sessionRebuildSuccess = new XNATSessionBuilder(srcDIR, sessionXml, true, params).call();
+        timer.lap("rebuild");
         if (!sessionRebuildSuccess || sessionXml.length() == 0) {
             try (final Stream<Path> paths = Files.walk(srcDIR.toPath())) {
                 // Are there any non-log files? Then I'm not sure what's wrong.
@@ -210,6 +234,8 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         }
 
         final XnatImagesessiondata session = populateSession(sessionXml);
+        timer.lap("populate");
+        PhaseTimer.LOG.info("Project anonymization of {} rebuilt the session: {}", srcDIR, timer);
         try (final ScanIdValidator scanIdValidator = new ScanIdValidator(control, dest, session, _prearcSession, allowSessionMerge, overwriteFiles)) {
             if (scanIdValidator.needsScanIdCorrection()) {
                 scanIdValidator.call();
@@ -233,7 +259,10 @@ public class MergePrearcToArchiveSession extends MergeSessionsA<XnatImagesession
         final List<AnonymizationResult> anonResults = anonymizer.call();
         if (anonResults.stream().anyMatch(AnonymizationResultError.class::isInstance)) {
             log.error("Anonymization failed for prearcSession at {} ", _prearcSession.getSessionDir().getAbsolutePath());
-            throw new ArchivingException("Anonymization failed for prearcSession at " + _prearcSession.getSessionDir().getAbsolutePath());
+            // A MizerException, not an ArchivingException: MergeSessionsA knows that nothing has moved yet
+            // when anonymization fails and leaves the directories alone. Any other exception takes its
+            // rollback, which moves the prearchive session into the cache and leaves an empty session.
+            throw new MizerException("Anonymization failed for prearcSession at " + _prearcSession.getSessionDir().getAbsolutePath());
         }
         if (anonResults.stream().allMatch(AnonymizationResultNoOp.class::isInstance)) {
             return false;

@@ -19,6 +19,7 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -153,6 +154,8 @@ public class ThreadAndProcessFileLock {
         }
     }
 
+    // The file this lock is for, named when the lock times out
+    private final File file;
     // The dummy file on which we synchronize for inter-process reading & writing
     private File dummyFile;
     private RandomAccessFile dummyRAF;
@@ -195,6 +198,7 @@ public class ThreadAndProcessFileLock {
         this.mutex = l == null ? new ReentrantReadWriteLock() : l.mutex;
         this.threadLock = readOnly ? mutex.readLock() : mutex.writeLock();
         this.readOnly = readOnly;
+        this.file = file;
 
         // Open channel on the dummy file to synchronize across processes
         this.dummyFile = getLockFileForFile(file);
@@ -206,9 +210,30 @@ public class ThreadAndProcessFileLock {
     }
 
     private String getCachePath() {
+        // Reading the preference is a database round trip, and every lock cycle needs the path (twice per
+        // catalog at archive time). The path is read once and kept until the cachePath
+        // preference changes (CachePathHandlerMethod calls cachePathChanged, on every node when the distributed
+        // events plugin relays the change) or the preferences bean is replaced.
         final SiteConfigPreferences preferences = getSiteConfigPreferences();
-        return preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+        final CachedPath            cached      = CACHE_PATH;
+        if (cached != null && cached.preferences == preferences) {
+            return cached.path;
+        }
+        final String path = preferences == null ? System.getProperty("java.io.tmpdir") : preferences.getCachePath();
+        CACHE_PATH = new CachedPath(preferences, path);
+        return path;
     }
+
+    /**
+     * Forgets the cache path read from the preferences, so the next lock reads it again.
+     */
+    public static void cachePathChanged() {
+        CACHE_PATH = null;
+    }
+
+    private record CachedPath(SiteConfigPreferences preferences, String path) {}
+
+    private static volatile CachedPath CACHE_PATH;
 
     /**
      * Create the lock-file File corresponding to the provided file.
@@ -306,7 +331,14 @@ public class ThreadAndProcessFileLock {
         } while (System.currentTimeMillis() <= timeoutTime);
 
         dummyRAF.close();
-        throw new IOException("Unable to acquire thread and process locks");
+        throw new IOException("Timed out after " + describe(timeout, units) + " waiting for the " + (readOnly ? "read" : "write")
+                              + " lock on " + file + "; another thread or process holds it");
+    }
+
+    /** The wait as the caller gave it: "2 minutes", "1 second". */
+    private static String describe(final long timeout, final TimeUnit units) {
+        final String unit = units.name().toLowerCase(Locale.ROOT);
+        return timeout + " " + (timeout == 1 ? unit.substring(0, unit.length() - 1) : unit);
     }
 
     /**

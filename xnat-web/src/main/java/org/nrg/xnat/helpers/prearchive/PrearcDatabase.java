@@ -138,10 +138,8 @@ public final class PrearcDatabase {
                     if ((Boolean) PoolDBUtils.ReturnStatisticQuery(QUERY_IS_INITIALIZED, "value", null, null)) {
                         // check to see if the table has the correct set of columns (older versions may not)
                         PrearcDatabase.correctTable(); // if not, correct the table by adding the required columns
-                        if (recreateDBMSTablesFromScratch) {
-                            PrearcDatabase.deleteRows();
-                        }
-                        PrearcDatabase.populateTable(); // add rows to the table from the prearchive directory if not already present
+                        final Set<SessionDataTriple> inError = recreateDBMSTablesFromScratch ? PrearcDatabase.deleteRowsKeepingErrors() : Collections.emptySet();
+                        PrearcDatabase.populateTable(inError); // add rows to the table from the prearchive directory if not already present
                         PrearcDatabase.pruneDatabase(); // remove rows from the table if they are not present in the prearchive directory
                     }
                 }
@@ -287,11 +285,34 @@ public final class PrearcDatabase {
      * @throws IOException
      * @throws IllegalStateException
      */
-    private static void populateTable() throws Exception {
-        PrearcDatabase.addSessions(PrearcDatabase.sessionDelegate.get());
+    /**
+     * Adds a row for each session in the prearchive directory that the table doesn't have yet.
+     *
+     * @param inError Sessions to add in ERROR whatever their XML file says: the ones that were in ERROR before the table
+     *                was emptied to be rebuilt. See {@link #deleteRowsKeepingErrors()}.
+     */
+    private static void populateTable(final Set<SessionDataTriple> inError) throws Exception {
+        PrearcDatabase.addSessions(PrearcDatabase.sessionDelegate.get(), inError);
     }
 
-    private static void addSessions(final Collection<SessionData> ss) throws Exception {
+    /**
+     * Empties the table so it can be rebuilt from disk, and returns the sessions that were in ERROR. A rebuild works out
+     * each session's status from its XML file, which can't show ERROR for a failed upload's session: it has no XML, so it
+     * would come back as RECEIVING and be built and archived. The caller passes these sessions to
+     * {@link #populateTable(Set)} so they go back in as ERROR.
+     */
+    private static Set<SessionDataTriple> deleteRowsKeepingErrors() throws Exception {
+        final Set<SessionDataTriple> inError = new HashSet<>();
+        for (final SessionData session : getAllSessions()) {
+            if (session.getStatus() == PrearcStatus.ERROR) {
+                inError.add(session.getSessionDataTriple());
+            }
+        }
+        deleteRows();
+        return inError;
+    }
+
+    private static void addSessions(final Collection<SessionData> ss, final Set<SessionDataTriple> inError) throws Exception {
         new SessionOp<Void>() {
             public java.lang.Void op() throws Exception {
                 PreparedStatement statement = this.pdb.getPreparedStatement(null, PrearcDatabase.insertSql());
@@ -300,17 +321,45 @@ public final class PrearcDatabase {
                     SessionData session = getSessionIfExists(sdt.getFolderName(), sdt.getTimestamp(), sdt.getProject());
 
                     if (session == null) {
+                        if (inError.contains(sdt)) {
+                            s.setStatus(PrearcStatus.ERROR);
+                        }
                         for (int i = 0; i < DatabaseSession.values().length; i++) {
                             DatabaseSession.values()[i].setInsertStatement(statement, s);
                         }
                         statement.executeUpdate();
-                    } else if (!s.getStatus().equals(session.getStatus())) { // newly generated status may need to override existing status
-                        setStatus(sdt.getFolderName(), sdt.getTimestamp(), sdt.getProject(), s.getStatus());
+                    } else {
+                        final PrearcStatus refreshed = statusAfterRefresh(session.getStatus(), s.getStatus());
+                        if (refreshed != null) { // newly generated status may need to override existing status
+                            setStatus(sdt.getFolderName(), sdt.getTimestamp(), sdt.getProject(), refreshed);
+                        }
                     }
                 }
                 return null;
             }
         }.run();
+    }
+
+    /**
+     * Decides the status a session already in the prearchive table gets when XNAT checks the table against the disk at
+     * startup. XNAT doesn't store a status on disk: it works one out from the session's XML file. No XML means RECEIVING,
+     * an XML it can read means READY, and one it can't read means ERROR.
+     * <p>
+     * A session already in ERROR keeps that status. A failed upload's session has no XML, so it would come back as
+     * RECEIVING, and the idle-timeout rebuild would then build it and, in a project that archives automatically, archive
+     * it with only part of the study. A rebuild that empties the table first keeps ERROR the same way, through
+     * {@link #deleteRowsKeepingErrors()}.
+     *
+     * @param current  The status in the prearchive table now.
+     * @param fromDisk The status worked out from the session's XML file.
+     *
+     * @return The new status, or null to keep the current one.
+     */
+    static PrearcStatus statusAfterRefresh(final PrearcStatus current, final PrearcStatus fromDisk) {
+        if (current == PrearcStatus.ERROR || fromDisk == null || fromDisk == current) {
+            return null;
+        }
+        return fromDisk;
     }
 
     /**
@@ -478,11 +527,8 @@ public final class PrearcDatabase {
      * @throws ClassNotFoundException
      */
     public static void refresh(boolean force) throws Exception {
-        if (force) {
-            PrearcDatabase.deleteRows();
-        }
-
-        PrearcDatabase.populateTable(); // add rows to the table from the prearchive directory if not already present
+        final Set<SessionDataTriple> inError = force ? PrearcDatabase.deleteRowsKeepingErrors() : Collections.emptySet();
+        PrearcDatabase.populateTable(inError); // add rows to the table from the prearchive directory if not already present
         PrearcDatabase.pruneDatabase(); // remove rows from the table if they are not present in the prearchive directory
     }
 

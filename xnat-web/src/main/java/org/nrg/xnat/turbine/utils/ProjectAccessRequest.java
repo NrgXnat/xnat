@@ -324,8 +324,14 @@ public class ProjectAccessRequest {
     }
 
     public static ProjectAccessRequest RequestPARByGUID(String guid, UserI user) {
+        // A PAR guid is a UUID, so anything else can't match a request. Return null without querying.
+        if (guid == null || !GUID_PATTERN.matcher(guid).matches()) {
+            return null;
+        }
         return RequestPAR(PAR_BY_GUID.formatted(guid), user);
     }
+
+    private static final Pattern GUID_PATTERN = Pattern.compile("^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$");
 
     public static ProjectAccessRequest RequestPARByUserProject(Integer userId, String projectId, UserI user) {
         return RequestPAR(PAR_BY_USER_AND_PROJ_ID.formatted(userId.toString(), projectId), user);
@@ -340,7 +346,7 @@ public class ProjectAccessRequest {
             String query = getPARQuery(where);
             return new ProjectAccessRequest(query, user);
         } catch (Exception exception) {
-            _logger.error("Error occurred while requesting project access request for user [" + user.getUsername() + "]: " + where, exception);
+            _logger.error("Error occurred while requesting project access request for user [" + (user != null ? user.getUsername() : null) + "]: " + where, exception);
             return null;
         }
     }

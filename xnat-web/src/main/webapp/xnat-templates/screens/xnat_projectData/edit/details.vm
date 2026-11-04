@@ -76,7 +76,7 @@
     <tr>
         <th>${PROJECT_DISPLAY_NAME} Title</th>
         <td>
-            <input class="requiredField project_title title" id="xnat:projectData/name" type="text" name="xnat:projectData/name" value="$!item.getStringProperty("xnat:projectData/name")" size="95" maxlength="199">
+            <input class="requiredField project_title title" id="xnat:projectData/name" type="text" name="xnat:projectData/name" value="#escapeCleanHTML($!item.getStringProperty("xnat:projectData/name"))" size="95" maxlength="199">
             <div class="requirementStatement">
                 <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Enter the full name of your project here. This will show up on project listings.</span>
             </div>
@@ -86,7 +86,7 @@
     <tr>
         <th>Running Title</th>
         <td>
-            <input class="requiredField abbreviation" id="xnat:projectData/secondary_ID" type="text" name="xnat:projectData/secondary_ID" value="$!item.getStringProperty("xnat:projectData/secondary_ID")" size="24" maxlength="24">
+            <input class="requiredField abbreviation" id="xnat:projectData/secondary_ID" type="text" name="xnat:projectData/secondary_ID" value="#escapeCleanHTML($!item.getStringProperty("xnat:projectData/secondary_ID"))" size="24" maxlength="24">
             <div class="requirementStatement">
                 <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Create a simple abbreviation of your project name, using 24 characters or less. Spaces are allowed.<br>This will be commonly used in menus and UI elements.</span>
             </div>
@@ -117,7 +117,7 @@
             <span class="nobr">${PROJECT_DISPLAY_NAME} Description</span>
         </th>
         <td>
-            <textarea id="xnat:projectData/description" name="xnat:projectData/description" rows="4" cols="70">$!item.getStringProperty("xnat:projectData/description")</textarea>
+            <textarea id="xnat:projectData/description" name="xnat:projectData/description" rows="4" cols="70">#escapeCleanHTML($!item.getStringProperty("xnat:projectData/description"))</textarea>
             <div class="requirementStatement">
                 <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">Provide a description of your project. This is for reference only and is not searchable.</span>
             </div>
@@ -127,7 +127,7 @@
     <tr>
         <th>Keywords</th>
         <td>
-            <input id="xnat:projectData/keywords" type="text" name="xnat:projectData/keywords" value="$!item.getStringProperty("xnat:projectData/keywords")" size="95" maxlength="255">
+            <input id="xnat:projectData/keywords" type="text" name="xnat:projectData/keywords" value="#escapeCleanHTML($!item.getStringProperty("xnat:projectData/keywords"))" size="95" maxlength="255">
             <div class="requirementStatement">
                 <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">Enter searchable keywords. Each word, separated by a space, can be used independently as a search string.</span>
             </div>
@@ -146,7 +146,7 @@
                 #set($numAliases = 3)
             #end
             #foreach($aliasCounter in [0..$numAliases])
-                <input type="text" size="17" maxlength="99" class="project_alias" id="xnat:projectData/aliases/alias[$aliasCounter]/alias" name="xnat:projectData/aliases/alias[$aliasCounter]/alias" value="$!item.getStringProperty("xnat:projectData/aliases/alias[$aliasCounter]/alias")">
+                <input type="text" size="17" maxlength="99" class="project_alias" id="xnat:projectData/aliases/alias[$aliasCounter]/alias" name="xnat:projectData/aliases/alias[$aliasCounter]/alias" value="#escapeCleanHTML($!item.getStringProperty("xnat:projectData/aliases/alias[$aliasCounter]/alias"))">
                 &nbsp;
             #end
             <div class="requirementStatement">

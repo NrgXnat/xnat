@@ -132,7 +132,9 @@ public interface MizerService {
     AnonymizationResult anonymize(final File dicomFile, final MizerContext script) throws MizerException;
 
     /**
-     * Anonymize the list of files with the same context.
+     * Anonymize the list of files with the same context, all or nothing: if any file fails, none is
+     * changed and this throws, rather than returning an error result the way the single-file methods
+     * do. Rejections still come back as results, for the caller to delete.
      */
     List<AnonymizationResult> anonymize(List<File> dicomFiles, String project, String subject, String session, long scriptId, String script, boolean record, boolean ignoreRejection) throws MizerException;
 

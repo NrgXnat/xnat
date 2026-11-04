@@ -32,7 +32,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -118,19 +119,13 @@ public class TestDicomSCPStore {
             assertTrue("the start never reached the port lookup", starting.await(10, SECONDS));
 
             final Future<?> cycle = threads.submit(() -> store.cycle(Set.of()));
-            try {
-                cycle.get(1, SECONDS);
-            } catch (TimeoutException expected) {
-                // The cycle is waiting for the start to finish.
-            }
+            assertThrows("the cycle ran while the start was in progress", TimeoutException.class, () -> cycle.get(1, SECONDS));
             release.countDown();
             start.get(10, SECONDS);
             cycle.get(10, SECONDS);
 
-            final DicomSCP tracked = store.get(_port);
-            final boolean  started = tracked != null && tracked.isStarted();
-            assertEquals("the port should be listening exactly when the store tracks a started receiver on it",
-                         started, awaitListening(_port, started));
+            // The cycle can't see the receiver, so once it runs it stops it.
+            assertNull(store.get(_port));
         } finally {
             release.countDown();
             threads.shutdownNow();
@@ -223,20 +218,5 @@ public class TestDicomSCPStore {
         } catch (IOException e) {
             return false;
         }
-    }
-
-    /**
-     * Whether the port is listening, once it's in the expected state or five seconds have passed. A stopped receiver's
-     * port can still accept connections for a moment: closing a server socket that a thread is blocked accepting on
-     * releases the port only when that thread wakes up.
-     */
-    private static boolean awaitListening(final int port, final boolean expected) throws InterruptedException {
-        final long deadline  = System.nanoTime() + SECONDS.toNanos(5);
-        boolean    listening = isListening(port);
-        while (listening != expected && System.nanoTime() < deadline) {
-            Thread.sleep(50);
-            listening = isListening(port);
-        }
-        return listening;
     }
 }

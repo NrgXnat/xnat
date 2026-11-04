@@ -13,6 +13,11 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * @deprecated Direct archive is deprecated and will be removed in a future release. Import through the prearchive and
+ *             set the project to auto-archive.
+ */
+@Deprecated
 public interface DirectArchiveSessionService {
     void delete(SessionData session);
 

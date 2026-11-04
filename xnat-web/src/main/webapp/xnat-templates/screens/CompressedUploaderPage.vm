@@ -145,6 +145,22 @@
         });
     }
 
+    // Keeps the login alive during an upload. A popup, such as Upload Scans, doesn't load the session timer, so it uses
+    // the timer of the window that opened it.
+    function maintainLogin(maintain) {
+        var timer = XNAT.app.timeout;
+        if (!timer) {
+            try {
+                timer = window.opener && window.opener.XNAT && window.opener.XNAT.app && window.opener.XNAT.app.timeout;
+            } catch (e) {
+                timer = null; // the opener is on another site
+            }
+        }
+        if (timer) {
+            timer.maintainLogin = maintain;
+        }
+    }
+
     function makeTheFormGo() {
         if(!validateForm()){ return; }
 
@@ -180,10 +196,7 @@
             processData: false,
             cache: false,
             beforeSend: function() {
-                // A popup, such as Upload Scans, doesn't load the session timer
-                if (XNAT.app.timeout) {
-                    XNAT.app.timeout.maintainLogin = true;
-                }
+                maintainLogin(true);
                 loading = XNAT.ui.dialog.static.wait("Uploading file", {
                     width: 300,
                     header: false,
@@ -225,9 +238,7 @@
                 errorHandler(xhr, 'Issue uploading your data');
             },
             complete: function() {
-                if (XNAT.app.timeout) {
-                    XNAT.app.timeout.maintainLogin = false;
-                }
+                maintainLogin(false);
             },
             xhr: function() {
                 var xhr = $.ajaxSettings.xhr();

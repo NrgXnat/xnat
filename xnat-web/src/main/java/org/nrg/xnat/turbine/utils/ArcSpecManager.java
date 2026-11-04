@@ -70,8 +70,9 @@ public class ArcSpecManager {
         }
 
         // Any change of the time counts, not only a later one, so a time set back, as by a restored database, still
-        // reloads the specification.
-        if (arcSpec == null || (lastModified != null && currentModDate != null && currentModDate.getTime() != lastModified.getTime())) {
+        // reloads the specification. So does a time read after a load that couldn't read one, or the check would stay
+        // off on this node until the next reset.
+        if (arcSpec == null || (currentModDate != null && (lastModified == null || currentModDate.getTime() != lastModified.getTime()))) {
             // Read before loading, so a change made during the load still moves the time past this one. The check above
             // only runs once a minute, and a reload that took its null left the check comparing against nothing.
             lastModified = currentModDate != null ? currentModDate : specLastModified();

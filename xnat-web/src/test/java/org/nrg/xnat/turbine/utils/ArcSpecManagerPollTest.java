@@ -88,6 +88,19 @@ public class ArcSpecManagerPollTest {
     }
 
     @Test
+    public void aLoadThatCouldNotReadTheTimeReloadsOnceTheCheckCanReadIt() {
+        // The time can't be read during the load: specLastModified() returns null when its query fails.
+        specModified = null;
+        ArcSpecManager.lastChecked = System.currentTimeMillis();
+        final ArcArchivespecification loaded = ArcSpecManager.GetInstance(false);
+
+        specModified = new Date(1000);
+        ArcSpecManager.lastChecked = 0L;
+
+        assertThat(ArcSpecManager.GetInstance(false)).as("the check must not stay off after a failed read").isNotSameAs(loaded);
+    }
+
+    @Test
     public void anUnchangedSpecificationIsKept() {
         ArcSpecManager.lastChecked = System.currentTimeMillis();
         final ArcArchivespecification loaded = ArcSpecManager.GetInstance(false);

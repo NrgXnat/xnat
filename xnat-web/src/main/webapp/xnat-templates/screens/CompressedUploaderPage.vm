@@ -1,3 +1,7 @@
+## A popup, such as Upload Scans, doesn't load the activity tab that shows the import's progress
+#if($turbineUtils.GetPassedParameter("popup", $data) == "true")
+<script type="text/javascript" src="$content.getURI('scripts/xnat/app/activityTab.js')"></script>
+#end
 <script type="text/javascript">
     XNAT.app = getObject(XNAT.app || {});
 
@@ -176,7 +180,10 @@
             processData: false,
             cache: false,
             beforeSend: function() {
-                XNAT.app.timeout.maintainLogin = true;
+                // A popup, such as Upload Scans, doesn't load the session timer
+                if (XNAT.app.timeout) {
+                    XNAT.app.timeout.maintainLogin = true;
+                }
                 loading = XNAT.ui.dialog.static.wait("Uploading file", {
                     width: 300,
                     header: false,
@@ -218,7 +225,9 @@
                 errorHandler(xhr, 'Issue uploading your data');
             },
             complete: function() {
-                XNAT.app.timeout.maintainLogin = false;
+                if (XNAT.app.timeout) {
+                    XNAT.app.timeout.maintainLogin = false;
+                }
             },
             xhr: function() {
                 var xhr = $.ajaxSettings.xhr();

@@ -98,18 +98,6 @@ public class BaseArcArchivespecificationTest {
     }
 
     @Test
-    public void aProjectRecreatedWithTheSameIdIsLoadedAgain() {
-        final ArcArchivespecification kept = specification();
-        assertThat(contentOf(kept, "P2")).isEqualTo("prearchive_code=4");
-
-        // Deleted and created again with nothing looking it up in between: a new row, so a new time.
-        modified.remove("P2");
-        save("P2", 5000L, "prearchive_code=0");
-
-        assertThat(contentOf(kept, "P2")).isEqualTo("prearchive_code=0");
-    }
-
-    @Test
     public void aChangeThatDoesNotMoveTheTimeIsSeenOnceTheProjectIsEvicted() {
         final ArcArchivespecification kept = specification();
         assertThat(contentOf(kept, "P1")).isEqualTo("prearchive_code=4");

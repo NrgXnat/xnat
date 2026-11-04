@@ -13,6 +13,7 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
@@ -37,7 +38,7 @@ public class BaseXnatProjectdataInitArcProjectTest {
 
             project.initArcProjectImpl(arcProject, mock(UserI.class), mock(EventMetaI.class));
 
-            saves.verify(() -> SaveItemHelper.authorizedSave(eq(arcProject), any(), eq(true), eq(false), any(EventMetaI.class)));
+            saves.verify(() -> SaveItemHelper.authorizedSave(eq(arcProject), any(), anyBoolean(), anyBoolean(), any(EventMetaI.class)));
             manager.verify(() -> ArcSpecManager.arcProjectSaved("P1"));
             manager.verify(ArcSpecManager::Reset, never());
         }

@@ -69,7 +69,7 @@ public class ArcSpecManagerArcProjectSavedTest {
     }
 
     @Test
-    public void savingAnArcProjectKeepsTheSpecificationAndDropsOnlyThatProject() {
+    public void savingAnArcProjectKeepsTheSpecificationAndEvictsThatProject() {
         final ArcArchivespecification loaded = ArcSpecManager.GetInstance(false);
         clearInvocations(rewrites);
 

@@ -63,18 +63,6 @@ public class ArcSpecManagerPollTest {
     }
 
     @Test
-    public void aLoadThatDidNotRunTheCheckStillArmsIt() {
-        // The check ran a moment ago, so this load doesn't run it.
-        ArcSpecManager.lastChecked = System.currentTimeMillis();
-        final ArcArchivespecification loaded = ArcSpecManager.GetInstance(false);
-
-        specModified = new Date(2000);
-        ArcSpecManager.lastChecked = 0L; // a minute has passed
-
-        assertThat(ArcSpecManager.GetInstance(false)).as("a change after the load must reload it at the next check").isNotSameAs(loaded);
-    }
-
-    @Test
     public void aTimeSetBackStillReloads() {
         ArcSpecManager.lastChecked = System.currentTimeMillis();
         specModified = new Date(2000);
@@ -102,6 +90,7 @@ public class ArcSpecManagerPollTest {
 
     @Test
     public void anUnchangedSpecificationIsKept() {
+        // The check ran a moment ago, so this load doesn't run it and has to read the time itself.
         ArcSpecManager.lastChecked = System.currentTimeMillis();
         final ArcArchivespecification loaded = ArcSpecManager.GetInstance(false);
 

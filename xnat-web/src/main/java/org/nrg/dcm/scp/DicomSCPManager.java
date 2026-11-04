@@ -190,12 +190,12 @@ public class DicomSCPManager extends AbstractXnatPreferenceHandlerMethod impleme
     }
 
     /**
-     * The labels of the enabled receivers that archive directly, for the notice that tells site admins direct archive
-     * is deprecated.
+     * The labels of the receivers that have direct archive turned on, for the notice that tells site admins direct
+     * archive is deprecated. Disabled receivers are included, since they archive directly again once they're enabled.
      */
     public List<String> getDirectArchiveReceivers() {
         return getDicomSCPInstancesList().stream()
-                                         .filter(instance -> instance.isEnabled() && instance.isDirectArchive())
+                                         .filter(DicomSCPInstance::isDirectArchive)
                                          .map(DicomSCPInstance::getLabel)
                                          .collect(Collectors.toList());
     }

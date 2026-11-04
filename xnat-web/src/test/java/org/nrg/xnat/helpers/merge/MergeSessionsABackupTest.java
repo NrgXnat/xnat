@@ -8,6 +8,7 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.nrg.action.ServerException;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -25,7 +27,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * A merge copies the existing session into the cache first, so it can put the session back if the merge fails. The copy
- * is only for that: a merge that succeeds deletes it, and one that fails keeps it.
+ * is only for that: a merge that succeeds deletes it, and one that fails keeps it. A merge whose anonymization fails
+ * deletes it too, since nothing has been changed by then.
  */
 public class MergeSessionsABackupTest {
     private static final String PROJECT = "PROJECT";
@@ -74,20 +77,35 @@ public class MergeSessionsABackupTest {
         assertEquals("the merge should keep its backup in the cache", 1, _backups.list().length);
     }
 
+    @Test
+    public void aMergeWhoseAnonymizationFailsDeletesItsBackup() {
+        final Merge merge = new Merge(false) {
+            @Override
+            protected XnatImagesessiondataBean getPostAnonSession() throws MizerException {
+                throw new MizerException("the project's anonymization script failed");
+            }
+        };
+        assertThrows(ServerException.class, merge::call);
+
+        assertTrue("the existing session should be left as it was", new File(_existing, "archived.dcm").exists());
+        assertFalse("the upload should not be merged", new File(_existing, "new.dcm").exists());
+        assertArrayEquals("nothing was changed, so the merge should leave no backup in the cache", new String[0], _backups.list());
+    }
+
     private static void instance(final File directory, final String name) throws IOException {
         Files.createDirectories(directory.toPath());
         Files.write(new File(directory, name).toPath(), new byte[] {1, 2, 3});
     }
 
     /** A merge of the upload into the existing session's directory, with no session metadata to merge. */
-    private final class Merge extends MergeSessionsA<XnatImagesessiondataBean> {
+    private class Merge extends MergeSessionsA<XnatImagesessiondataBean> {
         Merge(final boolean fails) {
             super(MergeSessionsABackupTest.this, _upload, upload(), _upload.getParent(), _existing, null, _existing.getParent(), true, false, session -> { }, null, null);
             _fails = fails;
         }
 
         @Override
-        protected XnatImagesessiondataBean getPostAnonSession() {
+        protected XnatImagesessiondataBean getPostAnonSession() throws MizerException {
             return src;
         }
 

@@ -23,7 +23,10 @@ Content-Type: application/zip
 <the zip or tar file>
 ```
 
-- Send the file as for any import: in the body with `inbody=true`, or as a multipart form.
+- Send the file as for any import: in the body with `inbody=true`, or as a multipart form. A file
+  already in your user cache can be named with `src` instead.
+- `async=true` applies to an imported file. An inbox import (`import-handler=inbox`) sends none,
+  and already answers right away with the URL of its own status, `/xapi/dicom/{id}`.
 - Every other parameter works as it does for any import: `project`, `subject`, `session`,
   `overwrite`, `action`, `auto-archive`, `Ignore-Unparsable`, and so on. See the
   [Image Session Import Service API](https://wiki.xnat.org/xnat-api/image-session-import-service-api).

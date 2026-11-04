@@ -244,6 +244,11 @@ public class Importer extends SecureResource {
                     return;
                 }
 
+                // An inbox import is queued, and returns the path of its status
+                if (ImporterHandlerA.DICOM_INBOX_IMPORTER.equals(handler) && response.size() == 1) {
+                    getResponse().setLocationRef(new Reference(new Reference(XDAT.getSiteConfigPreferences().getSiteUrl()), response.getFirst()).getTargetRef());
+                    getResponse().setStatus(Status.SUCCESS_ACCEPTED);
+                }
                 returnDefaultRepresentation();
                 return;
 
@@ -301,11 +306,11 @@ public class Importer extends SecureResource {
                 String task = prearchive ? "prearchival" : "archival";
                 importStarted = true;
                 importerExecutorService.submit(() -> callInBackground(importer));
+                getResponse().setLocationRef(XDAT.getSiteConfigPreferences().getSiteUrl() + "/xapi/event_tracking/" + Reference.encode(listenerControl));
                 if (asyncRequested) {
-                    getResponse().setLocationRef(XDAT.getSiteConfigPreferences().getSiteUrl() + "/xapi/event_tracking/" + Reference.encode(listenerControl));
                     returnString(listenerControl, MediaType.TEXT_PLAIN, Status.SUCCESS_ACCEPTED);
                 } else {
-                    returnString("Submitted for " + task, Status.SUCCESS_OK);
+                    returnString("Submitted for " + task, Status.SUCCESS_ACCEPTED);
                 }
                 return;
             } else {

@@ -11,6 +11,11 @@ import javax.persistence.*;
 import java.io.Serial;
 import java.util.Date;
 
+/**
+ * @deprecated Direct archive is deprecated and will be removed in a future release. Import through the prearchive and
+ *             set the project to auto-archive.
+ */
+@Deprecated
 @Slf4j
 @Entity
 @DynamicUpdate

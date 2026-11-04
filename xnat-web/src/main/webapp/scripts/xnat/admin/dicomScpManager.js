@@ -658,7 +658,7 @@ var XNAT = getObject(XNAT || {});
             return spawn('ul', {
                 style: { 'margin': '0', 'padding-left': '1.5em' }
             },[
-                [ 'li', archiveBehavior ],
+                [ 'li', item.directArchive ? [ archiveBehavior, ' ', [ 'b.text-warning', '(deprecated)' ] ] : archiveBehavior ],
                 [ 'li', customRemapping ],
                 [ 'li', projectRouting ],
                 [ 'li', whitelist ],

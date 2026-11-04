@@ -1710,7 +1710,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
         working.setPrearchiveCode(XDAT.getIntSiteConfigurationProperty("defaultPrearchiveCode", 4));
 
         SaveItemHelper.authorizedSave(working, user, true, false, eventMeta);
-        ArcSpecManager.Reset();
+        ArcSpecManager.arcProjectSaved(getId());
     }
 
     private ArcProject getDefaultArcProject(final UserI user, final @Nullable ArcProject existing) throws XFTInitException, ElementNotFoundException {

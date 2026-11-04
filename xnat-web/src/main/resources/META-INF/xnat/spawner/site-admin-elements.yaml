@@ -1974,6 +1974,16 @@ dicomScpEditor:
             onText: "Custom Processing: <b>Enabled</b>"
             offText: "Custom Processing <b>Disabled</b>"
             description: Enable or Disable Custom Processing for DICOM Receiver
+        directArchiveDeprecation:
+            tag: div.warning
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    <b>Direct Archive is deprecated</b> and will be removed in a future release. While it is on, this
+                    receiver archives every session it can route to a project, whatever that project's prearchive
+                    setting. Before turning it off, set each project that should archive automatically to auto-archive
+                    in its prearchive settings.
         directArchive:
             kind: panel.input.switchbox
             name: directArchive
@@ -2081,6 +2091,14 @@ dicomScpReceiversGlobal:
             onText: "DICOM Receivers: <b>Allowed</b>"
             offText: "DICOM Receivers: <b>Not Allowed</b>"
             description: Globally Allow or Disallow DICOM Receivers
+        directArchiveAppendDeprecation:
+            tag: div.warning
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    <b>Direct Archive is deprecated</b> and will be removed in a future release, along with the Direct
+                    Archive Append setting below.
         enableDirectArchiveAppend:
             kind: panel.input.switchbox
             name: enableDirectArchiveAppend

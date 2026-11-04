@@ -5,12 +5,13 @@ received the files, and built and archived the sessions if the request asks for 
 zip, that can mean an HTTP request that runs for many minutes.
 
 XNAT can instead run the import in the background and report its progress through the event
-tracking API. The Compressed Uploader works this way, and its progress is what the Activity tab
-shows.
+tracking API. The Compressed Uploader and the image uploader work this way, and their progress is
+what the Activity tab shows.
 
 - **XNAT 1.11 and later:** send the file with `async=true`, then poll.
 - **XNAT 1.8 to 1.10:** upload the file to your user cache, start the import from there, poll, and
-  delete the file.
+  delete the file. This still works in 1.11, but `src`, which starts the import from the cache, is
+  deprecated there and will be removed in a later release.
 
 ## XNAT 1.11 and later
 
@@ -23,8 +24,9 @@ Content-Type: application/zip
 <the zip or tar file>
 ```
 
-- Send the file as for any import: in the body with `inbody=true`, or as a multipart form. A file
-  already in your user cache can be named with `src` instead.
+- Send the file as for any import: in the body with `inbody=true`, or as a multipart form.
+- In the body, the content type tells XNAT what the file is: `application/zip` for a zip, and
+  `application/x-gtar` for a `.tar.gz` or `.tgz`. A multipart form sends the file's name instead.
 - `async=true` applies to an imported file. An inbox import (`import-handler=inbox`) sends none,
   and already answers right away with the URL of its own status, `/xapi/dicom/{id}`.
 - Every other parameter works as it does for any import: `project`, `subject`, `session`,
@@ -40,6 +42,8 @@ tracking key, and the `Location` header is its URL, `/xapi/event_tracking/{key}`
 See [Polling an import](#polling-an-import). XNAT deletes the stored file once the import has run.
 
 ## XNAT 1.8 to 1.10
+
+In XNAT 1.11, `src` is deprecated: send the file with `async=true` instead.
 
 ### 1. Upload the file to your user cache
 

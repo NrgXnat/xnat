@@ -4,7 +4,7 @@
 ## they close it for the browser session. AE titles are admin-set, so they are escaped like the site-wide alert's message.
 #set ($directArchiveReceivers = $contextService.getBean("dicomSCPManager").directArchiveReceivers)
 #if (!$directArchiveReceivers.isEmpty())
-    <div id="directArchiveNotice" class="warning hidden">
+    <div id="directArchiveNotice" class="warning hidden" style="padding-right: 32px;">
         <span class="close" style="position: absolute; top: 8px; right: 10px; cursor: pointer;"><i class="fa fa-close"></i></span>
         <span>
             <b>Direct archive is deprecated</b> and will be removed in a future release. DICOM receivers that use it:

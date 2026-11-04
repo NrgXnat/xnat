@@ -39,7 +39,25 @@ public class DisplayFieldWrapperCollection extends XFTCollection {
 
     public void addDisplayField(DisplayFieldWrapper df) {
         df.setSequence(this.getItemHash().size());
+        distinguishCollidingRowIDs(df);
         this.addStoredItem(df);
+    }
+
+    /**
+     * When the new field's row ID collides with an existing field's, both get row IDs built from their raw values, so the
+     * query and every presenter keep their columns apart. A pipeline's WRK_STATUS and WRK_STATUS_CID fields share a value,
+     * so both get the same suffix and stay paired.
+     *
+     * @param added The field being added.
+     */
+    private void distinguishCollidingRowIDs(final DisplayFieldWrapper added) {
+        for (final Object item : this.getItemHash().values()) {
+            final DisplayFieldWrapper existing = (DisplayFieldWrapper) item;
+            if (existing.hasRowIDCollision(added)) {
+                existing.setDistinctRowID();
+                added.setDistinctRowID();
+            }
+        }
     }
 
     public void addDisplayField(DisplayField df, String header, Object value) {
@@ -106,6 +124,7 @@ public class DisplayFieldWrapperCollection extends XFTCollection {
     public void addDisplayFieldWException(DisplayFieldWrapper displayField) {
         try {
             displayField.setSequence(this.getItemHash().size());
+            distinguishCollidingRowIDs(displayField);
             this.addStoredItemWException(displayField);
         } catch (DuplicateKeyException ignored) {
         }

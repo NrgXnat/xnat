@@ -9,7 +9,7 @@ tracking API. The Compressed Uploader works this way, and its progress is what t
 shows.
 
 - **XNAT 1.11 and later:** send the file with `async=true`, then poll.
-- **XNAT 1.10:** upload the file to your user cache, start the import from there, poll, and
+- **XNAT 1.8 to 1.10:** upload the file to your user cache, start the import from there, poll, and
   delete the file.
 
 ## XNAT 1.11 and later
@@ -36,7 +36,7 @@ tracking key, and the `Location` header is its URL, `/xapi/event_tracking/{key}`
 
 See [Polling an import](#polling-an-import). XNAT deletes the stored file once the import has run.
 
-## XNAT 1.10
+## XNAT 1.8 to 1.10
 
 ### 1. Upload the file to your user cache
 
@@ -65,8 +65,8 @@ POST /data/services/import?src=/user/cache/resources/{folder}/files/{file}&http-
 - The import runs in the background only when the request has both `src` and
   `http-session-listener`.
 - Include `action=commit`, as the Compressed Uploader does: it builds the sessions as part of the
-  import, and add `auto-archive=true` to archive them too. Without it, XNAT 1.10 never reports the
-  import's end, and polling never finishes.
+  import, and add `auto-archive=true` to archive them too. Without it, XNAT before 1.11 never
+  reports the import's end, and polling never finishes.
 
 XNAT responds `200` with the text `Submitted for prearchival` once the import is queued.
 
@@ -76,11 +76,13 @@ See [Polling an import](#polling-an-import).
 
 ### 4. Delete the file
 
-XNAT 1.10 leaves the file in your user cache. Once the import has finished, delete it:
+XNAT before 1.11 leaves the file in your user cache. Once the import has finished, delete it:
 
 ```http
 DELETE /data/user/cache/resources/{folder}/files/{file}
 ```
+
+XNAT 1.11 deletes the file once its import has run, so there this answers `404`.
 
 ## Polling an import
 
@@ -107,12 +109,15 @@ GET /xapi/event_tracking/{key}
   URI to request it.
 - When `succeeded` is `false`, `finalMessage` gives the reason. It also names any sessions that
   were archived before the failure.
-- Only the user who started the import can read its key. In XNAT 1.10, the response is `404` until
-  the import reports its first step, which can wait in a queue, so allow for that.
+- Only the user who started the import can read its key. Before XNAT 1.11, the response is `404`
+  until the import reports its first step, which can wait in a queue, so allow for that.
 
 Without `action=commit`, a DICOM-zip import is done once its files are in the prearchive. XNAT
 builds each session after it has been idle for the session idle time, and archives it if the
 project archives automatically.
+
+With `action=commit`, XNAT skips any file in the zip that isn't DICOM. Add `Ignore-Unparsable=false`
+to fail the import instead.
 
 ## Example (XNAT 1.11)
 

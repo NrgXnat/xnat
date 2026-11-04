@@ -28,7 +28,8 @@ Content-Type: application/zip
 - In the body, the content type tells XNAT what the file is: `application/zip` for a zip, and
   `application/x-gtar` for a `.tar.gz` or `.tgz`. A multipart form sends the file's name instead.
 - `async=true` applies to an imported file. An inbox import (`import-handler=inbox`) sends none,
-  and already answers right away with the URL of its own status, `/xapi/dicom/{id}`.
+  and already answers right away: `202 Accepted`, with the URL of its own status, `/xapi/dicom/{id}`,
+  in the body and the `Location` header.
 - Every other parameter works as it does for any import: `project`, `subject`, `session`,
   `overwrite`, `action`, `auto-archive`, `Ignore-Unparsable`, and so on. See the
   [Image Session Import Service API](https://wiki.xnat.org/xnat-api/image-session-import-service-api).
@@ -75,7 +76,8 @@ POST /data/services/import?src=/user/cache/resources/{folder}/files/{file}&http-
   import, and add `auto-archive=true` to archive them too. Without it, XNAT before 1.11 never
   reports the import's end, and polling never finishes.
 
-XNAT responds `200` with the text `Submitted for prearchival` once the import is queued.
+Once the import is queued, XNAT responds with the text `Submitted for prearchival`: `200` before
+XNAT 1.11, and `202 Accepted` from 1.11, with the tracking URL in the `Location` header.
 
 ### 3. Poll the import's progress
 

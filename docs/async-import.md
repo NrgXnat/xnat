@@ -103,10 +103,11 @@ GET /xapi/event_tracking/{key}
 - `payload` is a JSON document in a string. Its `entryList` holds the import's progress messages,
   oldest first. Each has a `status` (`Waiting`, `InProgress`, `Warning`, `Failed`, or `Completed`),
   an `eventTime` in milliseconds since the epoch, and a `message`.
-- When `succeeded` is `true`, `finalMessage` names the sessions the import produced, as
+- When `succeeded` is `true`, `finalMessage` names the sessions a DICOM import produced, as
   `Prearchive:` or `Archive:` followed by their URIs separated by semicolons, for example
   `Prearchive:/prearchive/projects/P1/20261103_182111029/S1`. Add `/data` to the front of each
-  URI to request it.
+  URI to request it. Other import handlers word it their own way: a XAR import's is the session's
+  URI alone.
 - When `succeeded` is `false`, `finalMessage` gives the reason. It also names any sessions that
   were archived before the failure.
 - Only the user who started the import can read its key. Before XNAT 1.11, the response is `404`

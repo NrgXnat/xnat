@@ -453,12 +453,15 @@ public class Importer extends SecureResource {
         }
 
         File f = org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser(), (String) map.get("XNAME"), (String) map.get("_REMAINDER"));
+        final File cache = org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser());
+        final CachedUpload upload = new CachedUpload(cache.toPath(), cache.toPath().resolve((String) map.get("XNAME")), f.toPath());
 
         if (f.exists()) {
-            final File cache = org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser());
-            cachedUpload = new CachedUpload(cache.toPath(), cache.toPath().resolve((String) map.get("XNAME")), f.toPath());
+            cachedUpload = upload;
             return new StoredFile(f, true);
         } else {
+            // Looking the file up creates the folders it would be in, so remove the ones it left empty
+            upload.delete();
             throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "Unknown src file.", new Exception());
         }
     }

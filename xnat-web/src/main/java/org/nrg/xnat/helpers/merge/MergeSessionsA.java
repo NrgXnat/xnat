@@ -184,6 +184,10 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
             postSave(this.merged);
             timer.lap("cleanup-catalogs");
+
+            // The backup is only for rolling back a failed merge.
+            FileUtils.DeleteFile(rootBackup);
+            timer.lap("delete-backup");
             PhaseTimer.LOG.info("Merged {} into {}: {}", srcDIR, destDIR, timer);
 
             return this.merged;

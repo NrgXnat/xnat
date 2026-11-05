@@ -125,11 +125,3 @@ Release tags `1.9.3.4`, `1.10.0`, `1.10.1`, `1.10.2` and `1.10.2.1` are reachabl
 - [Installing the OpenCV Native Library](./docs/installing-opencv-native.md) — installing the native library XNAT 1.10.2 and later need for JPEG-family DICOM pixel data, on sites that don't run the XNAT container image
 - [Mirroring the OpenCV Codecs](./docs/mirroring-opencv-codecs.md) — mirroring the OpenCV codec jars and native libraries into Artifactory, and how the build and container image use them
 
-## Miscellaneous
-
-### dcm4che 2
-
-XNAT 1.10._x_ shipped dcm4che 2.0.29 alongside dcm4che 5._x_ only for plugins that had not yet migrated; XNAT itself has not used dcm4che 2 since 1.10.0.
-XNAT 1.11 no longer includes dcm4che 2: the `org.nrg:parent` BOM no longer manages its versions and the WAR no longer ships its jars. Plugins that still use it
-must migrate to dcm4che 5 or bundle it themselves. See [dcm4che 2 Is No Longer Provided](./docs/plugin-migration-guide.md#8-dcm4che-2-is-no-longer-provided-1110)
-in the plugin migration guide.

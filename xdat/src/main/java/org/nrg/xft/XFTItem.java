@@ -98,6 +98,7 @@ import java.io.Serializable;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,6 +109,7 @@ import java.util.GregorianCalendar;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -4367,6 +4369,78 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
 	    return null;
 	}
 
+    /**
+     * The formats a date/time stored as text in a string or LONGVARCHAR field can have: {@link Date#toString()}, which
+     * is what the split-parameter path writes, and the dated forms {@link DateUtils} accepts (its day-without-year
+     * forms are left out, since they would land on 1970). The time forms include the DICOM TM shape {@code HHmmss}.
+     */
+    private static final String[] STORED_DATE_TIME_FORMATS = {"EEE MMM dd HH:mm:ss z yyyy",
+                                                              "yyyy-MM-dd HH:mm:ss.SSS",
+                                                              "yyyy-MM-dd HH:mm:ss.S",
+                                                              "yyyy-MM-dd HH:mm:ss z",
+                                                              "yyyy-MM-dd HH:mm:ss",
+                                                              "yyyy-MM-dd'T'HH:mm:ss",
+                                                              "yyyy-MM-dd",
+                                                              "MM/dd/yyyy"};
+    private static final String[] STORED_TIME_FORMATS      = {"HH:mm:ss", "HH:mm:ss z", "HHmmss"};
+
+    /**
+     * Returns the value already stored in a date-like field as a {@link Date} so that split
+     * {@code .hours/.minutes/.seconds/.year/.month/.date} parameters can update it. String and LONGVARCHAR fields
+     * store the date as text, either a full date/time or a bare time, so both forms are parsed; a value that is
+     * neither yields null and the caller starts from the default base date.
+     *
+     * Parsing is strict and must consume the whole value: a lenient parse would read a DICOM DA value such as
+     * {@code 20120222} as the time 20:12:02 and silently turn it into a date.
+     *
+     * @param stored  The value currently stored in the field, possibly null.
+     * @param fieldId The id of the field, for the log.
+     *
+     * @return The stored value as a date, or null if there is none or it can't be parsed.
+     */
+    private static Date parseStoredDateTime(final Object stored, final String fieldId) {
+        if (stored == null) {
+            return null;
+        }
+        if (stored instanceof Date date) {
+            return date;
+        }
+        final String text = stored.toString().trim();
+        for (final String format : STORED_DATE_TIME_FORMATS) {
+            final Date date = parseWhole(text, format);
+            if (date != null) {
+                return date;
+            }
+        }
+        for (final String format : STORED_TIME_FORMATS) {
+            final Date time = parseWhole(text, format);
+            if (time != null) {
+                return onBaseDate(time);
+            }
+        }
+        // The value is not logged: custom fields can hold DICOM-derived values.
+        log.warn("Replacing the {}-character value stored in {}, which is neither a date/time nor a time", text.length(), fieldId);
+        return null;
+    }
+
+    /**
+     * Puts a bare time on the base date that an empty field starts from, so that a stored {@code HH:mm:ss} and an
+     * empty field end up with the same date part once the split parameters have been applied.
+     */
+    private static Date onBaseDate(final Date time) {
+        final Calendar parsed = Calendar.getInstance();
+        parsed.setTime(time);
+        return new GregorianCalendar(2000, Calendar.JANUARY, 1, parsed.get(Calendar.HOUR_OF_DAY), parsed.get(Calendar.MINUTE), parsed.get(Calendar.SECOND)).getTime();
+    }
+
+    private static Date parseWhole(final String text, final String format) {
+        final SimpleDateFormat parser = new SimpleDateFormat(format, Locale.US);
+        parser.setLenient(false);
+        final ParsePosition position = new ParsePosition(0);
+        final Date          date     = parser.parse(text, position);
+        return date != null && position.getIndex() == text.length() ? date : null;
+    }
+
 	@SuppressWarnings("deprecation")
     private void setXMLPropertyChild(String xmlPath, Object value,boolean parseValue) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,InvalidValueException
 	{
@@ -4682,7 +4756,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             			        }else{
             						throw new FieldNotFoundException(xmlPath);
             			        }
-            			    }else if (secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("dateTime") || secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("string"))
+            			    }else if (secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("dateTime") || secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("string") || secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("LONGVARCHAR"))
             			    {
                                 // TODO: We don't support nulling out a date in this manner, so just ignore nulls for these cases.
             			        if (value != null && (xmlPath.equalsIgnoreCase("date")
@@ -4693,10 +4767,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable, Seria
             			                || xmlPath.equalsIgnoreCase("hours")
             			                || xmlPath.equalsIgnoreCase("seconds")))
             			        {
-            			            Date date = (Date)getProperty(secondToLastField.getId());
+            			            Date date = parseStoredDateTime(getProperty(secondToLastField.getId()), secondToLastField.getId());
             			            if (date==null)
             			            {
-            			                GregorianCalendar cal = new GregorianCalendar(1,1,2000);
+            			                GregorianCalendar cal = new GregorianCalendar(2000, Calendar.JANUARY, 1);
             			    			date= cal.getTime();
             			            }
 

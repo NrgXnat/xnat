@@ -881,15 +881,14 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     /**
-     * {@inheritDoc}
+     * Gets the preference's value as {@link #getProperty(String)} does: the cached value if there is one, otherwise
+     * the stored value, which is then cached. A preference whose cached value was {@link #invalidate(String, String...)
+     * invalidated} is still in {@link #keySet()}, so this can't use {@link #containsKey(Object)} to decide whether the
+     * cache holds it.
      */
     @Override
     public Object get(final Object key) {
-        if (key == null) {
-            return null;
-        }
-        final String keyed = key.toString();
-        return containsKey(keyed) ? getFromCache(keyed) : getProperty(keyed);
+        return key == null ? null : getProperty(key.toString());
     }
 
     /**

@@ -24,6 +24,7 @@ import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.configuration.NrgPrefsServiceTestsConfiguration;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.tools.basic.BasicEnum;
 import org.nrg.prefs.tools.basic.BasicTestTool;
 import org.nrg.prefs.tools.beans.BeanPrefsTool;
@@ -60,15 +61,17 @@ public class PreferenceBeanTests {
     private final PropertiesPrefsTool _propertiesPrefsTool;
     private final RelaxedPrefsTool    _relaxedPrefsTool;
     private final StrictPrefsTool     _strictPrefsTool;
-    private final BeanPrefsTool       _beanPrefsTool;
+    private final BeanPrefsTool        _beanPrefsTool;
+    private final NrgPreferenceService _preferenceService;
 
     @Autowired
-    public PreferenceBeanTests(final BasicTestTool basicPrefsTool, final PropertiesPrefsTool propertiesPrefsTool, final RelaxedPrefsTool relaxedPrefsTool, final StrictPrefsTool strictPrefsTool, final BeanPrefsTool beanPrefsTool) {
+    public PreferenceBeanTests(final BasicTestTool basicPrefsTool, final PropertiesPrefsTool propertiesPrefsTool, final RelaxedPrefsTool relaxedPrefsTool, final StrictPrefsTool strictPrefsTool, final BeanPrefsTool beanPrefsTool, final NrgPreferenceService preferenceService) {
         _basicPrefsTool      = basicPrefsTool;
         _propertiesPrefsTool = propertiesPrefsTool;
         _relaxedPrefsTool    = relaxedPrefsTool;
         _strictPrefsTool     = strictPrefsTool;
         _beanPrefsTool       = beanPrefsTool;
+        _preferenceService   = preferenceService;
     }
 
     @Test
@@ -99,6 +102,26 @@ public class PreferenceBeanTests {
                                .containsEntry("prefC", BasicEnum.Value2);
 
         validateBeanCache(_basicPrefsTool.getPreferenceBean(), preferences);
+    }
+
+    @Test
+    public void testMapReadAfterInvalidateLoadsStoredValue() throws InvalidPreferenceName {
+        final PreferenceBean      bean        = _basicPrefsTool.getPreferenceBean();
+        final Map<String, Object> preferences = _basicPrefsTool.getPreferences();
+        final String              original    = _basicPrefsTool.getPrefB();
+        try {
+            // The stored value changes without going through this bean, as when another node changes it.
+            _preferenceService.setPreferenceValue(bean.getToolId(), "prefB", "valueBStoredElsewhere");
+            assertThat(_basicPrefsTool.getPrefB()).isEqualTo("valueBStoredElsewhere");
+            assertThat(preferences.get("prefB")).isEqualTo(original);
+
+            // Invalidating drops this bean's copy, so reading through the map loads the stored value.
+            bean.invalidate("prefB");
+            assertThat(preferences.get("prefB")).isEqualTo("valueBStoredElsewhere");
+            assertThat(preferences).containsEntry("prefB", "valueBStoredElsewhere");
+        } finally {
+            _basicPrefsTool.setPrefB(original);
+        }
     }
 
     @Test

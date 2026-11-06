@@ -247,7 +247,6 @@ public class Importer extends SecureResource {
                 // An inbox import is queued, and returns the path of its status
                 if (ImporterHandlerA.DICOM_INBOX_IMPORTER.equals(handler) && response.size() == 1) {
                     getResponse().setLocationRef(new Reference(new Reference(XDAT.getSiteConfigPreferences().getSiteUrl()), response.getFirst()).getTargetRef());
-                    getResponse().setStatus(Status.SUCCESS_ACCEPTED);
                 }
                 returnDefaultRepresentation();
                 return;
@@ -310,7 +309,7 @@ public class Importer extends SecureResource {
                 if (asyncRequested) {
                     returnString(listenerControl, MediaType.TEXT_PLAIN, Status.SUCCESS_ACCEPTED);
                 } else {
-                    returnString("Submitted for " + task, Status.SUCCESS_ACCEPTED);
+                    returnString("Submitted for " + task, Status.SUCCESS_OK);
                 }
                 return;
             } else {

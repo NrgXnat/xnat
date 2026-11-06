@@ -147,7 +147,6 @@ public class Importer extends SecureResource {
                 listenerControl = (String) value;
                 break;
             case "src":
-                logger.warn("User {} imported a file from their cache with src, which is deprecated and will be removed in a later release. Send the file with async=true instead.", getUser().getUsername());
                 fw.add(retrievePrestoreFile((String) value));
                 async = true;
                 break;

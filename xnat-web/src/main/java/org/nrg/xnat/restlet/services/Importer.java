@@ -61,6 +61,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -264,6 +265,10 @@ public class Importer extends SecureResource {
                 }
                 httpSessionListener = true;
                 if (!async) {
+                    if (fw.isEmpty()) {
+                        getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "async=true needs a file: send one with the request, or name one in your user cache with src");
+                        return;
+                    }
                     // The file came in this request: store it in the user's cache, so the import can read it after the
                     // request has ended.
                     cachedUpload = storeUpload(user, fw.getFirst());
@@ -303,9 +308,16 @@ public class Importer extends SecureResource {
                             .getBeanSafely("threadPoolExecutorFactoryBean", ThreadPoolExecutor.class)) != null) {
                 startTracking(user);
                 String task = prearchive ? "prearchival" : "archival";
+                try {
+                    importerExecutorService.submit(() -> callInBackground(importer));
+                } catch (RejectedExecutionException e) {
+                    final String message = "XNAT couldn't queue the import. Try again later.";
+                    importer.publish(new StatusMessage(importer, StatusMessage.Status.FAILED, message, true));
+                    getResponse().setStatus(Status.SERVER_ERROR_SERVICE_UNAVAILABLE, message);
+                    return;
+                }
                 importStarted = true;
-                importerExecutorService.submit(() -> callInBackground(importer));
-                getResponse().setLocationRef(XDAT.getSiteConfigPreferences().getSiteUrl() + "/xapi/event_tracking/" + Reference.encode(listenerControl));
+                getResponse().setLocationRef(StringUtils.removeEnd(XDAT.getSiteConfigPreferences().getSiteUrl(), "/") + "/xapi/event_tracking/" + Reference.encode(listenerControl));
                 if (asyncRequested) {
                     returnString(listenerControl, MediaType.TEXT_PLAIN, Status.SUCCESS_OK);
                 } else {
@@ -379,9 +391,9 @@ public class Importer extends SecureResource {
                 importer.publish(new StatusMessage(importer, StatusMessage.Status.COMPLETED, destination + String.join(";", uris), true));
             }
             return uris;
-        } catch (ClientException | ServerException | RuntimeException e) {
+        } catch (final Throwable e) {
             if (!ended.get()) {
-                importer.publish(new StatusMessage(importer, StatusMessage.Status.FAILED, e.getMessage(), true));
+                importer.publish(new StatusMessage(importer, StatusMessage.Status.FAILED, StringUtils.defaultIfBlank(e.getMessage(), e.toString()), true));
             }
             throw e;
         }
@@ -389,8 +401,9 @@ public class Importer extends SecureResource {
 
     /**
      * Runs the import, then deletes the file named by {@code src}, or stored for {@code async=true}, from the user's
-     * cache, whether the import succeeded or failed: the import has read it, and nothing else uses it. A request
-     * rejected before the import runs keeps a {@code src} file, so it can be corrected and sent again.
+     * cache, whether the import succeeded or failed: the import has read it, and nothing else uses it. A failed import,
+     * for example to a project the user can't edit, needs the file uploaded again. Only a request rejected before the
+     * import runs, such as one with a parameter that isn't valid, keeps a {@code src} file.
      */
     private List<String> callAndDeleteUpload(final ImporterHandlerA importer) throws ClientException, ServerException {
         try {

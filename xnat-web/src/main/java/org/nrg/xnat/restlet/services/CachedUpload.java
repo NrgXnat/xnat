@@ -73,8 +73,8 @@ class CachedUpload {
         }
         try {
             Files.deleteIfExists(_file);
-            // The image uploader puts several files in one folder and imports each on its own, so the folder goes with
-            // the last of them, and two imports that finish together may both find it empty.
+            // A client may put several files in one folder and import each with src, so the folder goes with the last
+            // of them, and two imports that finish together may both find it empty.
             for (Path folder = _file.getParent(); folder.startsWith(_folder) && isEmptyFolder(folder); folder = folder.getParent()) {
                 Files.deleteIfExists(folder);
             }

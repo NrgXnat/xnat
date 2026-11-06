@@ -35,7 +35,7 @@ Content-Type: application/zip
   [Image Session Import Service API](https://wiki.xnat.org/xnat-api/image-session-import-service-api).
 - To choose the tracking key yourself, add `http-session-listener={key}`. Otherwise XNAT makes one.
 
-XNAT stores the file, queues the import, and responds `202 Accepted`. The response body is the
+XNAT stores the file, queues the import, and responds `200`. The response body is the
 tracking key, and the `Location` header is its URL, `/xapi/event_tracking/{key}`.
 
 ### 2. Poll the import's progress

@@ -128,7 +128,7 @@ public class Importer extends SecureResource {
     String listenerControl = null;
     boolean httpSessionListener = false;
     boolean async = false; // when importing a previously uploaded file, no need to keep the connection open while we import
-    boolean asyncRequested = false; // async=true: store the file sent in the request, answer 202 and import it in the background
+    boolean asyncRequested = false; // async=true: store the file sent in the request, answer with its key and import it in the background
     CachedUpload cachedUpload = null; // the file named by src or stored for async=true, deleted from the user's cache once the import has run
     boolean uploadStored = false;
     boolean importStarted = false;
@@ -307,7 +307,7 @@ public class Importer extends SecureResource {
                 importerExecutorService.submit(() -> callInBackground(importer));
                 getResponse().setLocationRef(XDAT.getSiteConfigPreferences().getSiteUrl() + "/xapi/event_tracking/" + Reference.encode(listenerControl));
                 if (asyncRequested) {
-                    returnString(listenerControl, MediaType.TEXT_PLAIN, Status.SUCCESS_ACCEPTED);
+                    returnString(listenerControl, MediaType.TEXT_PLAIN, Status.SUCCESS_OK);
                 } else {
                     returnString("Submitted for " + task, Status.SUCCESS_OK);
                 }

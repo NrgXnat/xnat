@@ -1,0 +1,111 @@
+/*
+ * web: org.nrg.xnat.restlet.services.CachedUpload
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2026, Washington University School of Medicine and Howard Hughes Medical Institute
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ */
+
+package org.nrg.xnat.restlet.services;
+
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.xnat.restlet.util.FileWriterWrapperI;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.UUID;
+import java.util.stream.Stream;
+
+/**
+ * A file in a user's cache that an import reads with {@code src}, such as a zip from the Compressed Uploader, or one
+ * that an import with {@code async=true} {@link #store(Path, FileWriterWrapperI) stored} there. Once the import has run,
+ * the file isn't needed, and {@link #delete()} removes it with the folders it leaves empty, up to and including the
+ * cache folder named in {@code src}.
+ */
+@Slf4j
+class CachedUpload {
+    /**
+     * Writes a file sent in a request to a new folder in the user's cache, so an import can read it after the request
+     * has ended. The file keeps the name it was sent with, since importers tell zip from tar by its extension.
+     *
+     * @param cache  The user's cache folder.
+     * @param upload The file sent in the request.
+     *
+     * @return The stored file.
+     */
+    static CachedUpload store(final Path cache, final FileWriterWrapperI upload) throws Exception {
+        final Path         folder = Files.createDirectories(cache.resolve("import-" + UUID.randomUUID()));
+        final CachedUpload stored = new CachedUpload(cache, folder, folder.resolve(fileName(upload.getName())));
+        try {
+            upload.write(stored.getFile());
+        } catch (Exception e) {
+            stored.delete();
+            throw e;
+        }
+        return stored;
+    }
+
+    /**
+     * @param cache  The user's cache folder.
+     * @param folder The cache folder named in {@code src}.
+     * @param file   The uploaded file.
+     */
+    CachedUpload(final Path cache, final Path folder, final Path file) {
+        _cache = cache.toAbsolutePath().normalize();
+        _folder = folder.toAbsolutePath().normalize();
+        _file = file.toAbsolutePath().normalize();
+    }
+
+    /**
+     * Deletes the file, if it's still there, and then each folder it leaves empty, up to and including the cache folder
+     * named in {@code src}. Some importers move their upload elsewhere, so the file may already be gone. Nothing outside
+     * that cache folder is deleted.
+     */
+    void delete() {
+        if (!_folder.startsWith(_cache) || _folder.equals(_cache) || !_file.startsWith(_folder) || _file.equals(_folder)) {
+            log.warn("Not deleting the import's upload {}: it isn't in a folder of the user's cache {}", _file, _cache);
+            return;
+        }
+        try {
+            Files.deleteIfExists(_file);
+            // A client may put several files in one folder and import each with src, so the folder goes with the last
+            // of them, and two imports that finish together may both find it empty.
+            for (Path folder = _file.getParent(); folder.startsWith(_folder) && isEmptyFolder(folder); folder = folder.getParent()) {
+                Files.deleteIfExists(folder);
+            }
+            log.debug("Deleted the import's upload {} from the user's cache", _file);
+        } catch (IOException e) {
+            log.warn("Couldn't delete the import's upload {} from the user's cache", _file, e);
+        }
+    }
+
+    File getFile() {
+        return _file.toFile();
+    }
+
+    /**
+     * The last element of the name the file was sent with, or "upload" if that names no file.
+     */
+    private static String fileName(final String name) {
+        final String fileName = FilenameUtils.getName(name);
+        return StringUtils.isBlank(fileName) || fileName.equals(".") || fileName.equals("..") ? "upload" : fileName;
+    }
+
+    private static boolean isEmptyFolder(final Path folder) throws IOException {
+        if (!Files.isDirectory(folder)) {
+            return false;
+        }
+        try (final Stream<Path> entries = Files.list(folder)) {
+            return entries.findAny().isEmpty();
+        }
+    }
+
+    private final Path _cache;
+    private final Path _folder;
+    private final Path _file;
+}

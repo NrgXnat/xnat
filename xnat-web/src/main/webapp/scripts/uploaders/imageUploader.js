@@ -19,19 +19,20 @@ XNAT.app.upload.defaultStr = "DEFAULT";
 }(function(){
     // NOTE: fileuploader.js expects the id variable below to be xmodal-abu,
     // but I don't want to use that bc I want to do my own button handling
-    let uploadName,
-        fNameReplace = 'XNAME',
-        usrResPath,
-        uploaderUrl,
-        archiverUrl = XNAT.url.csrfUrl('/data/services/import'),
+    let uploaderUrl,
         id = 'projuploader-modal',
-        abuId = 'projuploader-modal-abu',
-        interval;
+        abuId = 'projuploader-modal-abu';
 
     XNAT.app.upload.imageUploader.openUploadModal = function(config) {
-        uploadName = 'upload' + getDateBasedId();
-        usrResPath = '/user/cache/resources/' + uploadName + '/files/' + fNameReplace;
-        uploaderUrl = XNAT.url.csrfUrl('/data' + usrResPath).replace(fNameReplace, '##FILENAME_REPLACE##');
+        // Each file is sent with async=true: XNAT stores it, queues its import as soon as it has uploaded, and answers
+        // with the import's tracking key
+        const importParams = {async: 'true'};
+        for (let key of Object.keys(config)) {
+            if (config[key]) {
+                importParams[key] = config[key];
+            }
+        }
+        uploaderUrl = XNAT.url.csrfUrl('/data/services/import', importParams);
 
         let loc;
         if (config.session) {
@@ -61,14 +62,6 @@ XNAT.app.upload.defaultStr = "DEFAULT";
 
         function cancel() {
             abu._imageUploader.cancelUploads();
-            if (interval) {
-                window.clearInterval(interval);
-                interval = null;
-            }
-        }
-        function cancelAndClose() {
-            cancel();
-            xmodal.close(id);
         }
 
         xmodal.open({
@@ -78,47 +71,12 @@ XNAT.app.upload.defaultStr = "DEFAULT";
             content: spawn('div', messages).outerHTML,
             beforeShow: function(obj) {
                 obj.$modal.find('#' + id + '-done-button').hide();
-                obj.$modal.find('#' + id + '-process-button').prop('disabled', true);
             },
             buttons: {
-                process: {
-                    label: 'Request archival',
-                    isDefault: true,
-                    close: false,
-                    action: function() {
-                        submitForArchival(config);
-                    }
-                },
                 done: {
                     label: 'Close',
-                    isDefault: false,
-                    close: false,
-                    action: function() {
-                        // only prompt
-                        if ($('#' + id + '-process-button').prop('disabled')) {
-                            cancelAndClose();
-                        } else {
-                            XNAT.ui.dialog.confirm('Confirm close',
-                                'Are you sure you wish to close? Nothing will be submitted for archival.',
-                                {
-                                    buttons: [
-                                        {
-                                            label: 'Yes',
-                                            close: true,
-                                            isDefault: true,
-                                            action: cancelAndClose
-                                        },
-                                        {
-                                            label: 'No',
-                                            close: true,
-                                            isDefault: false,
-                                            action: function () {}
-                                        }
-                                    ]
-                                }
-                            );
-                        }
-                    }
+                    isDefault: true,
+                    close: true
                 },
                 cancel: {
                     label: 'Cancel',
@@ -133,21 +91,19 @@ XNAT.app.upload.defaultStr = "DEFAULT";
             uploadStartedFunction: function(){
                 $('#' + id + '-cancel-button').show();
                 $('#' + id + '-done-button').hide();
-                if (!interval) {
-                    $('#' + id + '-process-button').prop('disabled', false);
+            },
+            // Each upload answers with its import's tracking key, and the import has started, so track it right away:
+            // the dialog may be closed before the other files have uploaded
+            uploadSucceededFunction: function(key) {
+                if (typeof key === 'string') {
+                    XNAT.app.activityTab.start('Upload extraction/review for archival', key.trim());
                 }
             },
             uploadCompletedFunction: function(anyFailedUploads) {
                 $('#' + id + '-cancel-button').hide();
                 $('#' + id + '-done-button').show();
-                if ($('#' + id + ' .abu-upload-complete-text').length === 0) {
-                    $('#' + id + '-process-button').prop('disabled', true);
-                } else {
-                    if (!interval) {
-                        XNAT.app.abu.runFunctionIfIdle(60000, function() {
-                            $('#' + id + '-process-button').click();
-                        });
-                    }
+                if (!anyFailedUploads) {
+                    xmodal.close(id);
                 }
             },
             processFunction: function(){},
@@ -163,105 +119,6 @@ XNAT.app.upload.defaultStr = "DEFAULT";
         abu._imageUploader.buildUploaderDiv();
         abu._imageUploader._currentAction = uploaderUrl;
     };
-
-    function errorHandler(e, base){
-        const info = e.responseText ? base + ': ' + e.responseText : base;
-        const details = spawn('p',[info]);
-        console.log(e);
-        xmodal.alert({
-            title: 'Error',
-            content: '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p>' + details.html,
-            okAction: function () {
-                xmodal.closeAll();
-            }
-        });
-    }
-
-    function submitForArchival(config) {
-        $('#' + abuId + ' #file-upload-input').prop('disabled', true).addClass('disabled');
-        $('#' + id + '-process-button').prop('disabled', true);
-        const $statusDiv = $('#' + abuId + ' .abu-status');
-
-        if ($statusDiv.length === 0 && interval) {
-            // cancelled
-            window.clearInterval(interval);
-            interval = null;
-            return;
-        }
-
-        const uploadInProg = $statusDiv.children().length === 0 || abu._imageUploader.uploadsInProgress > 0 ||
-            abu._imageUploader.currentUploads > 0;
-        if (uploadInProg) {
-            if (!interval) {
-                XNAT.ui.dialog.message('Archival requested!', 'Archival will begin automatically when all uploads complete.');
-                interval = window.setInterval(function() {
-                    submitForArchival(config);
-                }, 2000);
-            }
-            return;
-        } else if (interval) {
-            window.clearInterval(interval);
-            interval = null;
-        }
-
-        const $targetFiles = $('#' + abuId + ' .abu-upload-filename');
-        const nfiles = $targetFiles.length;
-        let canCloseUploadDialog = true;
-        let timeout = 0;
-        $targetFiles.each(function(index) {
-            const fname = $(this).text();
-            const $parent = $(this).parent();
-
-            const uploadFailed = $parent.find('.abu-upload-fail').length > 0;
-            if (uploadFailed) {
-                canCloseUploadDialog = false;
-                return true;
-            }
-            window.setTimeout(function () {
-                const uploadId = getDateBasedId();
-                const formDataArchive = new FormData();
-                formDataArchive.append("src", usrResPath.replace(fNameReplace, fname));
-                formDataArchive.append("http-session-listener", uploadId);
-
-                for (let key of Object.keys(config)) {
-                    if (config[key]) {
-                        formDataArchive.append(key, config[key]);
-                    }
-                }
-
-                $.ajax({
-                    method: 'POST',
-                    contentType: false,
-                    url: archiverUrl,
-                    data: formDataArchive,
-                    processData: false,
-                    cache: false,
-                    beforeSend: function () {
-                        XNAT.app.timeout.maintainLogin = true;
-                    },
-                    success: function () {
-                        $parent.remove();
-                        XNAT.app.activityTab.start('Upload extraction/review for archival', uploadId);
-                    },
-                    error: function (xhr) {
-                        canCloseUploadDialog = false;
-                        errorHandler(xhr, 'Issue requesting archival of ' + fname);
-                    },
-                    complete: function () {
-                        if (index === nfiles-1 && canCloseUploadDialog) {
-                            xmodal.close(id);
-                        }
-                        XNAT.app.timeout.maintainLogin = false;
-                    }
-                });
-            }, timeout);
-            timeout = 200; // space out archival requests a tad
-        });
-    }
-
-    function getDateBasedId() {
-        return (new Date()).toISOString().replace(/[^\w]/gi,'');
-    }
 
     XNAT.app.upload.imageUploader.openUploadViaDesktopClient = function(config) {
         XNAT.xhr.get({

@@ -224,7 +224,7 @@ public final class DicomInboxImporter extends ImporterHandlerA {
 
         log.info("Created and queued import request {} for the inbox session located at {}.", request.getId(), _sessionPath.getAbsolutePath());
         try {
-            return Collections.singletonList(URI.create(XDAT.getSiteConfigurationProperty("siteUrl") + "/xapi/dicom/" + request.getId()).toURL().getPath());
+            return Collections.singletonList(URI.create(StringUtils.removeEnd(XDAT.getSiteConfigurationProperty("siteUrl"), "/") + "/xapi/dicom/" + request.getId()).toURL().getPath());
         } catch (MalformedURLException | ConfigServiceException e) {
             log.error("An error occurred trying to retrieve the site URL when composing DICOM inbox import request response, panicking.", e);
             return Collections.singletonList("/xapi/dicom/" + request.getId());

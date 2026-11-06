@@ -179,6 +179,10 @@ var XNAT = getObject(XNAT);
 
                 if (succeeded !== null) {
                     activityTab.stopPoll(key, succeeded);
+                } else if (lastProgressIdx === -1) {
+                    // Nothing reported yet: the import is still queued, or was lost, as in a restart. Retry as for a
+                    // record that isn't there yet, which ends with a note that refreshing the page resumes tracking.
+                    processError(item, key, errCnt, '', lastProgressIdx, 404);
                 } else {
                     window.setTimeout(function() {
                         checkProgress(item, key, 0, lastProgressIdx);
@@ -222,7 +226,7 @@ var XNAT = getObject(XNAT);
         let messages = "";
         let entryList = payload ? (payload['entryList'] || []) : [];
         if (entryList.length === 0 && succeeded == null) {
-            return [null, lastProgressIdx];
+            return {succeeded: null, lastProgressIdx: lastProgressIdx};
         }
         entryList.forEach(function(e, i) {
             if (i <= lastProgressIdx) {

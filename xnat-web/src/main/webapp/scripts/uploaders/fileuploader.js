@@ -245,6 +245,13 @@ abu.FileUploader = function(o){
 	}
 
 	this.cancelUploads = function() {
+		// Cancel the files that haven't started first, since aborting an upload starts the next one
+		$.each(this.waitingForUpload.slice(), function(i, idx) {
+			$('#' + this.elementId + ' #file-upload-form-' + idx).remove();
+			this.fillStatus($('#' + this.elementId + ' #upload-status-div-' + idx), "Canceled", "abort");
+			this.removeFromWaitlist(idx);
+			this.markUploadDone(idx);
+		}.bind(this));
 		$.each(this.xhrs, function(key, xhr) {
 			// for some reason, there's a guid key added to this object
 			if (key.startsWith('idx')) {
@@ -460,6 +467,9 @@ abu.FileUploader = function(o){
 								((this.isOverwrite) ? ' (Existing file overwritten) ' : '') + '</span>');
 						}
 						$("#" + uploader.elementId + " #xmodal-abu-done-button-text").addClass("abu-done-button-file-uploaded");
+						if (typeof uploader._options.uploadSucceededFunction === 'function') {
+							uploader._options.uploadSucceededFunction(result);
+						}
 					} else {
 			 			status.html('<a href="javascript:abu.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Duplicate file and overwrite=false.  Not uploaded.</a>');
 						uploader.uploadsStarted--; // We didn't upload anything

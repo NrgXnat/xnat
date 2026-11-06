@@ -46,7 +46,6 @@
     var uploadID = "$!uploadID";
     var started = 0;
     var extractTimeOut = 300;
-    var usrResPathBase = '/user/cache/resources/' + uploadID + '/files/';
     var destArchive = false;
     var prearchiveLinkString = '<a target="_blank" href="$content.getURI("/app/template/XDATScreen_prearchives.vm")">prearchive</a>';
     this.getSiteConfig();
@@ -144,13 +143,15 @@
     function makeTheFormGo() {
         if(!validateForm()){ return; }
 
-        // Upload file, then archive it asynchronously
+        // Send the file with async=true: XNAT stores it, queues its import, and answers before the import runs. The file is
+        // the request body, and its name goes in the path, which names the stored file: the import's messages show it, and
+        // the importer tells a zip from a tarball by it.
         var form = document.getElementById("uploadFORM");
         var file = $('#image_archive').prop('files')[0];
-        var usrResPath = usrResPathBase + encodeURIComponent(file.name);
         var formDataArchive = new FormData(form);
         formDataArchive.delete("image_archive");
-        formDataArchive.append("src", usrResPath);
+        formDataArchive.append("async", "true");
+        formDataArchive.append("inbody", "true");
         formDataArchive.append("http-session-listener", uploadID);
         let ignoreUnparsable = document.getElementById("Ignore-UnparsableUI");
         let handler = document.getElementById('import-handler').value;
@@ -164,14 +165,18 @@
             formDataArchive.append("Ignore-Unparsable", "false");
         }
         formDataArchive.delete("Ignore-UnparsableUI");
+        var importParams = {};
+        formDataArchive.forEach(function(value, key) {
+            importParams[key] = value;
+        });
 
         disableForm(form);
 
         var loading;
         $.ajax({
-            method: 'PUT',
-            contentType: file.type || 'application/octet-stream',
-            url: XNAT.url.csrfUrl('/data' + usrResPath + '?inbody=true'),
+            method: 'POST',
+            contentType: file.name.toLowerCase().endsWith('.zip') ? 'application/zip' : 'application/x-gtar',
+            url: XNAT.url.csrfUrl('/data/services/import/' + file.name.replace(/[^\w.\-]/g, '_'), importParams),
             data: file,
             processData: false,
             cache: false,
@@ -194,30 +199,13 @@
                 });
             },
             success: function() {
-                $.ajax({
-                    method: 'POST',
-                    contentType: false,
-                    url: XNAT.url.csrfUrl('/data/services/import'),
-                    data: formDataArchive,
-                    processData: false,
-                    cache: false,
-                    success: function() {
-                        XNAT.app.activityTab.start('Upload extraction/review for archival', uploadID);
-                    },
-                    error: function(xhr) {
-                        errorHandler(xhr, 'Issue requesting archival of your data');
-                    },
-                    complete: function() {
-                        loading.close();
-                    }
-                });
-
+                XNAT.app.activityTab.start('Upload extraction/review for archival', uploadID);
             },
             error: function(xhr) {
-                loading.close();
                 errorHandler(xhr, 'Issue uploading your data');
             },
             complete: function() {
+                loading.close();
                 XNAT.app.timeout.maintainLogin = false;
             },
             xhr: function() {

@@ -17,6 +17,7 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,7 +36,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * A compressed upload that fails marks every session it went into, including the session of an entry that failed:
- * that entry may have been the first in its session, so no entry returned it.
+ * that entry may have been the first in its session, so no entry returned it. An upload with no files in it, such as a
+ * file that isn't a zip, is rejected.
  */
 public class DicomZipImporterTest {
     private static final String SESSION_A = "/prearchive/projects/PROJ/20261015_120000/A";
@@ -112,6 +114,19 @@ public class DicomZipImporterTest {
         assertThrows(ClientException.class, importer(zip("b.dcm", "c.dcm"), true)::call);
 
         assertThat(marked()).containsExactly(SESSION_B);
+    }
+
+    @Test
+    public void aFileThatIsNotAZipIsRejected() throws Exception {
+        final byte[] notAZip = "not a zip file".getBytes(StandardCharsets.UTF_8);
+
+        assertThat(assertThrows(ClientException.class, importer(notAZip, true)::call)).hasMessageContaining("No files were found");
+        assertThat(assertThrows(ClientException.class, importer(notAZip, false)::call)).hasMessageContaining("No files were found");
+    }
+
+    @Test
+    public void anEmptyZipIsRejected() throws Exception {
+        assertThat(assertThrows(ClientException.class, importer(zip(), true)::call)).hasMessageContaining("No files were found");
     }
 
     private Collection<String> marked() {

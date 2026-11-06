@@ -135,6 +135,13 @@ public final class DicomZipImporter extends ImporterHandlerA {
             throw nonDcmException;
         }
 
+        // A file that isn't a zip reads as a zip with no entries
+        if (filesRead == 0) {
+            final ClientException e = new ClientException("No files were found in the upload: it's empty, or it isn't a zip or tar file");
+            this.failed(e.getMessage(), true);
+            throw e;
+        }
+
         this.processing("Successfully uploaded " + uris.size() + "  sessions to the prearchive.");
         if (params.containsKey(ACTION) && COMMIT.equals(params.get(ACTION))) {
             this.processing("Creating XML for DICOM sessions");
@@ -181,6 +188,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
                 if (ze.isDirectory()) {
                     continue;
                 }
+                filesRead++;
                 try {
                     if (Format.UNKNOWN != Format.getFormat(ze.getName())) {
                         importCompressedFile(new ZipEntryFileWriterWrapper(ze, zin), uris);
@@ -208,6 +216,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
             TarArchiveEntry ze;
             while (null != (ze = zin.getNextTarEntry())) {
                 if (!ze.isDirectory()) {
+                    filesRead++;
                     try {
                         if (Format.UNKNOWN != Format.getFormat(ze.getName())) {
                             importCompressedFile(new TarEntryFileWriterWrapper(ze, zin), uris);
@@ -463,6 +472,7 @@ public final class DicomZipImporter extends ImporterHandlerA {
     private final FileWriterWrapperI fw;
     private final boolean ignoreUnparsable;
     private ClientException nonDcmException = null;
+    private int filesRead = 0;   // the files in the upload, nested archives' files included
     private final Set<String> failedEntrySessions = Sets.newLinkedHashSet();
     private final Set<SessionDataTriple> heldSessions = Sets.newLinkedHashSet();
 }

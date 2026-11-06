@@ -144,7 +144,8 @@
         if(!validateForm()){ return; }
 
         // Send the file with async=true: XNAT stores it, queues its import, and answers before the import runs. The file is
-        // the request body, and the importer tells a zip from a tarball by the content type.
+        // the request body, and its name goes in the path, which names the stored file: the import's messages show it, and
+        // the importer tells a zip from a tarball by it.
         var form = document.getElementById("uploadFORM");
         var file = $('#image_archive').prop('files')[0];
         var formDataArchive = new FormData(form);
@@ -175,7 +176,7 @@
         $.ajax({
             method: 'POST',
             contentType: file.name.toLowerCase().endsWith('.zip') ? 'application/zip' : 'application/x-gtar',
-            url: XNAT.url.csrfUrl('/data/services/import', importParams),
+            url: XNAT.url.csrfUrl('/data/services/import/' + file.name.replace(/[^\w.\-]/g, '_'), importParams),
             data: file,
             processData: false,
             cache: false,

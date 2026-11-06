@@ -27,6 +27,9 @@ Content-Type: application/zip
   already in your user cache can be named with `src` instead.
 - In the body, the content type tells XNAT what the file is: `application/zip` for a zip, and
   `application/x-gtar` for a `.tar.gz` or `.tgz`. A multipart form sends the file's name instead.
+- A file in the body is called `upload.zip` or `upload.tar.gz` in the import's messages. To keep its
+  name, add the name to the path: `POST /data/services/import/{file name}?async=true&inbody=true&…`.
+  Keep it to letters, digits, dots, dashes, and underscores.
 - `async=true` applies to an imported file. An inbox import (`import-handler=inbox`) sends none,
   and already answers right away with the URL of its own status, `/xapi/dicom/{id}`, in the body.
   From 1.11, the `Location` header has it too.

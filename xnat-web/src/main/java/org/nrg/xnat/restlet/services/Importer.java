@@ -19,6 +19,7 @@ import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.file.StoredFile;
@@ -340,7 +341,7 @@ public class Importer extends SecureResource {
 
     private CachedUpload storeUpload(final UserI user, final FileWriterWrapperI upload) throws ServerException {
         try {
-            return CachedUpload.store(org.nrg.xdat.security.helpers.Users.getUserCacheFile(user).toPath(), upload);
+            return CachedUpload.store(Users.getUserCacheFile(user).toPath(), upload);
         } catch (Exception e) {
             throw new ServerException("Couldn't store the uploaded file " + upload.getName() + " for its import", e);
         }
@@ -547,8 +548,8 @@ public class Importer extends SecureResource {
             throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "src uri is invalid.", new Exception());
         }
 
-        File f = org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser(), (String) map.get("XNAME"), (String) map.get("_REMAINDER"));
-        final File cache = org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser());
+        File f = Users.getUserCacheFile(getUser(), (String) map.get("XNAME"), (String) map.get("_REMAINDER"));
+        final File cache = Users.getUserCacheFile(getUser());
         final CachedUpload upload = new CachedUpload(cache.toPath(), cache.toPath().resolve((String) map.get("XNAME")), f.toPath());
 
         if (f.exists()) {

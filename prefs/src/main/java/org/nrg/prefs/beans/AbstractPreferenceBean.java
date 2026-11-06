@@ -885,11 +885,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      */
     @Override
     public Object get(final Object key) {
-        if (key == null) {
-            return null;
-        }
-        final String keyed = key.toString();
-        return containsKey(keyed) ? getFromCache(keyed) : getProperty(keyed);
+        return key == null ? null : getProperty(key.toString());
     }
 
     /**

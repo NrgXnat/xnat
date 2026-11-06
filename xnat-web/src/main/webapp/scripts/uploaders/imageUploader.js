@@ -92,17 +92,16 @@ XNAT.app.upload.defaultStr = "DEFAULT";
                 $('#' + id + '-cancel-button').show();
                 $('#' + id + '-done-button').hide();
             },
+            // Each upload answers with its import's tracking key, and the import has started, so track it right away:
+            // the dialog may be closed before the other files have uploaded
+            uploadSucceededFunction: function(key) {
+                if (typeof key === 'string') {
+                    XNAT.app.activityTab.start('Upload extraction/review for archival', key.trim());
+                }
+            },
             uploadCompletedFunction: function(anyFailedUploads) {
                 $('#' + id + '-cancel-button').hide();
                 $('#' + id + '-done-button').show();
-                // Each upload that succeeded answered with its import's tracking key
-                $('#' + abuId + ' .abu-status').each(function() {
-                    const key = $(this).data('rtn');
-                    if ($(this).find('.abu-upload-complete').length && typeof key === 'string' && !$(this).data('tracked')) {
-                        $(this).data('tracked', true);
-                        XNAT.app.activityTab.start('Upload extraction/review for archival', key.trim());
-                    }
-                });
                 if (!anyFailedUploads) {
                     xmodal.close(id);
                 }

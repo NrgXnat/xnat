@@ -42,6 +42,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     private final List<String>                        subqueryFields = new ArrayList<>();
     private final Map<String, QueryOrganizer>         addOns         = new HashMap<>();//0:elementName,1:QueryOrganizer
     private final Map<String, DisplayFieldReferenceI> subqueries     = new HashMap<>();
+    private final Map<String, String>                 subqueryFieldAliases = new HashMap<>();
 
     public QueryOrganizer(String elementName, UserI u, String level, Map<String, CachedRootQuery> rootQueries) throws ElementNotFoundException {
         super(elementName, u, level, rootQueries);
@@ -193,7 +194,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     int indexDot = s.indexOf(".");
                     String FIELDID = s.substring(0,indexDot);
                     String VALUE = s.substring(indexDot+1);
-                    String alias = FIELDID + "_" + XftStringUtils.cleanColumnName(VALUE);
+                    String alias = XftStringUtils.createSubqueryFieldAlias(FIELDID, VALUE);
                     VALUE = StringUtils.replace(StringUtils.replace(VALUE, "_com_", ","), "_col_", ":");
 
                     final StringBuilder sb = new StringBuilder();
@@ -1351,15 +1352,17 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
             String elementName = XftStringUtils.GetRootElementName(xmlPath);
             String fieldPath = xmlPath.substring(xmlPath.indexOf(".")+1);
 
-            if (!selected.contains(fieldPath.toLowerCase()))
+            // Compared case-sensitively: values such as Segment and segment are different subquery fields.
+            if (!selected.contains(fieldPath))
             {
-                selected.add(fieldPath.toLowerCase());
+                selected.add(fieldPath);
                 if (fieldPath.startsWith("SUBQUERYFIELD_"))
                 {
                     fieldPath = fieldPath.substring(14);
                 }
 
-                String temp = XftStringUtils.cleanColumnName(StringUtils.replace(fieldPath, ".", "_"));
+                final int dot = fieldPath.indexOf(".");
+                String temp = XftStringUtils.createSubqueryFieldAlias(fieldPath.substring(0, dot), fieldPath.substring(dot + 1));
                 if (! selected.contains(temp.toLowerCase()))
                 {
                     selected.add(temp.toLowerCase());
@@ -1370,6 +1373,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     SchemaElement se = SchemaElement.GetElement(elementName);
                     SQLQueryField df = (SQLQueryField) se.getDisplayField(fieldPath.substring(0, fieldPath.indexOf(".")));
                     fieldPath=alias + "." + df.getSQLContent(this);
+                    String column = temp;
                     if (se.getFullXMLName().equalsIgnoreCase(rootElementFullXMLName) || containsOptimizedJoin(SchemaElement.GetElement(rootElement.getFullXMLName()),se))
                     {
                         if (counter++==0)
@@ -1379,16 +1383,17 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                             sb.append(", ").append(fieldPath).append(" AS ").append(temp);
                         }
                     }else{
-                        alias = XftStringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp;
+                        column = XftStringUtils.formatPostgreSQLIdentifier(XftStringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp);
                         if (counter++==0)
                         {
-                            sb.append(se.getSQLName()).append(".").append(temp).append(" AS ").append(alias);
+                            sb.append(se.getSQLName()).append(".").append(temp).append(" AS ").append(column);
                         }else{
-                            sb.append(", ").append(se.getSQLName()).append(".").append(temp).append(" AS ").append(alias);
+                            sb.append(", ").append(se.getSQLName()).append(".").append(temp).append(" AS ").append(column);
                         }
                     }
 
-                    fieldAliases.put(xmlPath.toLowerCase(),temp);
+                    fieldAliases.put(xmlPath.toLowerCase(),column);
+                    subqueryFieldAliases.put(getSubqueryFieldKey(xmlPath), column);
                 }else{
                     fieldAliases.put(fieldPath.toLowerCase(),temp);
                 }
@@ -1648,6 +1653,24 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
         }else{
             return fieldAliases.get(copy.toLowerCase());
         }
+    }
+
+    /**
+     * Gets the column that {@link #buildQuery()} emitted for a subquery field. Unlike {@link #getFieldAlias(String)}, this
+     * compares the field's value case-sensitively, so values such as Segment and segment find their own columns.
+     *
+     * @param xmlPath The subquery field's path, as <b>element.SUBQUERYFIELD_fieldId.value</b>.
+     *
+     * @return The emitted column name, or null if no such subquery field was built.
+     */
+    public String getSubqueryFieldAlias(final String xmlPath) {
+        return subqueryFieldAliases.get(getSubqueryFieldKey(xmlPath));
+    }
+
+    // Element names and field IDs match case-insensitively elsewhere in the search engine, so only the value keeps its case.
+    private static String getSubqueryFieldKey(final String xmlPath) {
+        final int valueStart = xmlPath.indexOf(".", xmlPath.indexOf(".") + 1) + 1;
+        return valueStart == 0 ? xmlPath.toLowerCase() : xmlPath.substring(0, valueStart).toLowerCase() + xmlPath.substring(valueStart);
     }
 
     public String translateStandardizedPath(String xmlPath) throws FieldNotFoundException{

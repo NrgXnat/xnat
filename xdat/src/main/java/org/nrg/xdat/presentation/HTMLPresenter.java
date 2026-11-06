@@ -25,6 +25,7 @@ import org.nrg.xdat.display.HTMLLink;
 import org.nrg.xdat.display.HTMLLinkProperty;
 import org.nrg.xdat.display.SQLQueryField;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.search.DisplayFieldAliasCache;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.SecurityValues;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -232,13 +233,7 @@ public class HTMLPresenter extends PresentationA {
 			{
 				//XFT.LogCurrentTime("BEGIN HTML FORMAT :: ROWS(" + table.getRowCursor() + ") FIELDS: 1");
 				DisplayFieldReferenceI dfr = (DisplayFieldReferenceI)fields.next();
-				Object v = null;
-				if (dfr.getElementName().equalsIgnoreCase(search.getRootElement().getFullXMLName()))
-				{
-					v = row.get(dfr.getRowID().toLowerCase());
-				}else{
-					v = row.get(dfr.getElementSQLName().toLowerCase() + "_" + dfr.getRowID().toLowerCase());
-				}
+				Object v = row.get(DisplayFieldAliasCache.getAlias(dfr, search.getRootElement().getFullXMLName()));
 
 				if (allowDiffs)
 				{

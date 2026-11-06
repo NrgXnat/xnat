@@ -1,0 +1,29 @@
+<!-- Sequence: 10 -->
+<!-- adminOnly: true -->
+## Direct archive is deprecated. Site admins see this while any receiver, enabled or not, has it turned on in its
+## settings, until they close it for the browser session. The steps for turning it off are in the receiver dialog. AE
+## titles are admin-set, so they are escaped like the site-wide alert's message.
+#set ($directArchiveReceivers = $contextService.getBean("dicomSCPManager").directArchiveReceivers)
+#if (!$directArchiveReceivers.isEmpty())
+    <div id="directArchiveNotice" class="warning hidden" style="padding-right: 32px;">
+        <span class="close" style="position: absolute; top: 8px; right: 10px; cursor: pointer;"><i class="fa fa-close"></i></span>
+        <span>
+            <b>Direct archive is deprecated</b> and will be removed in a future release. DICOM receivers with it turned on:
+            #foreach ($receiver in $directArchiveReceivers)$!esc.html($receiver)#if ($foreach.hasNext), #end#end.
+            <a href="${SITE_ROOT}/app/template/Page.vm?view=admin#tab=dicom-scp-receivers-tab">Manage DICOM receivers</a>
+        </span>
+    </div>
+
+    <script>
+        (function(){
+            var notice = jq('#directArchiveNotice');
+            if (XNAT.cookie.get('DIRECT_ARCHIVE_NOTICE') !== 'CLOSED') {
+                notice.removeClass('hidden');
+            }
+            notice.find('.close').on('click', function(){
+                notice.slideUp();
+                XNAT.cookie.set('DIRECT_ARCHIVE_NOTICE', 'CLOSED');
+            });
+        })();
+    </script>
+#end

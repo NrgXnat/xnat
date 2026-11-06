@@ -68,7 +68,7 @@ public abstract class BaseArcArchivespecification extends AutoArcArchivespecific
      * {@inheritDoc}
      */
     @Override
-    public <A extends ArcProjectI> List<A> getProjects_project() {
+    public synchronized <A extends ArcProjectI> List<A> getProjects_project() {
         //noinspection unchecked
         return (List<A>) new ArrayList<>(getArcProjects().values());
     }
@@ -166,6 +166,13 @@ public abstract class BaseArcArchivespecification extends AutoArcArchivespecific
         return project;
     }
 
+    /**
+     * Drops the project's cached arc project, so the next lookup loads it again whatever its last-modified time.
+     */
+    public synchronized void evictArcProject(final String projectId) {
+        _projects.remove(projectId);
+    }
+
     public boolean isComplete() {
         return getGlobalpaths() != null && !StringUtils.isAnyBlank(getSiteId(), getSiteAdminEmail(), getGlobalpaths().getArchivepath(), getGlobalpaths().getPrearchivepath(), getGlobalpaths().getCachepath(), getGlobalpaths().getBuildpath(), getGlobalpaths().getFtppath());
     }
@@ -181,7 +188,7 @@ public abstract class BaseArcArchivespecification extends AutoArcArchivespecific
         _projects.clear();
     }
 
-    private ArcProject getArcProject(final String projectId) {
+    private synchronized ArcProject getArcProject(final String projectId) {
         return (ArcProject) Optional.ofNullable(getArcProjects().get(projectId)).orElseGet(() -> {
             final ArcProject arcProject = getArcProjectFromXft(projectId);
             if (arcProject != null) {
@@ -213,6 +220,8 @@ public abstract class BaseArcArchivespecification extends AutoArcArchivespecific
                                          .map(this::getArcProjectFromXft)
                                          .filter(Objects::nonNull)
                                          .collect(COLLECTOR_MAP_ARC_PROJECT_BY_ID));
+            // And drop the projects that have been deleted, so the cache holds what a fresh load would.
+            removeOrphanedArcProjects(projectDates.keySet());
         }
 
         if (_projects.isEmpty()) {
@@ -238,7 +247,7 @@ public abstract class BaseArcArchivespecification extends AutoArcArchivespecific
         removeOrphanedArcProjects(getArcProjectIdsAndDates().keySet());
     }
 
-    private void removeOrphanedArcProjects(final Set<String> projectIds) {
+    private synchronized void removeOrphanedArcProjects(final Set<String> projectIds) {
         // Get all IDs from the cache and filter out those that aren't in projectDates: because projectDates was *just* generated, it has all
         // existing project IDs, so any project IDs in the project cache that aren't in projectDates are for projects that have been deleted.
         final Set<String> removed = _projects.keySet().stream().filter(projectId -> !projectIds.contains(projectId)).collect(Collectors.toSet());
@@ -354,6 +363,7 @@ public abstract class BaseArcArchivespecification extends AutoArcArchivespecific
 
     private static final Collector<ArcProject, ?, Map<String, ArcProject>> COLLECTOR_MAP_ARC_PROJECT_BY_ID = Collectors.toMap(ArcProject::getId, Function.identity());
 
+    // Shared by every request and changed by lookups, so read and written only under this object's lock.
     private final Map<String, ArcProjectI>   _projects = new HashMap<>();
     private       NamedParameterJdbcTemplate _template;
 }

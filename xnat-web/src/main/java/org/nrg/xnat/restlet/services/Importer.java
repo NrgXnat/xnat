@@ -374,7 +374,8 @@ public class Importer extends SecureResource {
         try {
             final List<String> uris = callAndDeleteUpload(importer);
             if (!ended.get()) {
-                final String destination = uris.stream().allMatch(uri -> uri.startsWith("/prearchive/")) ? "Prearchive:"
+                final String destination = uris.isEmpty() ? ""
+                                           : uris.stream().allMatch(uri -> uri.startsWith("/prearchive/")) ? "Prearchive:"
                                            : uris.stream().allMatch(uri -> uri.startsWith("/archive/")) ? "Archive:" : "";
                 importer.publish(new StatusMessage(importer, StatusMessage.Status.COMPLETED, destination + String.join(";", uris), true));
             }

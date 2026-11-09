@@ -361,6 +361,8 @@ abu.FileUploader = function(o){
 						status.html("<span class='abu-upload-fail'>Filename contains invalid characters ('%','#','[]', and '{}' are not allowed). Please rename file and try again.</a>");
 						$(infoSelector).find(".abu-progress").css("display","none");
 						status.css("display","inline-block");
+						// Aborting here skips the error handler, which would otherwise mark the failure
+						uploader.anyFailedUploads = true;
 						arr.abort();
 						this.complete(false);
 						return false;
@@ -430,6 +432,12 @@ abu.FileUploader = function(o){
 					var percentVal = percentComplete + '%';
 					bar.width(percentVal);
 					percent.html(percentComplete === 100 ? 'Saving...' : percentVal);
+					if (position >= total) {
+						// Once the whole file is sent, aborting the request doesn't stop XNAT from keeping it, so Cancel
+						// leaves this upload to finish and show its result
+						delete uploader.xhrs['idx' + idx];
+						$('#' + uploader.elementId + ' #upload-cancel-div-' + idx).remove();
+					}
 				},
 				error: function(xhr, textStatus, result) {
 					let err;

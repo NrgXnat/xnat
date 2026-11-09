@@ -39,7 +39,13 @@ Content-Type: application/zip
 - To choose the tracking key yourself, add `http-session-listener={key}`. Otherwise XNAT makes one.
 
 XNAT stores the file, queues the import, and responds `200`. The response body is the
-tracking key, and the `Location` header is its URL, `/xapi/event_tracking/{key}`.
+tracking key, and the `Location` header is its URL, `/xapi/event_tracking/{key}`, at the address
+in XNAT's site URL setting. If you reach XNAT at another address, such as through a port forward,
+poll that path at the address you use.
+
+If XNAT can't queue the import, for example while it's shutting down, it responds `503` and doesn't
+import the file: send it again later. If the upload is cut off, it responds `400`, and if XNAT can't
+store the file, `500`.
 
 ### 2. Poll the import's progress
 
@@ -109,19 +115,23 @@ GET /xapi/event_tracking/{key}
 }
 ```
 
-- `succeeded` is `null` while the import is running, then `true` or `false`.
-- `payload` is a JSON document in a string. Its `entryList` holds the import's progress messages,
-  oldest first. Each has a `status` (`Waiting`, `InProgress`, `Warning`, `Failed`, or `Completed`),
-  an `eventTime` in milliseconds since the epoch, and a `message`.
+- `succeeded` is `null` while the import is queued or running, then `true` or `false`.
+- `payload` is `null` until the import reports its first step, then a JSON document in a string.
+  Its `entryList` holds the import's progress messages, oldest first. Each has a `status`
+  (`Waiting`, `InProgress`, `Warning`, `Failed`, or `Completed`), an `eventTime` in milliseconds
+  since the epoch, and a `message`.
 - When `succeeded` is `true`, `finalMessage` names the sessions a DICOM import produced, as
   `Prearchive:` or `Archive:` followed by their URIs separated by semicolons, for example
   `Prearchive:/prearchive/projects/P1/20261103_182111029/S1`. Add `/data` to the front of each
-  URI to request it. Other import handlers word it their own way: a XAR import's is the session's
-  URI alone.
+  URI to request it. Without `action=commit`, an import with `Direct-Archive=true` lists
+  `/xapi/direct-archive/{project}/{tag}/{name}` paths instead, with no prefix. Other import
+  handlers word it their own way: a XAR import's is the session's URI alone.
 - When `succeeded` is `false`, `finalMessage` gives the reason. It also names any sessions that
   were archived before the failure.
 - Only the user who started the import can read its key. Before XNAT 1.11, the response is `404`
   until the import reports its first step, which can wait in a queue, so allow for that.
+- If XNAT restarts before a queued import starts, the import never runs and `succeeded` stays
+  `null`. Poll with a time limit, and send the file again if it runs out.
 
 Without `action=commit`, a DICOM-zip import is done once its files are in the prearchive. XNAT
 builds each session after it has been idle for the session idle time, and archives it if the
@@ -147,12 +157,15 @@ with open("study.zip", "rb") as fh:
                                     "project": "P1", "action": "commit", "auto-archive": "true"},
                             data=fh, headers={"Content-Type": "application/zip"})
 response.raise_for_status()
-status_url = response.headers["Location"]
+key = response.text.strip()
 
+deadline = time.monotonic() + 4 * 60 * 60  # size this for your largest imports and busiest queue
 while True:
-    status = session.get(status_url).json()
+    status = session.get(f"{xnat}/xapi/event_tracking/{key}").json()
     if status["succeeded"] is not None:
         break
+    if time.monotonic() > deadline:
+        raise TimeoutError(f"import {key} hasn't finished")
     time.sleep(5)
 
 print("succeeded" if status["succeeded"] else "failed", status["finalMessage"])

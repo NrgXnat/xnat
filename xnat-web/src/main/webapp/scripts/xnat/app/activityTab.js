@@ -26,7 +26,8 @@ var XNAT = getObject(XNAT);
 }(function(){
     let activityTab, storageTag;
     const minimized = 'minimized', 
-        processes = 'processes';
+        processes = 'processes',
+        queuedTimeout = 10 * 60 * 1000;
 
     XNAT.app = getObject(XNAT.app || {});
 
@@ -152,7 +153,7 @@ var XNAT = getObject(XNAT);
         });
     }
 
-    function checkProgress(item, key, errCnt, lastProgressIdx) {
+    function checkProgress(item, key, errCnt, lastProgressIdx, queuedSince) {
         if (!lastProgressIdx) {
             lastProgressIdx = -1;
         }
@@ -166,11 +167,13 @@ var XNAT = getObject(XNAT);
             url: XNAT.url.restUrl('/xapi/event_tracking/' + statusListenerId),
             success: function(respDat) {
                 var succeeded = null;
+                var queued = false;
                 try {
                     const callback = getCallbackForItem(item);
                     const rtn = callback(itemDivId, detailsTag, respDat, lastProgressIdx);
                     succeeded = rtn.succeeded;
                     lastProgressIdx = rtn.lastProgressIdx;
+                    queued = rtn.queued === true;
                 } catch (e) {
                     console.log(e);
                     processError(item, key, errCnt, e.name + ' (js): ' + e.message, lastProgressIdx);
@@ -179,10 +182,19 @@ var XNAT = getObject(XNAT);
 
                 if (succeeded !== null) {
                     activityTab.stopPoll(key, succeeded);
-                } else if (lastProgressIdx === -1) {
-                    // Nothing reported yet: the import is still queued, or was lost, as in a restart. Retry as for a
-                    // record that isn't there yet, which ends with a note that refreshing the page resumes tracking.
-                    processError(item, key, errCnt, '', lastProgressIdx, 404);
+                } else if (queued) {
+                    // The callback says nothing has reported yet: the import is still queued, or was lost, as in a
+                    // restart. Check less often the longer it waits, and stop after a while with a note that
+                    // refreshing the page resumes tracking.
+                    queuedSince = queuedSince || Date.now();
+                    const waited = Date.now() - queuedSince;
+                    if (waited > queuedTimeout) {
+                        stopWithQueuedWarning(item, key);
+                    } else {
+                        window.setTimeout(function() {
+                            checkProgress(item, key, 0, lastProgressIdx, queuedSince);
+                        }, Math.min(30000, Math.max(2000, waited / 2)));
+                    }
                 } else {
                     window.setTimeout(function() {
                         checkProgress(item, key, 0, lastProgressIdx);
@@ -191,33 +203,32 @@ var XNAT = getObject(XNAT);
             },
             error: function(xhr) {
                 processError(item, key, errCnt,
-                    xhr.responseText ? ': ' + xhr.responseText : '', lastProgressIdx, xhr.status);
+                    xhr.responseText ? ': ' + xhr.responseText : '', lastProgressIdx, xhr.status, queuedSince);
             }
         });
     }
 
-    function processError(item, key, errCnt, errDetails, lastProgressIdx, status = -1) {
+    function processError(item, key, errCnt, errDetails, lastProgressIdx, status = -1, queuedSince) {
         const maxErrCnt = status === 404 ? 15 : 3;
         if (errCnt < maxErrCnt) {
             setTimeout(function() {
-                checkProgress(item, key, ++errCnt, lastProgressIdx);
+                checkProgress(item, key, ++errCnt, lastProgressIdx, queuedSince);
             }, 2000);
+        } else if (status === 404) {
+            stopWithQueuedWarning(item, key);
         } else {
-            let contents;
-            let succeeded = false;
-            if (status === 404) {
-                // Event tracking can take some time to start if no consumers/threads are available to start the processing
-                contents = '<div class="warning">No event tracking data yet. This likely means tasks are queued, ' +
-                    'but could be indicative of an issue. You will need to refresh the page to resume tracking this event. ' +
-                    'If there is no progress for quite some time, you may wish to contact your administrator.</div>';
-                succeeded = null;
-            } else {
-                contents = '<div class="prog error">Issue polling event progress: ' + errDetails +
-                    '. Refresh the page to try again.</div>';
-            }
-            $(item.detailsTag).append(contents);
-            activityTab.stopPoll(key, succeeded);
+            $(item.detailsTag).append('<div class="prog error">Issue polling event progress: ' + errDetails +
+                '. Refresh the page to try again.</div>');
+            activityTab.stopPoll(key, false);
         }
+    }
+
+    function stopWithQueuedWarning(item, key) {
+        // Event tracking can take some time to start if no consumers/threads are available to start the processing
+        $(item.detailsTag).append('<div class="warning">No event tracking data yet. This likely means tasks are queued, ' +
+            'but could be indicative of an issue. You will need to refresh the page to resume tracking this event. ' +
+            'If there is no progress for quite some time, you may wish to contact your administrator.</div>');
+        activityTab.stopPoll(key, null);
     }
 
     activityTab.populateArchivalDetails = function(itemDivId, detailsTag, jsonobj, lastProgressIdx) {
@@ -226,7 +237,8 @@ var XNAT = getObject(XNAT);
         let messages = "";
         let entryList = payload ? (payload['entryList'] || []) : [];
         if (entryList.length === 0 && succeeded == null) {
-            return {succeeded: null, lastProgressIdx: lastProgressIdx};
+            // The record was created when the import was queued, and nothing has reported yet
+            return {succeeded: null, lastProgressIdx: lastProgressIdx, queued: true};
         }
         entryList.forEach(function(e, i) {
             if (i <= lastProgressIdx) {

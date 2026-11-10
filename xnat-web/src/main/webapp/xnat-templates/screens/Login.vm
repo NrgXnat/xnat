@@ -90,6 +90,7 @@
                         <input type="text"
                                id="username"
                                name="username"
+                               value="$!esc.html($!externalAuthUsername)"
                                title="User"
                                data-validate="not-empty"
                                data-message="Username cannot be blank.">
@@ -131,6 +132,8 @@
 #end
 
 #set ($siteId = $siteConfig.siteId)
+## Set by ExternalClientAuthFilter when an external client (e.g. XNAT Desktop Client) opens the browser to log in
+#set ($externalAuthUsername = $data.getSession().getAttribute("xnat.externalClient.externalAuthUsername"))
 $page.setTitle("$siteId - Please Login")
 $page.setBgColor($ui.bgcolor)
 $page.addAttribute("onLoad", "document.getElementById('username').focus();")
@@ -223,6 +226,7 @@ $page.addAttribute("onLoad", "document.getElementById('username').focus();")
                         <input type="text"
                                id="username"
                                name="username"
+                               value="$!esc.html($!externalAuthUsername)"
                                title="User"
                                class="validate onblur"
                                data-validate="not-empty"

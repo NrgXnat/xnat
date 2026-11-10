@@ -69,6 +69,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -885,11 +886,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      */
     @Override
     public Object get(final Object key) {
-        if (key == null) {
-            return null;
-        }
-        final String keyed = key.toString();
-        return containsKey(keyed) ? getFromCache(keyed) : getProperty(keyed);
+        return key == null ? null : getProperty(key.toString());
     }
 
     /**
@@ -1475,7 +1472,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     private Object getPreferenceMethod(final String preference, final Object defaultValue) throws InvalidPreferenceName {
-        if (containsKey(preference)) {
+        final boolean isStored = containsKey(preference);
+        if (isStored) {
             final Object value = getFromCache(preference);
             if (value != null) {
                 log.debug("Found cached value for preference {}, returning that: {}", preference, value);
@@ -1486,7 +1484,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         if (_methods.containsKey(preference)) {
             return _methods.get(preference);
         }
-        final Object resolver = getPreferenceValueResolver(preference, defaultValue);
+        final Object resolver = getPreferenceValueResolver(preference, defaultValue, isStored);
         if (resolver == null) {
             return null;
         }
@@ -1498,7 +1496,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         return resolver;
     }
 
-    private Object getPreferenceValueResolver(final String preference, final Object defaultValue) {
+    private Object getPreferenceValueResolver(final String preference, final Object defaultValue, final boolean isStored) {
         final Method method = getGetter(getClass(), AbstractPreferenceBean.class, preference, ReflectionUtils.withAnnotation(NrgPreference.class));
         if (method != null) {
             return method;
@@ -1508,7 +1506,10 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             case 0:
                 final Tool tool = getToolEntity();
                 if (tool.isStrict()) {
-                    log.error("No such property for {} preferences: {}", tool.getToolId(), preference);
+                    // Stored settings are read every time the bean is listed, so each is logged once.
+                    if (!isStored || _storedPreferencesWithoutGetters.add(preference)) {
+                        log.error("No such property for {} preferences: {}", tool.getToolId(), preference);
+                    }
                     return null;
                 }
                 final String returnValue = getValue(preference);
@@ -1582,6 +1583,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     private final Map<String, String>         _aliases            = new HashMap<>();
     private final Map<String, List<String>>   _aliasedPreferences = new HashMap<>();
     private final Map<String, Method>         _methods            = new HashMap<>();
+
+    private final Set<String> _storedPreferencesWithoutGetters = ConcurrentHashMap.newKeySet();
 
     private final AtomicBoolean _resolverInitialized = new AtomicBoolean();
     private final AtomicBoolean _initFromConfig      = new AtomicBoolean();

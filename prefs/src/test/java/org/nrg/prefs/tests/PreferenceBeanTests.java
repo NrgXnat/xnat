@@ -9,6 +9,10 @@
 
 package org.nrg.prefs.tests;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -33,6 +37,7 @@ import org.nrg.prefs.tools.properties.PropertiesPrefsTool;
 import org.nrg.prefs.tools.relaxed.RelaxedPrefsTool;
 import org.nrg.prefs.tools.strict.StrictPrefsTool;
 import org.reflections.ReflectionUtils;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -121,6 +126,29 @@ public class PreferenceBeanTests {
             assertThat(preferences).containsEntry("prefB", "valueBStoredElsewhere");
         } finally {
             _basicPrefsTool.setPrefB(original);
+        }
+    }
+
+    @Test
+    public void testStrictBeanLogsStoredPreferenceWithoutGetterOnce() throws InvalidPreferenceName {
+        final PreferenceBean              bean     = _basicPrefsTool.getPreferenceBean();
+        final Logger                      logger   = (Logger) LoggerFactory.getLogger(AbstractPreferenceBean.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            // A stored setting with no getter, as when a plugin removes a setting in a later version.
+            _preferenceService.create(bean.getToolId(), "removedPref", "leftover");
+            assertThat(bean.containsKey("removedPref")).isTrue();
+            for (int read = 0; read < 3; read++) {
+                assertThat(bean.get("removedPref")).isNull();
+            }
+            bean.asProperties();
+            bean.entrySet();
+            assertThat(appender.list).filteredOn(event -> event.getLevel() == Level.ERROR && event.getFormattedMessage().contains("removedPref")).hasSize(1);
+        } finally {
+            logger.detachAppender(appender);
+            _preferenceService.deletePreference(bean.getToolId(), "removedPref");
         }
     }
 

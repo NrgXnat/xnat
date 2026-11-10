@@ -9,6 +9,10 @@
 
 package org.nrg.prefs.tests;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -24,6 +28,7 @@ import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.configuration.NrgPrefsServiceTestsConfiguration;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.tools.basic.BasicEnum;
 import org.nrg.prefs.tools.basic.BasicTestTool;
 import org.nrg.prefs.tools.beans.BeanPrefsTool;
@@ -32,6 +37,7 @@ import org.nrg.prefs.tools.properties.PropertiesPrefsTool;
 import org.nrg.prefs.tools.relaxed.RelaxedPrefsTool;
 import org.nrg.prefs.tools.strict.StrictPrefsTool;
 import org.reflections.ReflectionUtils;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -60,15 +66,17 @@ public class PreferenceBeanTests {
     private final PropertiesPrefsTool _propertiesPrefsTool;
     private final RelaxedPrefsTool    _relaxedPrefsTool;
     private final StrictPrefsTool     _strictPrefsTool;
-    private final BeanPrefsTool       _beanPrefsTool;
+    private final BeanPrefsTool        _beanPrefsTool;
+    private final NrgPreferenceService _preferenceService;
 
     @Autowired
-    public PreferenceBeanTests(final BasicTestTool basicPrefsTool, final PropertiesPrefsTool propertiesPrefsTool, final RelaxedPrefsTool relaxedPrefsTool, final StrictPrefsTool strictPrefsTool, final BeanPrefsTool beanPrefsTool) {
+    public PreferenceBeanTests(final BasicTestTool basicPrefsTool, final PropertiesPrefsTool propertiesPrefsTool, final RelaxedPrefsTool relaxedPrefsTool, final StrictPrefsTool strictPrefsTool, final BeanPrefsTool beanPrefsTool, final NrgPreferenceService preferenceService) {
         _basicPrefsTool      = basicPrefsTool;
         _propertiesPrefsTool = propertiesPrefsTool;
         _relaxedPrefsTool    = relaxedPrefsTool;
         _strictPrefsTool     = strictPrefsTool;
         _beanPrefsTool       = beanPrefsTool;
+        _preferenceService   = preferenceService;
     }
 
     @Test
@@ -99,6 +107,49 @@ public class PreferenceBeanTests {
                                .containsEntry("prefC", BasicEnum.Value2);
 
         validateBeanCache(_basicPrefsTool.getPreferenceBean(), preferences);
+    }
+
+    @Test
+    public void testMapReadAfterInvalidateLoadsStoredValue() throws InvalidPreferenceName {
+        final PreferenceBean      bean        = _basicPrefsTool.getPreferenceBean();
+        final Map<String, Object> preferences = _basicPrefsTool.getPreferences();
+        final String              original    = _basicPrefsTool.getPrefB();
+        try {
+            // The stored value changes without going through this bean, as when another node changes it.
+            _preferenceService.setPreferenceValue(bean.getToolId(), "prefB", "valueBStoredElsewhere");
+            assertThat(_basicPrefsTool.getPrefB()).isEqualTo("valueBStoredElsewhere");
+            assertThat(preferences.get("prefB")).isEqualTo(original);
+
+            // Invalidating drops this bean's copy, so reading through the map loads the stored value.
+            bean.invalidate("prefB");
+            assertThat(preferences.get("prefB")).isEqualTo("valueBStoredElsewhere");
+            assertThat(preferences).containsEntry("prefB", "valueBStoredElsewhere");
+        } finally {
+            _basicPrefsTool.setPrefB(original);
+        }
+    }
+
+    @Test
+    public void testStrictBeanLogsStoredPreferenceWithoutGetterOnce() throws InvalidPreferenceName {
+        final PreferenceBean              bean     = _basicPrefsTool.getPreferenceBean();
+        final Logger                      logger   = (Logger) LoggerFactory.getLogger(AbstractPreferenceBean.class);
+        final ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            // A stored setting with no getter, as when a plugin removes a setting in a later version.
+            _preferenceService.create(bean.getToolId(), "removedPref", "leftover");
+            assertThat(bean.containsKey("removedPref")).isTrue();
+            for (int read = 0; read < 3; read++) {
+                assertThat(bean.get("removedPref")).isNull();
+            }
+            bean.asProperties();
+            bean.entrySet();
+            assertThat(appender.list).filteredOn(event -> event.getLevel() == Level.ERROR && event.getFormattedMessage().contains("removedPref")).hasSize(1);
+        } finally {
+            logger.detachAppender(appender);
+            _preferenceService.deletePreference(bean.getToolId(), "removedPref");
+        }
     }
 
     @Test

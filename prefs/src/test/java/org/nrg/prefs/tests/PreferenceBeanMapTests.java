@@ -11,6 +11,7 @@ package org.nrg.prefs.tests;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.NotImplementedException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,8 +33,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests preference beans through the {@link Map} interface.
@@ -141,6 +145,38 @@ public class PreferenceBeanMapTests {
             final Map<String, Object> entries = bean.entrySet().stream().collect(HashMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), HashMap::putAll);
             assertThat(mapper.readValue(mapper.writeValueAsString(bean), type)).isEqualTo(mapper.readValue(mapper.writeValueAsString(entries), type));
         }
+    }
+
+    @Test
+    public void testInheritedReadMethodsUseCurrentValues() throws InvalidPreferenceName {
+        _preferenceService.setPreferenceValue(_relaxedBean.getToolId(), "plainPref", "storedElsewhere");
+        _relaxedBean.invalidate("plainPref");
+        assertThat(_relaxedBean.getOrDefault("plainPref", "fallback")).isEqualTo("storedElsewhere");
+        assertThat(_relaxedBean.getOrDefault("notARealSetting", "fallback")).isEqualTo("fallback");
+
+        final Map<String, Object> visited = new HashMap<>();
+        _relaxedBean.forEach(visited::put);
+        assertThat(visited.keySet()).isEqualTo(_relaxedBean.keySet());
+        assertThat(visited).containsEntry("plainPref", "storedElsewhere");
+    }
+
+    @Test
+    public void testInheritedWriteMethodsAreNotSupported() {
+        final List<Runnable> writes = List.of(() -> _relaxedBean.putIfAbsent("plainPref", "x"),
+                                              () -> _relaxedBean.compute("plainPref", (key, value) -> "x"),
+                                              () -> _relaxedBean.computeIfAbsent("newPref", key -> "x"),
+                                              () -> _relaxedBean.computeIfPresent("plainPref", (key, value) -> "x"),
+                                              () -> _relaxedBean.merge("plainPref", "x", (current, value) -> "x"),
+                                              () -> _relaxedBean.replace("plainPref", "x"),
+                                              () -> _relaxedBean.replace("plainPref", "plainInitial", "x"),
+                                              () -> _relaxedBean.replaceAll((key, value) -> "x"),
+                                              () -> _relaxedBean.remove("plainPref", "plainInitial"),
+                                              _relaxedBean::clone);
+        for (final Runnable write : writes) {
+            assertThrows(NotImplementedException.class, write::run);
+        }
+        assertThat(_relaxedBean.get("plainPref")).isEqualTo("plainInitial");
+        assertThat(Stream.of("newPref").filter(_relaxedBean::containsKey).collect(Collectors.toList())).isEmpty();
     }
 
     private final BasicTestToolPreferenceBean       _strictBean;

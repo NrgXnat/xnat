@@ -130,8 +130,10 @@ GET /xapi/event_tracking/{key}
   were archived before the failure.
 - Only the user who started the import can read its key. Before XNAT 1.11, the response is `404`
   until the import reports its first step, which can wait in a queue, so allow for that.
-- If XNAT restarts before a queued import starts, the import never runs and `succeeded` stays
-  `null`. Poll with a time limit, and send the file again if it runs out.
+- If XNAT restarts before a queued import starts, or stops abruptly during an import, the import
+  doesn't finish, and `succeeded` stays `null` even if the import has reported progress. Poll with
+  a time limit. If it runs out, check the prearchive and the project before sending the file again.
+  A restart during an import can instead end it with `succeeded` set to `false`.
 
 Without `action=commit`, a DICOM-zip import is done once its files are in the prearchive. XNAT
 builds each session after it has been idle for the session idle time, and archives it if the

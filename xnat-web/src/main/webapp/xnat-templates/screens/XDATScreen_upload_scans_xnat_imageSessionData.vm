@@ -3,35 +3,27 @@
 #if($turbineUtils.GetPassedParameter("popup", $data) == "true")
 <script type="text/javascript" src="$content.getURI('scripts/xnat/app/activityTab.js')"></script>
 <script type="text/javascript">
-    // Keeps the login alive during an upload with the session timer of the window that opened the popup, and stops if
-    // the popup closes before the upload has finished
+    // Keeps the login alive during an upload by renewing it every minute, as the session timer does. Every window's
+    // session timer reads the session's expiration cookie, so the window that opened the popup follows the renewals.
     (function() {
-        var uploading = false;
-
-        function maintainOpenerLogin(maintain) {
-            try {
-                window.opener.XNAT.app.timeout.maintainLogin = maintain;
-            } catch (e) {
-                // the opener is closed, on another site, or has no session timer
-            }
-        }
+        var renewal = null;
 
         XNAT.app = getObject(XNAT.app || {});
         XNAT.app.timeout = XNAT.app.timeout || {
             get maintainLogin() {
-                return uploading;
+                return renewal !== null;
             },
             set maintainLogin(maintain) {
-                uploading = maintain;
-                maintainOpenerLogin(maintain);
+                if (maintain && renewal === null) {
+                    renewal = window.setInterval(function() {
+                        XNAT.xhr.get({ url: XNAT.url.restUrl('/xapi/siteConfig/buildInfo') });
+                    }, 60000);
+                } else if (!maintain && renewal !== null) {
+                    window.clearInterval(renewal);
+                    renewal = null;
+                }
             }
         };
-
-        window.addEventListener('pagehide', function() {
-            if (uploading) {
-                maintainOpenerLogin(false);
-            }
-        });
     })();
 </script>
 #end

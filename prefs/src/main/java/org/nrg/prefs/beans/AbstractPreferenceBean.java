@@ -71,6 +71,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -300,19 +303,16 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @JsonIgnore
     @Override
     public Object getProperty(final String preference, final Object defaultValue) throws UnknownToolId {
+        final long cacheChanges = _cacheChanges.get();
         try {
-            final Object value = getPreferenceMethod(preference, defaultValue);
-            if (!(value instanceof Method)) {
+            final Object value = getPreferenceMethod(preference, defaultValue, cacheChanges);
+            if (!(value instanceof Method method)) {
                 return value;
             }
-            final Method method      = (Method) value;
             final Object returnValue = method.invoke(this);
-            if (returnValue != null) {
-                storeToCache(preference, returnValue);
-                return returnValue;
-            }
-            storeToCache(preference, defaultValue);
-            return defaultValue;
+            final Object loaded      = returnValue != null ? returnValue : defaultValue;
+            storeLoadedToCache(preference, loaded, cacheChanges);
+            return loaded;
         } catch (InvalidPreferenceName invalidPreferenceName) {
             log.error("The requested preference \"{}\" is invalid for tool {}", preference, getToolId());
             return null;
@@ -874,7 +874,9 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     /**
-     * {@inheritDoc}
+     * Always throws: preference beans can't be searched by value.
+     *
+     * @throws NotImplementedException Always.
      */
     @Override
     public boolean containsValue(final Object value) {
@@ -890,7 +892,9 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     /**
-     * {@inheritDoc}
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
      */
     @Override
     public Object put(final String key, final Object value) {
@@ -898,7 +902,9 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     /**
-     * {@inheritDoc}
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
      */
     @Override
     public Object remove(final Object key) {
@@ -906,7 +912,9 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     /**
-     * {@inheritDoc}
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
      */
     @Override
     public void putAll(@Nonnull final Map<? extends String, ?> map) {
@@ -933,13 +941,15 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         }
         // If the tool isn't strict, include all keys that may have been added
         if (!getToolEntity().isStrict()) {
-            primaryKeys.addAll(super.keySet().stream().filter(key -> !primaryKeys.contains(key)).collect(Collectors.toSet()));
+            primaryKeys.addAll(_cache.keySet());
         }
         return primaryKeys;
     }
 
     /**
-     * {@inheritDoc}
+     * Always throws: preference beans don't return their values without their keys. Use {@link #entrySet()} instead.
+     *
+     * @throws NotImplementedException Always.
      */
     @Nonnull
     @Override
@@ -958,6 +968,124 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
             map.put(key, getProperty(key));
         }
         return map.entrySet();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Object getOrDefault(final Object key, final Object defaultValue) {
+        return containsKey(key) ? get(key) : defaultValue;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void forEach(final BiConsumer<? super String, ? super Object> action) {
+        for (final Map.Entry<String, Object> entry : entrySet()) {
+            action.accept(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public Object putIfAbsent(final String key, final Object value) {
+        throw new NotImplementedException(UNSUPPORTED_CHANGE);
+    }
+
+    /**
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public boolean remove(final Object key, final Object value) {
+        throw new NotImplementedException(UNSUPPORTED_CHANGE);
+    }
+
+    /**
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public boolean replace(final String key, final Object oldValue, final Object newValue) {
+        throw new NotImplementedException(UNSUPPORTED_CHANGE);
+    }
+
+    /**
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public Object replace(final String key, final Object value) {
+        throw new NotImplementedException(UNSUPPORTED_CHANGE);
+    }
+
+    /**
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public void replaceAll(final BiFunction<? super String, ? super Object, ?> function) {
+        throw new NotImplementedException(UNSUPPORTED_CHANGE);
+    }
+
+    /**
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public Object computeIfAbsent(final String key, final Function<? super String, ?> mappingFunction) {
+        throw new NotImplementedException(UNSUPPORTED_CHANGE);
+    }
+
+    /**
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public Object computeIfPresent(final String key, final BiFunction<? super String, ? super Object, ?> remappingFunction) {
+        throw new NotImplementedException(UNSUPPORTED_CHANGE);
+    }
+
+    /**
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public Object compute(final String key, final BiFunction<? super String, ? super Object, ?> remappingFunction) {
+        throw new NotImplementedException(UNSUPPORTED_CHANGE);
+    }
+
+    /**
+     * Always throws: preference beans can't be changed through the {@link Map} interface. Use the {@link PreferenceBean} methods instead.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public Object merge(final String key, final Object value, final BiFunction<? super Object, ? super Object, ?> remappingFunction) {
+        throw new NotImplementedException(UNSUPPORTED_CHANGE);
+    }
+
+    /**
+     * Preference beans can't be cloned.
+     *
+     * @throws NotImplementedException Always.
+     */
+    @Override
+    public Object clone() {
+        throw new NotImplementedException("Preference beans can't be cloned.");
     }
 
     /**
@@ -1066,7 +1194,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     @SuppressWarnings("SameParameterValue")
     protected Object getPropertyNoCache(final String preference, final Object defaultValue) throws UnknownToolId {
         try {
-            final Object value = getPreferenceMethod(preference, defaultValue);
+            final Object value = getPreferenceMethod(preference, defaultValue, _cacheChanges.get());
             if (!(value instanceof Method)) {
                 return value;
             }
@@ -1113,11 +1241,18 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     private Object getFromCache(final String key) {
-        return super.get(key);
+        final Object value = _cache.get(key);
+        return value == NULL_VALUE ? null : value;
     }
 
     private void storeToCache(final String key, final Object value) {
-        super.put(key, value);
+        _cacheChanges.incrementAndGet();
+        _cache.put(key, value != null ? value : NULL_VALUE);
+    }
+
+    // Caches a value that was loaded after _cacheChanges had the given count, unless the cache has changed since.
+    private void storeLoadedToCache(final String key, final Object value, final long cacheChanges) {
+        _cache.compute(key, (ignored, cached) -> _cacheChanges.get() == cacheChanges ? (value != null ? value : NULL_VALUE) : cached);
     }
 
     private <T> void storeToCacheAsType(final String key, final String value, final PreferenceInfo info) {
@@ -1144,6 +1279,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         }
         if (cacheValue != null) {
             storeToCache(key, cacheValue);
+        } else {
+            removeFromCache(key);
         }
     }
 
@@ -1156,7 +1293,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     }
 
     private void removeFromCache(final String key) {
-        super.remove(key);
+        _cacheChanges.incrementAndGet();
+        _cache.remove(key);
     }
 
     private void processDefaultPreferences() {
@@ -1471,7 +1609,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         return properties;
     }
 
-    private Object getPreferenceMethod(final String preference, final Object defaultValue) throws InvalidPreferenceName {
+    private Object getPreferenceMethod(final String preference, final Object defaultValue, final long cacheChanges) throws InvalidPreferenceName {
         final boolean isStored = containsKey(preference);
         if (isStored) {
             final Object value = getFromCache(preference);
@@ -1491,7 +1629,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         if (resolver instanceof Method method) {
             _methods.put(preference, method);
         } else {
-            storeToCache(preference, resolver);
+            storeLoadedToCache(preference, resolver, cacheChanges);
         }
         return resolver;
     }
@@ -1573,6 +1711,10 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
 
     private ObjectMapper _mapper;
 
+    // Stands in for a cached null, which ConcurrentHashMap can't hold. A non-strict bean lists the keys of cached nulls too.
+    private static final Object NULL_VALUE = new Object();
+
+    private static final String UNSUPPORTED_CHANGE        = "Values can't be changed in preference bean maps. Use the PreferenceBean methods instead.";
     private static final String COMMA_SPACE_SEPARATOR     = ", ";
     private static final String PREFERENCE_PATTERN_FORMAT = "^%s(" + NAMESPACE_DELIMITER + ".*)?$";
 
@@ -1582,8 +1724,11 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
     private final Map<String, PreferenceInfo> _preferences        = new HashMap<>();
     private final Map<String, String>         _aliases            = new HashMap<>();
     private final Map<String, List<String>>   _aliasedPreferences = new HashMap<>();
-    private final Map<String, Method>         _methods            = new HashMap<>();
+    private final Map<String, Method>         _methods            = new ConcurrentHashMap<>();
+    private final Map<String, Object>         _cache              = new ConcurrentHashMap<>();
 
+    // Counts writes to _cache, so a load that overlaps a write or invalidation doesn't cache what it loaded.
+    private final AtomicLong  _cacheChanges                    = new AtomicLong();
     private final Set<String> _storedPreferencesWithoutGetters = ConcurrentHashMap.newKeySet();
 
     private final AtomicBoolean _resolverInitialized = new AtomicBoolean();

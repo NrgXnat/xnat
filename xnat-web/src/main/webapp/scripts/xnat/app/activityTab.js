@@ -280,8 +280,15 @@ var XNAT = getObject(XNAT);
 
     function parseSiMessage(message, succeeded) {
         if (succeeded) {
-            const dest = message.replace(/:.*/, '');
-            const urls = message.replace(/^.*:/, '').split(';');
+            // The DICOM importers name the sessions they made as "Prearchive:" or "Archive:" and their URIs. Other
+            // importers word it their own way, so their message is shown as it is.
+            const named = /^(prearchive|archive):(.*)$/i.exec(message || '');
+            if (!named) {
+                return '<div class="prog success">Import complete' +
+                    (message ? ': ' + linkArchived(escapeHtml(message)) : '') + '</div>';
+            }
+            const dest = named[1];
+            const urls = named[2].split(';').filter(Boolean);
             let urlsHtml;
             if (dest.toLowerCase().includes('prearchive')) {
                 urlsHtml = 'Visit the ' + getPrearcLink() + ' to review.';
@@ -295,13 +302,19 @@ var XNAT = getObject(XNAT);
                 ' session(s) successfully uploaded to ' + dest + ': ' + urlsHtml + '</div>';
         } else {
             // A failed upload names any sessions it archived before the failure: link them as a success does
-            const details = escapeHtml(message).replace(/\/archive\/projects\/[^\s;<]+/g, function (url) {
-                return '<a target="_blank" href="' + XNAT.url.rootUrl('/data' + url) + '">' + url.replace(/.*\//, '') + '</a>';
-            });
+            const details = linkArchived(escapeHtml(message));
             return '<div class="prog error">Extraction/Review failed: ' + details + '</div>' +
                 '<div class="warning">Check the ' + getPrearcLink() +
                 ', DICOM/ECAT data may be available there for manual review.</div>';
         }
+    }
+
+    // Links each archived session a message names
+    function linkArchived(html) {
+        return html.replace(/\/archive\/projects\/[^\s;<]+/g, function (url) {
+            const id = url.replace(/.*\//, '');
+            return '<a target="_blank" href="' + XNAT.url.rootUrl('/data' + url) + '">' + id + '</a>';
+        });
     }
 
     function getPrearcLink() {

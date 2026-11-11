@@ -975,8 +975,7 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
      */
     @Override
     public Object getOrDefault(final Object key, final Object defaultValue) {
-        final Object value = get(key);
-        return value != null || containsKey(key) ? value : defaultValue;
+        return containsKey(key) ? get(key) : defaultValue;
     }
 
     /**

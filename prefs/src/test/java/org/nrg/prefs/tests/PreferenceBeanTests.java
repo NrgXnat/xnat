@@ -130,6 +130,21 @@ public class PreferenceBeanTests {
     }
 
     @Test
+    public void testSetMapFromStringReplacesCachedValue() throws InvalidPreferenceName {
+        final PreferenceBean      bean     = _beanPrefsTool.getPreferenceBean();
+        final Map<String, String> original = _beanPrefsTool.getPrefDs();
+        try {
+            assertThat(bean.get("prefDs")).isEqualTo(original);
+
+            // set() can't build a map from the string, so it can't cache the map it stores.
+            bean.set("{'XNAT':'10.0.0.1'}", "prefDs");
+            assertThat(bean.get("prefDs")).isEqualTo(Map.of("XNAT", "10.0.0.1"));
+        } finally {
+            _beanPrefsTool.setPrefDs(original);
+        }
+    }
+
+    @Test
     public void testStrictBeanLogsStoredPreferenceWithoutGetterOnce() throws InvalidPreferenceName {
         final PreferenceBean              bean     = _basicPrefsTool.getPreferenceBean();
         final Logger                      logger   = (Logger) LoggerFactory.getLogger(AbstractPreferenceBean.class);

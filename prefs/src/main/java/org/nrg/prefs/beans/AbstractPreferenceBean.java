@@ -1280,6 +1280,8 @@ public abstract class AbstractPreferenceBean extends HashMap<String, Object> imp
         }
         if (cacheValue != null) {
             storeToCache(key, cacheValue);
+        } else {
+            removeFromCache(key);
         }
     }
 

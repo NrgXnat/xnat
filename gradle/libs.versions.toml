@@ -34,6 +34,7 @@ commons-digester = "1.8.1"
 commons-discovery = "0.5"
 commons-email = "1.5"
 commons-fileupload = "1.6.0"
+# 2.21.0 and later give IOUtils.skip a buffer per thread, which also prevents COMPRESS-666.
 commons-io = "2.22.0"
 commons-lang = "2.6"
 commons-lang3 = "3.11"

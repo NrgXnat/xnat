@@ -138,6 +138,9 @@ public class DicomSCP {
 
         for (final DicomSCPInstance instance : instances) {
             log.debug("Adding DICOM SCP instance {}: {}", instance.getId(), instance);
+            if (instance.isDirectArchive()) {
+                log.warn("DICOM SCP receiver {} uses direct archive, which is deprecated and will be removed in a future release. It archives every session it can route to a project, whatever that project's prearchive setting. Before turning it off, set each project that should archive automatically to auto-archive in its prearchive settings.", instance.getLabel());
+            }
             addApplicationEntity(instance);
         }
 
@@ -250,7 +253,6 @@ public class DicomSCP {
         }
 
         final String aeTitle = instance.getAeTitle();
-        final int port = getPort();
         if (StringUtils.isBlank(aeTitle)) {
             throw new IllegalArgumentException("Can only add service to named AE");
         }
@@ -269,7 +271,7 @@ public class DicomSCP {
         getDicomServicesByApplicationEntity().put(applicationEntity,
                 new CStoreService.Specifier(aeTitle,
                         _manager.getUserProvider(),
-                        _manager.getDicomObjectIdentifier(aeTitle, port),
+                        _manager.getDicomObjectIdentifier(instance),
                         _manager.getDicomFileNamer(fileNamer),
                         _manager)
                         .build());

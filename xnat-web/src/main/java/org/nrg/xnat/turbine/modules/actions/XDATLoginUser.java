@@ -11,7 +11,6 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.ActionLoader;
-import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -36,8 +35,9 @@ public class XDATLoginUser extends
 		 */
 		 if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);
-            VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
-            action.doPerform(data, context);
+            // Dispatch through exec(...) so the target action's perform() runs its isAuthorized() check; a
+            // direct doPerform(...) call would skip it.
+            ActionLoader.getInstance().exec(data, nextAction);
 		 }else if (!StringUtils.isEmpty(par)){
 	         	AcceptProjectAccess action = new AcceptProjectAccess();
 	         	context.put("user", user);

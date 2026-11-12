@@ -226,13 +226,13 @@ Direct commits to `main` and `releases/*` are not allowed.
    git checkout -b feature/XNAT-1234-short-description
    ```
 
-2. Make changes, commit with a message referencing the ticket:
+2. Make changes and commit them using the [commit message format](#commit-messages):
 
    ```bash
-   git commit -m "XNAT-1234 Short description of the change"
+   git commit -m "fix(mizer): read empty OB, OW and UC values as an empty string"
    ```
 
-3. Push and open a pull request targeting `develop`.
+3. Push and open a pull request targeting `develop`, with a title in the same format.
 
 4. A bug fix applying to both `develop-1.9.x` and `develop` should be committed to
    `develop-1.9.x` first, then cherry-picked to `develop`:
@@ -241,6 +241,70 @@ Direct commits to `main` and `releases/*` are not allowed.
    git checkout develop
    git cherry-pick <commit-sha>
    ```
+
+## Commit Messages
+
+Commit messages follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/):
+
+```text
+<type>(<scope>)!: <summary>
+
+<body>
+
+<footers>
+```
+
+- **Type** (required):
+
+  | Type | Use for |
+  |------|---------|
+  | `feat` | A new feature |
+  | `fix` | A bug fix |
+  | `perf` | A performance improvement with no change in behavior |
+  | `refactor` | Restructuring that neither fixes a bug nor adds a feature |
+  | `test` | Tests only |
+  | `docs` | Documentation only |
+  | `build` | The Gradle build or dependencies |
+  | `ci` | GitHub Actions workflows |
+  | `chore` | Anything else that doesn't change shipped code, such as a version bump |
+
+- **Scope** (optional): the module or area, in lowercase, such as `import`, `xft`, `dicom-edit6`,
+  `ui` or `deps`. Leave it out when the change has no single home.
+- **`!`** (optional): marks a breaking change. It goes right before the colon: `fix(xft)!:`, not
+  `fix!(xft):`, which Conventional Commits tools can't parse.
+- **Summary** (required): imperative, lowercase, no trailing period. Say what the change does,
+  not which ticket it is for.
+- **Body** (optional): what changed and why, wrapped at 72 columns. Name the Jira ticket
+  (`XNAT-1234`) or GitHub issue (`#123`) here rather than in the summary.
+- **Footers** (optional): a breaking change also needs a `BREAKING CHANGE:` footer saying what
+  broke and what callers have to change.
+
+For example:
+
+```text
+feat: add NodeLockService for Postgres advisory-lock leader election
+build(deps): let plugins take dcm4che artifacts from XNAT
+docs(dicom-edit6): describe 6.10.0 as released in UPGRADING
+```
+
+```text
+fix(xft)!: stop the JVM finalizer from running a save's change-info insert
+
+The JVM called DBItemCache.finalize() on its finalizer thread, which
+intermittently broke schema loading.
+
+BREAKING CHANGE: DBItemCache.finalize() is now addChangeInfo().
+```
+
+Pull requests are squash-merged. The commit subject comes from the commit when the pull request
+has one, and from the pull request title when it has more, so the title must follow this format
+too. GitHub appends the pull request number, as in `(#121)`, so don't add it yourself.
+
+The squash body joins every commit's message. Whoever merges should check the subject and body in
+the merge dialog: drop lines like `* Update CONTRIBUTING.md`, and keep any `BREAKING CHANGE:`
+footer and ticket references.
+
+Older commits use an `XNAT-1234 Summary` form. Don't copy it.
 
 ## Code Standards
 

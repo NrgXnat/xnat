@@ -9,6 +9,7 @@
 
 package org.nrg.xdat.search;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.display.*;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -29,6 +30,7 @@ public class DisplayFieldWrapper implements Identifier, SequentialObject, Displa
     private String type = null;
     private String header = null;
     private Boolean visible = null;
+    private boolean distinctRowID = false;
 
     private List<String> secondaryFields = new ArrayList<>();
     private List<String> xmlPathNames = new ArrayList<>();
@@ -214,6 +216,36 @@ public class DisplayFieldWrapper implements Identifier, SequentialObject, Displa
     }
 
     public String getRowID() {
+        String key = getUndistinguishedRowID();
+        if (distinctRowID && this.getValue() != null){
+            key += XftStringUtils.getCleanedValueSuffix(this.getValue().toString());
+        }
+        return key;
+    }
+
+    /**
+     * Indicates whether this field and another, both with values, would otherwise get the same row ID. Values such as
+     * dose-alpha and dose_alpha clean to the same row ID, which names the field's result column.
+     *
+     * @param other The other field.
+     *
+     * @return True if the two fields are different but their row IDs match ignoring case.
+     */
+    public boolean hasRowIDCollision(final DisplayFieldWrapper other) {
+        return getValue() != null && other.getValue() != null && !StringUtils.equals(getId(), other.getId())
+               && StringUtils.equalsIgnoreCase(getElementName(), other.getElementName())
+               && StringUtils.equalsIgnoreCase(getUndistinguishedRowID(), other.getUndistinguishedRowID());
+    }
+
+    /**
+     * Makes this field's row ID carry a suffix built from its raw value, if cleaning or lower-casing changes that value.
+     * Only fields whose row IDs collide get this, so all other row IDs stay unchanged.
+     */
+    public void setDistinctRowID() {
+        distinctRowID = true;
+    }
+
+    private String getUndistinguishedRowID() {
         String key = this.getDisplayField().getId();
         if (this.getValue() != null){
             key = df.getId() + "_" + XftStringUtils.cleanColumnName(this.getValue().toString());

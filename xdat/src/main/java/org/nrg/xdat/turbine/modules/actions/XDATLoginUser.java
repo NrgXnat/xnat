@@ -150,8 +150,9 @@ public class XDATLoginUser extends VelocityAction{
 		 */
 		if (hasNextAction && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
 			data.setAction(nextAction);
-			VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
-			action.doPerform(data, context);
+			// Dispatch through exec(...) so the target action's perform() runs its isAuthorized() check; a
+			// direct doPerform(...) call would skip it.
+			ActionLoader.getInstance().exec(data, nextAction);
 		} else if (hasNextPage && !nextPage.equals(Turbine.getConfiguration().getString("template.home"))) {
 			data.setScreenTemplate(nextPage);
 		} else {

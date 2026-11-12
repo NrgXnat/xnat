@@ -52,6 +52,12 @@ public class AcceptProjectAccess extends SecureAction {
         String parId = (String) TurbineUtils.GetPassedParameter("par", data);
         String hash = (String) TurbineUtils.GetPassedParameter("hash", data);
         ProjectAccessRequest par = ProjectAccessRequest.RequestPARByGUID(parId, user);
+		if (par == null) {
+			// No request matches this guid.
+			data.setMessage("The link for this project access request is insecure or invalid. Please contact the system administrator to verify your email or project membership.");
+			data.setScreenTemplate("Index.vm");
+			return;
+		}
 		if (par.getApproved() != null || par.getApprovalDate() != null) {
 			data.setMessage("Project Invitation already accepted by a different user.  Please request access to the project directly.");
 			data.setScreenTemplate("Index.vm");

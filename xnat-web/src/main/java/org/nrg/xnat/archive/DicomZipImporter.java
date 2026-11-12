@@ -10,6 +10,7 @@
 package org.nrg.xnat.archive;
 
 import com.google.common.collect.Sets;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -29,6 +30,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcSession;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
 import org.nrg.xnat.helpers.prearchive.SessionData;
+import org.nrg.xnat.helpers.prearchive.SessionDataTriple;
 import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveOperationHandlerResolver;
 import org.nrg.xnat.helpers.prearchive.handlers.PrearchiveRebuildHandler;
 import org.nrg.xnat.helpers.uri.URIManager;
@@ -65,6 +67,7 @@ import static org.nrg.xnat.archive.GradualDicomImporter.isAutoArchive;
 import static org.nrg.xnat.archive.Operation.Rebuild;
 
 @ImporterHandler(handler = ImporterHandlerA.DICOM_ZIP_IMPORTER)
+@Slf4j
 public final class DicomZipImporter extends ImporterHandlerA {
 
     private static final String ACTION = "action";
@@ -92,6 +95,14 @@ public final class DicomZipImporter extends ImporterHandlerA {
      */
     @Override
     public List<String> call() throws ClientException, ServerException {
+        try {
+            return importAndCommit();
+        } finally {
+            releaseHeldSessions();
+        }
+    }
+
+    private List<String> importAndCommit() throws ClientException, ServerException {
         final Set<String> uris = Sets.newLinkedHashSet();
         this.processing("Determining destination");
         try {
@@ -350,14 +361,56 @@ public final class DicomZipImporter extends ImporterHandlerA {
             importer.setNamer(getNamer());
         }
         try {
-            uris.addAll(importer.call());
+            for (final String uri : importer.call()) {
+                if (uris.add(uri)) {
+                    holdForUpload(uri);
+                }
+            }
         } catch (ServerException | ClientException e) {
             // The entry may have been the first in its session, so no entry returned that session. Skipped or not,
-            // it went into the session, and a failed import marks it with the others.
+            // it went into the session, so the session is held with the others and a failed import marks it with them.
             if (importer.getSessionUri() != null) {
                 failedEntrySessions.add(importer.getSessionUri());
+                holdForUpload(importer.getSessionUri());
             }
             throw e;
+        }
+    }
+
+    /**
+     * Keeps the idle-timeout rebuild away from a session until this upload is over. A session written early in a long
+     * upload can sit idle past the idle time before then. The rebuild would build it and, where the project archives
+     * automatically, archive it: before a file further on adds to it, before a failure further on marks it, and before
+     * a commit gets to it. A session that something else already keeps from the rebuild is left as it is.
+     */
+    private void holdForUpload(final String uri) {
+        if (!StringUtils.startsWith(uri, "/prearchive/")) {
+            return;
+        }
+        try {
+            final SessionDataTriple session = SessionDataTriple.fromURI(uri);
+            if (!Boolean.TRUE.equals(PrearcDatabase.getSession(session.getFolderName(), session.getTimestamp(), session.getProject()).getPreventAutoCommit())) {
+                PrearcDatabase.setPreventAutoCommit(session.getFolderName(), session.getTimestamp(), session.getProject(), true);
+                heldSessions.add(session);
+            }
+        } catch (Exception e) {
+            log.warn("Unable to keep the idle-timeout rebuild away from {} until this upload is over", uri, e);
+        }
+    }
+
+    /**
+     * Gives the idle-timeout rebuild back the sessions {@link #holdForUpload(String)} kept from it, once the upload is
+     * over, whether it succeeded or failed. An archived session has no row left to change.
+     */
+    private void releaseHeldSessions() {
+        for (final SessionDataTriple session : heldSessions) {
+            try {
+                if (PrearcDatabase.getSessionIfExists(session.getFolderName(), session.getTimestamp(), session.getProject()) != null) {
+                    PrearcDatabase.setPreventAutoCommit(session.getFolderName(), session.getTimestamp(), session.getProject(), false);
+                }
+            } catch (Exception e) {
+                log.warn("Unable to give {} back to the idle-timeout rebuild", session, e);
+            }
         }
     }
 
@@ -411,4 +464,5 @@ public final class DicomZipImporter extends ImporterHandlerA {
     private final boolean ignoreUnparsable;
     private ClientException nonDcmException = null;
     private final Set<String> failedEntrySessions = Sets.newLinkedHashSet();
+    private final Set<SessionDataTriple> heldSessions = Sets.newLinkedHashSet();
 }

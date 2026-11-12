@@ -9,7 +9,7 @@
 #if(!$session)
 	#set($allowArchive=false)
 	#if($notBuilt)
-	<div class="alert">This session hasn't been built yet, so its details aren't available. Rebuild it to see them and archive it.</div>
+	<div class="alert">This session hasn't been built yet, so its details aren't available. Rebuild it from the Actions box to see them and archive it.</div>
 	#else
 	<div class="alert">Empty sessions cannot be archived.</div>
 	#end
@@ -45,6 +45,14 @@
 	}
 	button.hide_me{
 		visibility:hidden;
+	}
+	div.alert{
+		margin-bottom:10px;
+	}
+	#scans_div::after{
+		content:"";
+		display:block;
+		clear:both;
 	}
 </style>
 <div style="float:left">
@@ -101,6 +109,9 @@
     #end
 	#if($canModify)
     <li class="yuimenuitem">
+			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestRebuild()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Rebuild</a>
+    </li>
+    <li class="yuimenuitem">
 			<a href="#" class="nolink" onclick="XNAT.app.prearchiveActions.requestDelete()"><div class="ic">&nbsp;</div><div class="ic_spacer">&nbsp;</div>Delete</a>
     </li>
 	#end
@@ -109,6 +120,8 @@
 </div>
 <div class="spacer" style="clear:both;">&nbsp;</div>
 <div id="scans_div" style="clear:both;">
+	## A session that hasn't been built has no scans to list.
+	#if($session)
 	<h3>Scans</h3>
 	<table>
 		<tr><th>ID</th><th>Description</th><th>Files</th><th>Actions</th></tr>
@@ -133,6 +146,7 @@
 		</tr>
 	#end
 	</table>
+	#end
 
     #set($resources = $session.getResources_resource())
     #if($resources.size() > 0)
@@ -158,11 +172,11 @@
         </table>
     #end
 
+    #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
+         <button id="dAscans" style="float:right;" onclick="XNAT.app.prearchiveActions.downloadAllFiles('$url')">Download All Files</button>
+    #end
     ## move this out of the table
     <p id="prearchiveSessionTotals"></p>
-    #if(!$project || $user.checkRestrictedFeature("$!project","data_download"))
-         <button id="dAscans" style="float:right;margin-top:20px;" onclick="XNAT.app.prearchiveActions.downloadAllFiles('$url')">Download All Files</button>
-    #end
 </div>
 
 <div id="validationAlerts"></div>

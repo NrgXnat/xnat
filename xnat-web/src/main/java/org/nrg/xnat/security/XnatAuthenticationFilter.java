@@ -118,7 +118,9 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
                 request.getSession().setAttribute("par", parId);
 
                 final ProjectAccessRequest par = ProjectAccessRequest.RequestPARByGUID(parId, null);
-                if (par.getApproved() != null || par.getApprovalDate() != null) {
+                if (par == null) {
+                    log.warn("User {} logged in with a par parameter that doesn't match a project access request", username);
+                } else if (par.getApproved() != null || par.getApprovalDate() != null) {
                     log.warn("User {} tried to access a PAR that is not approved or has already been accepted: {}", username, par.getGuid());
                 } else {
                     final XDATUser user = new XDATUser(username);

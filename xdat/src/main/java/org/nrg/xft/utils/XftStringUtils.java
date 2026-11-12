@@ -637,6 +637,33 @@ public class XftStringUtils {
 	}
 
 	/**
+	 * Creates the column name for a subquery display field, such as a custom variable or a pipeline's workflow status.
+	 * Every site that emits or references that column must use this, so they all agree on the name. The name only appears
+	 * inside the generated SQL, never in the search results.
+	 *
+	 * @param fieldId The display field ID.
+	 * @param value   The raw value the field was requested with.
+	 *
+	 * @return A column name that fits within the PostgreSQL identifier limit and is distinct for distinct values.
+	 */
+	public static String createSubqueryFieldAlias(final String fieldId, final String value) {
+	    return formatPostgreSQLIdentifier(cleanColumnName(fieldId) + "_" + cleanColumnName(value) + getCleanedValueSuffix(value));
+	}
+
+	/**
+	 * Values such as <b>dose-alpha</b>, <b>dose_alpha</b> and <b>Dose_alpha</b> clean or lower-case to the same column name.
+	 * This returns a suffix built from the raw value that keeps those apart, or an empty string when cleaning and lower-casing
+	 * leave the value unchanged, so that such values keep their existing column names.
+	 *
+	 * @param value The raw value.
+	 *
+	 * @return The suffix to append to a column name built from the cleaned value.
+	 */
+	public static String getCleanedValueSuffix(final String value) {
+	    return StringUtils.equals(cleanColumnName(value), StringUtils.lowerCase(value)) ? "" : "_" + Integer.toHexString(value.hashCode());
+	}
+
+	/**
 	 * Counts the number of times the specified string occurs in the full string.
 	 *
 	 * @param fullString The full string to be searched.

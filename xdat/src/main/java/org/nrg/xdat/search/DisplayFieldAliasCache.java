@@ -27,11 +27,29 @@ package org.nrg.xdat.search;
  * should not be thought of as the ultimate fix for this issue.
  */
 
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.xdat.display.DisplayFieldReferenceI;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class DisplayFieldAliasCache {
     static private final Map<String, String> aliases = new HashMap<>();
+
+    /**
+     * Gets the result column name for a display field in a search. {@link DisplaySearch} names the column with this and
+     * every presenter reads it back with this, so they agree for row IDs of any length.
+     *
+     * @param dfr             The display field reference.
+     * @param rootElementName The full XML name of the search's root element.
+     *
+     * @return The result column name.
+     */
+    public static String getAlias(final DisplayFieldReferenceI dfr, final String rootElementName) throws XFTInitException, ElementNotFoundException {
+        return getAlias(StringUtils.equalsIgnoreCase(dfr.getElementName(), rootElementName) ? dfr.getRowID() : dfr.getElementSQLName() + "_" + dfr.getRowID());
+    }
 
     public static String getAlias(String id) {
         String key = id.toLowerCase();

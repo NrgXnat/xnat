@@ -18,6 +18,7 @@ import org.nrg.xdat.display.DisplayFieldReferenceI;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.search.DisplayFieldAliasCache;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.XFTTableI;
@@ -237,19 +238,7 @@ public class HTMLNoTagsAllFieldsPresenter extends CSVPresenter {
                         }
 
 
-                        Object v;
-
-                        if (dfr.getElementName().equalsIgnoreCase(search.getRootElement().getFullXMLName()))
-
-                        {
-
-                            v = row.get(dfr.getRowID().toLowerCase());
-
-                        } else {
-
-                            v = row.get(dfr.getElementSQLName().toLowerCase() + "_" + dfr.getRowID().toLowerCase());
-
-                        }
+                        Object v = row.get(DisplayFieldAliasCache.getAlias(dfr, search.getRootElement().getFullXMLName()));
 
                         if (v != null)
 

@@ -26,6 +26,7 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -103,5 +104,18 @@ public class BaseMizerServiceTest {
         List<AnonymizationResult> res = service.anonymize(Arrays.asList(dicomFile), "project", "subject", "session", 1, SCRIPT_STRING, record, ignoreRejection);
         assertEquals(TestMizer.RESULT_MESSAGE, res.get(0).getMessage());
 
+    }
+
+    /** The message is built by concatenation, which is where its words used to run together. */
+    @Test
+    public void aMalformedVersionDeclarationIsQuotedInAReadableMessage() throws MizerException {
+        final MizerService service = new BaseMizerService(new ArrayList<>());
+        final MizerContextWithScript context = new MizerContextWithScript(Arrays.asList("version := \"6.1\"", "(0010,0010) := subject"));
+
+        final MizerException thrown = assertThrows(MizerException.class, () -> service.getMizer(context));
+        assertEquals("The Mizer service failed to find a Mizer implementation that knows how to handle your script, but "
+                     + "also found what appears to be a malformed version declaration. The version declaration should use "
+                     + "the format 'version \"X.Y\"', where X.Y is a valid version such as \"6.1\". The statement in your "
+                     + "script is: version := \"6.1\"", thrown.getMessage());
     }
 }

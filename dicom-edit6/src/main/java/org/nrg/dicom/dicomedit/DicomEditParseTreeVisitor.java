@@ -40,6 +40,12 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
 
     private Map<String, Variable> variables = new HashMap<String, Variable>();
     private DicomObjectI dicomObject;
+    /**
+     * The most-recently-entered statement, retained so its line and text can be derived on the
+     * error path only. Holding the context costs a reference store per statement; deriving the
+     * text eagerly cost a string allocation per statement of every script for every object.
+     */
+    private DE6Parser.StatementContext currentStatement;
 
     private static final Logger logger = LoggerFactory.getLogger(DicomEditParseTreeVisitor.class);
 
@@ -76,9 +82,30 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
         return variables.get(name);
     }
 
+    /**
+     * @return the source line of the most-recently-entered statement, or {@code null} if no
+     *         statement has been entered yet. Useful at the script-applicator boundary when
+     *         decorating an evaluation failure with location context.
+     */
+    public Integer getCurrentStatementLine() {
+        return currentStatement == null ? null : currentStatement.start.getLine();
+    }
+
+    /**
+     * @return the textual form of the most-recently-entered statement, or {@code null}.
+     *         Note: ANTLR's {@code ctx.getText()} concatenates tokens without their original
+     *         whitespace, so the result is a faithful but compact reconstruction. Reconstructing
+     *         it allocates, so this is called only when decorating an error.
+     */
+    public String getCurrentStatementText() {
+        return currentStatement == null ? null : currentStatement.getText();
+    }
+
     @Override
     public Value visitScript(DE6Parser.ScriptContext ctx) {
         logger.debug("Encountered script.");
+        // The applicator reuses this visitor for every object, so forget the last object's statement.
+        this.currentStatement = null;
         for (int i = 0; i < ctx.statement().size(); i++) {
             logger.debug("visit statement " + i + ": " + ctx.statement(i).getText());
             this.visit(ctx.statement(i));
@@ -88,6 +115,7 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
 
     @Override
     public Value visitStatement(DE6Parser.StatementContext ctx) {
+        this.currentStatement = ctx;
         this.visit(ctx.getChild(0));
         return new ConstantValue(null);
     }
@@ -349,9 +377,17 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
         return new ConstantValue(values);
     }
 
+    /**
+     * Resolve a {@code variable} node appearing as a function argument or a list element.
+     *
+     * <p>Routed through {@link #extractVariableValue(String)} rather than dereferencing
+     * {@link #getVariable(String)} directly, so an undefined or null-valued variable in these
+     * positions reports the same actionable error as one on the right-hand side of an
+     * assignment instead of a raw {@code NullPointerException}. See XNAT-8499.
+     */
     @Override
     public Value visitVariable(DE6Parser.VariableContext ctx) {
-        return getVariable(ctx.ID().getText()).getValue();
+        return extractVariableValue(ctx.ID().getText());
     }
 
     /**
@@ -400,10 +436,16 @@ public class DicomEditParseTreeVisitor extends DE6ParserBaseVisitor<Value> {
 
     protected Value extractVariableValue(String id) {
         if (variables.containsKey(id)) {
-            return variables.get(id).getValue();
-        } else {
-            throw new ParseCancellationException("Unknown variable: " + id);
+            Value value = variables.get(id).getValue();
+            if (value == null) {
+                throw new ScriptEvaluationRuntimeException("Variable '" + id + "' is null.");
+            }
+            return value;
         }
+        // Reached by a variable the script reads only as a function argument or a list element:
+        // DiscoverVariablesTreeVisitor does not descend into those, so the variable is never
+        // registered or seeded from the context, even when a value is supplied.
+        throw new ParseCancellationException("Unknown variable: '" + id + "'");
     }
 
     @Override

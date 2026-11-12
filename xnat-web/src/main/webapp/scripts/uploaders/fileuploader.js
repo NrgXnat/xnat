@@ -276,7 +276,7 @@ abu.FileUploader = function(o){
 					 (($("#formatBox").length>0) ? (($("#formatBox").val().length>0) ? "&format="+$("#formatBox").val() : "") : "") +
 					 '" method="POST" enctype="multipart/form-data">' +
 				'</form>' +
-				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file abu-upload-filename">' + cFile.name + '</span><span class="abu-upload-file">' +
+				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file abu-upload-filename">' + escapeHtml(cFile.name) + '</span><span class="abu-upload-file">' +
 					" (" + ((typeof cFile.type !== 'undefined' && cFile.type !== '') ? cFile.type + ", " : '') +
 					 this.bytesToSize(cFile.size) + ") </span>" +
 					'<div class="abu-progress">' +
@@ -350,6 +350,7 @@ abu.FileUploader = function(o){
 		var bar = $(infoSelector).find(".abu-bar");
 		var percent = $(infoSelector).find(".abu-percent");
 		var status = $(infoSelector).find(".abu-status");
+		var cancelDiv = $(infoSelector).find(".abu-cancel-div");
 		let filename = formData.get("file"+idx).name;
 		$(formSelector).on("submit",function(e, uploader) {
 			uploader.removeFromWaitlist(idx);
@@ -436,7 +437,7 @@ abu.FileUploader = function(o){
 						// Once the whole file is sent, aborting the request doesn't stop XNAT from keeping it, so Cancel
 						// leaves this upload to finish and show its result
 						delete uploader.xhrs['idx' + idx];
-						$('#' + uploader.elementId + ' #upload-cancel-div-' + idx).remove();
+						cancelDiv.remove();
 					}
 				},
 				error: function(xhr, textStatus, result) {
@@ -508,7 +509,9 @@ abu.FileUploader = function(o){
 			const availableSpaces = this.MAX_CONCURRENT_UPLOADS - this.uploadsInProgress;
 			for (let i = 0; i < availableSpaces; i++) {
 				const target = this.waitingForUpload[i];
-				$("#" + this.elementId + " #file-upload-form-" + target).trigger("submit",this);
+				// Every image uploader dialog has the same element id, so look only in this uploader's own element: an
+				// upload left running after its dialog closed mustn't start a file in the dialog open now
+				$(this._options.element).find("#file-upload-form-" + target).trigger("submit",this);
 			}
 		}
 	}.bind(this)
@@ -536,7 +539,7 @@ abu.FileUploader = function(o){
 
 	this.markUploadDone = function(idx) {
 		delete this.xhrs['idx' + idx];
-		$('#' + this.elementId + ' #upload-cancel-div-' + idx).remove();
+		$(this._options.element).find('#upload-cancel-div-' + idx).remove();
 	}.bind(this);
 
 	this.completeUpload = function(idx, counted) {

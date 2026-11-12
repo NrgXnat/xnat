@@ -72,6 +72,9 @@ XNAT.app.upload.defaultStr = "DEFAULT";
             beforeShow: function(obj) {
                 obj.$modal.find('#' + id + '-done-button').hide();
             },
+            // Closing the dialog any way, with Cancel, Escape, or the title bar's X, cancels the files that haven't been
+            // sent in full
+            onClose: cancel,
             buttons: {
                 done: {
                     label: 'Close',
@@ -80,15 +83,20 @@ XNAT.app.upload.defaultStr = "DEFAULT";
                 },
                 cancel: {
                     label: 'Cancel',
-                    close: true,
-                    action: cancel
+                    close: true
                 }
             }
         });
 
+        // Uploads keep running after their dialog is closed, and can end after it has been opened again for other
+        // files, so only the uploader this dialog was opened with changes it
+        let uploader;
         abu.initializeImageUploader({
             element: $('#' + abuId),
             uploadStartedFunction: function(){
+                if (abu._imageUploader !== uploader) {
+                    return;
+                }
                 $('#' + id + '-cancel-button').show();
                 $('#' + id + '-done-button').hide();
             },
@@ -100,6 +108,9 @@ XNAT.app.upload.defaultStr = "DEFAULT";
                 }
             },
             uploadCompletedFunction: function(anyFailedUploads) {
+                if (abu._imageUploader !== uploader) {
+                    return;
+                }
                 $('#' + id + '-cancel-button').hide();
                 $('#' + id + '-done-button').show();
                 if (!anyFailedUploads) {
@@ -115,6 +126,7 @@ XNAT.app.upload.defaultStr = "DEFAULT";
             showUpdateOption: false,
             acceptFilePattern: 'application/zip, application/x-gzip, application/x-tgz'
         });
+        uploader = abu._imageUploader;
 
         abu._imageUploader.buildUploaderDiv();
         abu._imageUploader._currentAction = uploaderUrl;

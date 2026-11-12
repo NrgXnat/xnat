@@ -267,7 +267,7 @@ abu.FileUploader = function(o){
 			var cFile = fileA[i];
 			var adj_i = i + start_i;
 			$("#" + this.elementId + " .abu-upload-list").append(
-				'<form id="file-upload-form-' + adj_i + '" action="' + this._currentAction.replace("##FILENAME_REPLACE##",cFile.name) +
+				'<form id="file-upload-form-' + adj_i + '" action="' + this._currentAction.replace("##FILENAME_REPLACE##",cFile.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;')) +
 					 (($("#extractRequestBox").length>0) ? (($("#extractRequestBox").is(':checked')) ? "&extract=true" : "&extract=false") : "") +
 					 (($("#emailBox").length>0) ? (($("#emailBox").is(':checked')) ? "&sendemail=true" : "&sendemail=false") : "") +
 					 (($("#verboseBox").length>0) ? (($("#verboseBox").is(':checked')) ? "&verbose=true" : "&verbose=false") : "") +

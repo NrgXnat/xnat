@@ -222,8 +222,8 @@ var XNAT = getObject(XNAT);
         } else if (status === 404) {
             stopWithQueuedWarning(item, key);
         } else {
-            $(item.detailsTag).append('<div class="prog error">Issue polling event progress: ' + errDetails +
-                '. Refresh the page to try again.</div>');
+            $(item.detailsTag).append('<div class="prog error">Issue polling event progress: ' +
+                escapeHtml(errDetails) + '. Refresh the page to try again.</div>');
             activityTab.stopPoll(key, false);
         }
     }
@@ -272,7 +272,7 @@ var XNAT = getObject(XNAT);
                     clazz = 'success';
                     break;
             }
-            messages += '<div class="prog ' + clazz + '">' + message + '</div>';
+            messages += '<div class="prog ' + clazz + '">' + escapeHtml(message) + '</div>';
             lastProgressIdx = i;
         });
         if (succeeded != null) {

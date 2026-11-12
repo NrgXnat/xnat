@@ -176,7 +176,8 @@
         $.ajax({
             method: 'POST',
             contentType: file.name.toLowerCase().endsWith('.zip') ? 'application/zip' : 'application/x-gtar',
-            url: XNAT.url.csrfUrl('/data/services/import/' + file.name.replace(/[^\w.\-]/g, '_'), importParams),
+            // csrfUrl's own params drop any '=' in a value, so encode them here
+            url: XNAT.url.csrfUrl('/data/services/import/' + file.name.replace(/[^\w.\-]/g, '_')) + '&' + $.param(importParams),
             data: file,
             processData: false,
             cache: false,

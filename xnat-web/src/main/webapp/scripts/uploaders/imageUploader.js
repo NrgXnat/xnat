@@ -32,7 +32,8 @@ XNAT.app.upload.defaultStr = "DEFAULT";
                 importParams[key] = config[key];
             }
         }
-        uploaderUrl = XNAT.url.csrfUrl('/data/services/import', importParams);
+        // csrfUrl's own params drop any '=' in a value, so encode them here
+        uploaderUrl = XNAT.url.csrfUrl('/data/services/import') + '&' + $.param(importParams);
 
         let loc;
         if (config.session) {

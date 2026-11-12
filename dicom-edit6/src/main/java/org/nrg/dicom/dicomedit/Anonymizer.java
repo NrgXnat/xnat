@@ -10,6 +10,7 @@
 package org.nrg.dicom.dicomedit;
 
 import org.nrg.dicom.dicomedit.functions.LookupManager;
+import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.objects.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,8 +79,8 @@ public class Anonymizer {
             anonymize( applicator, inFile, mapper.map( inFile));
 
         } catch (Exception e) {
-            String format = "Error processing \nscript = {0}, \ninputRoot = {1}, \noutputRoot = {2}\n";
-            logger.error( MessageFormat.format(format, anonScriptFileString, inRootFileString, outRootFileString), e);
+            String format = "Error processing (script={0}, inputRoot={1}, outputRoot={2}): {3}";
+            logger.error( MessageFormat.format(format, anonScriptFileString, inRootFileString, outRootFileString, MizerException.rootCauseMessage(e)), e);
         }
     }
 
@@ -115,8 +116,8 @@ public class Anonymizer {
             }
         }
         catch( Exception e) {
-            String format = "Error processing \nscript = {0}, \ninput = {1}, \noutput = {2}\n";
-            logger.error( MessageFormat.format(format, anonScriptFileString, inFile.getAbsolutePath(), outFile.getAbsolutePath()), e);
+            String format = "Error processing (script={0}, input={1}, output={2}): {3}";
+            logger.error( MessageFormat.format(format, anonScriptFileString, inFile.getAbsolutePath(), outFile.getAbsolutePath(), MizerException.rootCauseMessage(e)), e);
         }
     }
 

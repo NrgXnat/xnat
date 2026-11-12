@@ -40,7 +40,7 @@ public class FormatScriptFunction extends AbstractScriptFunction {
             }
             return values.size() > 0 ? new ConstantValue(MessageFormat.format(values.get(0).asString(), strings.toArray())) : null;
         } catch( IllegalArgumentException e) {
-            throw new ScriptEvaluationRuntimeException(getFormattedErrorMessage(values));
+            throw new ScriptEvaluationRuntimeException(getFormattedErrorMessage(values) + " (" + e.getMessage() + ")", e);
         }
     }
 }

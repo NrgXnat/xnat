@@ -130,7 +130,8 @@ public class SerialScriptAnonymizer {
             anonymizer.anon();
 
         } catch (MizerException | IOException e) {
-            e.printStackTrace();
+            logger.error("Anonymization failed (input={}, output={}): {}", inRootPath, outRootPath, MizerException.rootCauseMessage(e), e);
+            System.exit(2);
         }
     }
 

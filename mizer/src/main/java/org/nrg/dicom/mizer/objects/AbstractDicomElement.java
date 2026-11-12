@@ -5,11 +5,16 @@ import org.dcm4che3.data.ElementDictionary;
 import org.dcm4che3.data.Sequence;
 import org.dcm4che3.data.SpecificCharacterSet;
 import org.dcm4che3.data.VR;
+import org.dcm4che3.util.TagUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 
 public abstract class AbstractDicomElement implements DicomElementI {
+    private static final Logger logger = LoggerFactory.getLogger(AbstractDicomElement.class);
+
     protected final Attributes attrs;
     protected final int tag;
     protected final VR vr;
@@ -30,6 +35,7 @@ public abstract class AbstractDicomElement implements DicomElementI {
         try {
             return this.attrs.getBytes(tag);
         } catch (IOException e) {
+            logger.trace("getBytes failed for tag {}: {} (returning empty array)", TagUtils.toString(tag), e.getMessage(), e);
             return new byte[0];
         }
     }

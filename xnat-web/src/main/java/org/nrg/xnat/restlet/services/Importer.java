@@ -51,10 +51,12 @@ import org.restlet.resource.Variant;
 import org.restlet.util.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.util.UriUtils;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -317,7 +319,7 @@ public class Importer extends SecureResource {
                     return;
                 }
                 importStarted = true;
-                getResponse().setLocationRef(StringUtils.removeEnd(XDAT.getSiteConfigPreferences().getSiteUrl(), "/") + "/xapi/event_tracking/" + Reference.encode(listenerControl));
+                getResponse().setLocationRef(StringUtils.removeEnd(XDAT.getSiteConfigPreferences().getSiteUrl(), "/") + "/xapi/event_tracking/" + UriUtils.encodePathSegment(listenerControl, StandardCharsets.UTF_8));
                 if (asyncRequested) {
                     returnString(listenerControl, MediaType.TEXT_PLAIN, Status.SUCCESS_OK);
                 } else {

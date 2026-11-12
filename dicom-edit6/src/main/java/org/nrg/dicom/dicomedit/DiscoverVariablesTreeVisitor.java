@@ -51,13 +51,37 @@ public class DiscoverVariablesTreeVisitor extends DE6ParserBaseVisitor<Void> {
     @Override
     public Void visitIdValue(final DE6Parser.IdValueContext context) {
         logger.debug("Encountered idTerm.");
-        final String id = context.variable().getText();
+        registerReferenced(context.variable().getText());
+        return null;
+    }
+
+    /**
+     * Register a variable appearing as a function argument or a list element.
+     *
+     * <p>Per the grammar, {@code variable} appears in three places: as {@code idValue}, handled by
+     * {@link #visitIdValue} which does not descend; as {@code variableArgument} inside a function
+     * argument list; and as a {@code list_element}. The latter two are only reached because
+     * {@link #visitFunction} descends into its children, and without registering them here a
+     * variable referenced only in those positions is never discovered, so it is never seeded from
+     * the {@code MizerContext} even when the value is supplied. See XNAT-8499.
+     */
+    @Override
+    public Void visitVariable(final DE6Parser.VariableContext context) {
+        registerReferenced(context.getText());
+        return null;
+    }
+
+    /**
+     * Record a variable the script reads. A name not already known is treated as external — a
+     * value the script expects to be supplied from outside — which is what
+     * {@code BaseScriptApplicator} seeds from the context.
+     */
+    private void registerReferenced(final String id) {
         if (!_variables.containsKey(id)) {
             final Variable variable = new BasicVariable(id);
             _externalVariables.put(id, variable);
             _variables.put(id, variable);
         }
-        return null;
     }
 
     @Override public Void visitDescribeHiddenVariable(DE6Parser.DescribeHiddenVariableContext ctx) {
@@ -84,12 +108,15 @@ public class DiscoverVariablesTreeVisitor extends DE6ParserBaseVisitor<Void> {
         return null;
     }
 
+    @Override
     public Void visitFunction(DE6Parser.FunctionContext ctx) {
         logger.debug("Encountered function term: " + ctx.getText());
         String functionName = ctx.ID().getText();
         Set<String> elementNames = FunctionManager.getInstance().getInternalContext(functionName).keySet();
         elementNames.forEach(name -> _externalVariables.put(name, new BasicVariable(name)));
-        return null;
+        // Descend into the argument list. Without this, an identifier nested in a function
+        // argument is never discovered and so never supplied from the context.
+        return visitChildren(ctx);
     }
 
     protected Variable initVariable( String name) {

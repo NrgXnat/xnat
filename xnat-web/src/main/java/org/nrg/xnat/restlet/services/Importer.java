@@ -394,6 +394,7 @@ public class Importer extends SecureResource {
             }
             return uris;
         } catch (final Throwable e) {
+            logger.error("The import with tracking key {} failed", listenerControl, e);
             if (!ended.get()) {
                 importer.publish(new StatusMessage(importer, StatusMessage.Status.FAILED, StringUtils.defaultIfBlank(e.getMessage(), e.toString()), true));
             }

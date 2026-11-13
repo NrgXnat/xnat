@@ -136,11 +136,11 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      * @param sourceFile               the file the stream reads from its beginning, or null when the
      *                                 source is not a file.
      * @param negotiatedTransferSyntax the syntax the caller negotiated for a stream without file meta
-     *                                 information, such as a C-STORE's, or null. Only a deflated one
-     *                                 is used: dcm4che recognizes every other syntax from the first
-     *                                 element, but can't guess its way into an inflater. A stream that
-     *                                 starts with a preamble reads its own file meta information
-     *                                 either way.
+     *                                 information, such as a C-STORE's, or null to have dcm4che guess
+     *                                 it. Guessing can't inflate a deflated dataset, and it takes a
+     *                                 dataset that starts in group 0002 for file meta information. A
+     *                                 stream that starts with a preamble reads its own file meta
+     *                                 information either way.
      *
      * @return a resumable stream that references bulk data rather than loading it.
      *
@@ -150,7 +150,7 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      */
     public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in, final File sourceFile,
                                                                     final String negotiatedTransferSyntax) throws IOException {
-        final ResumableDicomInputStream dis = BufferedBulkDataCreator.isDeflated(negotiatedTransferSyntax) && !hasPreamble(in)
+        final ResumableDicomInputStream dis = negotiatedTransferSyntax != null && !hasPreamble(in)
                                               ? new ResumableDicomInputStream(in, negotiatedTransferSyntax)
                                               : new ResumableDicomInputStream(in);
         dis.setIncludeBulkData(IncludeBulkData.URI);

@@ -307,7 +307,7 @@ var XNAT = getObject(XNAT);
             } else {
                 urlsHtml = $.map(urls, function (url) {
                     var id = url.replace(/.*\//, '');
-                    return '<a target="_blank" href="' + XNAT.url.rootUrl('/data' + url) + '">' + id + '</a>'
+                    return '<a target="_blank" href="' + escapeHtml(XNAT.url.rootUrl('/data' + url)) + '">' + escapeHtml(id) + '</a>'
                 }).join(', ');
             }
             return '<div class="prog success">' + urls.length +

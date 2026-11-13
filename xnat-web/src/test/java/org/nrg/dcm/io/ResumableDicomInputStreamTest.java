@@ -33,6 +33,7 @@ import java.util.List;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.Assert.assertTrue;
@@ -249,6 +250,46 @@ public class ResumableDicomInputStreamTest {
                        descriptor.isBulkData(Collections.emptyList(), null, Tag.FloatPixelData, VR.OF, 1000));
             assertFalse("but not a palette lookup table",
                         descriptor.isBulkData(Collections.emptyList(), null, 0x00281201, VR.OW, 1000));
+        }
+    }
+
+    /**
+     * A stream with no preamble is a C-STORE's dataset, encoded in the negotiated syntax even when its
+     * first element is in group 0002, which dcm4che would otherwise take for file meta information.
+     */
+    @Test
+    public void openWithBulkDataOffHeapReadsADatasetInTheNegotiatedSyntax() throws Exception {
+        final File bare = folder.newFile("leading-meta.dcm");
+        try (final DicomInputStream in = new DicomInputStream(new File(FIXTURE));
+             final DicomOutputStream out = new DicomOutputStream(new FileOutputStream(bare), UID.ImplicitVRLittleEndian)) {
+            in.readFileMetaInformation();
+            final Attributes dataset = in.readDataset();
+            dataset.setString(Tag.SourceApplicationEntityTitle, VR.AE, "ARCHIVE");
+            out.writeDataset(null, dataset);
+        }
+        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(bare));
+             final ResumableDicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis, null, UID.ImplicitVRLittleEndian)) {
+            assertNull("a dataset carries no file meta information", dis.readFileMetaInformation());
+            assertEquals(UID.ImplicitVRLittleEndian, dis.getTransferSyntax());
+            final Attributes dataset = new Attributes();
+            dis.readAttributes(dataset, -1, ORDINARY_WINDOW);
+            assertEquals("ARCHIVE", dataset.getString(Tag.SourceApplicationEntityTitle));
+            assertTrue("the read must reach the dataset's own elements", dataset.contains(Tag.SOPInstanceUID));
+        }
+    }
+
+    /** A Part 10 file names its own syntax in its file meta information, whatever the caller negotiated. */
+    @Test
+    public void openWithBulkDataOffHeapReadsAPart10FilesOwnSyntax() throws Exception {
+        final String own;
+        try (final DicomInputStream in = new DicomInputStream(new File(FIXTURE))) {
+            own = in.readFileMetaInformation().getString(Tag.TransferSyntaxUID);
+        }
+        final String other = UID.ImplicitVRLittleEndian.equals(own) ? UID.ExplicitVRLittleEndian : UID.ImplicitVRLittleEndian;
+        try (final BufferedInputStream bis = new BufferedInputStream(new FileInputStream(FIXTURE));
+             final ResumableDicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis, null, other)) {
+            assertEquals(own, dis.readFileMetaInformation().getString(Tag.TransferSyntaxUID));
+            assertEquals(own, dis.getTransferSyntax());
         }
     }
 

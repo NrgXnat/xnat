@@ -24,7 +24,7 @@ public class XDATScreen_upload_scans_xnat_imageSessionData extends SecureReport 
         Date d = Calendar.getInstance().getTime();
         
         StringBuffer sb = new StringBuffer();
-        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyyMMdd_hhmmss");
+        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyyMMdd_HHmmss");
         sb.append(formatter.format(d));
         context.put("uploadID", sb.toString());
 

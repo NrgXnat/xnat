@@ -98,6 +98,16 @@ public class BulkLaunchLogTest {
     }
 
     @Test
+    public void anOrchestrationThatContinuesAfterAFailedStepCountsEachTargetOnce() {
+        final BulkLaunchLog batch = orchestrationLogOf(2, 2, workflow(1, "SESSION_1", FAILED), workflow(2, "SESSION_2", COMPLETE),
+                                                       workflow(3, "SESSION_1", FAILED), workflow(4, "SESSION_2", COMPLETE));
+
+        assertThat(batch.bulkLaunchComplete()).isTrue();
+        assertThat(batch.bulkLaunchSuccess()).isFalse();
+        assertThat(batch.bulkLaunchMessage()).isEqualTo("1 jobs succeed / 1 jobs failed");
+    }
+
+    @Test
     public void aBatchWithTargetsNotYetSavedIsNotComplete() {
         final BulkLaunchLog batch = orchestrationLogOf(3, 1, workflow(1, "SESSION_1", COMPLETE), workflow(2, "SESSION_2", COMPLETE));
 

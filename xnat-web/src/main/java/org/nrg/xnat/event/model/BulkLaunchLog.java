@@ -114,7 +114,8 @@ public class BulkLaunchLog {
     }
 
     private boolean hasTotal() {
-        return total != -1;
+        // A total of 0 means no workflow in the batch has been saved yet, so the batch can't be complete
+        return total > 0;
     }
 
     @JsonIgnore

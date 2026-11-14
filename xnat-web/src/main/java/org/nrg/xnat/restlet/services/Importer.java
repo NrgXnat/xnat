@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
+import org.nrg.framework.status.StatusMessage;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -34,9 +35,11 @@ import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest;
 import org.nrg.xnat.status.StatusList;
+import org.nrg.xnat.tracking.services.EventTrackingDataService;
 import org.restlet.Context;
 import org.restlet.data.ClientInfo;
 import org.restlet.data.MediaType;
+import org.restlet.data.Reference;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
@@ -47,21 +50,28 @@ import org.restlet.resource.Variant;
 import org.restlet.util.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.util.UriUtils;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Importer extends SecureResource {
     private static final String CRLF = "\r\n";
     private static final String COMMIT = "commit";
     private static final String ACTION = "action";
+    private static final String ASYNC = "async";
     private final Logger logger = LoggerFactory.getLogger(Importer.class);
 
     public Importer(Context context, Request request, Response response) {
@@ -121,6 +131,10 @@ public class Importer extends SecureResource {
     String listenerControl = null;
     boolean httpSessionListener = false;
     boolean async = false; // when importing a previously uploaded file, no need to keep the connection open while we import
+    boolean asyncRequested = false; // async=true: store the file sent in the request, answer with its key and import it in the background
+    CachedUpload cachedUpload = null; // the file named by src or stored for async=true, deleted from the user's cache once the import has run
+    boolean uploadStored = false;
+    boolean importStarted = false;
 
     final Map<String, Object> params = new Hashtable<>();
 
@@ -142,6 +156,9 @@ public class Importer extends SecureResource {
             case HTTP_SESSION_LISTENER:
                 listenerControl = (String) value;
                 httpSessionListener = true;
+                break;
+            case ASYNC:
+                asyncRequested = Boolean.parseBoolean((String) value);
                 break;
             default:
                 params.put(key, value);
@@ -230,6 +247,10 @@ public class Importer extends SecureResource {
                     return;
                 }
 
+                // An inbox import is queued, and returns the path of its status
+                if (ImporterHandlerA.DICOM_INBOX_IMPORTER.equals(handler) && response.size() == 1) {
+                    getResponse().setLocationRef(new Reference(new Reference(XDAT.getSiteConfigPreferences().getSiteUrl()), response.getFirst()).getTargetRef());
+                }
                 returnDefaultRepresentation();
                 return;
 
@@ -238,6 +259,25 @@ public class Importer extends SecureResource {
                 this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Importer is limited to one uploaded resource at a time.");
                 return;
 
+            }
+
+            if (asyncRequested) {
+                if (StringUtils.isBlank(listenerControl)) {
+                    listenerControl = UUID.randomUUID().toString();
+                }
+                httpSessionListener = true;
+                if (!async) {
+                    if (fw.isEmpty()) {
+                        getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "async=true needs a file: send one with the request, or name one in your user cache with src");
+                        return;
+                    }
+                    // The file came in this request: store it in the user's cache, so the import can read it after the
+                    // request has ended.
+                    cachedUpload = storeUpload(user, fw.getFirst());
+                    uploadStored = true;
+                    fw.set(0, new StoredFile(cachedUpload.getFile(), true));
+                    async = true;
+                }
             }
 
             if (handler == null && entity != null) {
@@ -268,12 +308,27 @@ public class Importer extends SecureResource {
             if (httpSessionListener && async &&
                     (importerExecutorService = XDAT.getContextService()
                             .getBeanSafely("threadPoolExecutorFactoryBean", ThreadPoolExecutor.class)) != null) {
+                startTracking(user);
                 String task = prearchive ? "prearchival" : "archival";
-                importerExecutorService.submit(importer);
-                returnString("Submitted for " + task, Status.SUCCESS_OK);
+                try {
+                    importerExecutorService.submit(() -> callInBackground(importer));
+                } catch (RejectedExecutionException e) {
+                    final String message = "XNAT couldn't queue the import. Try again later.";
+                    importer.publish(new StatusMessage(importer, StatusMessage.Status.FAILED, message, true));
+                    getResponse().setStatus(Status.SERVER_ERROR_SERVICE_UNAVAILABLE, message);
+                    return;
+                }
+                importStarted = true;
+                getResponse().setLocationRef(StringUtils.removeEnd(XDAT.getSiteConfigPreferences().getSiteUrl(), "/") + "/xapi/event_tracking/" + UriUtils.encodePathSegment(listenerControl, StandardCharsets.UTF_8));
+                if (asyncRequested) {
+                    returnString(listenerControl, MediaType.TEXT_PLAIN, Status.SUCCESS_OK);
+                } else {
+                    returnString("Submitted for " + task, Status.SUCCESS_OK);
+                }
                 return;
             } else {
-                response = importer.call();
+                importStarted = true;
+                response = callAndDeleteUpload(importer);
             }
 
             if (entity != null && APPLICATION_XMIRC.equals(entity.getMediaType())) {
@@ -288,6 +343,78 @@ public class Importer extends SecureResource {
             respondToException(e, (e.status != null) ? e.status : Status.SERVER_ERROR_INTERNAL);
         } catch (IllegalArgumentException | FileUploadException e) {
             respondToException(e, Status.CLIENT_ERROR_BAD_REQUEST);
+        } finally {
+            // A file stored for async=true whose import never started is of no use: only this request knew where it was.
+            if (uploadStored && !importStarted) {
+                cachedUpload.delete();
+            }
+        }
+    }
+
+    private CachedUpload storeUpload(final UserI user, final FileWriterWrapperI upload) throws ServerException {
+        try {
+            return CachedUpload.store(getUserDataCache().getUserDataCache(user), upload);
+        } catch (Exception e) {
+            throw new ServerException("Couldn't store the uploaded file " + upload.getName() + " for its import", e);
+        }
+    }
+
+    /**
+     * Creates the import's event tracking record as the import is queued, so polling its key finds the import while it
+     * waits to start, instead of a 404. Keys belong to their user, so another user's import may use the same one.
+     */
+    private void startTracking(final UserI user) {
+        try {
+            XDAT.getContextService().getBean(EventTrackingDataService.class).createOrRestartWithKey(listenerControl, user);
+        } catch (IllegalAccessException e) {
+            logger.warn("Couldn't start tracking the import with key {}; it will be tracked once it reports progress", listenerControl, e);
+        }
+    }
+
+    /**
+     * Runs an import queued in the background. A client follows it only through its tracking key, so the import always
+     * ends it. Some importers return without reporting an end, as the DICOM-zip importer does without
+     * {@code action=commit}, once the files are in the prearchive. Their import is reported completed, with the sessions
+     * it returned. An importer that throws without reporting an end has its import reported failed.
+     */
+    private List<String> callInBackground(final ImporterHandlerA importer) throws ClientException, ServerException {
+        final AtomicBoolean ended = new AtomicBoolean();
+        importer.addStatusListener(message -> {
+            if (message.isTerminal()) {
+                ended.set(true);
+            }
+        });
+        try {
+            final List<String> uris = callAndDeleteUpload(importer);
+            if (!ended.get()) {
+                final String destination = uris.isEmpty() ? ""
+                                           : uris.stream().allMatch(uri -> uri.startsWith("/prearchive/")) ? "Prearchive:"
+                                           : uris.stream().allMatch(uri -> uri.startsWith("/archive/")) ? "Archive:" : "";
+                importer.publish(new StatusMessage(importer, StatusMessage.Status.COMPLETED, destination + String.join(";", uris), true));
+            }
+            return uris;
+        } catch (final Throwable e) {
+            logger.error("The import with tracking key {} failed", listenerControl, e);
+            if (!ended.get()) {
+                importer.publish(new StatusMessage(importer, StatusMessage.Status.FAILED, StringUtils.defaultIfBlank(e.getMessage(), e.toString()), true));
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Runs the import, then deletes the file named by {@code src}, or stored for {@code async=true}, from the user's
+     * cache, whether the import succeeded or failed: the import has read it, and nothing else uses it. A failed import,
+     * for example to a project the user can't edit, needs the file uploaded again. Only a request rejected before the
+     * import runs, such as one with a parameter that isn't valid, keeps a {@code src} file.
+     */
+    private List<String> callAndDeleteUpload(final ImporterHandlerA importer) throws ClientException, ServerException {
+        try {
+            return importer.call();
+        } finally {
+            if (cachedUpload != null) {
+                cachedUpload.delete();
+            }
         }
     }
 
@@ -437,10 +564,15 @@ public class Importer extends SecureResource {
         }
 
         File f = org.nrg.xdat.security.helpers.Users.getUserCacheFile(getUser(), (String) map.get("XNAME"), (String) map.get("_REMAINDER"));
+        final Path cache = getUserDataCache().getUserDataCache(getUser());
+        final CachedUpload upload = new CachedUpload(cache, cache.resolve((String) map.get("XNAME")), f.toPath());
 
         if (f.exists()) {
+            cachedUpload = upload;
             return new StoredFile(f, true);
         } else {
+            // Looking the file up creates the folders it would be in, so remove the ones it left empty
+            upload.delete();
             throw new ClientException(Status.CLIENT_ERROR_NOT_FOUND, "Unknown src file.", new Exception());
         }
     }

@@ -245,6 +245,13 @@ abu.FileUploader = function(o){
 	}
 
 	this.cancelUploads = function() {
+		// Cancel the files that haven't started first, since aborting an upload starts the next one
+		$.each(this.waitingForUpload.slice(), function(i, idx) {
+			$('#' + this.elementId + ' #file-upload-form-' + idx).remove();
+			this.fillStatus($('#' + this.elementId + ' #upload-status-div-' + idx), "Canceled", "abort");
+			this.removeFromWaitlist(idx);
+			this.markUploadDone(idx);
+		}.bind(this));
 		$.each(this.xhrs, function(key, xhr) {
 			// for some reason, there's a guid key added to this object
 			if (key.startsWith('idx')) {
@@ -260,7 +267,7 @@ abu.FileUploader = function(o){
 			var cFile = fileA[i];
 			var adj_i = i + start_i;
 			$("#" + this.elementId + " .abu-upload-list").append(
-				'<form id="file-upload-form-' + adj_i + '" action="' + this._currentAction.replace("##FILENAME_REPLACE##",cFile.name) +
+				'<form id="file-upload-form-' + adj_i + '" action="' + this._currentAction.replace("##FILENAME_REPLACE##",cFile.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;')) +
 					 (($("#extractRequestBox").length>0) ? (($("#extractRequestBox").is(':checked')) ? "&extract=true" : "&extract=false") : "") +
 					 (($("#emailBox").length>0) ? (($("#emailBox").is(':checked')) ? "&sendemail=true" : "&sendemail=false") : "") +
 					 (($("#verboseBox").length>0) ? (($("#verboseBox").is(':checked')) ? "&verbose=true" : "&verbose=false") : "") +
@@ -269,7 +276,7 @@ abu.FileUploader = function(o){
 					 (($("#formatBox").length>0) ? (($("#formatBox").val().length>0) ? "&format="+$("#formatBox").val() : "") : "") +
 					 '" method="POST" enctype="multipart/form-data">' +
 				'</form>' +
-				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file abu-upload-filename">' + cFile.name + '</span><span class="abu-upload-file">' +
+				'<div id="file-info-div-' + adj_i + '"><span class="abu-upload-file abu-upload-filename">' + escapeHtml(cFile.name) + '</span><span class="abu-upload-file">' +
 					" (" + ((typeof cFile.type !== 'undefined' && cFile.type !== '') ? cFile.type + ", " : '') +
 					 this.bytesToSize(cFile.size) + ") </span>" +
 					'<div class="abu-progress">' +
@@ -343,6 +350,7 @@ abu.FileUploader = function(o){
 		var bar = $(infoSelector).find(".abu-bar");
 		var percent = $(infoSelector).find(".abu-percent");
 		var status = $(infoSelector).find(".abu-status");
+		var cancelDiv = $(infoSelector).find(".abu-cancel-div");
 		let filename = formData.get("file"+idx).name;
 		$(formSelector).on("submit",function(e, uploader) {
 			uploader.removeFromWaitlist(idx);
@@ -354,6 +362,8 @@ abu.FileUploader = function(o){
 						status.html("<span class='abu-upload-fail'>Filename contains invalid characters ('%','#','[]', and '{}' are not allowed). Please rename file and try again.</a>");
 						$(infoSelector).find(".abu-progress").css("display","none");
 						status.css("display","inline-block");
+						// Aborting here skips the error handler, which would otherwise mark the failure
+						uploader.anyFailedUploads = true;
 						arr.abort();
 						this.complete(false);
 						return false;
@@ -423,6 +433,12 @@ abu.FileUploader = function(o){
 					var percentVal = percentComplete + '%';
 					bar.width(percentVal);
 					percent.html(percentComplete === 100 ? 'Saving...' : percentVal);
+					if (position >= total) {
+						// Once the whole file is sent, aborting the request doesn't stop XNAT from keeping it, so Cancel
+						// leaves this upload to finish and show its result
+						delete uploader.xhrs['idx' + idx];
+						cancelDiv.remove();
+					}
 				},
 				error: function(xhr, textStatus, result) {
 					let err;
@@ -460,6 +476,9 @@ abu.FileUploader = function(o){
 								((this.isOverwrite) ? ' (Existing file overwritten) ' : '') + '</span>');
 						}
 						$("#" + uploader.elementId + " #xmodal-abu-done-button-text").addClass("abu-done-button-file-uploaded");
+						if (typeof uploader._options.uploadSucceededFunction === 'function') {
+							uploader._options.uploadSucceededFunction(result);
+						}
 					} else {
 			 			status.html('<a href="javascript:abu.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Duplicate file and overwrite=false.  Not uploaded.</a>');
 						uploader.uploadsStarted--; // We didn't upload anything
@@ -490,7 +509,9 @@ abu.FileUploader = function(o){
 			const availableSpaces = this.MAX_CONCURRENT_UPLOADS - this.uploadsInProgress;
 			for (let i = 0; i < availableSpaces; i++) {
 				const target = this.waitingForUpload[i];
-				$("#" + this.elementId + " #file-upload-form-" + target).trigger("submit",this);
+				// Every image uploader dialog has the same element id, so look only in this uploader's own element: an
+				// upload left running after its dialog closed mustn't start a file in the dialog open now
+				$(this._options.element).find("#file-upload-form-" + target).trigger("submit",this);
 			}
 		}
 	}.bind(this)
@@ -518,7 +539,7 @@ abu.FileUploader = function(o){
 
 	this.markUploadDone = function(idx) {
 		delete this.xhrs['idx' + idx];
-		$('#' + this.elementId + ' #upload-cancel-div-' + idx).remove();
+		$(this._options.element).find('#upload-cancel-div-' + idx).remove();
 	}.bind(this);
 
 	this.completeUpload = function(idx, counted) {

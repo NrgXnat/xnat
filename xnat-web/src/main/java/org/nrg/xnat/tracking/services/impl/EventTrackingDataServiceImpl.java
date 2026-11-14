@@ -10,9 +10,11 @@
 package org.nrg.xnat.tracking.services.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.Striped;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xft.XFTItem;
@@ -24,6 +26,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.event.model.BulkLaunchEvent;
 import org.nrg.xnat.event.model.BulkLaunchLog;
 import org.nrg.xnat.preferences.AsyncOperationsPreferences;
+import org.nrg.xnat.tracking.entities.EventTrackingData;
 import org.nrg.xnat.tracking.entities.EventTrackingDataPojo;
 import org.nrg.xnat.tracking.model.TrackableEvent;
 import org.nrg.xnat.tracking.services.EventTrackingDataHibernateService;
@@ -35,6 +38,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 
 import static org.nrg.xnat.tracking.utils.TrackingUtils.BULK_TRACKING_KEY_PREFIX;
@@ -109,6 +113,16 @@ public class EventTrackingDataServiceImpl implements EventTrackingDataService {
      * {@inheritDoc}
      */
     @Override
+    public void recordBulkLaunch(final String key, final UserI user, final int targets, final int steps) throws IllegalAccessException {
+        final EventTrackingData eventTrackingData = eventTrackingDataHibernateService.createOrRestartWithKey(key, user.getID());
+        eventTrackingData.setPayload(objectMapper.createObjectNode().put(TOTAL, targets).put(STEPS, steps).toString());
+        eventTrackingDataHibernateService.update(eventTrackingData);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void cleanupOldEntries() {
         // Remove entries > asyncOperationsPreferences.getEventTrackingDataCleanupTtl() days ago
         Calendar cal = Calendar.getInstance();
@@ -131,6 +145,10 @@ public class EventTrackingDataServiceImpl implements EventTrackingDataService {
     private BulkLaunchLog convertWorkflowsToBulkLaunchLog(final String key, final UserI user) {
         CriteriaCollection cc = new CriteriaCollection("AND");
         BulkLaunchLog bulkLaunchLog = new BulkLaunchLog();
+        // The size recorded at launch, if the plugin recorded one. Its steps are set before the workflows are added,
+        // since a target counts as succeeded at its last step.
+        final Optional<JsonNode> size = getRecordedSize(key, user);
+        size.ifPresent(recorded -> bulkLaunchLog.setSteps(recorded.path(STEPS).asInt(1)));
         cc.addClause("wrk:workflowData.jobid", key);
         try {
             ItemCollection items = ItemSearch.GetItems(cc, user, false);
@@ -142,15 +160,29 @@ public class EventTrackingDataServiceImpl implements EventTrackingDataService {
                 bulkLaunchLog.addOrUpdateWorkflow(wrkFlow);
                 ++totalWorkflows;
             }
-            bulkLaunchLog.setTotal(totalWorkflows);
+            bulkLaunchLog.setTotal(size.isPresent() ? size.get().path(TOTAL).asInt(totalWorkflows) : totalWorkflows);
         } catch (Exception e) {
             log.error("Querying for workflows by jobid encountered error", e);
         }
         return bulkLaunchLog;
     }
 
+    private Optional<JsonNode> getRecordedSize(final String key, final UserI user) {
+        try {
+            final String payload = eventTrackingDataHibernateService.findByKey(key, user.getID()).getPayload();
+            return StringUtils.isBlank(payload) ? Optional.empty() : Optional.of(objectMapper.readTree(payload));
+        } catch (NotFoundException e) {
+            // Launched by a plugin that doesn't record the size: count the workflows saved so far
+            return Optional.empty();
+        } catch (JsonProcessingException e) {
+            log.warn("Couldn't read the recorded size of bulk launch {}", key, e);
+            return Optional.empty();
+        }
+    }
 
 
+    private static final String TOTAL = "total";
+    private static final String STEPS = "steps";
     private static final String BULK_JOB_ID = "BULK_JOB_ID";
     private static final String BULK_WORKFLOWS_QUERY = "select * from wrk_workflowdata where jobid=:" + BULK_JOB_ID;
 }

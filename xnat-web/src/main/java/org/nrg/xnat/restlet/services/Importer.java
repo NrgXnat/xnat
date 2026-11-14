@@ -197,7 +197,7 @@ public class Importer extends SecureResource {
                 // If the overwrite flag has been set by the user, make sure it is a valid option
                 if (params.containsKey("overwrite")) {
                     String ow = (String) params.get("overwrite");
-                    if (!PrearcUtils.DELETE.equalsIgnoreCase(ow) || !PrearcUtils.APPEND.equalsIgnoreCase(ow)) {
+                    if (!PrearcUtils.DELETE.equalsIgnoreCase(ow) && !PrearcUtils.APPEND.equalsIgnoreCase(ow)) {
                         this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Overwrite flag was not set to a valid option. ('append' or 'delete')");
                         return;
                     }

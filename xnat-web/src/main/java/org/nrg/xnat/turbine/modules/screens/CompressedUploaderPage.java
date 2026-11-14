@@ -22,7 +22,7 @@ public class CompressedUploaderPage extends SecureScreen {
 
 	@Override
 	protected void doBuildTemplate(RunData data, Context context) throws Exception {
-		final SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_hhmmss");
+		final SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss");
 		context.put("uploadID", formatter.format(Calendar.getInstance().getTime()));
 		final ArcArchivespecification arc = ArcSpecManager.GetInstance();
 		context.put("arc", arc);

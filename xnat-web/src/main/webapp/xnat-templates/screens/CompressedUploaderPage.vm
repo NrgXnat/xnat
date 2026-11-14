@@ -13,17 +13,10 @@
     }
 
     function hiddenItemsByHandler(handler) {
-        if (handler === "DICOM-zip") {
-            document.getElementById("ignoreUnparsableTr").hidden = false;
-            document.getElementById("custom-labeling").hidden = false;
-            document.getElementById("subject-labeling").hidden = false;
-            document.getElementById("session-labeling").hidden = false;
-        } else {
-            document.getElementById("ignoreUnparsableTr").hidden = true;
-            document.getElementById("custom-labeling").hidden = true;
-            document.getElementById("subject-labeling").hidden = true;
-            document.getElementById("session-labeling").hidden = true;
-        }
+        var hide = handler !== "DICOM-zip";
+        document.getElementById("ignoreUnparsableTr").hidden = hide;
+        // An existing session's page has no labeling rows
+        $('#custom-labeling, #subject-labeling, #session-labeling').prop('hidden', hide);
     }
 
     function disableForm(theform) {
@@ -242,9 +235,6 @@
 #if(!$sectionTitle)
     #set($sectionTitle = "<h2>XNAT Compressed Uploader</h2>")
 #end
-#if($session)
-    #set($quarantineMsg=" and specify whether the resulting session should go into a quarantine state")
-#end
 
 <div>
     $sectionTitle
@@ -255,7 +245,7 @@
         which allows you to review the details and match the data to the proper
         $displayManager.getSingularDisplayNameForSubject().toLowerCase() &amp;
         $displayManager.getSingularDisplayNameForImageSession().toLowerCase(). If you are confident the metadata will
-        map properly, you may directly 'Archive' the files$!quarantineMsg.
+        map properly, you may directly 'Archive' the files.
     </p>
     <form id="uploadFORM" class="noHide" enctype="multipart/form-data" method="POST"
           action="">
@@ -287,6 +277,8 @@
                     </select>
                 </td>
             </tr>
+            ## An existing session's scans go to that session, so its labels aren't asked for
+            #if(!$session)
             <tr id="custom-labeling">
                 <th align="left">Custom Labeling <i class="fa fa-question-circle info-labeling-options" style="color: #084fab; cursor: pointer"></i></th>
                 <td>
@@ -306,6 +298,7 @@
                     <input type="text" name="session" disabled />
                 </td>
             </tr>
+            #end
             <tr id="ignoreUnparsableTr">
                 <th>Ignore unparsable files</th>
                 <td>

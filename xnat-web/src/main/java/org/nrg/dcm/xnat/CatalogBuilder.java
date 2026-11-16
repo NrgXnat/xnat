@@ -62,8 +62,8 @@ public class CatalogBuilder implements Callable<Map<File, AbstractMap.SimpleEntr
     public static final String SCANS_DIR                  = "SCANS";
 
     private static final Map<?, String> EMPTY_CONSTRAINTS                     = new HashMap<>();
-    private static final String         XNAT_GENERATED_SCAN_PARENT_PATH_REGEX = Paths.get(".*", SCANS_DIR, "[^" + File.separator + "]+").toString();
-    private static final String         XNAT_GENERATED_SCAN_PATH_REGEX        = Paths.get(XNAT_GENERATED_SCAN_PARENT_PATH_REGEX, RESOURCE_LABEL_DICOM).toString();
+    private static final String         XNAT_GENERATED_SCAN_PARENT_PATH_REGEX = ".*[\\\\/]SCANS[\\\\/][^\\\\/]+";
+    private static final String         XNAT_GENERATED_SCAN_PATH_REGEX        = XNAT_GENERATED_SCAN_PARENT_PATH_REGEX + "[\\\\/]" + RESOURCE_LABEL_DICOM;
     private static final Object         MUTEX                                 = new Object();
 
     private final Map<Object, String> constraints = new LinkedHashMap<>();

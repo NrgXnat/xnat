@@ -44,7 +44,11 @@ public class TestEchoStatement {
                 final BaseScriptApplicator sa = BaseScriptApplicator.getInstance( bytes("echo (0008,0080)"));
                 final DicomObjectI result_dobj = sa.apply(src_dobj).getDicomObject();
 
-                assertEquals("Some Institution\n", baos.toString());
+                if (System.lineSeparator().equals("\n")) {
+                    assertEquals("Some Institution\n", baos.toString());
+                } else {
+                    assertEquals("Some Institution\r\n", baos.toString());
+                }
                 System.setOut(out);
             }
 
@@ -72,7 +76,11 @@ public class TestEchoStatement {
                 final DicomObjectI result_dobj = sa.apply(src_dobj).getDicomObject();
 
                 // There may be other unflushed stuff in std out.
-                assertTrue(baos.toString().endsWith( "Some Institution for the win.\n") );
+                if (System.lineSeparator().equals("\n")) {
+                    assertTrue(baos.toString().endsWith( "Some Institution for the win.\n") );
+                } else {
+                    assertTrue(baos.toString().endsWith( "Some Institution for the win.\r\n") );
+                }
                 System.setOut( out);
             }
 

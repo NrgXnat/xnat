@@ -6,6 +6,9 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.junit.Assert;
 import org.junit.Test;
+import org.nrg.dicom.mizer.TestUtils.TestSeqTag;
+import org.nrg.dicom.mizer.TestUtils.TestSeqTagVM;
+import org.nrg.dicom.mizer.TestUtils.TestTag;
 import org.nrg.dicom.mizer.exceptions.MizerException;
 import org.nrg.dicom.mizer.tags.TagPath;
 import org.nrg.dicom.mizer.tags.TagPublic;
@@ -1176,7 +1179,11 @@ public class DicomObjectFactoryTests {
             DicomObjectI dobj = DicomObjectFactory.newInstance();
             put(dobj, AS_VM1);
             dobj.dump(ps);
-            assertEquals(22, file.length());
+            if (System.lineSeparator().equals("\n")) {
+                assertEquals(22, file.length());
+            } else {
+                assertEquals(23, file.length());
+            }
         }
     }
 

@@ -36,6 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -261,7 +262,7 @@ public class FileUtilsTest {
     @Test
     public void testClearExecutable() throws Exception {
         final File file = createFile(src, f[0], c[0]);
-        Assume.assumeTrue("test requires a file system that supports the executable permission bit", file.setExecutable(true, false));
+        Assume.assumeTrue("test requires a file system that supports the executable permission bit", Files.getFileStore(file.toPath()).supportsFileAttributeView("posix"));
         Assert.assertTrue(file.canExecute());
 
         FileUtils.clearExecutable(file);

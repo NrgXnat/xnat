@@ -8,6 +8,8 @@ import org.dcm4che3.data.VR;
 import org.dcm4che3.imageio.codec.Transcoder;
 import org.dcm4che3.io.DicomInputStream;
 import org.dcm4che3.io.DicomOutputStream;
+import org.dcm4che3.util.ByteUtils;
+import org.dcm4che3.util.TagUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -391,6 +393,61 @@ public class ReceivedDicomObjectTest {
     }
 
     /**
+     * A C-STORE dataset is encoded in the syntax the association negotiated, whatever its first element.
+     * Some archives send datasets that still carry a file meta element, here the Source Application
+     * Entity Title. dcm4che, left to guess, takes a stream that starts in group 0002 for a file with no
+     * preamble, finds no transfer syntax in that group, and reads the rest as Explicit VR Little Endian.
+     */
+    @Test
+    public void aNegotiatedDatasetThatStartsWithAFileMetaElementIsReadInTheNegotiatedSyntax() throws Exception {
+        final Attributes original = readWhole(MR_FIXTURE);
+        for (final String transferSyntax : new String[] {
+                UID.ImplicitVRLittleEndian, UID.ExplicitVRLittleEndian, UID.ExplicitVRBigEndian}) {
+            final File bare = datasetOnlyStartingWithSourceAeTitle(MR_FIXTURE, transferSyntax);
+            for (final boolean whole : new boolean[] {false, true}) {
+                final String what   = transferSyntax + (whole ? ", whole read" : ", partial read");
+                final File   output = new File(folder.getRoot(), "leading-meta-out-" + transferSyntax + (whole ? "-whole" : "-partial") + ".dcm");
+                try (ReceivedDicomObject received = ReceivedDicomObject.read(open(bare), transferSyntax, ORDINARY_LAST_TAG, whole)) {
+                    assertEquals(what, original.getString(Tag.SOPInstanceUID), received.getDataset().getString(Tag.SOPInstanceUID));
+                    ReceivedDicomObject.stampSourceAeTitle(received.getDataset(), AE_TITLE);
+                    received.write(received.getDataset(), output, "test");
+                }
+                try (DicomInputStream in = new DicomInputStream(output)) {
+                    final Attributes fmi = in.readFileMetaInformation();
+                    assertEquals(what + ": the written object must keep the negotiated syntax",
+                                 transferSyntax, fmi.getString(Tag.TransferSyntaxUID));
+                    assertEquals(what + ": the sender's AE title replaces the one the dataset carried",
+                                 AE_TITLE, fmi.getString(Tag.SourceApplicationEntityTitle));
+                    final Attributes dataset = in.readDataset();
+                    for (final int tag : dataset.tags()) {
+                        assertNotEquals(what + ": no file meta element may stay in the dataset", 0x0002, TagUtils.groupNumber(tag));
+                    }
+                    assertEquals(what, original.getString(Tag.SeriesDescription), dataset.getString(Tag.SeriesDescription));
+                }
+                assertArrayEquals(what + ": pixels must survive the round trip", littleEndianPixelData(MR_FIXTURE), littleEndianPixelData(output));
+            }
+        }
+    }
+
+    /** A Part 10 file names its own syntax, and the read follows the file whatever the caller negotiated. */
+    @Test
+    public void aPart10FileIsReadInItsOwnSyntaxWhateverTheCallerNegotiated() throws Exception {
+        final String own;
+        try (DicomInputStream in = new DicomInputStream(MR_FIXTURE)) {
+            own = in.readFileMetaInformation().getString(Tag.TransferSyntaxUID);
+        }
+        final String other = UID.ImplicitVRLittleEndian.equals(own) ? UID.ExplicitVRLittleEndian : UID.ImplicitVRLittleEndian;
+        for (final boolean whole : new boolean[] {false, true}) {
+            final File written = write(MR_FIXTURE, other, whole, "own-syntax-" + (whole ? "whole" : "partial") + ".dcm");
+            try (DicomInputStream in = new DicomInputStream(written)) {
+                assertEquals(own, in.readFileMetaInformation().getString(Tag.TransferSyntaxUID));
+                assertEquals(readWhole(MR_FIXTURE).getString(Tag.SOPInstanceUID), in.readDataset().getString(Tag.SOPInstanceUID));
+            }
+            assertArrayEquals(pixelData(MR_FIXTURE), pixelData(written));
+        }
+    }
+
+    /**
      * A stream that breaks partway through the pixel data -- a dropped association, a corrupt zip
      * entry -- must not leave a truncated instance for the session build to skip, nor truncate the copy
      * a re-send of the same instance is written over.
@@ -625,6 +682,32 @@ public class ReceivedDicomObjectTest {
             out.writeDataset(null, in.readDataset());
         }
         return bare;
+    }
+
+    /** The dataset alone in <b>transferSyntax</b>, as a C-STORE carries it, but led by a Source Application Entity Title. */
+    private File datasetOnlyStartingWithSourceAeTitle(final File source, final String transferSyntax) throws IOException {
+        final File bare = folder.newFile("leading-meta-" + transferSyntax + ".dcm");
+        try (DicomInputStream in = new DicomInputStream(source);
+             DicomOutputStream out = new DicomOutputStream(new FileOutputStream(bare), transferSyntax)) {
+            in.readFileMetaInformation();
+            final Attributes dataset = in.readDataset();
+            dataset.setString(Tag.SourceApplicationEntityTitle, VR.AE, "ARCHIVE");
+            out.writeDataset(null, dataset);
+        }
+        final byte[] start = Arrays.copyOf(Files.readAllBytes(bare.toPath()), 2);
+        final int    group = UID.ExplicitVRBigEndian.equals(transferSyntax) ? (start[0] << 8 | start[1]) : (start[1] << 8 | start[0]);
+        assertEquals("the fixture must start with a file meta element", 0x0002, group);
+        return bare;
+    }
+
+    /** The pixel data's bytes in little-endian order, so instances in either byte order compare. */
+    private static byte[] littleEndianPixelData(final File file) throws IOException {
+        final Attributes dataset = readWhole(file);
+        final byte[]     pixels  = dataset.getBytes(Tag.PixelData);
+        if (pixels != null && dataset.bigEndian()) {
+            ByteUtils.swapShorts(pixels, 0, pixels.length);
+        }
+        return pixels == null ? new byte[0] : pixels;
     }
 
     private MizerContext context(final String script) throws Exception {

@@ -6,6 +6,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.io.BulkDataDescriptor;
 import org.dcm4che3.io.DicomInputStream;
+import org.dcm4che3.util.StreamUtils;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -96,11 +97,45 @@ public final class ResumableDicomInputStream extends DicomInputStream {
      *                     and cannot be created.
      */
     public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in) throws IOException {
-        final ResumableDicomInputStream dis = new ResumableDicomInputStream(in);
+        return openWithBulkDataOffHeap(in, null);
+    }
+
+    /**
+     * As {@link #openWithBulkDataOffHeap(BufferedInputStream)}, for a stream whose transfer syntax the caller
+     * may know.
+     *
+     * @param in                       the object's bytes.
+     * @param negotiatedTransferSyntax the syntax the caller negotiated for a stream without file meta
+     *                                 information, such as a C-STORE's, or null to have dcm4che guess it.
+     *                                 Guessing takes a dataset that starts in group 0002 for file meta
+     *                                 information. A stream that starts with a preamble reads its own file
+     *                                 meta information either way.
+     *
+     * @return a resumable stream that references bulk data rather than loading it.
+     *
+     * @throws IOException if the stream cannot be opened, or the configured scratch directory does not exist
+     *                     and cannot be created.
+     */
+    public static ResumableDicomInputStream openWithBulkDataOffHeap(final BufferedInputStream in, final String negotiatedTransferSyntax) throws IOException {
+        final ResumableDicomInputStream dis = negotiatedTransferSyntax != null && !hasPreamble(in)
+                                              ? new ResumableDicomInputStream(in, negotiatedTransferSyntax)
+                                              : new ResumableDicomInputStream(in);
         dis.setIncludeBulkData(IncludeBulkData.URI);
         dis.setBulkDataDescriptor(PIXEL_DATA_OF_ANY_FORM);
         dis.setBulkDataDirectory(scratchDirectory());
         return dis;
+    }
+
+    /** Whether <b>in</b> starts with a Part 10 file's 128-byte preamble and "DICM", leaving it where it was. */
+    private static boolean hasPreamble(final BufferedInputStream in) throws IOException {
+        final byte[] start = new byte[132];
+        in.mark(start.length);
+        try {
+            return StreamUtils.readAvailable(in, start, 0, start.length) == start.length
+                   && start[128] == 'D' && start[129] == 'I' && start[130] == 'C' && start[131] == 'M';
+        } finally {
+            in.reset();
+        }
     }
 
     /**

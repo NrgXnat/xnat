@@ -153,7 +153,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
         // be left on any of the wrappers and every one of them has to be released.
         final List<DicomObjectI> processedObjects = new ArrayList<>();
         try (final BufferedInputStream bis = new BufferedInputStream(_fileWriter.getInputStream());
-             final DicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis)) {
+             final DicomInputStream dis = ResumableDicomInputStream.openWithBulkDataOffHeap(bis, _transferSyntax)) {
             Attributes fmi = dis.readFileMetaInformation();
             final String transferSyntaxUID = null == _transferSyntax ? dis.getTransferSyntax() : _transferSyntax;
             Attributes dataset = new Attributes();

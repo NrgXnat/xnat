@@ -13,6 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -20,6 +21,7 @@ import java.util.Comparator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assume;
 
 /**
  * Verifies that the log-download endpoint confines the requested {@code path} to the XNAT logs directory,
@@ -107,11 +109,15 @@ public class LoggingApiTest {
 
     @Test
     public void rejectsSymlinkInsideLogsPointingOutside() throws IOException {
-        // A symlink located inside the logs directory but pointing outside it must not allow escape.
-        final Path link = Files.createSymbolicLink(logs.resolve("escape"), outside);
-        assertThrows(IllegalArgumentException.class,
-                     () -> LoggingApi.resolveLogPathWithinLogsFolder(logs, link.toString()));
-        assertThrows(IllegalArgumentException.class,
-                     () -> LoggingApi.resolveLogPathWithinLogsFolder(logs, link.resolve("secret.txt").toString()));
+        // A symlink located inside the logs directory but pointing outside it must not allow escape
+        try {
+            final Path link = Files.createSymbolicLink(logs.resolve("escape"), outside);
+            assertThrows(IllegalArgumentException.class,
+                () -> LoggingApi.resolveLogPathWithinLogsFolder(logs, link.toString()));
+            assertThrows(IllegalArgumentException.class,
+                () -> LoggingApi.resolveLogPathWithinLogsFolder(logs, link.resolve("secret.txt").toString()));
+        } catch(FileSystemException fse) {
+            Assume.assumeNoException("No permission to create symlinks on this file system; if this is Windows, have you turned on Developer Mode?", fse);
+        }
     }
 }

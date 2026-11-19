@@ -47,6 +47,22 @@ function getUrlHashValue(start, end){
     return part;
 }
 
+// the topmost window showing a page from this site: window.top, unless a page
+// on another origin frames this site (a portal), whose window can't be used
+function getTopWindow(){
+    var win = window;
+    while (win !== win.top) {
+        try {
+            if (!win.parent.document) { break }
+        }
+        catch (e) {
+            break;
+        }
+        win = win.parent;
+    }
+    return win;
+}
+
 window.debug = window.debug ||
     getQueryStringValue('debug') ||
     window.jsdebug ||

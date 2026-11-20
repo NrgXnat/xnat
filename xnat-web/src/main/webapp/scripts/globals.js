@@ -53,7 +53,7 @@ function getTopWindow(){
     var win = window;
     while (win !== win.top) {
         try {
-            if (!win.parent.document || !win.parent.XNAT) { break }
+            if (!win.parent.document || typeof win.parent.getTopWindow !== 'function') { break }
         }
         catch (e) {
             break;

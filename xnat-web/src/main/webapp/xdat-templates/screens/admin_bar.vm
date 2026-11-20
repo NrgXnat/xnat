@@ -137,7 +137,7 @@
                 footer: false,
                 onClose: function(){
                     xmodal.loading.open('#wait');
-                    window.top.location.reload(true);
+                    getTopWindow().location.reload(true);
                 }
             }, opts||{}));
         }

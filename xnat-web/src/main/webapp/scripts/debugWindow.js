@@ -8,10 +8,10 @@
  * Released under the Simplified BSD.
  */
 function writeConsole(content) {
- if(top.consoleRef){
+ if(getTopWindow().consoleRef){
  	
  }else{
- 	top.consoleRef=window.open('','myconsole',
+ 	getTopWindow().consoleRef=window.open('','myconsole',
   'width=350,height=250'
    +',menubar=0'
    +',toolbar=1'
@@ -19,6 +19,6 @@ function writeConsole(content) {
    +',scrollbars=1'
    +',resizable=1');
  }
- top.consoleRef.document.writeln(content);
+ getTopWindow().consoleRef.document.writeln(content);
  
 }

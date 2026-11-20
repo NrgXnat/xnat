@@ -1144,7 +1144,7 @@ var XNAT = getObject(XNAT);
                                     e.preventDefault();
                                     var modalId = $(this).closest('div.xnat-dialog').attr('data-dialog');
                                     XNAT.dialog.getDialog(modalId).close();
-                                    window.top.usernameForUserThatIsCurrentlyBeingEdited = data.username;
+                                    getTopWindow().usernameForUserThatIsCurrentlyBeingEdited = data.username;
                                     userProjectsAndSecurity(e, data.username);
                                 }
                             }
@@ -1204,7 +1204,7 @@ var XNAT = getObject(XNAT);
                 $(this).data('username') ||
                 $(this).closest('tr').data('username') ||
                 (this.innerText || '').trim();
-        window.top.usernameForUserThatIsCurrentlyBeingEdited = username;
+        getTopWindow().usernameForUserThatIsCurrentlyBeingEdited = username;
         getUserData(username).done(function(data){
             getUserRoles(username).done(function(roles){
                 data.roles = roles;
@@ -1267,8 +1267,8 @@ var XNAT = getObject(XNAT);
                 XNAT.dialog.close(XNAT.dialog.topUID, true);
             },
             onClose: function(){
-                var editedUser = window.top.usernameForUserThatIsCurrentlyBeingEdited;
-                if (!window.top.XNAT.page.userAdminPage) {
+                var editedUser = getTopWindow().usernameForUserThatIsCurrentlyBeingEdited;
+                if (!getTopWindow().XNAT.page.userAdminPage) {
                     return false;
                 }
                 if (editedUser){

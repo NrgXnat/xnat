@@ -249,10 +249,20 @@ public class ThreadAndProcessFileLock {
     private File getLockFileForFile(File file) throws IOException {
         final String filePath = file.getCanonicalPath();
         Path path;
+        String transformedFilePath = filePath.replace(File.separator, "-");
         if (filePath.length() > 255) {
             path = Paths.get(getCachePath(),"file-locks", LOCKFILE_PREFIX.concat( DigestUtils.md5Hex(filePath)));
         } else {
-            path = Paths.get(getCachePath(), "file-locks", LOCKFILE_PREFIX.concat( filePath.replace("/", "-")));
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win")) {
+                StringBuilder sb = new StringBuilder(transformedFilePath);
+                sb.deleteCharAt(transformedFilePath.indexOf(":"));
+                transformedFilePath = "-" + sb.toString();
+            } else {
+                transformedFilePath = filePath.replace(File.separator, "-");
+            }
+
+            path = Paths.get(getCachePath(), "file-locks", LOCKFILE_PREFIX.concat(transformedFilePath));
         }
         return path.toFile();
     }

@@ -1,11 +1,13 @@
 package org.nrg.xnat.helpers.merge.anonymize;
 
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.nrg.dicom.mizer.service.StagingDirectoryResolver;
 
 import java.io.File;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -78,7 +80,11 @@ public class SameVolumeStagingDirectoryResolverTest {
     public void recognisesARootConfiguredThroughASymlink() throws Exception {
         resolver();
         final Path link = folder.getRoot().toPath().resolve("archive-link");
-        Files.createSymbolicLink(link, archive.toPath());
+        try {
+            Files.createSymbolicLink(link, archive.toPath());
+        } catch(FileSystemException fse) {
+            Assume.assumeNoException("No permission to create symlinks on this file system; if this is Windows, have you turned on Developer Mode?", fse);
+        }
         final SameVolumeStagingDirectoryResolver throughLink = new SameVolumeStagingDirectoryResolver(
                 () -> Arrays.asList(link.toString()), fallback);
         // The file is addressed through the real directory, the root through the link.

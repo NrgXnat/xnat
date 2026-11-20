@@ -320,7 +320,17 @@ public class ThreadAndProcessFileLock {
             // Try for both the thread lock and the file lock
             try {
                 if (threadLock.tryLock(250L, TimeUnit.MILLISECONDS)) {
-                    if (tryFileLock()) {
+                    boolean locked = false;
+                    try {
+                        locked = tryFileLock();
+                    } catch (IOException | RuntimeException | Error e) {
+                        // The thread lock is shared by every accessor of this file in this JVM. If it isn't released
+                        // here, the caller never gets to unlock() and every other accessor waits it out and times out.
+                        threadLock.unlock();
+                        closeQuietly();
+                        throw e;
+                    }
+                    if (locked) {
                         return;
                     }
                     threadLock.unlock();
@@ -333,6 +343,14 @@ public class ThreadAndProcessFileLock {
         dummyRAF.close();
         throw new IOException("Timed out after " + describe(timeout, units) + " waiting for the " + (readOnly ? "read" : "write")
                               + " lock on " + file + "; another thread or process holds it");
+    }
+
+    private void closeQuietly() {
+        try {
+            dummyRAF.close();
+        } catch (IOException e) {
+            log.debug("Couldn't close the lock file {}", dummyFile, e);
+        }
     }
 
     /** The wait as the caller gave it: "2 minutes", "1 second". */

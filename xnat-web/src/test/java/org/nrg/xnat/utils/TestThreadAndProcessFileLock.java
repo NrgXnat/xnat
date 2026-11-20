@@ -19,6 +19,8 @@ import org.nrg.xnat.junit.ConcurrentJunitRunner;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -226,6 +228,33 @@ public class TestThreadAndProcessFileLock {
         } finally {
             other.shutdownNow();
             writer.unlock();
+            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
+        }
+    }
+
+    @Test
+    public void aFileLockErrorReleasesTheThreadLockForOtherThreads() throws Exception {
+        final File file = new File(TMPDIR, "aFileLockError_" + UUID.randomUUID() + ".xml");
+        final ThreadAndProcessFileLock failing = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, false);
+        final ThreadAndProcessFileLock waiting = ThreadAndProcessFileLock.getThreadAndProcessFileLock(file, false);
+        final ExecutorService other = Executors.newSingleThreadExecutor();
+        try {
+            // A closed channel makes the file lock throw, as a stale NFS file handle does
+            final Field channel = ThreadAndProcessFileLock.class.getDeclaredField("channel");
+            channel.setAccessible(true);
+            ((FileChannel) channel.get(failing)).close();
+            assertThrows(ClosedChannelException.class, () -> failing.tryLock(1L, TimeUnit.SECONDS));
+
+            // The write lock is reentrant, so only another thread shows whether it was released
+            final Future<?> write = other.submit(() -> {
+                waiting.tryLock(5L, TimeUnit.SECONDS);
+                waiting.unlock();
+                return null;
+            });
+            write.get(30L, TimeUnit.SECONDS);
+        } finally {
+            other.shutdownNow();
+            ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
             ThreadAndProcessFileLock.removeThreadAndProcessFileLock(file);
         }
     }

@@ -514,7 +514,7 @@ public class DefaultCatalogService implements CatalogService {
         ResourceData resourceData = getResourceDataFromUri(parentUri);
         File         parentDir    = resourceData.getItem().getExpectedCurrentDirectory();
         Files.createDirectories(parentDir.toPath());
-        File lockFile = new File(parentDir.toString(), ".resourcecheck" + label);
+        File lockFile = getResourceCheckLockFile(resourceData.getXnatUri(), parentDir, label);
         // Get the lock outside the try so we don't release a reference we never obtained
         final ThreadAndProcessFileLock fl = ThreadAndProcessFileLock.getThreadAndProcessFileLock(lockFile, false);
         try {
@@ -544,6 +544,23 @@ public class DefaultCatalogService implements CatalogService {
         } finally {
             ThreadAndProcessFileLock.removeThreadAndProcessFileLock(lockFile);
         }
+    }
+
+    /**
+     * The lock that stops two callers creating the same resource on the same item. It is keyed on the item that
+     * will own the resource. Scans and reconstructions are secured by their session, so keying them on the session
+     * directory made every scan in a session wait on one lock, and many outputs finishing on one session at once
+     * timed out waiting for it. The lock file is only a key and is never created.
+     */
+    static File getResourceCheckLockFile(final URIManager.ArchiveItemURI uri, final File parentDir, final String label) {
+        final String name = ".resourcecheck" + label;
+        if (uri instanceof ScanURII scanUri) {
+            return parentDir.toPath().resolve(Path.of("SCANS", scanUri.getScan().getId(), name)).toFile();
+        }
+        if (uri instanceof ReconURII reconUri) {
+            return parentDir.toPath().resolve(Path.of("ASSESSORS", "PROCESSED", reconUri.getRecon().getId(), name)).toFile();
+        }
+        return new File(parentDir, name);
     }
 
     /**

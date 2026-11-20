@@ -177,7 +177,7 @@ var XNAT = getObject(XNAT);
         }
 
         // add version to title attribute of XNAT logos
-        if (window.top.loggedIn !== undef && window.top.loggedIn === true) {
+        if (getTopWindow().loggedIn !== undef && getTopWindow().loggedIn === true) {
 
             XNAT.cookie.set('SESSION_ACTIVE', 'true');
 

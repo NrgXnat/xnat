@@ -136,7 +136,7 @@ $page.setVlinkColor($ui.vlink)
             <script type="text/javascript">
                 function goToGroupsPage(){
                     xmodal.loading.open('#wait');
-                    window.top.location.href = serverRoot + '/app/template/XDATScreen_groups.vm';
+                    getTopWindow().location.href = serverRoot + '/app/template/XDATScreen_groups.vm';
                 }
             </script>
             #if ($turbineUtils.GetPassedParameter("popup",$data)=="true")

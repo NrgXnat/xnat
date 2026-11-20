@@ -78,7 +78,7 @@ var XNAT = getObject(XNAT||{});
             }
         }
 
-        return window.top.open( url, title, paramsArray.join(',') );
+        return getTopWindow().open( url, title, paramsArray.join(',') );
 
     }
     window.popupCentered = popupCentered;

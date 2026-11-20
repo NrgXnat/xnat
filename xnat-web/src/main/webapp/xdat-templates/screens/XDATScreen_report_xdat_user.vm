@@ -75,7 +75,7 @@ $page.setVlinkColor($ui.vlink)
 
                                 function goToUsersPage(){
                                     xmodal.loading.open('#wait');
-                                    window.top.location.href = serverRoot + '/app/template/XDATScreen_admin.vm';
+                                    getTopWindow().location.href = serverRoot + '/app/template/XDATScreen_admin.vm';
                                 }
 
                                 function clearFailedLogins(){

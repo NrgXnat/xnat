@@ -505,7 +505,7 @@ var XNAT = getObject(XNAT);
             timeoutCookie('guest').set('true');
             // need to wait a little longer before reloading
             window.setTimeout(function(){
-                if (!window.top.debug) {
+                if (!getTopWindow().debug) {
                     xmodal.loading.open('#redirecting');
                 }
                 window.setTimeout(function(){

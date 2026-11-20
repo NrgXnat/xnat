@@ -188,9 +188,11 @@ public class XFT {
                 {
                     sb.append(s.getTargetNamespaceURI()).append(" ");
                     try {
-                        final String path = s.getDataModel().getResource().getFile().getPath();
-                        logger.debug("Schema location for " + s.getTargetNamespaceURI() + " resolved to file path: " + path);
-                        sb.append(path);
+                        // A URL, not a bare path: the parser resolves a bare path against the importing schema's
+                        // location, so a schema inside a plugin jar would look for this file inside its own jar.
+                        final String uri = s.getDataModel().getResource().getFile().toURI().toString();
+                        logger.debug("Schema location for " + s.getTargetNamespaceURI() + " resolved to file URL: " + uri);
+                        sb.append(uri);
                     } catch (FileNotFoundException e) {
                         try {
                             final String uri = s.getDataModel().getResource().getURI().toString();
@@ -251,7 +253,7 @@ public class XFT {
      * The file is written to {schemasDir}/{prefix}/{prefix}.xsd, mirroring the
      * directory layout used by classpath schemas.
      *
-     * @return The absolute path to the written file.
+     * @return The file URL of the written file.
      */
     private static String writeSchemaToFile(XFTSchema s) throws Exception {
         final String prefix = s.getTargetNamespacePrefix();
@@ -265,7 +267,7 @@ public class XFT {
         Files.writeString(schemaFile, content, StandardCharsets.UTF_8);
 
         logger.debug("Wrote DB-backed schema " + s.getTargetNamespaceURI() + " to " + schemaFile);
-        return schemaFile.toAbsolutePath().toString();
+        return schemaFile.toAbsolutePath().toUri().toString();
     }
 
     public static String GetConfDir(){

@@ -47,13 +47,13 @@ function getUrlHashValue(start, end){
     return part;
 }
 
-// the topmost window showing a page from this site: window.top, unless a page
-// on another origin frames this site (a portal), whose window can't be used
+// the topmost window showing an XNAT page: window.top, unless a page that isn't
+// XNAT (a portal) frames this site
 function getTopWindow(){
     var win = window;
     while (win !== win.top) {
         try {
-            if (!win.parent.document) { break }
+            if (!win.parent.document || !win.parent.XNAT) { break }
         }
         catch (e) {
             break;

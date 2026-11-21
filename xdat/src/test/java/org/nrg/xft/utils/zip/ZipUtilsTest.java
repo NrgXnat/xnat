@@ -20,7 +20,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
 
 public class ZipUtilsTest {
     private static final IOFileFilter NOT_FILE1_FILTER = new NotFileFilter(new NameFileFilter("file1.txt"));

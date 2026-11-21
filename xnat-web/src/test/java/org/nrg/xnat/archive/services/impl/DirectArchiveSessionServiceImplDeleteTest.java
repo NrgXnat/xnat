@@ -439,13 +439,14 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         // A half-removed directory must never be queued for build again (ERROR would allow that); DELETING can be
         // re-claimed by the next delete and by nothing else.
         stubDeletableSession();
-        FileInputStream newFIS = null;
+        FileInputStream fileStreamDeleteBlocker = null;
         String os = System.getProperty("os.name").toLowerCase();
 
         try {
             if (os.contains("win")) {
                 // On a Windows OS, opening a FileInputStream makes removing that file (and the directory) fail.
-                newFIS = new FileInputStream(sessionXml);
+                fileStreamDeleteBlocker = new FileInputStream(sessionXml);
+                // Attempt to delete the file to show that opening the file stream successfully blocked deletion.
                 assertThat(sessionXml.delete()).isFalse();
             } else {
                 // A read-only parent makes removing the session XML (and the directory) fail.
@@ -459,8 +460,8 @@ public class DirectArchiveSessionServiceImplDeleteTest {
             verify(hibernateService, never()).delete(anyLong());
 
         } finally {
-            if (newFIS != null) {
-                newFIS.close();
+            if (fileStreamDeleteBlocker != null) {
+                fileStreamDeleteBlocker.close();
             }
         }
     }

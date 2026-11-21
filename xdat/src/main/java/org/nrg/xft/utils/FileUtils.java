@@ -1020,7 +1020,6 @@ public  class FileUtils {
             final Path   filePath    = file.toPath().toAbsolutePath();
             final Path   subpath     = filePath.getRoot().relativize(filePath);
             final Path   destination = (StringUtils.isNotBlank(timestamp) ? cacheRoot.resolve(timestamp.replace("_", "/")) : getUniqueCacheFolder(cacheRoot, getMsTimestamp())).resolve(subpath);
-
             if (file.isDirectory()) {
                 FileUtils.MoveDir(file, destination.toFile(), true);
             } else {

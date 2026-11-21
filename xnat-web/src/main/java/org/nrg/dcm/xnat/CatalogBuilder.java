@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -62,7 +61,8 @@ public class CatalogBuilder implements Callable<Map<File, AbstractMap.SimpleEntr
     public static final String SCANS_DIR                  = "SCANS";
 
     private static final Map<?, String> EMPTY_CONSTRAINTS                     = new HashMap<>();
-    private static final String         XNAT_GENERATED_SCAN_PARENT_PATH_REGEX = ".*[\\\\/]SCANS[\\\\/][^\\\\/]+";
+    //  "[\\\\/]" is the regex for either file separator ("/" or "\")
+    private static final String         XNAT_GENERATED_SCAN_PARENT_PATH_REGEX = ".*[\\\\/]" + SCANS_DIR + "[\\\\/][^\\\\/]+";
     private static final String         XNAT_GENERATED_SCAN_PATH_REGEX        = XNAT_GENERATED_SCAN_PARENT_PATH_REGEX + "[\\\\/]" + RESOURCE_LABEL_DICOM;
     private static final Object         MUTEX                                 = new Object();
 

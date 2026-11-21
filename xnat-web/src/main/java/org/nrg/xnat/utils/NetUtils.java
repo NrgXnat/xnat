@@ -12,7 +12,6 @@ package org.nrg.xnat.utils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,9 +36,6 @@ public class NetUtils {
         while (count.getAndIncrement() < resolvedAttempts) {
             try (final ServerSocket serverSocket = new ServerSocket(port)) {
                 serverSocket.setReuseAddress(true);
-                try (final DatagramSocket socket = new DatagramSocket(port)) {
-                    socket.setReuseAddress(true);
-                }
                 return true;
             } catch (IOException e) {
                 log.debug("Got an exception of type \"{}\" when creating new ServerSocket instance on port {}, throwing it upstairs for handling.", e.getClass().getName(), port);

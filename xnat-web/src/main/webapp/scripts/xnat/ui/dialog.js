@@ -1390,7 +1390,7 @@ window.xmodal = getObject(window.xmodal);
             obj = cloneObject(method);
             method = 'open';
         }
-        return window.top.XNAT.ui.dialog[method](obj);
+        return getTopWindow().XNAT.ui.dialog[method](obj);
     };
 
     // iframe 'popup' with sensible defaults

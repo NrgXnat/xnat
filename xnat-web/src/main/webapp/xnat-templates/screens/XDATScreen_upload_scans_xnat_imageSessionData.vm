@@ -1,1 +1,30 @@
-#parse("/screens/ImageUpload.vm")						
+## Upload Scans opens as a popup, whose layout loads neither the activity tab nor the session timer that the Compressed
+## Uploader uses. They're set up here rather than in the uploader page, so a plugin's copy of that page works here too.
+#if($turbineUtils.GetPassedParameter("popup", $data) == "true")
+<script type="text/javascript" src="$content.getURI('scripts/xnat/app/activityTab.js')"></script>
+<script type="text/javascript">
+    // Keeps the login alive during an upload by renewing it every minute, as the session timer does. Every window's
+    // session timer reads the session's expiration cookie, so the window that opened the popup follows the renewals.
+    (function() {
+        var renewal = null;
+
+        XNAT.app = getObject(XNAT.app || {});
+        XNAT.app.timeout = XNAT.app.timeout || {
+            get maintainLogin() {
+                return renewal !== null;
+            },
+            set maintainLogin(maintain) {
+                if (maintain && renewal === null) {
+                    renewal = window.setInterval(function() {
+                        XNAT.xhr.get({ url: XNAT.url.restUrl('/xapi/siteConfig/buildInfo') });
+                    }, 60000);
+                } else if (!maintain && renewal !== null) {
+                    window.clearInterval(renewal);
+                    renewal = null;
+                }
+            }
+        };
+    })();
+</script>
+#end
+#parse("/screens/CompressedUploaderPage.vm")

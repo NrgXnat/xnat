@@ -184,11 +184,16 @@ public abstract class MergeSessionsA<A extends XnatImagesessiondataI> extends St
 
             postSave(this.merged);
             timer.lap("cleanup-catalogs");
+
+            // The backup is only for rolling back a failed merge.
+            FileUtils.DeleteFile(rootBackup);
+            timer.lap("delete-backup");
             PhaseTimer.LOG.info("Merged {} into {}: {}", srcDIR, destDIR, timer);
 
             return this.merged;
         } catch (MizerException e) {
             logger.error("An error occurred when anonymizing the data. This occurred prior to moving files, so no rollback is performed.", e);
+            FileUtils.DeleteFile(rootBackup);
             failed("An error occurred when anonymizing the data: " + e.getMessage());
             throw new ServerException(Status.SERVER_ERROR_INTERNAL, e);
         } catch (Throwable e) {

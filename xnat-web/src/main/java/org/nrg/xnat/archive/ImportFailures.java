@@ -37,6 +37,15 @@ public final class ImportFailures {
                                                                  PrearcStatus.READY, PrearcStatus.CONFLICT, PrearcStatus.ERROR);
 
     /**
+     * The note a marked session's log gets. It leaves out why the import failed: that can name the uploader's file,
+     * which no anonymization script sees. The uploader gets the reason in the response, and the server log keeps it.
+     */
+    public static final String FAILED_PARTWAY = "The import failed while processing a file that may not belong to this session. "
+                                                + "The remaining files were not read, so this session may be incomplete. "
+                                                + "Import the study again to add any missing files. "
+                                                + "If the session is already complete, rebuild and archive it.";
+
+    /**
      * Whether the instance ends before its last value does: a Part 10 file cut short, such as one still being copied.
      * GradualDicomImporter reports it as unreadable like any other instance it can't read, and the zip importer
      * skips it as such under Ignore-Unparsable, but it is DICOM, so the inbox stops at it and keeps the file.
@@ -51,10 +60,10 @@ public final class ImportFailures {
     }
 
     /**
-     * Marks the sessions an import wrote into before it failed. A prearchive session is marked {@code ERROR}, with the
-     * reason in its log. Left receiving, it looks like one still arriving, and unless the upload tool sent it, the
-     * idle-timeout rebuild builds it as though the import had finished, then archives it where the project archives
-     * automatically. An import of the same study still reopens it: a session in error takes more data. A session
+     * Marks the sessions an import wrote into before it failed. A prearchive session is marked {@code ERROR}, with
+     * {@link #FAILED_PARTWAY} in its log. Left receiving, it looks like one still arriving, and unless the upload tool
+     * sent it, the idle-timeout rebuild builds it as though the import had finished, then archives it where the project
+     * archives automatically. An import of the same study still reopens it: a session in error takes more data. A session
      * already queued for, or in the middle of, a build, archive, delete or move is left to that operation, which would
      * run anyway. A direct-archive session is marked instead and keeps receiving; once idle, it moves to the prearchive in
      * {@code ERROR}, as it does when its build or archive fails.
@@ -75,8 +84,7 @@ public final class ImportFailures {
                         log.warn("The import failed after writing into {}, which is {} and is left as it is: {}", uri, status, cause.getMessage());
                         continue;
                     }
-                    PrearcUtils.log(project, timestamp, folder, "An import into this session failed partway, so it may be missing files. "
-                                                                + "Importing the study again adds them. The import failed with: " + cause.getMessage());
+                    PrearcUtils.log(project, timestamp, folder, FAILED_PARTWAY);
                     if (PrearcDatabase.setStatus(folder, timestamp, project, PrearcUtils.PrearcStatus.ERROR)) {
                         log.warn("The import failed after writing into {}, which is now marked ERROR: {}", uri, cause.getMessage());
                     } else {

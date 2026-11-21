@@ -23,6 +23,7 @@ import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.XnatUserProvider;
 import org.nrg.xdat.services.cache.GroupsAndPermissionsCache;
+import org.nrg.xnat.archive.ImportFailures;
 import org.nrg.xnat.archive.services.DirectArchiveSessionHibernateService;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
@@ -156,15 +157,15 @@ public class DirectArchiveSessionServiceImplFailedUploadTest {
     }
 
     @Test
-    public void anIdleSessionStillMarkedMovesToThePrearchiveInErrorWithTheReasonInItsLog() throws Exception {
+    public void anIdleSessionStillMarkedMovesToThePrearchiveInErrorWithANoteInItsLog() throws Exception {
         service.triggerArchive();
 
         assertThat(sessionDirectory).doesNotExist();
         assertThat(new File(prearchiveDirectory, "1.dcm")).isFile();
         assertThat(Files.readString(new File(prearchiveDirectory, "logs/directArchive" + SESSION_ID + ".log").toPath()))
-                .contains("An import into this session failed partway").contains("unable to read data from file")
-                // The reason only: users who can read the session's log shouldn't see the server's stack frames.
-                .doesNotContain("\tat ");
+                .contains(ImportFailures.FAILED_PARTWAY)
+                // The note only: the reason can name the uploader's file.
+                .doesNotContain(cause.getMessage());
         assertThat(recorded.get().getStatus()).isEqualTo(PrearcStatus.ERROR);
         assertThat(recorded.get().getUrl()).isEqualTo(prearchiveDirectory.getAbsolutePath());
         // Looked up by study instead, it would join any other prearchive session of the study and leave these files

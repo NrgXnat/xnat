@@ -26,7 +26,9 @@ var XNAT = getObject(XNAT);
 }(function(){
     let activityTab, storageTag;
     const minimized = 'minimized', 
-        processes = 'processes';
+        processes = 'processes',
+        queuedTimeout = 10 * 60 * 1000,
+        idleTimeout = 60 * 60 * 1000;
 
     XNAT.app = getObject(XNAT.app || {});
 
@@ -152,8 +154,9 @@ var XNAT = getObject(XNAT);
         });
     }
 
-    function checkProgress(item, key, errCnt, lastProgressIdx) {
-        if (!lastProgressIdx) {
+    function checkProgress(item, key, errCnt, lastProgressIdx, quietSince) {
+        // 0 is the first step's index, so only a missing index means nothing has been shown yet
+        if (typeof lastProgressIdx !== 'number') {
             lastProgressIdx = -1;
         }
         if (! (activityTab.pollers.hasOwnProperty(key) && activityTab.pollers[key])) {
@@ -166,11 +169,15 @@ var XNAT = getObject(XNAT);
             url: XNAT.url.restUrl('/xapi/event_tracking/' + statusListenerId),
             success: function(respDat) {
                 var succeeded = null;
+                var queued = false;
+                var idle = false;
                 try {
                     const callback = getCallbackForItem(item);
                     const rtn = callback(itemDivId, detailsTag, respDat, lastProgressIdx);
                     succeeded = rtn.succeeded;
                     lastProgressIdx = rtn.lastProgressIdx;
+                    queued = rtn.queued === true;
+                    idle = rtn.idle === true;
                 } catch (e) {
                     console.log(e);
                     processError(item, key, errCnt, e.name + ' (js): ' + e.message, lastProgressIdx);
@@ -179,6 +186,20 @@ var XNAT = getObject(XNAT);
 
                 if (succeeded !== null) {
                     activityTab.stopPoll(key, succeeded);
+                } else if (queued || idle) {
+                    // The callback says nothing new has reported: the import is still queued, is in a long step, or
+                    // was lost, as in a restart. Check less often the longer it stays quiet, and stop after a while
+                    // with a note that refreshing the page resumes tracking. A started import gets longer, since one
+                    // step can go quiet for many minutes.
+                    quietSince = quietSince || Date.now();
+                    const waited = Date.now() - quietSince;
+                    if (waited > (queued ? queuedTimeout : idleTimeout)) {
+                        stopWithQueuedWarning(item, key, queued);
+                    } else {
+                        window.setTimeout(function() {
+                            checkProgress(item, key, 0, lastProgressIdx, quietSince);
+                        }, Math.min(30000, Math.max(2000, waited / 2)));
+                    }
                 } else {
                     window.setTimeout(function() {
                         checkProgress(item, key, 0, lastProgressIdx);
@@ -187,33 +208,36 @@ var XNAT = getObject(XNAT);
             },
             error: function(xhr) {
                 processError(item, key, errCnt,
-                    xhr.responseText ? ': ' + xhr.responseText : '', lastProgressIdx, xhr.status);
+                    xhr.responseText ? ': ' + xhr.responseText : '', lastProgressIdx, xhr.status, quietSince);
             }
         });
     }
 
-    function processError(item, key, errCnt, errDetails, lastProgressIdx, status = -1) {
+    function processError(item, key, errCnt, errDetails, lastProgressIdx, status = -1, quietSince) {
         const maxErrCnt = status === 404 ? 15 : 3;
         if (errCnt < maxErrCnt) {
             setTimeout(function() {
-                checkProgress(item, key, ++errCnt, lastProgressIdx);
+                checkProgress(item, key, ++errCnt, lastProgressIdx, quietSince);
             }, 2000);
+        } else if (status === 404) {
+            stopWithQueuedWarning(item, key);
         } else {
-            let contents;
-            let succeeded = false;
-            if (status === 404) {
-                // Event tracking can take some time to start if no consumers/threads are available to start the processing
-                contents = '<div class="warning">No event tracking data yet. This likely means tasks are queued, ' +
-                    'but could be indicative of an issue. You will need to refresh the page to resume tracking this event. ' +
-                    'If there is no progress for quite some time, you may wish to contact your administrator.</div>';
-                succeeded = null;
-            } else {
-                contents = '<div class="prog error">Issue polling event progress: ' + errDetails +
-                    '. Refresh the page to try again.</div>';
-            }
-            $(item.detailsTag).append(contents);
-            activityTab.stopPoll(key, succeeded);
+            $(item.detailsTag).append('<div class="prog error">Issue polling event progress: ' +
+                escapeHtml(errDetails) + '. Refresh the page to try again.</div>');
+            activityTab.stopPoll(key, false);
         }
+    }
+
+    function stopWithQueuedWarning(item, key, queued = true) {
+        // Event tracking can take some time to start if no consumers/threads are available to start the processing
+        const why = queued ? 'No event tracking data yet. This likely means tasks are queued, but could be ' +
+                             'indicative of an issue.'
+                           : 'No new progress has been reported for a while. The import may still be running, or may ' +
+                             'have stopped, for example in a restart.';
+        $(item.detailsTag).append('<div class="warning">' + why + ' You will need to refresh the page to resume ' +
+            'tracking this event. If there is no progress for quite some time, you may wish to contact your ' +
+            'administrator.</div>');
+        activityTab.stopPoll(key, null);
     }
 
     activityTab.populateArchivalDetails = function(itemDivId, detailsTag, jsonobj, lastProgressIdx) {
@@ -222,8 +246,10 @@ var XNAT = getObject(XNAT);
         let messages = "";
         let entryList = payload ? (payload['entryList'] || []) : [];
         if (entryList.length === 0 && succeeded == null) {
-            return [null, lastProgressIdx];
+            // The record was created when the import was queued, and nothing has reported yet
+            return {succeeded: null, lastProgressIdx: lastProgressIdx, queued: true};
         }
+        const shownIdx = lastProgressIdx;
         entryList.forEach(function(e, i) {
             if (i <= lastProgressIdx) {
                 return;
@@ -246,7 +272,7 @@ var XNAT = getObject(XNAT);
                     clazz = 'success';
                     break;
             }
-            messages += '<div class="prog ' + clazz + '">' + message + '</div>';
+            messages += '<div class="prog ' + clazz + '">' + escapeHtml(message) + '</div>';
             lastProgressIdx = i;
         });
         if (succeeded != null) {
@@ -255,7 +281,9 @@ var XNAT = getObject(XNAT);
         if (messages) {
             $(detailsTag).append(messages);
         }
-        return {succeeded: succeeded, lastProgressIdx: lastProgressIdx};
+        // Nothing new since the last check: the import is in a long step, or was lost, as in a restart
+        const idle = succeeded == null && lastProgressIdx === shownIdx;
+        return {succeeded: succeeded, lastProgressIdx: lastProgressIdx, idle: idle};
     };
 
     function parseFinalMessage(message, succeeded) {
@@ -264,28 +292,41 @@ var XNAT = getObject(XNAT);
 
     function parseSiMessage(message, succeeded) {
         if (succeeded) {
-            const dest = message.replace(/:.*/, '');
-            const urls = message.replace(/^.*:/, '').split(';');
+            // The DICOM importers name the sessions they made as "Prearchive:" or "Archive:" and their URIs. Other
+            // importers word it their own way, so their message is shown as it is.
+            const named = /^(prearchive|archive):(.*)$/i.exec(message || '');
+            if (!named) {
+                return '<div class="prog success">Import complete' +
+                    (message ? ': ' + linkArchived(escapeHtml(message)) : '') + '</div>';
+            }
+            const dest = named[1];
+            const urls = named[2].split(';').filter(Boolean);
             let urlsHtml;
             if (dest.toLowerCase().includes('prearchive')) {
                 urlsHtml = 'Visit the ' + getPrearcLink() + ' to review.';
             } else {
                 urlsHtml = $.map(urls, function (url) {
                     var id = url.replace(/.*\//, '');
-                    return '<a target="_blank" href="' + XNAT.url.rootUrl('/data' + url) + '">' + id + '</a>'
+                    return '<a target="_blank" href="' + escapeHtml(XNAT.url.rootUrl('/data' + url)) + '">' + escapeHtml(id) + '</a>'
                 }).join(', ');
             }
             return '<div class="prog success">' + urls.length +
                 ' session(s) successfully uploaded to ' + dest + ': ' + urlsHtml + '</div>';
         } else {
             // A failed upload names any sessions it archived before the failure: link them as a success does
-            const details = escapeHtml(message).replace(/\/archive\/projects\/[^\s;<]+/g, function (url) {
-                return '<a target="_blank" href="' + XNAT.url.rootUrl('/data' + url) + '">' + url.replace(/.*\//, '') + '</a>';
-            });
+            const details = linkArchived(escapeHtml(message));
             return '<div class="prog error">Extraction/Review failed: ' + details + '</div>' +
                 '<div class="warning">Check the ' + getPrearcLink() +
                 ', DICOM/ECAT data may be available there for manual review.</div>';
         }
+    }
+
+    // Links each archived session a message names
+    function linkArchived(html) {
+        return html.replace(/\/archive\/projects\/[^\s;<]+/g, function (url) {
+            const id = url.replace(/.*\//, '');
+            return '<a target="_blank" href="' + XNAT.url.rootUrl('/data' + url) + '">' + id + '</a>';
+        });
     }
 
     function getPrearcLink() {

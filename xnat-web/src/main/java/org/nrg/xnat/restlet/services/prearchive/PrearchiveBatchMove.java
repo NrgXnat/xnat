@@ -63,7 +63,7 @@ public class PrearchiveBatchMove extends BatchPrearchiveActionsA {
             return;
         }
 
-        final List<SessionDataTriple> triples = getSessionDataTriples();
+        final List<SessionDataTriple> triples = getSessionDataTriples("move");
         if (triples == null) {
             return;
         }

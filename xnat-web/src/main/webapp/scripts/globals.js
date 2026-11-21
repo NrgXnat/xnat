@@ -47,6 +47,22 @@ function getUrlHashValue(start, end){
     return part;
 }
 
+// the topmost window showing an XNAT page: window.top, unless a page that isn't
+// XNAT (a portal) frames this site
+function getTopWindow(){
+    var win = window;
+    while (win !== win.top) {
+        try {
+            if (!win.parent.document || typeof win.parent.getTopWindow !== 'function') { break }
+        }
+        catch (e) {
+            break;
+        }
+        win = win.parent;
+    }
+    return win;
+}
+
 window.debug = window.debug ||
     getQueryStringValue('debug') ||
     window.jsdebug ||

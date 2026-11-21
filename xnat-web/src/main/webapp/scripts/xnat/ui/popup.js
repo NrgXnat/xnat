@@ -78,7 +78,7 @@ var XNAT = getObject(XNAT||{});
             }
         }
 
-        return window.top.open( url, title, paramsArray.join(',') );
+        return getTopWindow().open( url, title, paramsArray.join(',') );
 
     }
     window.popupCentered = popupCentered;
@@ -143,7 +143,10 @@ var XNAT = getObject(XNAT||{});
         if (isPopup(loc)){
             $form.each(function(){
                 var _form = this;
-                _form.action = setupUrl(_form.action);
+                // a field named 'action' hides the form's action URL
+                if (typeof _form.action === 'string') {
+                    _form.action = setupUrl(_form.action);
+                }
             });
         }
 

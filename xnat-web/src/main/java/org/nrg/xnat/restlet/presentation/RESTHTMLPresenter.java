@@ -261,18 +261,12 @@ public class RESTHTMLPresenter extends PresentationA {
 				//XFT.LogCurrentTime("BEGIN HTML FORMAT :: ROWS(" + table.getRowCursor() + ") FIELDS: 1");
 				DisplayFieldReferenceI dfr = (DisplayFieldReferenceI)fields.next();
 
-				String field_row_id=null;
 				if(dfr.getValue()!=null && !dfr.getValue().equals("")){
 					if(dfr.getValue().equals("{XDAT_USER_ID}")){
 						dfr.setValue(user.getID());
 					}
 				}
-				if (dfr.getElementName().equalsIgnoreCase(search.getRootElement().getFullXMLName()))
-				{
-					field_row_id = DisplayFieldAliasCache.getAlias(dfr.getRowID());
-				}else{
-					field_row_id = DisplayFieldAliasCache.getAlias(dfr.getElementSQLName() + "_" + dfr.getRowID());
-				}
+				String field_row_id = DisplayFieldAliasCache.getAlias(dfr, search.getRootElement().getFullXMLName());
 				Object v = row.get(field_row_id);
 
 				if (allowDiffs)

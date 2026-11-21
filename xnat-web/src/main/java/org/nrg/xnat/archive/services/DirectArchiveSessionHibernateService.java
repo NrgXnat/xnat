@@ -11,6 +11,11 @@ import org.nrg.xnat.helpers.prearchive.SessionData;
 import javax.annotation.Nullable;
 import java.util.List;
 
+/**
+ * @deprecated Direct archive is deprecated and will be removed in a future release. Import through the prearchive and
+ *             set the project to auto-archive.
+ */
+@Deprecated
 public interface DirectArchiveSessionHibernateService extends BaseHibernateService<DirectArchiveSession> {
     void touch(long id) throws NotFoundException;
 

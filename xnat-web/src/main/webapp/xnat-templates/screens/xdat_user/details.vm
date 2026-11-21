@@ -68,8 +68,8 @@
                                     // fake the scope since we just need the
                                     // username as an 'innerText' property
                                     var scope = { innerText: '$!item.getProperty("login")' }
-                                    window.top.XNAT.admin.usersGroups.showAdvanced = false;
-                                    window.top.XNAT.admin.usersGroups.editUser.call(scope, e, function(){
+                                    getTopWindow().XNAT.admin.usersGroups.showAdvanced = false;
+                                    getTopWindow().XNAT.admin.usersGroups.editUser.call(scope, e, function(){
                                         // reload this iframe
                                         window.location.reload(true);
                                     });
@@ -203,7 +203,7 @@
 
     (function(){
 
-        var topXNAT = window.top.XNAT;
+        var topXNAT = getTopWindow().XNAT;
         var usersGroups = topXNAT.usersGroups;
         var USERNAME = '#escapeAll($!item.getProperty("login"))';
         var isVerified = #if ($item.getBooleanProperty("verified")) true #else false #end;
@@ -228,7 +228,7 @@
 
         topXNAT.xhr.get(topXNAT.url.rootUrl('/xapi/siteConfig')).done(function(siteConfig){
 
-            topXNAT = window.top.XNAT;
+            topXNAT = getTopWindow().XNAT;
 
             topXNAT.data = extend(true, XNAT.data||{}, {
                 siteConfig: siteConfig
@@ -240,7 +240,7 @@
             }
             else {
                 loadjs(XNAT.url.rootUrl('/scripts/xnat/admin/usersGroups.js'), function(){
-                    topXNAT = window.top.XNAT;
+                    topXNAT = getTopWindow().XNAT;
                     usersGroups = topXNAT.admin.usersGroups;
                     setupSwitches();
                 }, function(){

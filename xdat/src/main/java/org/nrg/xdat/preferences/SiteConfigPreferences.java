@@ -1283,11 +1283,19 @@ public class SiteConfigPreferences extends EventTriggeringAbstractPreferenceBean
         }
     }
 
+    /**
+     * @deprecated Direct archive is deprecated and will be removed in a future release, along with this setting.
+     */
+    @Deprecated
     @NrgPreference(defaultValue = "false")
     public boolean getEnableDirectArchiveAppend() {
         return getBooleanValue("enableDirectArchiveAppend");
     }
 
+    /**
+     * @deprecated Direct archive is deprecated and will be removed in a future release, along with this setting.
+     */
+    @Deprecated
     public void setEnableDirectArchiveAppend(final boolean enableDirectArchiveAppend) {
         try {
             setBooleanValue(enableDirectArchiveAppend, "enableDirectArchiveAppend");

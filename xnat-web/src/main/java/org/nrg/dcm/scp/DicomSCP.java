@@ -122,7 +122,7 @@ public class DicomSCP {
             return Collections.emptyList();
         }
 
-        if (!NetUtils.isPortAvailable(getPort(), 3, 2)) {
+        if (!NetUtils.isPortAvailable(getPort(), 3, 2, NetUtils.ProtocolCheck.TCP_ONLY)) {
             log.error("Unable to access DICOM SCP port {}. The port may be already in use, but I can't tell from the information I have now. Starting with the DICOM receiver disabled. The following AEs will be unavailable on this port: {}", getPort(), StringUtils.join(extractAeTitles(), ", "));
             return Collections.emptyList();
         }

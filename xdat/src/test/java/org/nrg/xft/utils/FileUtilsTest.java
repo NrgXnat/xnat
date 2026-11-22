@@ -262,6 +262,7 @@ public class FileUtilsTest {
     public void testClearExecutable() throws Exception {
         final File file = createFile(src, f[0], c[0]);
         Assume.assumeTrue("test requires a file system that supports the executable permission bit", Files.getFileStore(file.toPath()).supportsFileAttributeView("posix"));
+        file.setExecutable(true, false);
         Assert.assertTrue(file.canExecute());
 
         FileUtils.clearExecutable(file);

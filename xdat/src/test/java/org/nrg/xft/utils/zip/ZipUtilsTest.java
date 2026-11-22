@@ -134,7 +134,6 @@ public class ZipUtilsTest {
 
     @Test
     public void extractTarClearsExecutableBit() throws Exception {
-
         final File dir        = Files.createTempDir();
         final File sourceFile = buildExecutableSourceFile(dir);
 

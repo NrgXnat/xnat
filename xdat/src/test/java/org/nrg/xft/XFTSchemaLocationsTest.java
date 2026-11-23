@@ -5,25 +5,20 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.nrg.framework.configuration.SerializerConfig;
 import org.nrg.framework.services.ContextService;
+import org.nrg.framework.services.SerializerService;
+import org.nrg.framework.services.impl.ValidationHandler;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.references.XFTPseudonymManager;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.XFTManager;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -93,26 +88,11 @@ public class XFTSchemaLocationsTest {
         }
         final String locations = XFT.GetAllSchemaLocations(null) + " " + PLUGIN_NAMESPACE + " jar:" + jar.toURI() + "!/schemas/plugin/plugin.xsd";
 
-        final SAXParserFactory factory = SAXParserFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setValidating(true);
-        factory.setFeature("http://apache.org/xml/features/validation/schema", true);
-        final SAXParser parser = factory.newSAXParser();
-        parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage", "http://www.w3.org/2001/XMLSchema");
-        parser.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation", locations);
-
-        final List<String> errors = new ArrayList<>();
-        parser.parse(new InputSource(new StringReader("<p:Root xmlns:p=\"" + PLUGIN_NAMESPACE + "\"/>")), new DefaultHandler() {
-            @Override
-            public void error(final SAXParseException e) {
-                errors.add(e.getMessage());
-            }
-
-            @Override
-            public void fatalError(final SAXParseException e) {
-                errors.add(e.getMessage());
-            }
-        });
-        assertTrue("validation errors: " + errors, errors.isEmpty());
+        // Validate through SerializerService, as XMLValidator does, so the test runs with secure processing on and the
+        // ACCESS_EXTERNAL_SCHEMA protocol list production uses, not a parser configured just for the test.
+        final SerializerConfig  config  = new SerializerConfig();
+        final SerializerService service = new SerializerService(config.objectMapperBuilder(), config.documentBuilderFactory(), config.saxParserFactory(), config.transformerFactory(), config.saxTransformerFactory());
+        final ValidationHandler handler = service.validateString("<p:Root xmlns:p=\"" + PLUGIN_NAMESPACE + "\"/>", locations);
+        assertTrue("validation errors: " + handler.getErrors(), handler.assertValid());
     }
 }

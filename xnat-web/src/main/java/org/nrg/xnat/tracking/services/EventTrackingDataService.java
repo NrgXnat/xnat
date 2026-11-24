@@ -56,6 +56,19 @@ public interface EventTrackingDataService {
     void createOrUpdate(TrackableEvent eventData) throws IllegalAccessException;
 
     /**
+     * Records the size of a bulk launch. Its progress is built from its workflows each time it's read, and with its
+     * size it counts the batch's targets, not the workflows saved so far, so it isn't complete until each target has
+     * run all its steps. Call it once the batch's targets are queued, before answering the launch request.
+     *
+     * @param key     the bulk launch's tracking key
+     * @param user    the user who launched the batch
+     * @param targets the number of targets queued
+     * @param steps   the number of steps each target runs: 1, or the number of commands in an orchestration
+     * @throws IllegalAccessException if user cannot read this event tracking data
+     */
+    void recordBulkLaunch(String key, UserI user, int targets, int steps) throws IllegalAccessException;
+
+    /**
      * Remove entries older than the number of days configured in {@link AsyncOperationsPreferences#getEventTrackingDataCleanupTtl()}.
      */
     void cleanupOldEntries();

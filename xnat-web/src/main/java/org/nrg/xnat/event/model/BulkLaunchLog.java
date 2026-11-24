@@ -9,7 +9,9 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -25,6 +27,7 @@ public class BulkLaunchLog {
 
     private Map<Integer, WorkflowLog> workflows = new TreeMap<>();
     private Map<String, Integer> itemSteps = new HashMap<>();
+    private final Set<String> failedItems = new HashSet<>();
 
     public int getTotal() {
         return total;
@@ -82,11 +85,13 @@ public class BulkLaunchLog {
         boolean statusRecorded = lastLog != null && lastLog.statusRecorded;
         if (!statusRecorded) {
             if (status.startsWith(PersistentWorkflowUtils.FAILED)) {
-                failureCount++;
+                // An orchestration that continues after a failed step can fail a target more than once: count it once
+                if (failedItems.add(getWorkflowItemId(workflow))) {
+                    failureCount++;
+                }
                 statusRecorded = true;
             } else if (status.equals(PersistentWorkflowUtils.COMPLETE)) {
                 // Keep track of completions so we know when we've completed all the steps
-                // No need to track failures bc as soon as we hit one, we abort
                 String itemId = getWorkflowItemId(workflow);
                 int count = itemSteps.getOrDefault(itemId, 0);
                 itemSteps.put(itemId, ++count);
@@ -114,7 +119,8 @@ public class BulkLaunchLog {
     }
 
     private boolean hasTotal() {
-        return total != -1;
+        // A total of 0 means no workflow in the batch has been saved yet, so the batch can't be complete
+        return total > 0;
     }
 
     @JsonIgnore

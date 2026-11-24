@@ -285,7 +285,12 @@ public class TestScriptApplicator {
         final AnonymizationResult result = a1.apply(FILE4);
         assertNotNull(result);
         assertEquals(AnonymizationResultSeverity.ERROR, result.getSeverity());
-        assertEquals(ERROR_EVALUATING_LOWERCASE_EXPECTED_MESSAGE, result.getMessage());
+        // Error message now carries script-line / statement-text context in addition to the
+        // original cause message; assert on the meaningful fragments instead of exact equality.
+        final String message = result.getMessage();
+        assertTrue("expected '" + ERROR_EVALUATING_LOWERCASE_EXPECTED_MESSAGE + "' in: " + message,
+                message.contains(ERROR_EVALUATING_LOWERCASE_EXPECTED_MESSAGE));
+        assertTrue("expected line context in: " + message, message.contains("line 2"));
     }
 
     private static final ResourceManager _resourceManager = ResourceManager.getInstance();

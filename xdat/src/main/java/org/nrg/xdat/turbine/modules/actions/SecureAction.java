@@ -183,7 +183,7 @@ public abstract class SecureAction extends VelocitySecureAction {
     //if you change that behavior, look at every place this is used to be sure it actually
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(final HttpServletRequest request, final String clientToken, final boolean strict) throws InvalidCsrfException {
-        if (!XDAT.getSiteConfigPreferences().getEnableCsrfToken()) {
+        if (!XDAT.getSiteConfigPreferences().getEnableCsrfToken() || isStatelessBearerRequest(request)) {
             return true;
         }
 
@@ -217,6 +217,16 @@ public abstract class SecureAction extends VelocitySecureAction {
             handleCsrfTokenError(request);
         }
         return true;
+    }
+
+    /**
+     * Indicates whether the request was authenticated by a bearer token alone. The CSRF token protects the session
+     * cookie, which a browser sends with cross-site requests on its own. A browser never adds an Authorization header
+     * that way, and a request with no session has no cookie for a forged request to ride on. A request that has a
+     * session is checked even with a bearer header, since the session may be what authenticated it.
+     */
+    private static boolean isStatelessBearerRequest(final HttpServletRequest request) {
+        return StringUtils.startsWithIgnoreCase(request.getHeader(AUTH_HEADER_NAME), "Bearer ") && request.getSession(false) == null;
     }
 
     public static void handleCsrfTokenError(final HttpServletRequest request) throws InvalidCsrfException {

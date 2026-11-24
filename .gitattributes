@@ -1,0 +1,2 @@
+xdat/src/test/resources/zip/*.txt eol=lf
+xnat-web/src/test/data/*.txt eol=lf

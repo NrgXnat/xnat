@@ -88,7 +88,8 @@ public class EnumeratedMetadataStoreTest {
     private List<URI> resources, otherResources;
 
     private static URI toURI(final File folder, final String file) throws URISyntaxException {
-        return DicomUtils.getQualifiedUri(Path.of(folder.getAbsolutePath(), file).toString());
+        File f = new File(folder, file);
+        return toURI(f);
     }
 
     private static URI toURI(final File f) {
@@ -262,7 +263,7 @@ public class EnumeratedMetadataStoreTest {
     public void testGetDataFiles() throws IOException, SQLException, URISyntaxException {
         try (final DicomMetadataStore store = EnumeratedMetadataStore.createHSQLDBBacked(TAGS, FileURIOpener.getInstance())) {
             assertEquals(0, store.getSize());
-            store.add(Collections.singletonList(new URI(tempDir.getPath())));
+            store.add(Collections.singletonList(toURI(tempDir)));
             assertEquals(fileNames.length, store.getSize());
             final Set<URI> files = store.getResources();
             assertEquals(fileNames.length, files.size());

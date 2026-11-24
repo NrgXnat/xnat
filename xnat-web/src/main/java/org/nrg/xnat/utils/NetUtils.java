@@ -19,16 +19,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class NetUtils {
+    public enum ProtocolCheck { TCP_ONLY, TCP_AND_UDP }
+
     @SuppressWarnings("unused")
     public static boolean isPortAvailable(final int port) {
         return isPortAvailable(port, 0);
     }
 
     public static boolean isPortAvailable(final int port, final int attempts) {
-        return isPortAvailable(port, attempts, 0);
+        return isPortAvailable(port, attempts, 0, ProtocolCheck.TCP_AND_UDP);
     }
 
     public static boolean isPortAvailable(final int port, final int attempts, final int timeout) {
+        return isPortAvailable(port, attempts, timeout, ProtocolCheck.TCP_AND_UDP);
+    }
+
+    public static boolean isPortAvailable(final int port, final int attempts, final int timeout, final ProtocolCheck protocolCheck) {
         final int resolvedAttempts = attempts == 0 ? 3 : attempts;
         final int resolvedTimeout  = (timeout > 0 ? timeout * 2 : 1) * 500;
         log.debug("Preparing to check port {} up to {} times if necessary, with a timeout of {} ms between each attempt", port, resolvedAttempts, resolvedTimeout);
@@ -37,8 +43,10 @@ public class NetUtils {
         while (count.getAndIncrement() < resolvedAttempts) {
             try (final ServerSocket serverSocket = new ServerSocket(port)) {
                 serverSocket.setReuseAddress(true);
-                try (final DatagramSocket socket = new DatagramSocket(port)) {
-                    socket.setReuseAddress(true);
+                if (protocolCheck == ProtocolCheck.TCP_AND_UDP) {
+                    try (final DatagramSocket socket = new DatagramSocket(port)) {
+                        socket.setReuseAddress(true);
+                    }
                 }
                 return true;
             } catch (IOException e) {

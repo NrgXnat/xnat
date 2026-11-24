@@ -110,7 +110,7 @@ public class FileExtractorTests {
             assertTrue("The files are different.", FileUtils.contentEquals(f3, f3out.toFile()));
         }
         catch( Exception e) {
-            fail( "Unexpected execption: " + e);
+            fail( "Unexpected exception: " + e);
         }
     }
 

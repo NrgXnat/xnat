@@ -1176,7 +1176,7 @@ public class DicomObjectFactoryTests {
             DicomObjectI dobj = DicomObjectFactory.newInstance();
             put(dobj, AS_VM1);
             dobj.dump(ps);
-            assertEquals(22, file.length());
+            assertEquals(21, file.length()-System.lineSeparator().length());
         }
     }
 

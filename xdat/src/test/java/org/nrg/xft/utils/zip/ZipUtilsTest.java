@@ -159,7 +159,8 @@ public class ZipUtilsTest {
     private File buildExecutableSourceFile(final File dir) throws Exception {
         final File sourceFile = new File(dir, "script.sh");
         org.apache.commons.io.FileUtils.writeStringToFile(sourceFile, "#!/bin/sh\necho hi\n", StandardCharsets.UTF_8);
-        Assume.assumeTrue("test requires a file system that supports the executable permission bit", sourceFile.setExecutable(true, false));
+        Assume.assumeTrue("test requires a file system that supports the executable permission bit", java.nio.file.Files.getFileStore(sourceFile.toPath()).supportsFileAttributeView("posix"));
+        sourceFile.setExecutable(true, false);
         return sourceFile;
     }
 

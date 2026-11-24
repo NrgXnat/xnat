@@ -2,6 +2,7 @@ package org.nrg.xnat.archive.services.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -438,15 +439,31 @@ public class DirectArchiveSessionServiceImplDeleteTest {
         // A half-removed directory must never be queued for build again (ERROR would allow that); DELETING can be
         // re-claimed by the next delete and by nothing else.
         stubDeletableSession();
-        // A read-only parent makes removing the session XML (and the directory) fail.
-        assertThat(archiveDirectory.setWritable(false)).isTrue();
+        FileInputStream fileStreamDeleteBlocker = null;
+        String os = System.getProperty("os.name").toLowerCase();
 
-        assertThatThrownBy(() -> service.delete(SESSION_ID, user, false)).isInstanceOf(ServerException.class);
+        try {
+            if (os.contains("win")) {
+                // On a Windows OS, opening a FileInputStream makes removing that file (and the directory) fail.
+                fileStreamDeleteBlocker = new FileInputStream(sessionXml);
+                // Attempt to delete the file to show that opening the file stream successfully blocked deletion.
+                assertThat(sessionXml.delete()).isFalse();
+            } else {
+                // A read-only parent makes removing the session XML (and the directory) fail.
+                assertThat(archiveDirectory.setWritable(false)).isTrue();
+            }
+            assertThatThrownBy(() -> service.delete(SESSION_ID, user, false)).isInstanceOf(ServerException.class);
 
-        assertFilesIntact();
-        verify(hibernateService, never()).setStatusToError(anyLong(), any());
-        verify(hibernateService, never()).setStatusBackToReceiving(anyLong());
-        verify(hibernateService, never()).delete(anyLong());
+            assertFilesIntact();
+            verify(hibernateService, never()).setStatusToError(anyLong(), any());
+            verify(hibernateService, never()).setStatusBackToReceiving(anyLong());
+            verify(hibernateService, never()).delete(anyLong());
+
+        } finally {
+            if (fileStreamDeleteBlocker != null) {
+                fileStreamDeleteBlocker.close();
+            }
+        }
     }
 
     @Test

@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -25,6 +26,7 @@ import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarOutputStream;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -164,6 +166,8 @@ public class PrearcImporterUnpackDispatcherTest {
     public final void testTarExtractionClearsExecutableBit() throws Exception {
         for (final String name : new String[]{"exec.tar", "exec.tar.gz", "exec.tgz", "exec.tar.bz2"}) {
             final File tar  = writeTar(name, EXECUTABLE_FILE_MODE, "script.sh", "subdir/script2.sh");
+            Assume.assumeTrue("test requires a file system that supports the executable permission bit", Files.getFileStore(tar.toPath()).supportsFileAttributeView("posix"));
+
             final File dest = new File(workingDir, "dest-" + name);
 
             assertTrue(name + " should unpack successfully", createDispatcher().unpack(tar, dest));

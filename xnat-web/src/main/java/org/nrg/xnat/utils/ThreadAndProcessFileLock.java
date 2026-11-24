@@ -238,21 +238,32 @@ public class ThreadAndProcessFileLock {
     /**
      * Create the lock-file File corresponding to the provided file.
      *
-     * Takes a file path x/y/z and creates lock file.
-     * If length of path x/y/z is greater than 255
-     * lockfile is created at <cache-path>/file-locks/<LOCKFILE_PREFIX><MD5 hash of x/y/z>
-     * else lockfile is created at <cache-path>/file-locks/<LOCKFILE_PREFIX>x-y-z.
+     * Takes a file path /x/y/z and creates lock file.
+     * If length of path /x/y/z is greater than 255
+     * lockfile is created at <cache-path>/file-locks/<LOCKFILE_PREFIX><MD5 hash of /x/y/z>
+     * else lockfile is created at <cache-path>/file-locks/<LOCKFILE_PREFIX> + hyphen-substituted path.
+     * Substitution patterns:
+     * Linux /a/b/c → -a-b-c
+     * Windows C:\Users\x → -C-Users-x
+     * Windows network path \\server\share\a → ---server-share-a
      *
      * @param file Generate the lock file for this file
      * @return the lock file.
      */
     private File getLockFileForFile(File file) throws IOException {
-        final String filePath = file.getCanonicalPath();
+        final String filePathString = file.getCanonicalPath();
         Path path;
-        if (filePath.length() > 255) {
-            path = Paths.get(getCachePath(),"file-locks", LOCKFILE_PREFIX.concat( DigestUtils.md5Hex(filePath)));
+        if (filePathString.length() > 255) {
+            path = Paths.get(getCachePath(),"file-locks", LOCKFILE_PREFIX.concat( DigestUtils.md5Hex(filePathString)));
         } else {
-            path = Paths.get(getCachePath(), "file-locks", LOCKFILE_PREFIX.concat( filePath.replace("/", "-")));
+            final Path filePath = Paths.get(filePathString);
+            final Path root = filePath.getRoot();
+            // replaceAll both drops the colon on Windows and removes the leading slash on *nix so it doesn't get two
+            // hyphens
+            final String safeRoot = root.toString().replaceAll("[:/]", "");
+            final String subpath = root.relativize(filePath).toString();
+            final String transformedFilePath = "-" + (safeRoot + subpath).replace(File.separator, "-");
+            path = Paths.get(getCachePath(), "file-locks", LOCKFILE_PREFIX.concat(transformedFilePath));
         }
         return path.toFile();
     }

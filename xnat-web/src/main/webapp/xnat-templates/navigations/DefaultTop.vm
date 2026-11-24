@@ -303,11 +303,13 @@
     ## otherwise be written to the page as raw HTML. It would be better to register a global
     ## EscapeHtmlReference eventhandler.referenceinsertion handler in TurbineResources.properties
     ## so that every reference is escaped by default, but that requires auditing the templates that
-    ## intentionally emit HTML, so escape at the reference for now.
+    ## intentionally emit HTML, so escape at the reference for now. The alert message is the
+    ## exception: admins may use HTML in it, so #siteWideAlertMessage sanitizes it with DOMPurify.
     #if($siteConfig.siteWideAlertStatus == "2")
+        <script src="$content.getURI("scripts/lib/dompurify/purify.min.js")"></script>
         <div class="$!esc.html($siteConfig.siteWideAlertType) headNotification hidden">
             <span class="close closeNotification"><i class="fa fa-close"></i></span>
-            <span>$!esc.html($siteConfig.siteWideAlertMessage)</span>
+            #siteWideAlertMessage("span")
         </div>
 
         <script>

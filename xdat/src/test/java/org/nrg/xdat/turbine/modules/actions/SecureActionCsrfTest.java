@@ -28,8 +28,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Tests {@link SecureAction#isCsrfTokenOk(javax.servlet.http.HttpServletRequest, boolean)} for requests from a browser
- * user agent: a request authenticated by a bearer token with no HTTP session skips the check, and every request with a
- * session or without a bearer header is checked as before.
+ * user agent: a request authenticated by a bearer token with no HTTP session skips the check unless it is a write that
+ * carries an Origin header, and every request with a session or without a bearer header is checked as before.
  */
 public class SecureActionCsrfTest {
     private static final String BROWSER    = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
@@ -62,8 +62,25 @@ public class SecureActionCsrfTest {
     }
 
     @Test
-    public void bearerWithoutSessionSkipsTheCheckForAMutatingRequest() throws InvalidCsrfException {
+    public void bearerWithoutSessionSkipsTheCheckForAWriteWithoutOrigin() throws InvalidCsrfException {
         assertThat(SecureAction.isCsrfTokenOk(browserRequest("POST", "bearer abc.def.ghi"), false)).isTrue();
+    }
+
+    @Test
+    public void bearerWithoutSessionIsCheckedForAWriteWithOrigin() {
+        for (final String method : new String[]{"POST", "PUT", "DELETE"}) {
+            final MockHttpServletRequest request = browserRequest(method, "Bearer abc.def.ghi");
+            request.addHeader("Origin", "https://attacker.example");
+            assertThatThrownBy(() -> SecureAction.isCsrfTokenOk(request, false)).as(method).isInstanceOf(InvalidCsrfException.class);
+        }
+    }
+
+    @Test
+    public void bearerWithoutSessionSkipsTheCheckForAReadWithOrigin() throws InvalidCsrfException {
+        final MockHttpServletRequest request = browserRequest("GET", "Bearer abc.def.ghi");
+        request.addHeader("Origin", "https://app.example");
+        assertThat(SecureAction.isCsrfTokenOk(request, false)).isTrue();
+        assertThat(request.getSession(false)).isNull();
     }
 
     @Test
